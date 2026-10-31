@@ -14,10 +14,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(repo, 'dist');
 const load = file => import(pathToFileURL(path.join(dist, file)).href);
-const [THREE, track, signalling, station, operations, platform, network, networkData, catalog, model, { TOURS }] = await Promise.all([
+const [THREE, track, signalling, station, operations, platform, network, networkData, occ, catalog, model, { TOURS }] = await Promise.all([
   load('vendor/three.module.js'), load('track-models.js'), load('signalling-models.js'),
   load('station-models.js'), load('operations-models.js'), load('platform-models.js'),
-  load('network-model.js'), load('network-data.js'), load('catalog.js'), load('model.js'), load('tours.js'),
+  load('network-model.js'), load('network-data.js'), load('occ-models.js'), load('catalog.js'), load('model.js'), load('tours.js'),
 ]);
 const source = await readFile(path.join(dist, 'viewer.js'), 'utf8');
 function between(start, end) {
@@ -74,7 +74,8 @@ check('Expanded scenes construct one requested view at a time', () => {
     [track.TRACK_VIEWS, track.buildTrackView],
     [signalling.SIGNALLING_VIEWS, signalling.buildSignallingView],
     [station.STATION_VIEWS, station.buildStationView],
-    [operations.OPERATIONS_VIEWS, operations.buildOperationsView],
+    [Object.fromEntries(Object.entries(operations.OPERATIONS_VIEWS).filter(([id])=>!occ.OCC_VIEWS[id])), operations.buildOperationsView],
+    [occ.OCC_VIEWS, occ.buildOccView],
     [platform.PLATFORM_VIEWS, platform.buildPlatformView],
     [network.NETWORK_VIEWS, network.buildNetworkView],
   ];

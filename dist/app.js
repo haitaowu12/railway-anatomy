@@ -1,6 +1,9 @@
-import {DEFAULT_TECHNOLOGY,PROPULSION_CHOICES,CONTROL_CHOICES,normalizeTechnology,technologyFromUrl,technologyForView,technologyForComponent,controlRoute,technologyScope,technologyNote,technologyFlow} from './technology.js';
+import {SHORT_LABELS as shortLabels} from './labels.js';
+import {DEFAULT_TECHNOLOGY,PROPULSION_CHOICES,CONTROL_CHOICES,normalizeTechnology,technologyFromUrl,technologyForView,technologyForComponent,controlRoute,technologyNote,technologyFlow} from './technology.js';
 import {NAVIGATION_GROUPS,VIEW_PARENTS,domainForView,viewTrail,routeState,PROPULSION_EFFECTS,CONTROL_EFFECTS} from './navigation.js';
 import {NETWORK_DESTINATIONS} from './network-data.js';
+import {technologyControlsFor,comparisonLabel,animationFor,canAnimate,placeModelLabels} from './comparisons.js';
+import {READING_GUIDES} from './reading-guides.js';
 import {SOURCES,CONCEPTS,ARCHITECTURES} from './catalog.js';
 import {TOURS} from './tours.js';
 import {DOMAINS,VIEWS,RELATED,MODES,EXPERIMENTS,targetFor,domainFor,viewFor,applyExperiment,describeFlow,wheelEstimate,variantFor,variantsFor,defaultVariant,cutawayFor,PART_CONTEXTS} from './model.js';
@@ -11,16 +14,16 @@ const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
 const sources=new Map(SOURCES.map(s=>[s.id,s]));
 let savedTechnology={};try{savedTechnology=JSON.parse(localStorage.getItem('railway-anatomy-technology-v1')||'{}');}catch{}
-let state={technology:technologyFromUrl(location.search,savedTechnology),page:'explore',domain:'network',view:'railway',component:'network-overview',mode:'coasting',scenario:'nominal',variant:'movement',sink:'train',cutaway:true,exploded:0,playing:false,labels:true,lesson:0};
+let state={technology:technologyFromUrl(location.search,savedTechnology),page:'explore',domain:'network',view:'railway',component:'network-overview',mode:'coasting',scenario:'nominal',variant:'movement',sink:'train',cutaway:true,exploded:0,explodeScope:'all',playing:false,labels:true,labelMode:'nearby',lesson:0};
 let historyMode='replace',returnContext=null,lastReadUrl='',allComponents=false,configurationEffect='',lastDetailKey='';
-let viewer=null, rendererStatus='', loadingViewer=false, labelFrame=0,lastLabelTime=0;
+let viewer=null, rendererStatus='', loadingViewer=false, labelFrame=0,lastLabelTime=0,lastExplorationContext='';
 let lessonAnswers={}, lessonAttempts={}, quizSelections={};
-const progressKey='railway-anatomy-learning-v1';
+const progressKey='railway-anatomy-learning-v2';
 try{const saved=JSON.parse(localStorage.getItem(progressKey)||'{}');for(const t of TOURS){if(saved.completed?.[t.id]===true)lessonAnswers[t.id]=true;if(Number.isInteger(saved.choices?.[t.id])&&saved.choices[t.id]>=0&&saved.choices[t.id]<t.choices.length)quizSelections[t.id]=saved.choices[t.id];if(Number.isFinite(saved.attempts?.[t.id]))lessonAttempts[t.id]=Math.max(0,saved.attempts[t.id]);}}catch{}
 function saveProgress(){try{localStorage.setItem(progressKey,JSON.stringify({completed:lessonAnswers,choices:quizSelections,attempts:lessonAttempts}));}catch{}}
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const labelElements=new Map();
-const shortLabels={'network-overview':'Railway','network-route':'Running line','network-station':'Station','network-turnback':'Turnback','network-train':'Train','network-depot':'Depot & yard','network-maintenance':'Maintenance','network-stabling':'Stabling','network-control-centre':'Control centre','network-substation':'Substation','network-telecommunications':'Information links','depot-layout':'Depot','depot-stabling':'Stabling','depot-throat':'Yard throat','depot-controller':'Depot control','depot-inspection-pit':'Inspection pit','depot-roof-access':'Roof access','depot-bogie-drop':'Bogie drop','depot-lifting-jacks':'Lifting jacks','depot-wheel-lathe':'Wheel lathe','depot-maintenance-road':'Maintenance road','depot-network-boundary':'Control boundary','depot-reception':'Reception road','depot-dispatch':'Departure road','depot-yard-points':'Yard points','depot-shunt-signal':'Shunt signal','depot-wash-plant':'Wash plant','depot-water-recovery':'Water treatment','depot-stores':'Stores','depot-facility-power':'Facility power','depot-work-planning':'Work planning','depot-maintenance-release':'Maintenance release','depot-wash-gantry':'Moving gantry','depot-wash-pump':'Wash pump','depot-compressed-air':'Workshop air','depot-material-handling':'Handling route','depot-personnel-protection':'Work protection','depot-energy-isolation':'Energy isolation',utility:'AC supply','ac-switchgear':'AC switchgear',transformer:'Transformer',rectifier:'Rectifier','dc-switchgear':'DC distribution',breaker:'DC breaker','wayside-resistor':'Braking resistor',grounding:'Bonding / return','facility-transformer':'Facility supply',disconnect:'Isolation boundary','positive-rail':'+ DC conductor','negative-rail':'Return conductor','running-rail':'Running rails','reaction-rail':'Reaction rail',collector:'Collector',carbody:'Carbody',bogie:'Bogie','traction-inverter':'Traction inverter','lim-primary':'LIM primary',apu:'Auxiliary converter','vehicle-battery':'Auxiliary battery',hvac:'HVAC',brakes:'Friction brakes',compressor:'Air supply',doors:'Doors','control-battery':'Control battery','substation-control':'Station control',atp:'ATP protection',ato:'ATO driving',ats:'ATS supervision','train-control':'Control computer',tcms:'TCMS','train-radio':'Control radio','radio-antenna':'Antenna','wayside-radio':'Wayside radio','zone-controller':'Zone controller',balise:'Position reference',tachometer:'Wheel-speed sensor',accelerometer:'Inertial sensor','door-control':'Door controller','passenger-info':'Passenger display','pa-intercom':'PA / intercom',cctv:'CCTV','train-network':'Onboard network'};
+
 
 function sourceChips(ids){return `<div class="source-chips">${[...new Set(ids)].filter(id=>sources.has(id)).map(id=>`<button data-source="${id}" title="${safe(sources.get(id).title)}">${safe(sources.get(id).publisher)} ↗</button>`).join('')}</div>`;}
 function announce(text){$('#announce').textContent=text;}
@@ -51,7 +54,7 @@ function readHash(){
     if(parts.has(c))state.component=c;else state.component=VIEWS[state.view].component;
     state.variant=VIEWS[state.view].variants?.some(x=>x.id===v)?v:variantFor(state.component,state.view);
     if(state.variant!=='default'&&!VIEWS[state.view].variants?.some(x=>x.id===state.variant))state.variant=defaultVariant(state.view);
-    state.cutaway=cutawayFor(state.view);state.exploded=0;
+    state.cutaway=cutawayFor(state.view);state.exploded=0;state.explodeScope='all';
     const q=new URLSearchParams(location.search);
     state.mode=MODES.some(x=>x.id===q.get('mode'))?q.get('mode'):['power','vehicle'].includes(state.domain)?'motoring':'coasting';
     state.scenario=['nominal','radio-loss','door-open','wheel-slip','regen-limited'].includes(q.get('scenario'))?q.get('scenario'):'nominal';
@@ -64,20 +67,44 @@ function readHash(){
 function activeDomain(){return DOMAINS.find(d=>d.id===state.domain);}
 function syncViewer(changedView=false){
   if(!viewer)return;
+  if(!canAnimate(VIEWS[state.view],state.variant))state.playing=false;
+  const context=[state.view,state.variant,state.component,state.technology.propulsion,state.technology.control].join('/');
+  if(lastExplorationContext&&context!==lastExplorationContext&&state.explodeScope==='selected'){state.exploded=0;state.explodeScope='all';}
+  lastExplorationContext=context;
   viewer.setTechnology(state.technology);
   if(changedView)viewer.setView(state.view);
   viewer.setVariant(state.variant);viewer.setMode(state.mode);viewer.setScenario(state.scenario);viewer.setReceptivity(state.sink);
-  viewer.setExploded(state.exploded);viewer.setCutaway(state.cutaway);viewer.setSignals(['track','control','communications','station','operations','depot'].includes(state.domain));
-  viewer.setSelected(['network-overview','depot-layout'].includes(state.component)?null:targetFor(state.component));
+  viewer.setSelected(['network-overview','depot-layout','operations-centre'].includes(state.component)?null:targetFor(state.component));
+  viewer.setCutaway(state.cutaway);
+  const requestedScope=state.explodeScope||'all';
+  state.explodeScope=viewer.setExplodeScope?.(requestedScope)||'all';
+  if(requestedScope==='selected'&&state.explodeScope!=='selected')state.exploded=0;
+  viewer.setExploded(state.exploded);viewer.setSignals(['track','control','communications','station','operations','depot'].includes(state.domain));
   state.playing=viewer.setPlaying(state.playing);syncControls();
 }
 function syncControls(){
-  $('#cutaway').checked=state.cutaway;$('#explode').value=state.exploded;$('#labels').checked=state.labels;
+  const presentation=viewer?.getExplorationState?.();
+  if(presentation){state.exploded=presentation.exploded;state.explodeScope=presentation.explodeScope;}
+  $('#cutaway').checked=state.cutaway;$('#explode').value=state.exploded;$('#label-density').value=state.labels?(state.labelMode||'nearby'):'off';
   $('#play').textContent=state.playing?'Ⅱ Pause':'▶ Animate';$('#play').setAttribute('aria-pressed',String(state.playing));
   $('#play').disabled=reducedMotion.matches;
+  $('.animation').hidden=!canAnimate(VIEWS[state.view],state.variant);
   $('#play').title=reducedMotion.matches?'Reduced motion is enabled. Use the phase slider to inspect each state.':'Animate the model';
   const capabilities=viewer?.getViewCapabilities();
-  $('#cutaway').closest('label').hidden=state.view==='railway'||capabilities?.cutaway===false;$('#explode').closest('label').hidden=state.view==='railway'||capabilities?.explode===false;
+  $('#cutaway').closest('label').hidden=state.view==='railway'||capabilities?.cutaway===false;$('#separation-controls').hidden=state.view==='railway'||capabilities?.explode===false;
+  const selected=targetFor(state.component),overview=['network-overview','depot-layout','operations-centre'].includes(selected);
+  const exploration=viewer?.getExplorationCapabilities?.(selected),current=viewer?.getExplorationState?.();
+  $('#exploration-selection').textContent=overview?'Explore the model':`Selected: ${shortLabels[state.component]||parts.get(state.component)?.label||''}`;
+  $('#focus-selection').hidden=overview||!exploration?.canFocus;
+  $('#isolate-selection').hidden=overview||!exploration?.canIsolate;
+  $('#isolate-selection').setAttribute('aria-pressed',String(Boolean(current?.isolation)));
+  $('#isolate-selection').textContent=current?.isolation?'Assembly isolated':'Isolate assembly';
+  $('#restore-context').hidden=!current?.isolation&&!current?.canRestoreFrame;
+  $('#explode-scope').value=current?.explodeScope||'all';
+  $('#explode-scope option[value="selected"]').disabled=!exploration?.canExplodeSelected;
+  $('#exploration-note').hidden=!(current?.isolation||current?.explodeScope==='selected');
+  $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.separatedPartCount||0} separable parts in this assembly. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
+  updateMotionGuide();
   $('#render-badge').textContent=rendererStatus==='svg'?'Schematic · SVG':'Schematic · 3D';
 }
 function renderNavigation(){
@@ -97,9 +124,12 @@ function renderNavigation(){
   $('#view-nav').innerHTML=viewIds.map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" aria-pressed="${id===state.view}">${VIEWS[id].label}</button>`).join('');
   $('#scene-index').textContent=`${d.label} / ${VIEWS[state.view].level||'System & equipment'}`;
   $('#scene-title').textContent=VIEWS[state.view].label;
+  const controls=technologyControlsFor(state.view);
+  $('#technology-panel').hidden=!controls.propulsion&&!controls.control;
+  $('#propulsion-context').hidden=!controls.propulsion;$('#control-context').hidden=!controls.control;
+  $('#propulsion-choice').disabled=!controls.propulsion;$('#control-choice').disabled=!controls.control;
   $('#propulsion-choice').value=state.technology.propulsion;$('#control-choice').value=state.technology.control;
-  $('#technology-summary').textContent=`${state.technology.propulsion==='lim'?'LIM':'Rotary drive'} · ${CONTROL_CHOICES.find(x=>x.id===state.technology.control)?.label}`;
-  $('#technology-scope').textContent=technologyScope(state.technology,state.view)+' Changing a technology opens its equipment when it is outside the current view.';
+  $('#propulsion-context label').textContent=state.view==='guideway'?'Guideway propulsion interface':'Drive arrangement';
   $('#configuration-effect').hidden=!configurationEffect;$('#configuration-effect').textContent=configurationEffect;
   $('#model-key').textContent=technologyNote(state,VIEWS[state.view].note)+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');
   $('#tour-bar').hidden=state.page!=='learn';
@@ -111,12 +141,14 @@ function renderDetail(){
   if(lastDetailKey!==state.component){$('.inspector').scrollTop=0;lastDetailKey=state.component;}
   const related=(RELATED[c.id]||activeDomain().parts.filter(id=>id!==c.id).slice(0,3)).filter(id=>parts.has(id));
   const contexts=[...new Set([viewFor(c.id),...(PART_CONTEXTS[c.id]||[])])].filter(id=>VIEWS[id]&&id!==state.view);
-  const level=({'network-overview':'Railway','network-route':'Route','network-station':'Place','network-turnback':'Track connection','network-train':'Vehicle','network-depot':'Facility','network-maintenance':'Facility','network-stabling':'Area','network-control-centre':'Facility','network-substation':'Subsystem','network-telecommunications':'System','depot-layout':'Facility'})[c.id]||'Equipment';
+  const level=({'network-overview':'Railway','network-route':'Route','network-station':'Place','network-turnback':'Track connection','network-train':'Vehicle','network-depot':'Facility','network-maintenance':'Facility','network-stabling':'Area','network-control-centre':'Facility','network-substation':'Subsystem','network-telecommunications':'System','depot-layout':'Facility','operations-centre':'Facility'})[c.id]||'Equipment';
   const destination=NETWORK_DESTINATIONS[c.id];
   $('#selection-summary').innerHTML=`<strong>${safe(shortLabels[c.id]||c.label)}</strong><button id="read-selection">Read explanation</button>${destination?`<button data-destination="${c.id}">Explore area →</button>`:''}`;
   const drilldown=destination?`<button class="open-area" data-destination="${c.id}">Explore ${safe(VIEWS[destination.view]?.label||c.label)} →</button>`:'';
   const anchor=targetFor(c.id)!==c.id?`<p class="practice-note">Model anchor: ${safe(parts.get(targetFor(c.id))?.label||targetFor(c.id))}. This concept is shown in its equipment context.</p>`:'';
-  $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / ${level}</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${drilldown}${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<details class="part-scope"><summary>Scope of this example</summary><p class="part-note">${safe(c.caveat)}</p></details>`:''}<h3 class="detail-heading">Interfaces & connected equipment</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)} ↗</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links"><button data-focus="${targetFor(c.id)}">Locate in model</button><button data-reference="${c.id}">Read in field guide →</button></div>`;
+  $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / ${level}</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${drilldown}${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<details class="part-scope"><summary>Scope of this example</summary><p class="part-note">${safe(c.caveat)}</p></details>`:''}<h3 class="detail-heading">Interfaces & connected equipment</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links"><button data-focus="${targetFor(c.id)}">Locate in model</button><button data-reference="${c.id}">Read in field guide →</button></div>`;
+  const guide=READING_GUIDES.find(g=>g.domain===state.domain);
+  if(guide)$('#component-detail').insertAdjacentHTML('beforeend',`<div class="system-reading"><span>Read the system guide</span><button data-reading-guide="${guide.id}">${safe(guide.title)} →</button></div>`);
   $('#component-detail').hidden=state.page==='learn';$('#lesson-detail').hidden=state.page!=='learn';
   const visible=new Set(viewer?.getVisibleComponentIds()||[]);
   const candidates=allComponents?activeDomain().parts:[...new Set([...activeDomain().parts,...CONCEPTS.map(c=>c.id)])];
@@ -128,7 +160,7 @@ function renderDetail(){
 }
 function renderScenario(){
   const flow=technologyFlow(state,describeFlow(state)),variants=VIEWS[state.view].variants,electrical=!variants&&(['power','vehicle'].includes(state.domain)&&state.view!=='services'||state.view==='guideway');
-  $('#arrangement-label').textContent=state.domain==='network'?'Trace a connection':variants?'Compare arrangements':'Operating condition';
+  $('#arrangement-label').textContent=comparisonLabel(state.view,Boolean(variants),electrical);
   $('#scenario-heading').textContent=variants?'How this arrangement works':electrical?'Follow the energy':state.domain==='control'?'Trace the decisions':state.domain==='communications'?'Follow the messages':'Explore the supporting systems';
   $('#scenario-buttons').innerHTML=variants?variants.map(x=>`<button data-variant="${x.id}" class="${x.id===state.variant?'active':''}" aria-pressed="${x.id===state.variant}">${x.label}</button>`).join(''):(electrical?MODES:EXPERIMENTS[state.view==='services'?'services':state.domain]||MODES).filter(x=>x.id!=='radio-loss'||['loop','radio','etcs2'].includes(state.technology.control)).map(x=>`<button data-experiment="${x.id}" class="${x.id===(electrical?state.mode:state.scenario)?'active':''}" aria-pressed="${x.id===(electrical?state.mode:state.scenario)}">${x.id==='radio-loss'&&state.technology.control==='loop'?'Hold loop update':x.label}</button>`).join('');
   $('#receptivity').hidden=!(electrical&&state.mode==='regeneration');
@@ -136,6 +168,23 @@ function renderScenario(){
   $('#flow-path').innerHTML=flow.nodes.map((n,i)=>`${i?`<span class="flow-arrow" aria-hidden="true">${flow.parallel?'·':'→'}</span>`:''}<span class="flow-node ${flow.kind||''}">${safe(n)}</span>`).join('');
   $('#scenario-title').textContent=flow.title;$('#scenario-description').textContent=flow.description;$('#scenario-sources').innerHTML=sourceChips(flow.sources);
   $('#sensor-lab').hidden=!(state.domain==='control'&&(state.scenario==='wheel-slip'||['tachometer','accelerometer','balise'].includes(state.component)));
+}
+function updateMotionGuide(){
+  const guide=animationFor(VIEWS[state.view],state.variant),phase=viewer?.getPhase?.()||0;
+  const fraction=!state.playing&&phase===5?1:((phase%5)+5)%5/5;
+  if(document.activeElement!==$('#phase'))$('#phase').value=String(fraction);
+  $('#phase-value').value=`${Math.round(fraction*100)}%`;
+  $('#motion-guide').hidden=!guide;
+  if(!guide)return;
+  $('#motion-title').textContent=guide.label;
+  const steps=guide.steps||[],index=steps.reduce((best,step,i)=>fraction+.001>=step.at?i:best,0);
+  const key=`${state.view}/${state.variant}`;
+  if($('#motion-steps').dataset.guide!==key){
+    $('#motion-steps').dataset.guide=key;
+    $('#motion-steps').innerHTML=steps.map((step,i)=>`<button data-motion-phase="${step.at}" data-motion-step="${i}">${safe(step.label)}</button>`).join('');
+  }
+  $$('#motion-steps button').forEach((b,i)=>{b.classList.toggle('active',i===index);b.setAttribute('aria-pressed',String(i===index));});
+  $('#motion-caption').textContent=steps[index]?.description||'';
 }
 function renderLesson(){
   if(state.page!=='learn')return;
@@ -150,6 +199,9 @@ function showFeedback(correct,choice=quizSelections[TOURS[state.lesson].id]){
 }
 function renderReference(){
   const q=$('#reference-search').value.trim().toLowerCase(),filter=$('#reference-domain').value;
+  const guides=READING_GUIDES.filter(g=>(filter==='all'||g.domain===filter)&&[g.title,g.summary,...g.sections.map(s=>s.text)].join(' ').toLowerCase().includes(q));
+  $('#reading-guides').hidden=!guides.length;
+  $('#reading-guides').innerHTML=`<h3>Systems in context</h3>${guides.map(g=>`<details id="reading-${g.id}" class="reading-guide"><summary>${safe(g.title)}</summary><div><p class="reading-summary">${safe(g.summary)}</p>${g.sections.map(s=>`<h4>${safe(s.heading)}</h4><p>${safe(s.text)}</p>${s.sources?sourceChips(s.sources):''}`).join('')}${sourceChips(g.sources)}<button class="open-in-model" data-domain="${g.domain}">Explore this area →</button></div></details>`).join('')}`;
   const match=c=>(filter==='all'||domainFor(c.id).id===filter)&&[c.label,c.summary,...c.details,...c.sources.map(id=>sources.get(id).title)].join(' ').toLowerCase().includes(q);
   const found=CONCEPTS.filter(match);$('#reference-count').textContent=`${found.length} concepts`;
   $('#reference-results').innerHTML=DOMAINS.filter(d=>filter==='all'||d.id===filter).map(d=>{
@@ -241,35 +293,40 @@ function rebuildLabels(){
   for(const [id,nodes] of labelElements){if(!ids.includes(id)){nodes.button.remove();nodes.line.remove();labelElements.delete(id);}}
   let svg=layer.querySelector('svg');if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('model-leaders');svg.setAttribute('aria-hidden','true');layer.prepend(svg);}
   for(const id of ids){if(!parts.has(id)||labelElements.has(id))continue;
-    const button=document.createElement('button');button.className='model-label';button.dataset.component=id;button.textContent=shortLabels[id]||parts.get(id).label;button.setAttribute('aria-label',`Inspect ${parts.get(id).label}`);layer.append(button);
+    const button=document.createElement('button');button.className='model-label';button.dataset.component=id;button.textContent=shortLabels[id]||parts.get(id).label;button.setAttribute('aria-label',`Inspect ${parts.get(id).label}`);button.title=parts.get(id).label;layer.append(button);
     const line=document.createElementNS('http://www.w3.org/2000/svg','line');svg.append(line);labelElements.set(id,{button,line});
   }
   updateLabels();
 }
 function updateLabels(){
   if(!viewer||state.page==='reference')return;
-  const width=$('#viewer').clientWidth,height=$('#viewer').clientHeight,limit=width<450?5:width<700?6:8;
+  const stage=$('.stage'),width=$('#viewer').clientWidth,height=$('#viewer').clientHeight;
   for(const {button,line} of labelElements.values()){button.hidden=true;line.style.display='none';}
   if(!state.labels)return;
   const selected=targetFor(state.component),preferred=new Set(activeDomain().parts.map(targetFor));
-  const priorities=state.view==='railway'?new Set(['network-station','network-depot','network-control-centre','network-substation','network-telecommunications','network-train','network-turnback']):preferred;
-  const pts=viewer.getComponentScreenPositions().filter(p=>labelElements.has(p.id)&&!['network-overview','depot-layout'].includes(p.id)).sort((a,b)=>(a.id===selected?-1000:priorities.has(a.id)?-100:0)-(b.id===selected?-1000:priorities.has(b.id)?-100:0));
-  const occupied=[];let count=0;
-  for(const p of pts){if(count>=limit)break;
-    const nodes=labelElements.get(p.id),bw=Math.min(width-30,Math.max(65,nodes.button.textContent.length*5.5+18)),bh=25,x0=p.x*width,y0=p.y*height;
-    let placed=null;
-    for(const [dx,dy] of [[0,-24],[0,35],[-65,-20],[65,-20],[-80,35],[80,35],[0,-58],[0,70],[-100,-58],[100,-58]]){
-      const x=Math.min(width-bw/2-10,Math.max(bw/2+10,x0+dx)),y=Math.min(height-56,Math.max(105,y0+dy));
-      const rect={left:x-bw/2-5,right:x+bw/2+5,top:y-bh-5,bottom:y+5};
-      if(occupied.every(r=>rect.right<r.left||rect.left>r.right||rect.bottom<r.top||rect.top>r.bottom)){placed={x,y,rect};break;}
-    }
-    if(!placed)continue;
-    occupied.push(placed.rect);nodes.button.hidden=false;nodes.button.style.left=`${placed.x}px`;nodes.button.style.top=`${placed.y}px`;nodes.button.classList.toggle('selected',p.id===selected);
-    nodes.button.setAttribute('aria-pressed',String(p.id===selected));
-    nodes.line.style.display='';nodes.line.setAttribute('x1',String(x0));nodes.line.setAttribute('y1',String(y0));nodes.line.setAttribute('x2',String(placed.x));nodes.line.setAttribute('y2',String(placed.y-10));count++;
+  const priorities=state.view==='railway'?new Set(['network-station','network-depot','network-control-centre','network-substation','network-train','network-turnback']):state.view==='operations-centre'?new Set(['operations-equipment-room','occ-shared-display','operations-traffic-supervision','operations-power-control','operations-station-supervision','occ-duty-handover']):preferred;
+  const points=viewer.getComponentScreenPositions()
+    .filter(p=>labelElements.has(p.id)&&!['network-overview','depot-layout','operations-centre'].includes(p.id)&&(state.labelMode!=='selected'||p.id===selected))
+    .sort((a,b)=>(a.id===selected?-1000:priorities.has(a.id)?-100:0)-(b.id===selected?-1000:priorities.has(b.id)?-100:0));
+  const limit=state.labelMode==='selected'?1:width<450?4:width<850?6:8;
+  const measured=points.slice(0,Math.max(limit*2,12)).map(point=>{
+    const button=labelElements.get(point.id).button;
+    button.hidden=false;button.style.visibility='hidden';
+    const rect=button.getBoundingClientRect();button.hidden=true;button.style.visibility='';
+    return {...point,width:rect.width,height:rect.height};
+  });
+  const top=$('.stage-heading').getBoundingClientRect().bottom-stage.getBoundingClientRect().top+18;
+  const bottom=$('.stage-footer').getBoundingClientRect().height+20;
+  const positions=placeModelLabels(measured,{width,height,top,bottom,limit,gap:12});
+  for(const p of positions){
+    const nodes=labelElements.get(p.id);nodes.button.hidden=false;
+    nodes.button.style.left=`${p.x}px`;nodes.button.style.top=`${p.y}px`;
+    nodes.button.classList.toggle('selected',p.id===selected);nodes.button.setAttribute('aria-pressed',String(p.id===selected));
+    nodes.line.style.display='';nodes.line.setAttribute('x1',String(p.anchorX));nodes.line.setAttribute('y1',String(p.anchorY));
+    nodes.line.setAttribute('x2',String(p.x));nodes.line.setAttribute('y2',String(p.y-p.height/2));
   }
 }
-function labelLoop(time){labelFrame=requestAnimationFrame(labelLoop);if(!document.hidden&&time-lastLabelTime>150){updateLabels();lastLabelTime=time;}}
+function labelLoop(time){labelFrame=requestAnimationFrame(labelLoop);if(!document.hidden&&time-lastLabelTime>150){updateLabels();updateMotionGuide();lastLabelTime=time;}}
 async function startViewer(){
   if(loadingViewer||viewer)return;loadingViewer=true;$('#model-error').hidden=true;
   try{
@@ -283,12 +340,16 @@ async function startViewer(){
 document.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b)return;
   rememberCurrentEntry();
-  historyMode=b.matches('[data-page],[data-domain],[data-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
+  historyMode=b.matches('[data-page],[data-domain],[data-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
   if(b.matches('[data-domain],[data-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');}
   if(b.id==='navigator-toggle'){const open=$('.railway-navigation').classList.toggle('is-open');b.setAttribute('aria-expanded',String(open));}
   else if(b.id==='read-selection'){const heading=$('#component-detail h2');heading?.setAttribute('tabindex','-1');heading?.focus();heading?.scrollIntoView({block:'start',behavior:'instant'});}
   else if(b.id==='component-scope'){allComponents=!allComponents;renderDetail();}
-  else if(b.id==='return-context'){if(returnContext){const destination=returnContext;returnContext=null;state={...state,...destination};configurationEffect='';render(true);announce(`Returned to ${VIEWS[state.view].label}`);}}
+  else if(b.id==='focus-selection'){viewer?.frameSelection?.(targetFor(state.component));syncControls();updateLabels();}
+  else if(b.id==='isolate-selection'){const current=viewer?.getExplorationState?.();viewer?.setIsolation?.(current?.isolation?null:targetFor(state.component));renderDetail();syncControls();rebuildLabels();}
+  else if(b.id==='restore-context'){viewer?.setIsolation?.(null);viewer?.restoreFrame?.();state.exploded=viewer?.getExplorationState?.().exploded||0;renderDetail();syncControls();rebuildLabels();}
+  else if(b.id==='larger-model'){const expanded=$('.explorer-shell').classList.toggle('model-expanded');b.setAttribute('aria-pressed',String(expanded));b.textContent=expanded?'Standard model size':'Larger model';requestAnimationFrame(()=>{viewer?.resize();viewer?.frameModel?.();syncControls();updateLabels();});}
+  else if(b.id==='return-context'){if(returnContext){const destination=returnContext;returnContext=null;state={...state,...destination};configurationEffect='';lastExplorationContext='';render(true);announce(`Returned to ${VIEWS[state.view].label}`);}}
   else if(b.dataset.destination)openDestination(b.dataset.destination);
   else if(b.dataset.page)setPage(b.dataset.page);
   else if(b.dataset.domain)setDomain(b.dataset.domain);
@@ -297,10 +358,12 @@ document.addEventListener('click',event=>{
   else if(b.dataset.variant){configurationEffect='';state.variant=b.dataset.variant;const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();}
   else if(b.dataset.component)selectComponent(b.dataset.component,{primary:Boolean(b.closest('#search-results'))});
   else if(b.dataset.source)openSources(b.dataset.source);
-  else if(b.dataset.camera)viewer?.setCameraPreset(b.dataset.camera);
-  else if(b.dataset.focus)viewer?.focusComponent(b.dataset.focus);
+  else if(b.dataset.camera){viewer?.setCameraPreset(b.dataset.camera);syncControls();updateLabels();}
+  else if(b.dataset.motionPhase!==undefined){state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Number(b.dataset.motionPhase)*5);syncControls();updateLabels();}
+  else if(b.dataset.focus){viewer?.focusComponent(b.dataset.focus);syncControls();updateLabels();}
   else if(b.dataset.exploreComponent){selectComponent(b.dataset.exploreComponent,{explore:true,focus:false,primary:true});$('#workspace').scrollIntoView({block:'start'});}
   else if(b.dataset.reference){state.page='reference';$('#reference-search').value='';$('#reference-domain').value='all';render();const entry=$(`#reference-${b.dataset.reference}`);entry.open=true;entry.scrollIntoView({block:'center'});}
+  else if(b.dataset.readingGuide){state.page='reference';$('#reference-search').value='';$('#reference-domain').value='all';render();const entry=$(`#reading-${b.dataset.readingGuide}`);if(entry){entry.open=true;entry.scrollIntoView({block:'start'});}}
   else if(b.dataset.lesson!==undefined){state.lesson=Number(b.dataset.lesson);applyLesson();}
   else if(b.dataset.experiment){state=applyExperiment(state,b.dataset.experiment);render();announce(technologyFlow(state,describeFlow(state)).title);}
   else if(b.dataset.sink){state.sink=b.dataset.sink;state.scenario=b.dataset.sink==='resistor'?'regen-limited':'nominal';render();}
@@ -315,7 +378,7 @@ document.addEventListener('click',event=>{
   }else if(b.id==='previous-lesson'){state.lesson=Math.max(0,state.lesson-1);applyLesson();}
   else if(b.id==='next-lesson'){if(state.lesson<TOURS.length-1){state.lesson++;applyLesson();}else setPage('explore');}
   else if(b.id==='play'){state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();}
-  else if(b.id==='reset-scene'){viewer?.resetCamera();}
+  else if(b.id==='reset-scene'){viewer?.resetCamera();syncControls();}
   else if(b.id==='about-button')openSources();
   else if(b.id==='close-dialog')$('#about-dialog').close();
   else if(b.id==='reset-progress'){lessonAnswers={};lessonAttempts={};quizSelections={};saveProgress();$('#about-dialog').close();render();announce('Learning progress reset on this device.');}
@@ -334,11 +397,10 @@ function openTechnologyModel(kind){
   state={...state,...route,page:'explore',domain:domainFor(route.component).id,scenario:'nominal',mode:'coasting',exploded:0,cutaway:cutawayFor(route.view)};render(true);
 }
 function changeTechnology(kind,value){
+  if(!technologyControlsFor(state.view)[kind])return;
   rememberCurrentEntry();historyMode='push';
   state.technology=normalizeTechnology({...state.technology,[kind]:value});
   configurationEffect=(kind==='propulsion'?PROPULSION_EFFECTS:CONTROL_EFFECTS)[value];
-  const relevant=kind==='propulsion'?['system','guideway','vehicle','bogie','control','communications','signalling','etcs','seltrac','cbtc-network']:['system','guideway','vehicle','bogie','control','communications'];
-  if(!relevant.includes(state.view)){openTechnologyModel(kind);announce(configurationEffect);return;}
   state.scenario='nominal';viewer?.setTechnology(state.technology);
   const hidden=viewer&&!viewer.getVisibleComponentIds().includes(targetFor(state.component));
   if(hidden&&kind==='propulsion')state.component=state.technology.propulsion==='rotary'?'rotary-traction-motor':'lim-primary';
@@ -355,7 +417,8 @@ document.addEventListener('click',e=>{if(!e.target.closest('.inspector-search'))
 $('#reference-search').addEventListener('input',renderReference);$('#reference-domain').addEventListener('change',renderReference);
 $('#cutaway').addEventListener('change',e=>{state.cutaway=e.target.checked;syncViewer();rememberCurrentEntry();});
 $('#explode').addEventListener('input',e=>{state.exploded=Number(e.target.value);syncViewer();rememberCurrentEntry();$('#model-key').textContent=technologyNote(state,VIEWS[state.view].note)+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');});
-$('#labels').addEventListener('change',e=>{state.labels=e.target.checked;updateLabels();rememberCurrentEntry();});
+$('#explode-scope').addEventListener('change',e=>{state.explodeScope=viewer?.setExplodeScope?.(e.target.value)||'all';viewer?.setExploded(state.exploded);syncControls();updateLabels();rememberCurrentEntry();});
+$('#label-density').addEventListener('change',e=>{state.labels=e.target.value!=='off';state.labelMode=e.target.value;updateLabels();rememberCurrentEntry();});
 $('#phase').addEventListener('input',e=>{state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Number(e.target.value)*5);syncControls();});
 $('#sensor-error').addEventListener('input',updateSensor);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){state.playing=false;syncControls();}});
@@ -369,6 +432,7 @@ function restoreNavigation(){
     state={...state,...routeState(saved),variant,technology:technologyFromUrl(location.search,saved.technology),playing:false};
     state.exploded=Number.isFinite(saved.exploded)?Math.max(0,Math.min(1,saved.exploded)):0;
   }
+  lastExplorationContext='';
   render(true);
 }
 window.addEventListener('hashchange',restoreNavigation);window.addEventListener('popstate',restoreNavigation);

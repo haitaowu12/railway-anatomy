@@ -11,6 +11,8 @@ export const VIEW_PARENTS = {
   'depot-yard':'depot-overview','depot-maintenance':'depot-overview',
   'depot-workshop':'depot-maintenance','depot-wash':'depot-overview',
   'depot-protection':'depot-maintenance','depot-utilities':'depot-overview','depot-support':'depot-overview',
+  'depot-condition':'depot-overview','depot-components':'depot-maintenance','depot-testing':'depot-maintenance',
+  'occ-supervision':'operations-centre','occ-incident':'operations-centre','occ-equipment':'operations-centre','occ-workplace':'operations-centre',
   'rail-fastening':'track-support','switch-drive':'turnout',crossing:'turnout',
   substation:'system',interlocking:'control','train-detection':'control'
 };
@@ -28,7 +30,7 @@ export function viewTrail(view, views) {
 export function routeState(state) {
   return {page:state.page,domain:state.domain,view:state.view,component:state.component,variant:state.variant,
     technology:{...state.technology},mode:state.mode,scenario:state.scenario,sink:state.sink,
-    cutaway:state.cutaway,exploded:state.exploded,playing:false,labels:state.labels,lesson:state.lesson};
+    cutaway:state.cutaway,exploded:state.exploded,explodeScope:state.explodeScope||'all',playing:false,labels:state.labels,labelMode:state.labelMode||(state.labels===false?'off':'nearby'),lesson:state.lesson};
 }
 
 export const PROPULSION_EFFECTS = {
