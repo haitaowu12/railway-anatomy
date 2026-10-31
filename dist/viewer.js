@@ -7,6 +7,9 @@ import { STATION_VIEWS, buildStationView } from './station-models.js';
 import { OPERATIONS_VIEWS, buildOperationsView } from './operations-models.js';
 import { PLATFORM_VIEWS, buildPlatformView } from './platform-models.js';
 import { NETWORK_VIEWS, buildNetworkView } from './network-model.js';
+import { OCC_VIEWS, buildOccView } from './occ-models.js';
+import { nodeVisible, within, visibleBounds, componentBounds, assemblyRoots, restoreIsolation, applyIsolation,
+  separationEntries, explorationCapabilities, restoreSeparation, applySeparation, fitPerspectiveBounds, screenPositions } from './exploration.js';
 
 /*
  * Original procedural explanatory models. Geometry is a teaching composition,
@@ -24,7 +27,7 @@ const C = {
   brake: 0xe49268, accent: 0xd4ede1, signal: 0xb3a6f6, service: 0x7fcea5, warning: 0xff936c,
 };
 const VIEW = {
-  ...TRACK_VIEWS, ...SIGNALLING_VIEWS, ...STATION_VIEWS, ...OPERATIONS_VIEWS, ...PLATFORM_VIEWS, ...NETWORK_VIEWS,
+  ...TRACK_VIEWS, ...SIGNALLING_VIEWS, ...STATION_VIEWS, ...OPERATIONS_VIEWS, ...PLATFORM_VIEWS, ...NETWORK_VIEWS, ...OCC_VIEWS,
   system: { camera: [25, 26, 32], target: [0, .9, 1], distance: 55 },
   substation: { camera: [12.5, 12, 16], target: [0, 1, 0], distance: 31 },
   guideway: { camera: [7, 5.7, 7.6], target: [0, .3, .15], distance: 19 },
@@ -122,7 +125,8 @@ export function createViewer(container, callbacks = {}) {
 
   const models = new Map();
   let building;
-  const state = { view: 'system', selected: null, mode: 'motoring', exploded: 0, cutaway: false, playing: false, phase: 0, receptivity: 'train', scenario: 'nominal', variant: 'default', signals: true, technology: { propulsion: 'lim', control: 'loop' } };
+  const state = { view: 'system', selected: null, mode: 'motoring', exploded: 0, explodeScope: 'all', isolation: null, focused: null, cutaway: false, playing: false, phase: 0, receptivity: 'train', scenario: 'nominal', variant: 'default', signals: true, technology: { propulsion: 'lim', control: 'loop' } };
+  let frameBeforeExploration = null, cachedComponentBounds = null;
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -386,54 +390,69 @@ export function createViewer(container, callbacks = {}) {
     const primaryContext = building.root.name.slice(5);
     registerAnimator(s=>{g.visible=primaryContext==='lim'||(s.technology?.propulsion || 'lim')==='lim';});
     const width = .57;
-    box(g, [length + .14, .09, width + .18], M.steel, [0, .2, 0]);
-    for (const z of [-.34, .34]) box(g, [length + .22, .07, .045], M.core, [0, .24, z]);
+    const mounting = group(g, 'primary-mounting-frame'); mounting.userData.explorationLabel = 'Mounting frame';
+    const core = group(g, 'primary-laminated-core'); core.userData.explorationLabel = 'Laminated core';
+    const winding = group(g, 'primary-winding-groups'); winding.userData.explorationLabel = 'Winding groups';
+    box(mounting, [length + .14, .09, width + .18], M.steel, [0, .2, 0]);
+    for (const z of [-.34, .34]) box(mounting, [length + .22, .07, .045], M.core, [0, .24, z]);
     // Lamination lines make the iron core recognisable without implying a winding drawing.
-    for (let z = -.26; z <= .27; z += detailed ? .025 : .05) box(g, [length, .2, .015], M.core, [0, .075, z]);
+    for (let z = -.26; z <= .27; z += detailed ? .025 : .05) box(core, [length, .2, .015], M.core, [0, .075, z]);
     const coils = 8;
     for (let i = 0; i < coils; i++) {
       const x = -length / 2 + .13 + i * (length - .26) / (coils - 1);
-      box(g, [.09, .12, width], M.core, [x, -.045, 0]);
+      box(core, [.09, .12, width], M.core, [x, -.045, 0]);
       for (const z of [-.27, .27]) {
-        const coil = mesh(g, torus(.115, .035, 6, 14), M.copper, [x, .07, z], [0, Math.PI / 2, 0]);
+        const coil = mesh(winding, torus(.115, .035, 6, 14), M.copper, [x, .07, z], [0, Math.PI / 2, 0]);
         coil.scale.set(1, 1.15, 1);
       }
     }
     for (const x of [-length / 2 + .13, length / 2 - .13]) {
-      box(g, [.14, .23, .12], M.steel, [x, .36, 0]);
-      cylinder(g, .06, .2, M.steel, [x, .48, 0], [Math.PI / 2, 0, 0]);
+      box(mounting, [.14, .23, .12], M.steel, [x, .36, 0]);
+      cylinder(mounting, .06, .2, M.steel, [x, .48, 0], [Math.PI / 2, 0, 0]);
     }
-    tube(g, [[length / 2, .14, -.18], [length / 2 + .22, .3, -.2], [length / 2 + .3, .5, -.32]], .035, M.dark);
+    tube(winding, [[length / 2, .14, -.18], [length / 2 + .22, .3, -.2], [length / 2 + .3, .5, -.32]], .035, M.dark);
+    // Authored teaching separation of the three real functional assemblies;
+    // this is not a removal sequence or a manufacturing winding drawing.
+    explode(mounting, [0, .7, 0]); explode(core, [0, .2, 0]); explode(winding, [0, .2, .8]);
     return g;
   }
 
   function makeBogie(parent, position = [0, 0, 0], detailed = true) {
     const frame = group(parent, 'bogie-assembly', position);
+    frame.userData.explorationAssembly = 'bogie';
     const g = part(frame, 'bogie');
+    const chassis = group(g, 'bogie-frame-and-suspension'); chassis.userData.explorationLabel = 'Frame and suspension';
+    const wheelsets = [];
     for (const x of [-1.02, 1.02]) {
-      cylinder(g, .075, 1.72, M.steel, [x, .56, 0], [Math.PI / 2, 0, 0]);
+      const wheelset = group(g, `wheelset-${x < 0 ? 'rear' : 'front'}`);
+      wheelset.userData.explorationLabel = 'Wheelsets'; wheelsets.push(wheelset);
+      cylinder(wheelset, .075, 1.72, M.steel, [x, .56, 0], [Math.PI / 2, 0, 0]);
       for (const z of [-.72, .72]) {
-        cylinder(g, .365, .19, M.steel, [x, .56, z], [Math.PI / 2, 0, 0], 32);
-        cylinder(g, .4, .035, M.core, [x, .56, z + (z > 0 ? -.105 : .105)], [Math.PI / 2, 0, 0], 32);
-        cylinder(g, .14, .215, M.core, [x, .56, z], [Math.PI / 2, 0, 0]);
-        box(g, [.35, .25, .27], M.core, [x, .76, z]);
+        cylinder(wheelset, .365, .19, M.steel, [x, .56, z], [Math.PI / 2, 0, 0], 32);
+        cylinder(wheelset, .4, .035, M.core, [x, .56, z + (z > 0 ? -.105 : .105)], [Math.PI / 2, 0, 0], 32);
+        cylinder(wheelset, .14, .215, M.core, [x, .56, z], [Math.PI / 2, 0, 0]);
+        box(wheelset, [.35, .25, .27], M.core, [x, .76, z]);
         if (detailed) {
           const brake = part(frame, 'brakes');
           mesh(brake, torus(.29, .045, 7, 30), M.brake, [x, .56, z + (z > 0 ? .12 : -.12)]);
           box(brake, [.19, .2, .21], M.dark, [x + .24, .69, z]);
+          brake.userData.explorationLabel = 'Brake equipment'; explode(brake, [0, 0, Math.sign(z) * .6]);
         }
       }
+      explode(wheelset, [Math.sign(x) * .38, -.08, 0]);
     }
-    for (const z of [-.55, .55]) box(g, [2.65, .17, .18], M.teal, [0, .96, z]);
-    for (const x of [-.83, .83]) box(g, [.2, .16, 1.25], M.teal, [x, .97, 0]);
+    for (const z of [-.55, .55]) box(chassis, [2.65, .17, .18], M.teal, [0, .96, z]);
+    for (const x of [-.83, .83]) box(chassis, [.2, .16, 1.25], M.teal, [x, .97, 0]);
     for (const z of [-.55, .55]) {
-      cylinder(g, .23, .16, M.dark, [0, 1.15, z]);
-      cylinder(g, .26, .055, M.steel, [0, 1.25, z]);
-      for (let y = .82; y < 1.15; y += .055) mesh(g, torus(.12, .018, 6, 16), M.steel, [.75, y, z], [Math.PI / 2, 0, 0]);
+      cylinder(chassis, .23, .16, M.dark, [0, 1.15, z]);
+      cylinder(chassis, .26, .055, M.steel, [0, 1.25, z]);
+      for (let y = .82; y < 1.15; y += .055) mesh(chassis, torus(.12, .018, 6, 16), M.steel, [.75, y, z], [Math.PI / 2, 0, 0]);
     }
+    explode(chassis, [0, .85, 0]);
     makePrimary(frame, [0, .37, 0], 1.68, detailed);
     const rotary=group(frame,'selected-rotary-drive');
     const motor=part(rotary,'rotary-traction-motor',[-.72,.6975,-.45]);
+    motor.userData.explorationLabel = 'Traction motor';
     cylinder(motor,.235,.68,M.teal,[0,0,0],[Math.PI/2,0,0],20);
     for(const z of [-.33,.33])cylinder(motor,.25,.045,M.steel,[0,0,z],[Math.PI/2,0,0],18);
     for(let z=-.27;z<.3;z+=.09)mesh(motor,torus(.242,.013,5,18),M.steel,[0,0,z]);
@@ -445,6 +464,7 @@ export function createViewer(container, callbacks = {}) {
     cylinder(shaft,.105,.13,M.steel,[0,0,-.08],[Math.PI/2,0,0],12);
     for(let i=0;i<4;i++){const a=i*Math.PI/2;cylinder(shaft,.017,.15,M.dark,[Math.cos(a)*.075,Math.sin(a)*.075,-.08],[Math.PI/2,0,0],6);}
     const gear=part(rotary,'traction-gearbox',[-1.02,.56,.36]);
+    gear.userData.explorationLabel = 'Gearbox';
     roundedPanel(gear,.9,.7,.28,M.core,[0,0,0],.08);
     const gearCover=group(gear,'removable-gearbox-cover');roundedPanel(gearCover,.88,.68,.035,M.teal,[0,0,.17],.07);shell(gearCover);explode(gearCover,[0,0,.4]);
     // The axle gear is centred on the wheelset axle. The pinion is offset
@@ -456,6 +476,7 @@ export function createViewer(container, callbacks = {}) {
       registerAnimator(s=>{wheel.rotation.z=Number(s.phase||0)*(r>.15?.35:-.7);});
     }
     registerAnimator(s=>{rotary.visible=s.technology?.propulsion==='rotary';shaft.rotation.z=-Number(s.phase||0)*.7;});rotary.visible=false;
+    explode(motor, [0, .3, -.65]); explode(gear, [0, .1, .65]);
     const pickup=part(frame,'loop-pickup',[.38,.65,-.43]);
     box(pickup,[.45,.12,.24],M.dark);
     for(let x=-.15;x<.2;x+=.07)box(pickup,[.025,.018,.2],M.copper,[x,-.068,0]);
@@ -471,8 +492,9 @@ export function createViewer(container, callbacks = {}) {
     registerAnimator(s=>{baliseReader.visible=['etcs1','etcs2'].includes(controlTechnology(s,pickupContext));});
     baliseReader.visible=false;
 
-    makeCollector(frame, [.5, 0, 0]);
-    if (detailed) makeWheelSensor(frame);
+    const collector = makeCollector(frame, [.5, 0, 0]);
+    collector.userData.explorationLabel = 'Current collector'; explode(collector, [0, .25, .55]);
+    if (detailed) makeWheelSensor(wheelsets[1]);
     return frame;
   }
 
@@ -1025,18 +1047,18 @@ export function createViewer(container, callbacks = {}) {
     if(Object.hasOwn(TRACK_VIEWS,id))buildTrackView(id,modelApi);
     else if(Object.hasOwn(SIGNALLING_VIEWS,id))buildSignallingView(id,modelApi);
     else if(Object.hasOwn(STATION_VIEWS,id))buildStationView(id,modelApi);
+    else if(Object.hasOwn(OCC_VIEWS,id))buildOccView(id,modelApi);
     else if(Object.hasOwn(OPERATIONS_VIEWS,id))buildOperationsView(id,modelApi);
     else if(Object.hasOwn(PLATFORM_VIEWS,id))buildPlatformView(id,modelApi);
     else if(Object.hasOwn(NETWORK_VIEWS,id))buildNetworkView(id,modelApi);
     return models.has(id);
   }
-  function nodeVisible(node) { for(let p=node;p;p=p.parent)if(!p.visible)return false;return true; }
   function updateAssembly() {
     for (const record of models.values()) {
-      for (const e of record.exploded) e.node.position.copy(e.base).addScaledVector(e.delta, state.exploded);
+      restoreIsolation(record); restoreSeparation(record);
       for (const node of record.shells) node.visible = !state.cutaway;
     }
-    updateSelection();
+    cachedComponentBounds = null;
   }
   function activeFlow(tag) {
     if (state.mode === 'isolated') return false;
@@ -1056,6 +1078,11 @@ export function createViewer(container, callbacks = {}) {
   }
   function animateModel() {
     const r = models.get(state.view);
+    if (!r) return;
+    // A mask never becomes an animator's input. Re-evaluate the real variant
+    // visibility before masking it again, and compose separation after motion.
+    restoreIsolation(r); restoreSeparation(r);
+    for (const node of r.shells) node.visible = !state.cutaway;
     for (const contact of r.contacts) contact.rotation.z = state.mode === 'isolated' ? .72 : 0;
     for (const f of r.flows) {
       const active = activeFlow(f.tag) && !['control','communications'].includes(state.view) && !Object.hasOwn(SIGNALLING_VIEWS,state.view) && !Object.hasOwn(STATION_VIEWS,state.view);
@@ -1123,49 +1150,120 @@ export function createViewer(container, callbacks = {}) {
         a.node.setColor(state.mode === 'regeneration' ? C.brake : C.field);
       }
     }
+    applySeparation(r, { amount: state.exploded, scope: state.explodeScope, componentId: state.selected, isolation: state.isolation });
+    if (state.isolation && !applyIsolation(r, state.isolation)) state.isolation = null;
+    cachedComponentBounds = null;
+    updateSelection();
   }
   function updateSelection() {
-    const r = models.get(state.view), parts = state.selected && r.parts.get(state.selected)?.filter(nodeVisible);
-    selectionBox.visible = Boolean(parts?.length);
-    if (!parts?.length) return;
-    r.root.updateWorldMatrix(true, true);
-    selectionBounds.makeEmpty();
-    for (const p of parts) selectionBounds.expandByObject(p);
+    const r = models.get(state.view);
+    visibleBounds(state.selected ? assemblyRoots(r, state.selected) : [], selectionBounds);
+    selectionBox.visible = !selectionBounds.isEmpty();
+    if (!selectionBox.visible) return;
     selectionBounds.expandByScalar(.06);
     selectionBox.updateMatrixWorld(true);
   }
+  function clearStructuralExploration() {
+    for (const record of models.values()) { restoreIsolation(record); restoreSeparation(record); }
+    if (state.explodeScope === 'selected') state.exploded = 0;
+    state.explodeScope = 'all'; state.isolation = null; state.focused = null;
+    frameBeforeExploration = null; cachedComponentBounds = null;
+  }
   function setView(id) {
     if (!ensureModel(id)) return;
+    if (state.view !== id) clearStructuralExploration();
     state.view = id;
     for (const [key, value] of models) value.root.visible = key === id;
     updateAssembly(); animateModel(); resetCamera(); requestRender();
   }
+  function rememberFrame() {
+    if (frameBeforeExploration) return;
+    frameBeforeExploration = { view: state.view, position: camera.position.clone(), target: controls.target.clone(),
+      minDistance: controls.minDistance, maxDistance: controls.maxDistance, far: camera.far };
+  }
+  function restoreFrame() {
+    if (!frameBeforeExploration || frameBeforeExploration.view !== state.view) return false;
+    const previous = frameBeforeExploration; frameBeforeExploration = null;
+    camera.position.copy(previous.position); controls.target.copy(previous.target);
+    controls.minDistance = previous.minDistance; controls.maxDistance = previous.maxDistance;
+    camera.far = previous.far; camera.updateProjectionMatrix();
+    state.focused = null; controls.update(); requestRender(); return true;
+  }
+  function frameRoots() {
+    const record = models.get(state.view);
+    const focused = state.focused && assemblyRoots(record, state.focused);
+    return focused?.length ? focused : [record.root];
+  }
   function resetCamera() {
     const config = VIEW[state.view];
+    state.focused = null;
+    if (!state.isolation) frameBeforeExploration = null;
     camera.position.set(...config.camera); controls.target.set(...config.target);
-    controls.maxDistance = config.distance * 1.65; controls.minDistance = state.view === 'system' ? 8 : 2;
     fitToView(); controls.update(); requestRender();
   }
-  function fitToView() {
-    const record = models.get(state.view);
-    record.root.updateWorldMatrix(true, true);
-    const bounds = new THREE.Box3();
-    record.root.traverseVisible(o=>{if(o.geometry){if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();if(o.geometry.boundingBox)bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}});
-    if(bounds.isEmpty())return;
-    const direction = camera.position.clone().sub(controls.target).normalize();
-    const right = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
-    const up = new THREE.Vector3().crossVectors(direction, right).normalize();
-    const tangentY = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    const tangentX = tangentY * Math.max(camera.aspect, .15);
-    let distance = 2;
-    for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
-      const delta = new THREE.Vector3(x, y, z).sub(controls.target);
-      const depth = delta.dot(direction);
-      distance = Math.max(distance, depth + Math.abs(delta.dot(right)) / tangentX, depth + Math.abs(delta.dot(up)) / tangentY);
+  function fitToView(nodes = frameRoots()) {
+    const fit = fitPerspectiveBounds(visibleBounds(nodes), { direction: camera.position.clone().sub(controls.target),
+      up: camera.up, fov: camera.fov, aspect: camera.aspect });
+    if (!fit) return false;
+    controls.target.copy(fit.target); camera.position.copy(fit.position);
+    controls.minDistance = fit.minimumDistance;
+    controls.maxDistance = Math.max(VIEW[state.view].distance * 1.65, fit.distance * 2);
+    camera.far = fit.far; camera.updateProjectionMatrix();
+    return true;
+  }
+  function frameSelection(id = state.selected) {
+    const roots = assemblyRoots(models.get(state.view), id);
+    if (!roots.length) return false;
+    rememberFrame(); state.focused = id;
+    fitToView(roots); controls.update(); requestRender(); return true;
+  }
+  function frameModel() {
+    state.focused = null;
+    if (!state.isolation) frameBeforeExploration = null;
+    const fitted = fitToView(); controls.update(); requestRender(); return fitted;
+  }
+  function setSelected(id) {
+    const next = id || null, changed = state.selected !== next;
+    let restoreSurroundings = false;
+    if (changed) {
+      const record = models.get(state.view);
+      // Drilling into a child of an isolated assembly retains that assembly.
+      // Selecting equipment elsewhere restores its surroundings first.
+      if (state.isolation) {
+        restoreIsolation(record);
+        const isolated = assemblyRoots(record, state.isolation), selected = assemblyRoots(record, next);
+        if (!selected.length || !selected.every(node => isolated.some(root => within(node, root)))) {
+          state.isolation = null; restoreSurroundings = true;
+        }
+      }
+      if (state.explodeScope === 'selected') { state.explodeScope = 'all'; state.exploded = 0; }
+      if (state.focused !== next) state.focused = null;
     }
-    distance *= 1.12;
-    camera.position.copy(controls.target).addScaledVector(direction, distance);
-    controls.maxDistance = Math.max(VIEW[state.view].distance * 1.65, distance * 2);
+    state.selected = next;
+    animateModel();
+    if (restoreSurroundings && !restoreFrame()) frameModel();
+    requestRender();
+    return { explodeScope: state.explodeScope, isolation: state.isolation, focused: state.focused, exploded: state.exploded };
+  }
+  function setIsolation(id = null) {
+    const record = models.get(state.view), previous = state.isolation;
+    if (id === previous) return true;
+    restoreIsolation(record);
+    if (id && !assemblyRoots(record, id).length) {
+      if (previous) applyIsolation(record, previous);
+      return false;
+    }
+    if (id) rememberFrame();
+    state.isolation = id || null; state.focused = id || null;
+    animateModel();
+    if (id) { fitToView(); controls.update(); }
+    else if (!restoreFrame()) frameModel();
+    requestRender(); return true;
+  }
+  function setExplodeScope(scope) {
+    const selected = scope === 'selected' && explorationCapabilities(models.get(state.view), state.selected, state).canExplodeSelected;
+    state.explodeScope = selected ? 'selected' : 'all';
+    animateModel(); fitToView(); controls.update(); requestRender(); return state.explodeScope;
   }
   function setCameraPreset(id = 'isometric') {
     if (id === 'isometric') return resetCamera();
@@ -1196,7 +1294,7 @@ export function createViewer(container, callbacks = {}) {
     });
     const hit = raycaster.intersectObjects(visible, false)[0];
     if (hit?.object.userData.component) {
-      const id = hit.object.userData.component; state.selected = id; updateSelection(); animateModel(); requestRender(); onSelect(id);
+      const id = hit.object.userData.component; setSelected(id); onSelect(id);
     }
   }
   renderer.domElement.addEventListener('pointerdown', down);
@@ -1242,49 +1340,63 @@ export function createViewer(container, callbacks = {}) {
       const propulsion=['lim','rotary'].includes(value.propulsion)?value.propulsion:state.technology.propulsion;
       const control=['loop','radio','fixed','etcs1','etcs2'].includes(value.control)?value.control:state.technology.control;
       const changed=propulsion!==state.technology.propulsion||control!==state.technology.control;
+      if(changed)clearStructuralExploration();
       state.technology={propulsion,control};
-      animateModel();updateSelection();if(changed){fitToView();controls.update();}requestRender();
+      animateModel();if(changed){fitToView();controls.update();}requestRender();
     },
     getTechnology(){return {...state.technology};},
     getViewCapabilities() {
       const record=models.get(state.view);
-      return {cutaway:Boolean(record?.shells.length),explode:Boolean(record?.exploded.length)};
+      return {cutaway:Boolean(record?.shells.length),explode:separationEntries(record,{isolation:state.isolation}).length>0};
     },
-    setSelected(id) { state.selected = id || null; updateSelection(); animateModel(); requestRender(); },
+    getExplorationCapabilities(id = state.selected) { return explorationCapabilities(models.get(state.view), id, state); },
+    getExplorationState() { return { explodeScope: state.explodeScope, isolation: state.isolation, focused: state.focused,
+      exploded: state.exploded, canRestoreFrame: Boolean(frameBeforeExploration) }; },
+    setExplodeScope,
+    setIsolation,
+    frameSelection,
+    restoreFrame,
+    frameModel,
+    setSelected,
     setMode(mode) { if (!['motoring', 'regeneration', 'coasting', 'isolated'].includes(mode)) return; state.mode = mode; animateModel(); requestRender(); },
-    setExploded(value) { state.exploded = THREE.MathUtils.clamp(Number(value) || 0, 0, 1); updateAssembly(); animateModel(); requestRender(); },
-    setCutaway(value) { state.cutaway = Boolean(value); updateAssembly(); requestRender(); },
+    setExploded(value) {
+      const amount = THREE.MathUtils.clamp(Number(value) || 0, 0, 1), changed = state.exploded !== amount;
+      state.exploded = amount; updateAssembly(); animateModel();
+      if (changed) { fitToView(); controls.update(); }
+      requestRender(); return state.exploded;
+    },
+    setCutaway(value) {
+      const changed = state.cutaway !== Boolean(value); state.cutaway = Boolean(value); updateAssembly(); animateModel();
+      if (state.explodeScope === 'selected' && !explorationCapabilities(models.get(state.view), state.selected, state).canExplodeSelected) {
+        state.explodeScope = 'all'; state.exploded = 0; animateModel();
+      }
+      if (changed) { fitToView(); controls.update(); }
+      requestRender();
+    },
     setPlaying(value) { state.playing = Boolean(value) && !reducedMotion.matches && !document.hidden; lastTime = 0; requestRender(); return state.playing; },
     setPhase(value) { state.phase = Math.max(0, Number(value) || 0); animateModel(); requestRender(); },
+    getPhase() { return state.phase; },
     setReceptivity(value) { state.receptivity = value === 'resistor' ? 'resistor' : 'train'; animateModel(); requestRender(); },
-    setVariant(value) { const changed=state.variant!==value;state.variant=typeof value==='string'?value:'default'; animateModel(); updateSelection();if(changed){fitToView();controls.update();}requestRender(); },
+    setVariant(value) {
+      const variant = typeof value === 'string' ? value : 'default', changed = state.variant !== variant;
+      if (changed) clearStructuralExploration();
+      state.variant = variant; animateModel(); if (changed) { fitToView(); controls.update(); } requestRender();
+    },
     setScenario(value) { state.scenario=typeof value==='string'?value:'nominal'; animateModel(); updateSelection(); requestRender(); },
     setSignals(value) { state.signals=Boolean(value);animateModel();requestRender(); },
-    focusComponent(id) {
-      const parts=models.get(state.view).parts.get(id)?.filter(nodeVisible);if(!parts?.length)return false;
-      models.get(state.view).root.updateWorldMatrix(true,true);
-      const bounds=new THREE.Box3();for(const p of parts)bounds.expandByObject(p);
-      const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
-      const direction=camera.position.clone().sub(controls.target).normalize();
-      const distance=Math.max(2.8,Math.max(size.x,size.y,size.z)*2.2/Math.min(1,camera.aspect));
-      controls.target.copy(center);camera.position.copy(center).addScaledVector(direction,distance);controls.update();requestRender();return true;
-    },
+    focusComponent: frameSelection,
     setCameraPreset,
     resetCamera,
     resize,
     dispose,
     getComponentScreenPositions() {
-      const r = models.get(state.view), result = [];
-      r.root.updateWorldMatrix(true, true);
-      for (const [id, groups] of r.parts) {
-        const visibleGroups=groups.filter(nodeVisible);if(!visibleGroups.length)continue;
-        const box = new THREE.Box3(); visibleGroups.forEach(g => box.expandByObject(g));
-        const point = box.getCenter(new THREE.Vector3()).project(camera);
-        if (point.z < 1 && Math.abs(point.x) < 1 && Math.abs(point.y) < 1) result.push({ id, x: (point.x + 1) * .5, y: (1 - point.y) * .5 });
-      }
-      return result;
+      if (!cachedComponentBounds) cachedComponentBounds = componentBounds(models.get(state.view));
+      return screenPositions(cachedComponentBounds, camera);
     },
-    getVisibleComponentIds() {return [...models.get(state.view).parts].filter(([,groups])=>groups.some(nodeVisible)).map(([id])=>id);},
+    getVisibleComponentIds() {
+      if (!cachedComponentBounds) cachedComponentBounds = componentBounds(models.get(state.view));
+      return [...cachedComponentBounds.keys()];
+    },
     getComponentIds(view = state.view) { ensureModel(view);return [...(models.get(view)?.parts.keys() || [])]; },
   };
 }

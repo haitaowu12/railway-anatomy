@@ -5,6 +5,9 @@ export const OPERATIONS_VIEWS = {
   'operations-centre': { camera: [17, 14, 20], target: [0, 1.4, 0], distance: 38 },
   'depot-overview': { camera: [34, 31, 38], target: [0, .8, 1], distance: 68 },
   'depot-yard': { camera: [23, 22, 29], target: [0, .8, 0], distance: 53 },
+  'depot-condition': { camera: [22, 16, 25], target: [0, 1.1, 0], distance: 48 },
+  'depot-components': { camera: [15, 12, 19], target: [0, 1.4, 0], distance: 32 },
+  'depot-testing': { camera: [23, 16, 26], target: [0, 1.1, 0], distance: 48 },
   'depot-workshop': { camera: [19, 16, 22], target: [0, 1.4, 0], distance: 42 },
   'depot-utilities': { camera: [17, 15, 21], target: [0, 1.2, 0], distance: 37 },
   'depot-support': { camera: [19, 16, 23], target: [0, 1, 0], distance: 43 },
@@ -15,8 +18,11 @@ export const OPERATIONS_VIEWS = {
 const VARIANTS = {
   'operations-centre': ['service', 'incident'],
   'depot-overview': ['layout', 'night'],
-  'depot-yard': ['reception', 'dispatch'],
-  'depot-workshop': ['lathe', 'wheelset', 'bogie'],
+  'depot-yard': ['reception', 'handover', 'dispatch'],
+  'depot-condition': ['roll-by', 'stationary'],
+  'depot-components': ['brakes', 'doors', 'hvac', 'traction'],
+  'depot-testing': ['stationary', 'movement'],
+  'depot-workshop': ['lathe', 'wheelset', 'ndt', 'bogie'],
   'depot-utilities': ['services', 'water'],
   'depot-support': ['materials', 'planning'],
   'depot-maintenance': ['inspection', 'lifting', 'jacks', 'wheel-lathe'],
@@ -327,6 +333,216 @@ export function buildOperationsView(id, api) {
     box(p,[.06,h*.36,.04],P.water,[0,h*.4,r+.045]);
     return {p,lid};
   }
+  // New explanatory studies use one five-unit cycle, matching the phase UI.
+  // A manually selected endpoint remains an endpoint rather than wrapping.
+  function studyPhase(state) {
+    const phase=Math.max(0,state.phase);
+    return !state.playing&&phase===5?1:(phase%5)/5;
+  }
+  function studyTrace(parent,component,points,name,color=C.signal) {
+    const p=part(parent,component);p.name=name;
+    pipe(p,points,mat(color,.55,.06),.035);
+    const curve=new THREE.CatmullRomCurve3(points.map(v=>new THREE.Vector3(...v)));
+    const sample=mesh(p,new THREE.OctahedronGeometry(.13),new THREE.MeshBasicMaterial({color}),points[0]);
+    sample.name=`${name}-sample`;
+    animations.push(state=>{sample.visible=state.signals!==false;sample.position.copy(curve.getPointAt(studyPhase(state)));});
+    return p;
+  }
+  function equipmentBench(parent,component,at=[0,0,0],width=6,depth=3.8) {
+    const p=part(parent,component,at);p.userData.explorationAssembly=component;
+    box(p,[width,.18,depth],P.floor,[0,.95,0]);
+    for(const x of [-width/2+.25,width/2-.25])for(const z of [-depth/2+.25,depth/2-.25])box(p,[.15,.9,.15],M.steel,[x,.45,z]);
+    return p;
+  }
+  function supportedWheelset(parent,component='depot-wheelset') {
+    const p=part(parent,component,[0,.1,0]);p.userData.explorationAssembly=component;
+    box(p,[2,.16,3.2],P.blue,[0,.08,0]);
+    const rolling=group(p,'inspection-wheelset',[0,1.15,0]);
+    const axle=cylinder(rolling,.12,3.8,M.steel,[0,0,0],[Math.PI/2,0,0],12);axle.name='workshop-wheelset-axle';
+    for(const z of [-1.15,1.15]){
+      const wheel=cylinder(rolling,.8,.3,M.steel,[0,0,z],[Math.PI/2,0,0],24);wheel.name='workshop-wheel-disc';
+      cylinder(rolling,.28,.32,P.dark,[0,0,z],[Math.PI/2,0,0],16);
+      box(rolling,[.035,.58,.012],P.pale,[0,.42,z+(z>0?.16:-.16)]);
+      const rollerY=1.15-Math.sqrt(.96*.96-.5*.5);
+      for(const x of [-.5,.5]){
+        box(p,[.14,rollerY-.16,.18],M.core,[x,(rollerY+.16)/2,z]);
+        const roller=cylinder(p,.16,.4,P.dark,[x,rollerY,z],[Math.PI/2,0,0],16);roller.name='wheelset-support-roller';
+      }
+    }
+    return {p,rolling};
+  }
+
+  if(id==='depot-condition') {
+    foundation(root,[36,.18,12]);
+    const roll=alt('roll-by');track(roll,35,[0,.1,0]);
+    const inspection=part(roll,'depot-condition-monitoring');inspection.userData.explorationAssembly='depot-condition-monitoring';
+    for(const z of [-2.2,2.2])box(inspection,[.28,4.3,.28],P.blue,[0,2.25,z]);
+    box(inspection,[1.1,.25,4.65],P.blue,[0,4.3,0]);
+    for(const z of [-1.5,1.5]){
+      box(inspection,[.35,.3,.3],P.dark,[0,3.95,z]);
+      const sensor=box(inspection,[1.1,.28,.4],P.blue,[0,.31,z]);sensor.name='roll-by-wheel-sensor';
+      box(inspection,[.7,.035,.1],P.water,[0,.47,z]);
+    }
+    const scan=box(inspection,[.025,3.8,3.5],new THREE.MeshBasicMaterial({color:C.signal,transparent:true,opacity:.13,depthWrite:false}),[0,2.25,0]);scan.name='roll-by-measurement-plane';
+    const moving=vehicle(roll,[-11.5,.1,0],.8);moving.name='inspection-passage-vehicle';
+    const data=plantCabinet(inspection,'depot-condition-monitoring',[2,0,3.6],[1.1,1.9,.8]);
+    pipe(inspection,[[0,.2,1.5],[0,.2,3.6],[2,.2,3.6]],P.blue,.045);
+    infoBoard(roll,'depot-diagnostics',[5,.1,3.6]);
+    studyTrace(roll,'depot-condition-monitoring',[[0,1.2,2.2],[1.6,1.2,3.6],[5,1.6,3.6]],'condition-measurement-record');
+    animations.push(state=>{
+      moving.position.x=-11.5+23*studyPhase(state);
+      scan.visible=Math.abs(moving.position.x)<4.35;
+      data.userData.measurementActive=scan.visible;
+    });
+    const stationary=alt('stationary');track(stationary,17,[0,.1,0]);
+    const stopped=vehicle(stationary,[0,.1,0],.95);stopped.name='stationary-diagnostic-vehicle';
+    const diagnosis=part(stationary,'depot-diagnostics');diagnosis.userData.explorationAssembly='depot-diagnostics';
+    consoleUnit(diagnosis,'depot-diagnostics',[5.6,.1,3.4]);
+    const gauge=group(diagnosis,'manual-wheel-profile-gauge',[-3.5435,.1,.62]);
+    box(gauge,[.95,.06,.07],P.yellow,[0,.92,0]);
+    for(const x of [-.4,.4])box(gauge,[.06,.4,.07],M.steel,[x,.72,0]);
+    box(gauge,[.03,.025,.04],M.steel,[0,.8775,0]);
+    box(gauge,[.22,.14,.08],P.dark,[0,1.03,0]);
+    box(gauge,[.6,.08,.6],P.floor,[-.7,.04,.9]);
+    pipe(gauge,[[-.7,.08,.9],[-.7,1.12,.9],[-.7,1.12,0],[-.4,1.12,0],[-.4,.92,0]],M.steel,.035);
+    const lamp=group(diagnosis,'wheel-examination-light',[-4.4,.1,2.2]);
+    box(lamp,[.6,.08,.6],M.core,[0,.04,0]);cylinder(lamp,.04,1.5,M.steel,[0,.8,0],null,8);box(lamp,[.5,.12,.35],P.pale,[0,1.6,-.1],[.3,0,0]);
+    studyTrace(diagnosis,'depot-diagnostics',[[.2,1,1.05],[1.3,.35,2.1],[4.8,.35,3.1],[5.6,1.55,3.2]],'stationary-diagnostic-link');
+    infoBoard(stationary,'depot-work-planning',[8.5,.1,-2.6]);
+    walkway(stationary,[0,.2,2.1],9);
+  }
+
+  if(id==='depot-components') {
+    // Size each work area to its equipment so the floor does not dominate
+    // automatic framing. Clearances include the fully open door leaves.
+    const workArea=(parent,width,depth,cx=0)=>{
+      foundation(parent,[width,.18,depth],[cx,0,0]);
+      for(const z of [-depth/2+.55,depth/2-.55])box(parent,[width-1.2,.03,.06],M.yellow,[cx,.12,z]);
+    };
+    const brakesView=alt('brakes');
+    workArea(brakesView,10.5,6.3,-.55);
+    const brake=part(brakesView,'depot-brake-test',[-1.5,.1,0]);brake.userData.explorationAssembly='depot-brake-test';
+    box(brake,[6,.18,3.5],P.blue,[0,.15,0]);
+    for(const z of [-1.1,1.1]){
+      box(brake,[.3,1.4,.3],M.core,[0,.94,z]);
+      cylinder(brake,.27,.25,P.blue,[0,1.65,z],[Math.PI/2,0,0],16);
+    }
+    cylinder(brake,.14,2.7,M.steel,[0,1.65,0],[Math.PI/2,0,0],16);
+    const disc=part(brake,'brakes');
+    const discMesh=cylinder(disc,1.1,.18,M.steel,[0,1.65,0],[Math.PI/2,0,0],32);discMesh.name='bench-brake-disc';
+    box(disc,[.23,1.1,2.1],P.red,[1.35,1.65,0]);
+    const pads=[];
+    for(const sign of [-1,1]){
+      box(disc,[.9,.18,.18],P.red,[.93,2.15,sign*.58]);
+      box(disc,[.8,.18,.22],P.red,[1.05,1.65,sign*.9]);
+      cylinder(disc,.2,.35,P.blue,[.72,1.65,sign*.79],[Math.PI/2,0,0],16);
+      const pad=box(disc,[.6,.75,.12],P.dark,[.72,1.65,sign*.35]);pad.name='bench-brake-pad';pad.userData.side=sign;
+      const rod=cylinder(disc,.075,1,M.steel,[.72,1.65,sign*.5],[Math.PI/2,0,0],12);rod.name='brake-test-pushrod';pads.push({pad,rod,sign});
+    }
+    const cover=group(brake,'brake-bench-removable-cover');box(cover,[.1,1.2,2.2],P.blue,[1.62,1.65,0]);shell(cover);explode(cover,[.8,.3,0]);
+    cylinder(brake,.35,1.3,P.pale,[-2,.7,-.9],[0,0,Math.PI/2],16);
+    pipe(brake,[[-2,.7,-.9],[-1.5,.5,-1.5],[.72,.5,-1.5],[.72,1.65,-.97]],P.water,.045);
+    plantCabinet(brake,'depot-brake-test',[4,.1,1.5],[1.5,1.8,.8]);
+    const stroke=box(brake,[.12,.5,.025],P.yellow,[4.3,1.2,1.92]);stroke.name='brake-test-response-indicator';
+    animations.push(state=>{
+      const u=1-Math.abs(2*studyPhase(state)-1);
+      pads.forEach(({pad,rod,sign})=>{
+        const position=.35-.2*u;pad.position.z=sign*position;
+        rod.scale.y=.615-position-.06;rod.position.z=sign*(.615+position+.06)/2;
+      });
+      stroke.scale.y=.1+.9*u;stroke.position.y=.95+.25*stroke.scale.y;
+      brake.userData.applicationFraction=u;
+    });
+    const doorsView=alt('doors');
+    workArea(doorsView,10.8,6.5,.8);
+    const door=part(doorsView,'depot-door-service',[0,.1,0]);door.userData.explorationAssembly='depot-door-service';
+    box(door,[7.2,.15,4],P.blue,[0,.1,0]);
+    for(const x of [-2.3,2.3])box(door,[2.2,3.2,.18],P.pale,[x,1.8,-.15]);
+    for(const x of [-1.27,1.27])box(door,[.12,3.25,.17],M.steel,[x,1.8,.02]);
+    box(door,[2.6,.12,.5],M.steel,[0,.22,0]);box(door,[6.3,.16,.2],M.steel,[0,3.5,0]);
+    const leaves=[];
+    for(const sign of [-1,1]){
+      const leaf=part(door,'doors',[sign*.6,1.77,.18]);leaf.name='bench-door-leaf';leaf.userData.side=sign;
+      box(leaf,[1.18,2.95,.12],P.blue);box(leaf,[.8,.9,.025],M.glass,[0,.55,.075]);
+      box(leaf,[.035,2.6,.03],P.dark,[-sign*.54,0,.08]);
+      const carriage=box(leaf,[.35,.15,.2],M.steel,[0,1.65,-.17]);carriage.name='door-operator-carriage';leaves.push(leaf);
+    }
+    box(door,[5.7,.06,.08],P.dark,[0,3.7,-.05]);cylinder(door,.16,.3,P.blue,[-2.75,3.7,-.05],[Math.PI/2,0,0],12);
+    const operatorCover=group(door,'door-operator-cover');box(operatorCover,[6.2,.45,.5],P.blue,[0,3.65,-.1]);shell(operatorCover);explode(operatorCover,[0,.8,.3]);
+    const feedback=box(door,[.16,.18,.08],P.yellow,[1.3,3.35,.2]);feedback.name='door-closed-position-indicator';
+    infoBoard(door,'depot-door-service',[4.4,.1,2.1]);
+    pipe(door,[[2.9,3.6,0],[3.5,3.6,0],[3.5,.4,1.5],[4.4,.4,2.1]],P.blue,.035);
+    animations.push(state=>{
+      const opening=1-Math.abs(2*studyPhase(state)-1);
+      leaves.forEach(leaf=>leaf.position.x=leaf.userData.side*(.6+1.25*opening));
+      feedback.material=opening<.005?P.yellow:P.dark;door.userData.closedPosition=opening<.005;
+    });
+    const hvacView=alt('hvac');
+    workArea(hvacView,13,8);
+    const hvac=equipmentBench(hvacView,'depot-hvac-service',[-1.6,.1,0],7,3.7);
+    const unit=part(hvac,'hvac',[0,1.04,0]);
+    box(unit,[6.4,.1,2.8],M.core,[0,.05,0]);box(unit,[6.3,1.5,.06],P.floor,[0,.8,-.55]);
+    const filter=group(unit,'hvac-removable-filter',[-2.5,.85,.55]);
+    box(filter,[.16,1.4,1.8],P.pale);for(let z=-.2;z<=1.3;z+=.22)box(filter,[.19,1.3,.035],P.floor,[0,0,z-.55]);explode(filter,[0,1.2,1.4]);
+    const coil=group(unit,'hvac-heat-exchanger',[-.75,.85,.55]);
+    box(coil,[.38,1.35,1.8],P.red);for(let y=-.5;y<=.5;y+=.12)box(coil,[.4,.025,1.85],M.steel,[0,y,0]);
+    const fan=group(unit,'hvac-supply-fan',[1.2,.85,.55]);
+    for(let i=0;i<5;i++){const blade=group(fan,'fan-blade');blade.rotation.x=i*Math.PI*2/5;box(blade,[.1,.6,.17],P.pale,[0,.3,0]);}
+    cylinder(fan,.14,.22,P.blue,[0,0,0],[0,0,Math.PI/2],14);
+    box(unit,[.18,.65,.2],M.steel,[1.42,.4,.55]);cylinder(unit,.24,.35,P.blue,[1.42,.85,.55],[0,0,Math.PI/2],16);
+    for(const z of [-.3,1.4])box(unit,[1.2,1.3,.06],P.floor,[2.6,.85,z]);
+    for(const y of [.2,1.5])box(unit,[1.2,.06,1.75],P.floor,[2.6,y,.55]);
+    cylinder(unit,.32,.85,P.blue,[1.1,.53,-1.02],null,16);
+    box(unit,[1.8,1.05,.48],M.steel,[-1,.65,-1.04]);
+    pipe(unit,[[1.1,.9,-1],[-1,.9,-1],[-1,.9,.55]],P.red,.045);
+    const hvacCover=group(unit,'hvac-unit-cover');box(hvacCover,[6.5,.1,2.9],P.blue,[0,1.65,0]);box(hvacCover,[6.5,1.6,.06],P.blue,[0,.85,1.48]);shell(hvacCover);explode(hvacCover,[0,1.3,0]);
+    plantCabinet(hvacView,'depot-hvac-service',[5.1,.1,1.7],[1.2,2,.8]);
+    studyTrace(unit,'depot-hvac-service',[[-3.1,.85,.55],[-1.8,.85,.55],[.2,.85,.55],[3.2,.85,.55]],'hvac-supply-air',C.service);
+    animations.push(state=>{fan.rotation.x=studyPhase(state)*Math.PI*10;});
+    const tractionView=alt('traction');
+    workArea(tractionView,13,8);
+    const traction=equipmentBench(tractionView,'depot-traction-service',[-1.5,.1,0],7.5,4.3);
+    const converter=part(traction,'traction-inverter',[0,1.04,0]);
+    box(converter,[6.4,.14,3.3],M.core,[0,.07,0]);
+    for(const x of [-2.25,-1.55])cylinder(converter,.3,1.3,P.pale,[x,.79,-.5],null,16);
+    for(const [i,x]of [-.45,.65,1.75].entries()){
+      const stack=group(converter,'converter-power-module',[x,.79,0]);
+      box(stack,[.75,1.3,1.1],P.blue);for(let y=-.5;y<=.5;y+=.16)box(stack,[.85,.045,1.15],M.steel,[0,y,0]);
+      box(stack,[.45,.1,.4],M.copper,[0,.75,0]);explode(stack,[.2*i,1.1,.4]);
+    }
+    const control=group(converter,'converter-control-board',[-2.2,.55,1.05]);
+    box(control,[1.5,.05,.7],P.green);for(const x of [-.45,0,.45])box(control,[.18,.08,.2],P.dark,[x,.06,0]);explode(control,[0,.7,1.2]);
+    for(const x of [-.5,.5])for(const z of [-.23,.23])cylinder(control,.035,.385,M.steel,[x,-.2175,z],null,8);
+    const converterCover=group(converter,'converter-removable-case');box(converter,[6.5,1.7,.08],P.blue,[0,.9,-1.7]);box(converterCover,[6.5,.1,3.5],P.blue,[0,1.8,0]);box(converterCover,[6.5,1.75,.08],P.blue,[0,.9,1.7]);shell(converterCover);explode(converterCover,[0,1.5,0]);
+    plantCabinet(tractionView,'depot-traction-service',[5,.1,1.4],[1.4,2.2,1]);
+    studyTrace(tractionView,'depot-traction-service',[[-3.7,1.9,1.05],[-3.7,1.3,3],[2.5,1.3,3],[5,1.5,1.9]],'traction-diagnostic-response');
+  }
+
+  if(id==='depot-testing') {
+    foundation(root,[35,.18,12]);
+    const stationary=alt('stationary');track(stationary,19,[0,.1,0]);
+    const fixture=part(stationary,'depot-functional-checks');fixture.userData.explorationAssembly='depot-functional-checks';
+    const train=vehicle(fixture,[0,.1,0],.95);train.name='functional-test-stationary-vehicle';
+    plantCabinet(fixture,'depot-functional-checks',[6.8,.1,2.7],[1.3,2,.9]);
+    studyTrace(fixture,'depot-functional-checks',[[1.2,1.4,1.05],[2.3,.35,2.2],[5,.35,2.7],[6.8,1.5,3.2]],'functional-test-measurement');
+    infoBoard(stationary,'depot-maintenance-release',[10,.1,2.7]);
+    walkway(stationary,[0,.2,2.1],10);
+    const movement=alt('movement');
+    const road=part(movement,'depot-test-track');road.userData.explorationAssembly='depot-test-track';
+    track(road,32,[0,.1,0]);
+    for(const x of [-16,16]){
+      const end=group(road,'test-road-end-stop',[x,.1,0]);
+      for(const z of [-.58,.58])box(end,[.5,.6,.2],M.core,[0,.4,z]);box(end,[.18,.3,1.7],P.red,[0,.85,0]);
+    }
+    for(const z of [-2.3,2.3]){
+      for(const x of [-15,-10,-5,0,5,10,15])cylinder(road,.045,1.1,M.steel,[x,.65,z],null,8);
+      pipe(road,[[-15,1.1,z],[15,1.1,z]],M.yellow,.025);
+    }
+    const moving=vehicle(road,[-7,.1,0],.75);moving.name='separate-test-road-vehicle';
+    infoBoard(movement,'depot-functional-checks',[7,.1,4.2]);
+    infoBoard(movement,'depot-maintenance-release',[11,.1,4.2]);
+    animations.push(state=>{moving.position.x=-7*Math.cos(studyPhase(state)*Math.PI*2);});
+  }
 
   if(id==='depot-overview') {
     const site=part(root,'depot-layout');foundation(site,[40,.22,31],[0,0,1]);
@@ -364,11 +580,17 @@ export function buildOperationsView(id, api) {
     railBranch(site,[[-14,.1,-7.6],[-11,.1,-7],[-6,.1,-4.2],[14,.1,-4.2]],'depot-reception');
     boundary(site,-10,-5.8,5);
     const yard=part(site,'depot-stabling');
+    const blades=[];
     for(const [i,z]of [-.8,2.5,5.8].entries()) {
       railBranch(site,[[-7+i*2,.1,-4.2],[-4+i*2,.1,-2],[0,.1,z],[1,.1,z]]);
       track(yard,13,[7.5,.1,z]);buffer(yard,[14,.1,z]);
       const machine=part(site,'depot-yard-points',[-5+i*2,.1,-3.2]);
       box(machine,[.72,.28,.55],P.blue);pipe(machine,[[0,.12,0],[0,.12,-1.1]],M.steel,.025);
+      const switchEnd=part(site,'depot-yard-points',[-7+i*2,.1,-4.2]);
+      for(const side of [-1,1]){
+        const blade=group(switchEnd,'yard-switch-blade',[.08,.29,side*.51]);
+        box(blade,[1.65,.07,.06],M.aluminum,[.825,0,0]);blade.userData.roadIndex=i;blades.push(blade);
+      }
       walkway(site,[7.3,.17,z+1.3],13,'depot-stabling');
     }
     vehicle(yard,[6,.1,5.8],.75);
@@ -379,6 +601,17 @@ export function buildOperationsView(id, api) {
     const departure=alt('dispatch');
     const outbound=part(departure,'depot-dispatch');vehicle(outbound,[5,.1,-.8],.75);
     infoBoard(departure,'depot-dispatch',[10,.2,.7],'rows');
+    const handover=alt('handover');
+    const work=part(handover,'depot-work-handover');work.userData.explorationAssembly='depot-work-handover';
+    const assigned=vehicle(work,[6,.1,2.5],.75);assigned.name='handover-stationary-vehicle';
+    infoBoard(work,'depot-work-handover',[11.5,.2,3.9],'rows');
+    const workBoundary=group(work,'separate-work-road-boundary',[1.8,.1,2.5]);workBoundary.rotation.y=Math.PI/2;
+    zoneFence(workBoundary,'depot-personnel-protection',[0,.15,0],2.8);
+    path(handover,[[-10,1.6,3.2],[-4,2,7.5],[8,2,7.5],[11.5,1.6,3.9]],C.signal);
+    animations.push(state=>{
+      const destination=chosen(state)==='handover'?1:chosen(state)==='dispatch'?0:-1;
+      blades.forEach(blade=>blade.rotation.y=blade.userData.roadIndex===destination?-.32:0);
+    });
     path(arrival,[[-14,.8,-7.6],[-10,.8,-6],[-6,.8,-4.2],[5,.8,-4.2]],C.service);
     path(departure,[[8,.8,-.8],[1,.8,-.8],[-5,.8,-3.3],[-9,.8,-5.5],[-14,.8,-7.6]],C.signal);
   }
@@ -479,18 +712,25 @@ export function buildOperationsView(id, api) {
     const lathe=alt('lathe');serviceFloor(lathe,{x:-3,width:3.8,depth:3.3});
     track(lathe,15,[0,0,0],{sleeperGap:[-4.9,-1.1],railGap:[-3.9635,-3.1235]});vehicle(lathe,[0,0,0],.95);workshopLathe(lathe);
     const removed=alt('wheelset');foundation(removed,[21,.18,12]);
-    const wheel=part(removed,'depot-wheelset',[0,.1,0]);
-    cylinder(wheel,.12,3.8,M.steel,[0,1.1,0],[Math.PI/2,0,0],12);
-    for(const z of [-1.15,1.15]) {
-      cylinder(wheel,.8,.3,M.steel,[0,1.1,z],[Math.PI/2,0,0],24);
-      cylinder(wheel,.28,.32,P.dark,[0,1.1,z],[Math.PI/2,0,0],16);
-      box(wheel,[1.5,.2,.65],P.blue,[0,.2,z]);
-      for(const x of [-.5,.5])box(wheel,[.15,.6,.55],M.core,[x,.58,z],[0,0,x>0?.4:-.4]);
-    }
+    supportedWheelset(removed);
     const gauge=part(removed,'depot-wheelset',[1.4,.1,1.15]);
     box(gauge,[.6,.1,.8],M.core,[0,.06,0]);box(gauge,[.12,1.8,.15],P.blue,[0,.95,0]);
     box(gauge,[1,.12,.15],M.steel,[-.45,1.8,0]);box(gauge,[.18,.28,.2],P.red,[-.9,1.65,0]);
     infoBoard(removed,'depot-wheelset',[3.5,.1,2.7]);
+    const ndt=alt('ndt');foundation(ndt,[21,.18,12]);
+    const inspection=part(ndt,'depot-wheelset-inspection');inspection.userData.explorationAssembly='depot-wheelset-inspection';
+    const examined=supportedWheelset(inspection);
+    const probe=group(inspection,'wheelset-axial-inspection-probe',[0,.1,0]);
+    box(probe,[.8,.12,1.1],P.blue,[0,.08,2.6]);
+    box(probe,[.13,1.08,.16],M.steel,[0,.68,2.6]);
+    cylinder(probe,.23,.6,P.blue,[0,1.15,2.34],[Math.PI/2,0,0],16);
+    const tip=cylinder(probe,.1,.14,P.water,[0,1.15,1.97],[Math.PI/2,0,0],12);tip.name='wheelset-probe-tip';
+    infoBoard(inspection,'depot-wheelset-inspection',[4,.1,2.7]);
+    studyTrace(inspection,'depot-wheelset-inspection',[[0,1.25,2.7],[1.2,.4,3],[3,.4,3],[4,1.6,2.7]],'wheelset-inspection-record');
+    animations.push(state=>{
+      const turn=studyPhase(state)*Math.PI*2;examined.rolling.rotation.z=turn;
+      examined.p.traverse(n=>{if(n.name==='wheelset-support-roller')n.rotation.y=-turn*5;});
+    });
     const bogies=alt('bogie');foundation(bogies,[21,.18,12]);
     const stand=part(bogies,'depot-bogie-workshop',[-2,.1,0]);
     box(stand,[3.3,.18,2.4],P.blue,[0,.9,0]);

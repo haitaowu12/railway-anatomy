@@ -52,13 +52,13 @@ const visible = node => {
   return true;
 };
 const variantsFor = view => model.VIEWS[view]?.variants?.map(v => v.id) || ['default'];
-function setScene(view, variant, { cutaway = true, phase = 1, scenario = 'nominal', signals = true, technology = {propulsion:'lim',control:'loop'} } = {}) {
+function setScene(view, variant, { cutaway = true, phase = 1, playing = false, scenario = 'nominal', signals = true, technology = {propulsion:'lim',control:'loop'} } = {}) {
   const record = models.get(view);
   assert(record, `Missing constructed scene ${view}`);
   for (const candidate of models.values()) candidate.root.visible = candidate === record;
   for (const shell of record.shells) shell.visible = !cutaway;
   for (const e of record.exploded) e.node.position.copy(e.base);
-  const state = { view, variant, phase, scenario, signals, cutaway, technology, exploded: 0, mode: 'coasting', receptivity: 'train', selected: null };
+  const state = { view, variant, phase, playing, scenario, signals, cutaway, technology, exploded: 0, mode: 'coasting', receptivity: 'train', selected: null };
   for (const animate of record.animators) animate(state);
   record.root.updateWorldMatrix(true, true);
   return record;
@@ -67,14 +67,14 @@ function setScene(view, variant, { cutaway = true, phase = 1, scenario = 'nomina
 
 const depotData=await load('depot-data.js');
 const atlas=await load('atlas-config.js');
-for(const id of Object.keys(operations.OPERATIONS_VIEWS))operations.buildOperationsView(id,api);
+for(const id of Object.keys(operations.OPERATIONS_VIEWS).filter(id=>id.startsWith('depot-')))operations.buildOperationsView(id,api);
 const known=new Set(catalog.CONCEPTS.map(c=>c.id));
 const recordFor=(view,variant)=>setScene(view,variant);
 const namedVisible=(record,name)=>{
   const matches=[];record.root.traverse(n=>{if(n.name===name&&visible(n))matches.push(n);});return matches;
 };
 check('Every depot scene has finite geometry and declared concepts',()=>{
-  for(const [view,record]of models)if(view.startsWith('depot-')||view==='operations-centre'){
+  for(const [view,record]of models)if(view.startsWith('depot-')){
     for(const id of record.parts.keys())assert(known.has(id),`${view} unknown ${id}`);
     for(const variant of variantsFor(view)){
       const active=recordFor(view,variant);
@@ -211,7 +211,7 @@ check('Wash alternatives move different bodies and expose different geometry',()
 });
 
 check('Compact depot vehicles retain rail gauge and wheel contact height',()=>{
- for(const [view,variant,datum]of [['depot-yard','reception',.1],['depot-maintenance','inspection',0],['depot-maintenance','jacks',0],['depot-wash','wash',.12],['depot-protection','work-zone',.12]]){
+ for(const [view,variant,datum]of [['depot-yard','reception',.1],['depot-yard','handover',.1],['depot-condition','roll-by',.1],['depot-condition','stationary',.1],['depot-testing','stationary',.1],['depot-testing','movement',.1],['depot-maintenance','inspection',0],['depot-maintenance','jacks',0],['depot-wash','wash',.12],['depot-protection','work-zone',.12]]){
   const record=recordFor(view,variant);
   const wheels=namedVisible(record,'depot-mounted-wheel');assert(wheels.length,view);
   for(const wheel of wheels){
@@ -242,9 +242,141 @@ check('Underfloor lathe aligns with one installed axle and leaves the adjacent a
   assert(Math.abs(distance-(.21+.3*.95))<.01,'Drive roller misses the wheel tread');
  }
 });
-check('Control-centre builder retains eight selectable operational functions',()=>{
- const record=recordFor('operations-centre','service');
- for(const id of ['operations-centre','operations-traffic-supervision','operations-signalling-workstation','operations-power-control','operations-station-supervision','operations-radio-dispatch','operations-event-recording','operations-equipment-room'])assert((record.parts.get(id)||[]).some(visible),id);
+check('Roll-by measurement uses fixed sensors and activates only during vehicle overlap',()=>{
+ const record=setScene('depot-condition','roll-by',{phase:0});
+ const train=namedVisible(record,'inspection-passage-vehicle')[0];assert(train);
+ const scan=record.root.getObjectByName('roll-by-measurement-plane');assert(scan);
+ const sensors=namedVisible(record,'roll-by-wheel-sensor');assert.equal(sensors.length,2);
+ const sensorPositions=sensors.map(n=>n.getWorldPosition(new THREE.Vector3()).toArray());
+ const startX=train.position.x;assert(!scan.visible,'Measurement plane is active before the vehicle arrives');
+ setScene('depot-condition','roll-by',{phase:2.5});assert(scan.visible);assert.equal(train.position.x,0);
+ setScene('depot-condition','roll-by',{phase:5});assert(!scan.visible);assert(train.position.x>startX);
+ assert.deepEqual(sensors.map(n=>n.getWorldPosition(new THREE.Vector3()).toArray()),sensorPositions,'Trackside sensors move with the train');
+ const endX=train.position.x;
+ setScene('depot-condition','roll-by',{phase:5,playing:true});assert.equal(train.position.x,startX,'Playback does not restart the five-unit passage');
+ assert.notEqual(endX,startX,'Manual endpoint wraps instead of showing the completed passage');
+ const stationary=setScene('depot-condition','stationary',{phase:0});
+ assert.equal(namedVisible(stationary,'inspection-passage-vehicle').length,0);
+ const stopped=namedVisible(stationary,'stationary-diagnostic-vehicle')[0];const pose=stopped.position.clone();
+ assert(namedVisible(stationary,'manual-wheel-profile-gauge').length);
+ setScene('depot-condition','stationary',{phase:5});assert.deepEqual(stopped.position.toArray(),pose.toArray());
+});
+check('Yard work handover changes the destination and retains a separate stationary work boundary',()=>{
+ const record=setScene('depot-yard','reception',{phase:0});
+ const blades=namedVisible(record,'yard-switch-blade');assert.equal(blades.length,6);
+ assert(blades.every(n=>n.rotation.y===0));
+ setScene('depot-yard','handover',{phase:0});
+ const selected=blades.filter(n=>n.rotation.y!==0);assert.equal(selected.length,2);assert(selected.every(n=>n.userData.roadIndex===1));
+ const train=namedVisible(record,'handover-stationary-vehicle')[0];assert(train);
+ const pose=train.position.clone();assert(namedVisible(record,'separate-work-road-boundary').length);
+ assert((record.parts.get('depot-personnel-protection')||[]).some(visible));
+ setScene('depot-yard','handover',{phase:5});assert.deepEqual(train.position.toArray(),pose.toArray());
+ setScene('depot-yard','dispatch');assert.equal(namedVisible(record,'handover-stationary-vehicle').length,0);
+ assert(blades.filter(n=>n.rotation.y!==0).every(n=>n.userData.roadIndex===0),'Departure uses the handover destination');
+});
+check('Brake test pads contact both disc faces, stay connected to their actuators, and release',()=>{
+ const record=setScene('depot-components','brakes',{phase:0});
+ const disc=namedVisible(record,'bench-brake-disc')[0],pads=namedVisible(record,'bench-brake-pad'),rods=namedVisible(record,'brake-test-pushrod');
+ assert(disc);assert.equal(pads.length,2);assert.equal(rods.length,2);
+ const discPosition=disc.getWorldPosition(new THREE.Vector3()).toArray();
+ const gap=pad=>{
+  const p=new THREE.Box3().setFromObject(pad),d=new THREE.Box3().setFromObject(disc);
+  return pad.userData.side>0?p.min.z-d.max.z:d.min.z-p.max.z;
+ };
+ assert(pads.every(p=>gap(p)>.19));
+ for(const phase of [0,.625,1.25,1.875,2.5,3.125,3.75,4.375,5]){
+  setScene('depot-components','brakes',{phase});
+  assert(pads.every(p=>gap(p)>-.00001),'Pad penetrates the stationary disc');
+  for(const pad of pads){
+   const side=pad.userData.side,rod=rods.find(n=>Math.sign(n.position.z)===side);
+   const p=new THREE.Box3().setFromObject(pad),r=new THREE.Box3().setFromObject(rod);
+   assert(Math.abs(side>0?r.min.z-p.max.z:r.max.z-p.min.z)<.00001,'Pushrod loses contact with pad');
+   assert(Math.abs(side>0?r.max.z-.615:r.min.z+.615)<.00001,'Pushrod leaves its fixed actuator face');
+  }
+  assert.deepEqual(disc.getWorldPosition(new THREE.Vector3()).toArray(),discPosition);
+ }
+ setScene('depot-components','brakes',{phase:2.5});assert(pads.every(p=>Math.abs(gap(p))<.00001));
+ setScene('depot-components','brakes',{phase:5});assert(pads.every(p=>gap(p)>.19));
+});
+check('Door leaves clear the doorway and closed feedback follows physical position',()=>{
+ const record=setScene('depot-components','doors',{phase:0});
+ const leaves=namedVisible(record,'bench-door-leaf');assert.equal(leaves.length,2);
+ const rig=(record.parts.get('depot-door-service')||[]).find(n=>Object.hasOwn(n.userData,'closedPosition'));assert(rig);
+ assert.equal(rig.userData.closedPosition,true);
+ const initial=leaves.map(n=>n.position.x);
+ setScene('depot-components','doors',{phase:2.5});assert.equal(rig.userData.closedPosition,false);
+ for(const leaf of leaves){
+  const b=new THREE.Box3().setFromObject(leaf);
+  assert(leaf.userData.side>0?b.min.x>1.2:b.max.x< -1.2,'An open leaf still obstructs the doorway');
+  const carriage=leaf.getObjectByName('door-operator-carriage');assert(carriage);
+  assert(Math.abs(carriage.getWorldPosition(new THREE.Vector3()).x-leaf.getWorldPosition(new THREE.Vector3()).x)<.00001);
+ }
+ setScene('depot-components','doors',{phase:5});assert.equal(rig.userData.closedPosition,true);assert.deepEqual(leaves.map(n=>n.position.x),initial);
+ setScene('depot-components','doors',{phase:7.5,playing:true});assert.equal(rig.userData.closedPosition,false,'Playback cycle and phase captions disagree');
+});
+check('HVAC and traction alternatives expose distinct serviceable assemblies and meaningful traces',()=>{
+ const record=setScene('depot-components','hvac',{phase:0});
+ const filter=namedVisible(record,'hvac-removable-filter')[0],fan=namedVisible(record,'hvac-supply-fan')[0];assert(filter&&fan);
+ const filterPose=filter.position.clone(),fanAngle=fan.rotation.x;
+ const air=namedVisible(record,'hvac-supply-air-sample')[0];const start=air.position.x;
+ setScene('depot-components','hvac',{phase:1.25});assert.notEqual(fan.rotation.x,fanAngle);assert.deepEqual(filter.position.toArray(),filterPose.toArray(),'Filter is removed while the fan is operating');
+ setScene('depot-components','hvac',{phase:5});assert(air.position.x>start);
+ assert(record.exploded.some(e=>e.node===filter),'Filter is not available for selected component separation');
+ setScene('depot-components','traction',{phase:0});
+ assert.equal(namedVisible(record,'hvac-supply-fan').length,0);
+ const modules=namedVisible(record,'converter-power-module');assert.equal(modules.length,3);
+ assert(namedVisible(record,'converter-control-board').length);
+ assert(modules.every(node=>record.exploded.some(e=>e.node===node)),'Converter power modules have no separation transform');
+ const trace=namedVisible(record,'traction-diagnostic-response-sample')[0],traceStart=trace.position.clone();
+ setScene('depot-components','traction',{phase:5});assert(trace.position.distanceTo(traceStart)>5);
+});
+check('Wheelset inspection keeps the fixed axial probe aligned and the turning wheelset on rollers',()=>{
+ const record=setScene('depot-workshop','ndt',{phase:0});
+ const axle=namedVisible(record,'workshop-wheelset-axle')[0],tip=namedVisible(record,'wheelset-probe-tip')[0];assert(axle&&tip);
+ const probePosition=tip.getWorldPosition(new THREE.Vector3()).toArray();
+ const wheels=namedVisible(record,'workshop-wheel-disc'),rollers=namedVisible(record,'wheelset-support-roller');assert.equal(wheels.length,2);assert.equal(rollers.length,4);
+ const assembly=namedVisible(record,'inspection-wheelset')[0],initialAngle=assembly.rotation.z;
+ for(const phase of [0,1.25,2.5,3.75,5]){
+  setScene('depot-workshop','ndt',{phase});
+  const a=axle.getWorldPosition(new THREE.Vector3()),p=tip.getWorldPosition(new THREE.Vector3());
+  assert(Math.abs(a.x-p.x)<.00001&&Math.abs(a.y-p.y)<.00001,'Probe misses the axle axis');
+  assert.deepEqual(p.toArray(),probePosition,'Probe rotates with the wheelset');
+  const axleBounds=new THREE.Box3().setFromObject(axle),tipBounds=new THREE.Box3().setFromObject(tip);
+  assert(Math.abs(tipBounds.min.z-axleBounds.max.z)<.00001,'Axial probe loses its illustrated contact');
+  for(const roller of rollers){
+   const r=roller.getWorldPosition(new THREE.Vector3());const w=wheels.find(n=>Math.abs(n.getWorldPosition(new THREE.Vector3()).z-r.z)<.00001);assert(w);
+   assert(Math.abs(r.distanceTo(w.getWorldPosition(new THREE.Vector3()))-.96)<.00001,'Wheelset floats above or intersects a support roller');
+  }
+ }
+ setScene('depot-workshop','ndt',{phase:1.25});assert.notEqual(assembly.rotation.z,initialAngle);
+ assert(rollers.every(n=>n.rotation.y<0),'Rollers do not turn opposite the wheelset');
+});
+check('Functional-check alternatives distinguish a fixed vehicle from movement on a separate bounded road',()=>{
+ const record=setScene('depot-testing','stationary',{phase:0});
+ const stopped=namedVisible(record,'functional-test-stationary-vehicle')[0];const pose=stopped.position.clone();
+ const sample=namedVisible(record,'functional-test-measurement-sample')[0],start=sample.position.clone();
+ setScene('depot-testing','stationary',{phase:5});assert.deepEqual(stopped.position.toArray(),pose.toArray());assert(sample.position.distanceTo(start)>5);
+ setScene('depot-testing','movement',{phase:0});assert.equal(namedVisible(record,'functional-test-stationary-vehicle').length,0);
+ const moving=namedVisible(record,'separate-test-road-vehicle')[0],origin=moving.position.x;assert.equal(namedVisible(record,'test-road-end-stop').length,2);
+ for(const phase of [0,1.25,2.5,3.75,5]){
+  setScene('depot-testing','movement',{phase});const b=new THREE.Box3().setFromObject(moving);
+  assert(b.min.x> -15.9&&b.max.x<15.9,'Illustrative movement crosses a test-road end stop');
+  assert((record.parts.get('depot-maintenance-release')||[]).some(visible),'Test arrangement hides its separate record position');
+ }
+ setScene('depot-testing','movement',{phase:2.5});assert(moving.position.x>origin);
+ setScene('depot-testing','movement',{phase:5});assert(Math.abs(moving.position.x-origin)<.00001);
+});
+check('New motion descriptions and maintenance article have valid public-source contracts',()=>{
+ const sources=new Set(catalog.SOURCES.map(s=>s.id));
+ for(const id of ['depot-condition','depot-components','depot-testing'])for(const variant of model.VIEWS[id].variants){
+  const steps=variant.animation?.steps;assert(steps?.length>=3,`${id}/${variant.id} has no explanatory phases`);
+  assert.equal(steps[0].at,0);assert.equal(steps.at(-1).at,1);
+  steps.forEach((s,i)=>{assert(s.label&&s.description);if(i)assert(s.at>steps[i-1].at);});
+  variant.sources.forEach(source=>assert(sources.has(source),`${id} missing source ${source}`));
+ }
+ const guide=depotData.DEPOT_READING_GUIDES[0];assert(guide.title&&guide.sections.length>=5);
+ const words=guide.sections.map(s=>s.text).join(' ').split(/\s+/).length;assert(words>=600&&words<=900);
+ guide.sources.forEach(source=>assert(sources.has(source),`Maintenance article missing source ${source}`));
 });
 console.log(`${passed} checks passed, ${failures.length} failed.`);
 if(failures.length)process.exitCode=1;

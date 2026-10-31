@@ -1,4 +1,4 @@
-import {EXTRA_TOURS} from './expansion-data.js';
+// Guided questions test the mechanism or interface introduced by each lesson.
 export const TOURS = [
   {
     "id": "station-context",
@@ -18,17 +18,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Does a common supervisory screen mean every subsystem has the same local controller?",
+    "question": "A platform loudspeaker is silent while the passenger display is working. Which supporting path belongs to the loudspeaker?",
     "choices": [
-      "Yes",
-      "No",
-      "Only at the platform"
+      "The display data feed and display screen only",
+      "The audio source, routing, amplifier and speaker circuit",
+      "The station supervisory screen alone"
     ],
     "answer": 1,
     "feedback": [
-      "A screen can combine information from different equipment.",
-      "Correct. Shared supervision does not erase local system boundaries.",
-      "Location does not determine the control architecture."
+      "The display has its own information and power path; its operation does not establish the audio path.",
+      "The announcement needs both an audio path and electrical power at the speaker-driving stage.",
+      "Supervision can report status, but it does not replace the equipment that carries and amplifies the audio."
     ],
     "sourceConcepts": [
       "station-pa",
@@ -54,17 +54,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Does a slab remove the need for a designed resilient rail interface?",
+    "question": "In the direct-fixation example, which functions remain at the rail seat after the ballast and sleeper arrangement changes?",
     "choices": [
-      "Yes, concrete is enough",
-      "No",
-      "Only on curves"
+      "Designed support, resilience and restraint of the rail",
+      "Support by concrete alone, with no rail fastening",
+      "The same ballast bed directly beneath the rail foot"
     ],
-    "answer": 1,
+    "answer": 0,
     "feedback": [
-      "The rail interface still has support and restraint functions.",
-      "Correct. The selected fastening and resilient interfaces remain part of the design.",
-      "This distinction is not limited to curves."
+      "The supporting structure changes, while the rail still needs its designed mechanical interfaces.",
+      "The illustrated concrete structure does not replace the fastening and resilient interface.",
+      "Ballast belongs to the ballasted example; follow the baseplate and resilient layers in the direct-fixation view."
     ],
     "sourceConcepts": [
       "track-ballasted",
@@ -91,17 +91,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Which illustrated part provides elastic rail restraint?",
+    "question": "Which pairing matches the roles in the illustrated rail seat?",
     "choices": [
-      "A loudspeaker",
-      "A rail clip",
-      "A balise"
+      "Rail pad: elastic restraint above the foot; clip: foundation below the sleeper",
+      "Baseplate: spreads fastening loads; pad: locks the rail foot against uplift",
+      "Clip: rail restraint; pad: resilient interface beneath the rail"
     ],
-    "answer": 1,
+    "answer": 2,
     "feedback": [
-      "The speaker is an audio output device.",
-      "Yes. The clip is part of the selected restraint arrangement.",
-      "A balise exchanges information with passing equipment."
+      "The pad lies beneath the rail; the clip acts on the rail foot as part of its restraint.",
+      "The baseplate can spread loads, but the pad provides the resilient support interface; the clip provides the illustrated restraint.",
+      "The parts meet at the rail seat but perform different functions."
     ],
     "sourceConcepts": [
       "track-rail-clip",
@@ -128,17 +128,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Which statement is supported by a command to move a switch?",
+    "question": "A switch drive has received a movement command, but the required position indication is absent. What has been established?",
     "choices": [
-      "The required position is proved",
-      "A movement was requested",
-      "The route is definitely clear"
+      "The required position has been proved",
+      "Movement has been requested; the required position is not yet proved",
+      "The route is clear because the drive received the command"
     ],
     "answer": 1,
     "feedback": [
-      "Proof comes from the selected feedback and checking arrangement.",
-      "Correct. Request and confirmed state are different.",
-      "A route needs more than a movement command."
+      "The command and returned position indication are separate information.",
+      "The model deliberately keeps a request separate from the evidence of the resulting state.",
+      "A route depends on more conditions than receipt of a switch command."
     ],
     "sourceConcepts": [
       "track-point-machine",
@@ -163,17 +163,17 @@ export const TOURS = [
       "mode": "motoring",
       "scenario": "nominal"
     },
-    "question": "Which component converts incoming AC to DC?",
+    "question": "Which conversion belongs to the rectifier in this DC traction example?",
     "choices": [
-      "A rectifier",
-      "A balise",
-      "A passenger display"
+      "AC at one voltage to AC at another voltage",
+      "DC supply to controlled AC for the traction motor",
+      "AC supply to DC for traction distribution"
     ],
-    "answer": 0,
+    "answer": 2,
     "feedback": [
-      "Yes. Rectification supplies the DC side.",
-      "A balise provides information, not traction power conversion.",
-      "A display consumes auxiliary power."
+      "That is the transformer role in this example.",
+      "That is the onboard traction-inverter role.",
+      "The rectifier supplies the DC side; the transformer and onboard inverter have different conversions."
     ],
     "sourceConcepts": [
       "utility",
@@ -199,17 +199,17 @@ export const TOURS = [
       "mode": "motoring",
       "scenario": "nominal"
     },
-    "question": "Which element interacts magnetically with the LIM primary?",
+    "question": "In this separated-conductor LIM example, which guideway element is the motor secondary?",
     "choices": [
-      "The passenger antenna",
       "The reaction rail",
-      "The HVAC duct"
+      "The normal traction-current return conductor",
+      "The wheel-running rails"
     ],
-    "answer": 1,
+    "answer": 0,
     "feedback": [
-      "The antenna carries radio signals.",
-      "Yes. Primary and reaction rail form the linear motor.",
-      "The duct distributes air."
+      "The primary interacts electromagnetically with the reaction rail across the air gap.",
+      "The illustrated return conductor completes the normal DC supply circuit.",
+      "The running rails support and guide the wheels in this example."
     ],
     "sourceConcepts": [
       "positive-rail",
@@ -235,17 +235,17 @@ export const TOURS = [
       "mode": "motoring",
       "scenario": "nominal"
     },
-    "question": "Where does the LIM develop its propulsive interaction?",
+    "question": "What directly produces the illustrated LIM thrust?",
     "choices": [
-      "Inside the passenger display",
-      "Across the primary–reaction-rail gap",
-      "Through the radio antenna"
+      "Motor-shaft torque transmitted through an axle gearbox",
+      "Electromagnetic interaction between the primary and reaction rail across their gap",
+      "Driving-wheel torque transferred through wheel–rail adhesion"
     ],
     "answer": 1,
     "feedback": [
-      "Displays provide information.",
-      "Yes. Electromagnetic interaction produces linear force.",
-      "Radio carries information, not propulsion force."
+      "An axle gearbox belongs to the rotary-drive comparison.",
+      "The linear motor develops longitudinal force through the primary–secondary interaction.",
+      "The wheels support and guide this LIM vehicle; the motor produces its propulsive interaction across the gap."
     ],
     "sourceConcepts": [
       "traction-inverter",
@@ -258,30 +258,30 @@ export const TOURS = [
     "id": "braking-destinations",
     "label": "08 · Slow the train",
     "title": "Braking energy needs somewhere to go",
-    "domain": "vehicle",
-    "view": "vehicle",
-    "component": "regeneration",
+    "domain": "power",
+    "view": "system",
+    "component": "wayside-resistor",
     "explanation": "During regenerative braking, mechanical energy becomes electrical energy. Acceptance by the supply network is conditional. Explore the limited-receptivity example and its alternative energy paths. Electrical braking and friction braking are coordinated; their actual arrangements vary.",
     "actionText": "Limit regeneration and inspect the alternative braking paths.",
     "actionLabel": "Limit energy acceptance",
     "action": {
-      "view": "vehicle",
-      "component": "regeneration",
+      "view": "system",
+      "component": "wayside-resistor",
       "cutaway": true,
       "mode": "regeneration",
       "scenario": "regen-limited"
     },
-    "question": "Is every unit of braking energy always returned to the grid?",
+    "question": "If the illustrated DC network cannot accept all regenerated energy, which other braking paths are shown?",
     "choices": [
-      "Yes, automatically",
-      "Only at stations",
-      "No; acceptance and equipment matter"
+      "Resistive energy dissipation and friction braking, according to the selected arrangement",
+      "Automatic export of all surplus energy through the diode rectifier to the AC utility",
+      "Regeneration alone, with friction braking unavailable"
     ],
-    "answer": 2,
+    "answer": 0,
     "feedback": [
-      "A usable receiving path is needed.",
-      "Station location alone does not decide energy acceptance.",
-      "Yes. Follow the available destinations in this example."
+      "The model separates the energy destination from the friction-brake contribution; actual blending depends on the vehicle design.",
+      "The chosen diode-rectifier example does not provide that AC export path.",
+      "Friction braking remains a separate available mechanism in the teaching example."
     ],
     "sourceConcepts": [
       "regeneration",
@@ -304,19 +304,22 @@ export const TOURS = [
       "component": "atp",
       "cutaway": true,
       "mode": "coasting",
-      "scenario": "nominal"
+      "scenario": "nominal",
+      "technology": {
+        "control": "radio"
+      }
     },
-    "question": "Which role coordinates the overall service?",
+    "question": "ATS requests a service adjustment. Which role still supervises the permitted operating limits in this example?",
     "choices": [
-      "ATS",
-      "The traction rectifier",
-      "The antenna"
+      "ATS replaces the protection limits with the timetable target",
+      "ATO enlarges the permitted envelope to meet the request",
+      "ATP supervises the permitted limits while ATO manages driving within them"
     ],
-    "answer": 0,
+    "answer": 2,
     "feedback": [
-      "Yes. Supervision concerns the service across the railway.",
-      "The rectifier converts electrical power.",
-      "The antenna supports communication."
+      "Service coordination does not itself enlarge the protection envelope.",
+      "A driving request does not establish new permission.",
+      "Service supervision, driving and protection have different responsibilities."
     ],
     "sourceConcepts": [
       "atp",
@@ -344,17 +347,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Does receiving a radio packet by itself explain every decision governing movement?",
+    "question": "After movement information reaches the train, which role remains in the illustrated CBTC chain?",
     "choices": [
-      "Yes",
-      "No",
-      "Only when the antenna is on the roof"
+      "Receipt of the packet alone establishes that every route condition is satisfied",
+      "Onboard protection interprets the applicable limits with the train’s position information",
+      "The passenger-information controller sets the train’s protection limits"
     ],
     "answer": 1,
     "feedback": [
-      "Transporting information is one part of the architecture.",
-      "Correct. Interpretation, protection, localization and driving still need explicit roles.",
-      "Antenna location does not define those responsibilities."
+      "Communication transports information; the protection and route-condition responsibilities remain separate.",
+      "Follow the information exchange into the onboard supervision function rather than ending the explanation at the radio.",
+      "Passenger information is a different service from train protection."
     ],
     "sourceConcepts": [
       "cbtc",
@@ -383,17 +386,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Which device in this comparison provides a passing reference rather than an occupancy section?",
+    "question": "Which illustrated device exchanges information at a passing point rather than establishing a section-occupancy state?",
     "choices": [
       "The balise",
-      "The selected track circuit",
-      "The selected axle-counter section"
+      "The track circuit",
+      "The axle-counter section"
     ],
     "answer": 0,
     "feedback": [
-      "Correct. It exchanges information at a passing point.",
-      "The selected track circuit is used for section detection.",
-      "The selected counter arrangement evaluates section entry and exit."
+      "The balise provides a passing reference or data update in this comparison.",
+      "The selected track circuit is used for section-occupancy detection.",
+      "The selected axle-counter arrangement evaluates entries and exits to determine section state."
     ],
     "sourceConcepts": [
       "track-circuit",
@@ -409,7 +412,7 @@ export const TOURS = [
     "view": "bogie",
     "component": "tachometer",
     "explanation": "Arithmetic example: a distance estimate biased 10% high reports 110 m for an actual 100 m. This is an invented error, not a vehicle specification. Sliding wheels can cause different errors; independent measurements and position references help reveal disagreement.",
-    "actionText": "Compare the wheel estimate with the independent reference.",
+    "actionText": "Use the stated 100 m / 110 m example for the question, then vary the wheel-distance error to explore other cases.",
     "actionLabel": "Inspect sensor disagreement",
     "action": {
       "view": "bogie",
@@ -418,17 +421,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "wheel-slip"
     },
-    "question": "How much does this arithmetic example overestimate distance?",
+    "question": "In the stated example, the actual distance is 100 m and the estimate is 110 m. What is the estimation error?",
     "choices": [
-      "1 m",
-      "10 m",
-      "100 m"
+      "10 m high",
+      "10 m low",
+      "110 m high"
     ],
-    "answer": 1,
+    "answer": 0,
     "feedback": [
-      "Subtract the actual 100 m from the reported 110 m.",
-      "Correct: 110 − 100 = 10 m.",
-      "100 m is the actual journey in this example."
+      "110 − 100 = +10 m. The example states a positive distance-estimation bias.",
+      "The estimate exceeds the actual distance, so the error is positive.",
+      "110 m is the estimated distance; subtract the actual distance to find the error."
     ],
     "sourceConcepts": [
       "tachometer",
@@ -454,17 +457,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Does a current product announcement establish the architecture of every existing installation?",
+    "question": "When switching from the legacy-loop to the radio example, which distinction is directly illustrated?",
     "choices": [
-      "Yes",
-      "No",
-      "Only if the brand name is unchanged"
+      "A required change from LIM to rotary propulsion",
+      "A different train–wayside communication arrangement",
+      "Proof that every installed generation uses the same computer allocation"
     ],
     "answer": 1,
     "feedback": [
-      "Existing installations can differ in generation and configuration.",
-      "Correct. Match a claim to its generation and evidence.",
-      "A shared product name does not prove identical equipment."
+      "Propulsion is an independent choice; a communication change does not require that motor change.",
+      "The information transport changes. Function allocation and product-generation claims still need their own evidence.",
+      "The common product-family name does not establish identical installed architectures."
     ],
     "sourceConcepts": [
       "seltrac",
@@ -490,17 +493,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Does the selected Level 1 example stop supervising the train between balise passages?",
+    "question": "In the selected ETCS Level 1 example, what continues between the illustrated balise passages?",
     "choices": [
-      "Yes",
-      "No",
-      "Only when the display is off"
+      "A continuous new telegram from each passed balise",
+      "No protection until the next balise is reached",
+      "Onboard supervision using the applicable received information"
     ],
-    "answer": 1,
+    "answer": 2,
     "feedback": [
-      "A passing update is not the same as intermittent onboard supervision.",
-      "Correct. Onboard supervision continues between the illustrated updates.",
-      "Display state does not define this principle."
+      "The illustrated balise update occurs at a passing point.",
+      "Spot information updates do not mean that onboard supervision stops between them.",
+      "The timing of a data update and the continuity of onboard supervision are different."
     ],
     "sourceConcepts": [
       "etcs-level-1",
@@ -527,17 +530,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "radio-loss"
     },
-    "question": "Does a working passenger display prove current movement permission?",
+    "question": "The passenger display still updates while the illustrated control-data path is interrupted. Which evidence is relevant to train-control permission?",
     "choices": [
-      "Yes",
-      "Only when the screen is bright",
-      "No"
+      "The freshness of the passenger timetable display",
+      "Successful passenger audio playback",
+      "The validity of the applicable control information and protection conditions"
     ],
     "answer": 2,
     "feedback": [
-      "These are different functions.",
-      "Brightness says nothing about control-message validity.",
-      "Correct. Service information and control permission have distinct roles."
+      "A passenger-information update establishes something about that service, not the control-data path.",
+      "Audio playback does not establish movement-authority data or protection conditions.",
+      "Follow the control path and its governing functions separately from passenger services."
     ],
     "sourceConcepts": [
       "train-radio",
@@ -564,17 +567,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Which component converts electrical supply for supporting loads?",
+    "question": "Which role belongs to the auxiliary power converter in this vehicle example?",
     "choices": [
-      "The auxiliary power converter",
-      "The balise",
-      "The passenger speaker"
+      "Converting the incoming electrical supply for supporting loads",
+      "Estimating train location from wheel rotation",
+      "Turning motor torque into axle torque through a gearbox"
     ],
     "answer": 0,
     "feedback": [
-      "Yes. The APU supplies auxiliary systems.",
-      "A balise provides a position reference.",
-      "A speaker is an auxiliary load."
+      "The auxiliary supply supports selected vehicle systems; battery storage and each load’s controller remain distinct.",
+      "That is a sensing and estimation function.",
+      "That is a mechanical transmission function in the rotary-drive example."
     ],
     "sourceConcepts": [
       "apu",
@@ -603,17 +606,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "What does a speaker-driving amplifier add to the announcement path?",
+    "question": "Which job belongs to the speaker-driving amplifier, rather than message storage or zone selection?",
     "choices": [
-      "The mechanical train route",
-      "Electrical power for the speaker circuit",
-      "A new movement authority"
+      "Choosing which platform zone receives the message",
+      "Supplying the electrical audio output that drives the speaker circuit",
+      "Storing the announcement recording for later playback"
     ],
     "answer": 1,
     "feedback": [
-      "The audio system does not set the railway route.",
-      "Correct. Message routing and speaker-driving power are different functions.",
-      "Passenger audio does not grant train movement permission."
+      "Zone selection is an audio routing/control responsibility.",
+      "Routing a message and providing speaker-driving power are different parts of the announcement path.",
+      "Storage supplies recorded content; amplification supplies the speaker-driving output."
     ],
     "sourceConcepts": [
       "station-pa",
@@ -633,23 +636,23 @@ export const TOURS = [
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "station-networks",
-      "component": "station-scada",
-      "variant": "station",
+      "component": "bas-controller",
+      "variant": "building",
       "exploded": 0,
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Where does the illustrated building-control loop connect a measurement to an actuator command?",
+    "question": "In the illustrated building-control loop, which element uses a measured value to determine an actuator command?",
     "choices": [
-      "Only in a passenger display",
-      "Through the BAS controller",
-      "In a rail clip"
+      "The local BAS controller",
+      "The supervisory display by itself",
+      "The network switch forwarding the messages"
     ],
-    "answer": 1,
+    "answer": 0,
     "feedback": [
-      "A display is not the selected plant controller.",
-      "Correct. The local controller uses measurements to drive the selected plant interface.",
-      "A rail clip is a mechanical restraint."
+      "The local controller closes the illustrated control loop; the workstation and network support other roles.",
+      "Displaying a measurement does not make the screen the local controller.",
+      "Forwarding messages does not by itself implement the plant-control logic."
     ],
     "sourceConcepts": [
       "power-scada",
@@ -677,17 +680,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Does a fire detector universally open every conventional thermal sprinkler?",
+    "question": "What operates the individual conventional thermal sprinkler shown in this example?",
     "choices": [
-      "Yes",
-      "No",
-      "Only at underground stations"
+      "A smoke detector automatically opens every sprinkler on the system",
+      "Starting the fire pump mechanically opens each sprinkler head",
+      "Heat acts on the sprinkler’s local thermal element"
     ],
-    "answer": 1,
+    "answer": 2,
     "feedback": [
-      "Detection and sprinkler thermal operation are different mechanisms.",
-      "Correct. The individual thermal element operates with heat in this conventional example.",
-      "Station location does not make that a universal control rule."
+      "Detection and individual thermal-sprinkler operation are different mechanisms.",
+      "The pump supplies water pressure; it does not mechanically open every thermal element.",
+      "This describes the conventional thermal sprinkler shown; other water-protection arrangements have different control designs."
     ],
     "sourceConcepts": [
       "flss",
@@ -715,17 +718,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Can the rendered airflow particles establish smoke-control performance?",
+    "question": "How do the fan and damper contribute to the illustrated air path?",
     "choices": [
-      "Yes, if the fan rotates",
-      "No",
-      "Only when they are coloured"
+      "Fan rotation fixes the airflow regardless of the connected duct and damper state",
+      "The fan creates a pressure difference; the damper changes the available opening or path",
+      "The damper creates the driving pressure and the fan only isolates a branch"
     ],
     "answer": 1,
     "feedback": [
-      "Rotation does not validate the complete air system.",
-      "Correct. Performance needs an engineered and verified design.",
-      "Visual colour is not performance evidence."
+      "The complete air path, resistance and equipment state affect airflow.",
+      "The view separates the driving mechanism from the adjustable path; the animation does not calculate airflow performance.",
+      "Those roles are reversed in the illustrated arrangement."
     ],
     "sourceConcepts": [
       "tunnel-fan",
@@ -733,30 +736,230 @@ export const TOURS = [
       "tunnel-damper",
       "smoke-control"
     ]
+  },
+  {
+    "id": "platform-zones",
+    "label": "21 · Compare platform protection",
+    "title": "21 · Compare platform protection",
+    "domain": "station",
+    "view": "platform-interface",
+    "component": "platform-intrusion",
+    "explanation": "Compare an observed track area with a physical platform-door boundary. Then inspect the separate interspace between train and platform facade.",
+    "actionText": "Compare the arrangements and inspect the highlighted equipment.",
+    "actionLabel": "Show this arrangement",
+    "action": {
+      "view": "platform-interface",
+      "component": "platform-intrusion",
+      "variant": "open-platform",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "cutaway": true,
+      "exploded": 0
+    },
+    "question": "Which change adds a physical barrier at the platform edge in these examples?",
+    "choices": [
+      "The platform-door arrangement",
+      "A larger intrusion-detection coverage area alone",
+      "An additional camera view alone"
+    ],
+    "answer": 0,
+    "feedback": [
+      "The door arrangement introduces a barrier, with opening control and status feedback as separate functions.",
+      "Detection can report intrusion; sensing coverage is not a physical barrier.",
+      "A camera provides observation rather than a physical barrier."
+    ],
+    "sourceConcepts": [
+      "platform-intrusion",
+      "platform-screen-door",
+      "platform-gap-detector"
+    ]
+  },
+  {
+    "id": "platform-feedback",
+    "label": "22 · Read door feedback",
+    "title": "22 · Read door feedback",
+    "domain": "station",
+    "view": "platform-interface",
+    "component": "platform-door-proof",
+    "explanation": "Follow a door command to the drive, then inspect closed and locked feedback. These are separate facts at the train–platform interface.",
+    "actionText": "Compare the arrangements and inspect the highlighted equipment.",
+    "actionLabel": "Show this arrangement",
+    "action": {
+      "view": "platform-interface",
+      "component": "platform-door-proof",
+      "variant": "platform-doors",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "cutaway": true,
+      "exploded": 0
+    },
+    "question": "A close request has been issued to the platform doors. Which additional information addresses the closed-and-locked state?",
+    "choices": [
+      "The command appears in the operator’s event list",
+      "The door controller has received the request",
+      "The applicable closed-and-locked feedback from the door arrangement"
+    ],
+    "answer": 2,
+    "feedback": [
+      "The event list records the request, not necessarily the resulting physical state.",
+      "Receipt of a command is separate from confirmation of the required door state.",
+      "The teaching view distinguishes request, mechanism and returned status; actual proof requirements are design-specific."
+    ],
+    "sourceConcepts": [
+      "platform-door-proof",
+      "platform-door-drive",
+      "platform-gap-detector"
+    ]
+  },
+  {
+    "id": "operations-roles",
+    "label": "23 · Follow an event across the OCC",
+    "title": "Follow request, indication and coordination",
+    "domain": "operations",
+    "view": "occ-supervision",
+    "component": "operations-signalling-workstation",
+    "explanation": "An operator task can involve a control request, acknowledgement, returned equipment indication and communication with other roles. These are different pieces of information. Follow the supervisory path and compare it with the operational event record; acknowledging a request or alarm does not establish the resulting field state or resolve the event.",
+    "actionText": "Open the supervision view, follow the request and returned-indication stages, then compare event coordination.",
+    "actionLabel": "Trace supervision",
+    "action": {
+      "view": "occ-supervision",
+      "component": "operations-signalling-workstation",
+      "variant": "traffic",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "cutaway": true,
+      "exploded": 0
+    },
+    "question": "A control request is acknowledged, but the returned field indication is still absent. What is known at this point?",
+    "choices": [
+      "The request was received; the resulting field state has not been confirmed",
+      "The field equipment has completed the requested change",
+      "The associated operational event has been resolved"
+    ],
+    "answer": 0,
+    "feedback": [
+      "Acknowledgement, returned indication and event resolution are different evidence.",
+      "A received request does not establish the field equipment’s completed state.",
+      "An event can remain open after a request or alarm has been acknowledged."
+    ],
+    "sourceConcepts": [
+      "operations-centre",
+      "operations-signalling-workstation",
+      "operations-traffic-supervision"
+    ]
+  },
+  {
+    "id": "depot-journey",
+    "label": "24 · Follow the depot journey",
+    "title": "Follow one maintenance visit",
+    "domain": "depot",
+    "view": "depot-overview",
+    "component": "depot-layout",
+    "explanation": "In this example, a train crosses the network boundary, reaches reception, and is assigned to the work it needs. Inspection may lead to the maintenance hall or wheel and bogie shop; cleaning and stabling are other destinations. The work record then connects maintenance release with the fleet plan for departure.",
+    "actionText": "Start at the whole depot. Open Arrival & yard, inspect a maintenance area, then open Stores & work planning to follow the handover.",
+    "actionLabel": "Explore the connected depot",
+    "action": {
+      "view": "depot-overview",
+      "component": "depot-layout",
+      "variant": "layout",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "cutaway": true,
+      "exploded": 0
+    },
+    "question": "Which distinction matters when a maintained vehicle is prepared for departure?",
+    "choices": [
+      "A free departure road automatically completes maintenance release",
+      "Maintenance release concerns the vehicle and work evidence; a departure movement has separate route and operating arrangements",
+      "Completing the work record automatically establishes every yard movement condition"
+    ],
+    "answer": 1,
+    "feedback": [
+      "Available track space does not establish completion of the required work or release evidence.",
+      "The depot connects the maintenance and operations responsibilities without treating them as one approval.",
+      "A work record and a movement arrangement have different inputs and responsibilities."
+    ],
+    "sourceConcepts": [
+      "depot-layout",
+      "depot-network-boundary",
+      "depot-reception",
+      "depot-work-planning",
+      "depot-maintenance-release",
+      "depot-dispatch"
+    ]
+  },
+  {
+    "id": "depot-energy",
+    "label": "25 · Separate work-zone protections",
+    "title": "25 · Separate work-zone protections",
+    "domain": "depot",
+    "view": "depot-protection",
+    "component": "depot-personnel-protection",
+    "explanation": "Inspect the movement-protection device and the energy-control context. They address different hazards. This is not an isolation procedure.",
+    "actionText": "Compare the arrangements and inspect the highlighted equipment.",
+    "actionLabel": "Show this arrangement",
+    "action": {
+      "view": "depot-protection",
+      "component": "depot-personnel-protection",
+      "variant": "work-zone",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "cutaway": true,
+      "exploded": 0
+    },
+    "question": "The model shows movement inhibition on a protected work road. Which boundary remains separate from that indication?",
+    "choices": [
+      "The verified energy-isolation state relevant to the work",
+      "The location of the train within the depot",
+      "The existence of a recorded movement request"
+    ],
+    "answer": 0,
+    "feedback": [
+      "Movement protection and energy isolation are different concepts; the illustration is not an isolation procedure.",
+      "Location does not establish the relevant energy state.",
+      "A recorded request does not establish the relevant energy state."
+    ],
+    "sourceConcepts": [
+      "depot-personnel-protection",
+      "depot-energy-isolation"
+    ]
+  },
+  {
+    "id": "depot-water",
+    "label": "26 · Follow wash water",
+    "title": "26 · Follow wash water",
+    "domain": "depot",
+    "view": "depot-wash",
+    "component": "depot-water-recovery",
+    "explanation": "Select Water circuit to open the tanks and trace collection, treatment and reuse. The fresh-water supply and residual discharge have separate connections. Then compare Drive-through with Travelling gantry to see which object moves during washing.",
+    "actionText": "Trace the coloured water paths, then compare the two washing arrangements.",
+    "actionLabel": "Show this arrangement",
+    "action": {
+      "view": "depot-wash",
+      "component": "depot-water-recovery",
+      "variant": "recovery",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "cutaway": true,
+      "exploded": 0
+    },
+    "question": "In these two washing examples, how does the travelling-gantry arrangement differ from the fixed drive-through plant?",
+    "choices": [
+      "Both examples require the train and brushes to stay fixed",
+      "The gantry moves with the train at the same speed in both examples",
+      "The train stays stationary while the gantry travels; the drive-through example moves the train past fixed equipment"
+    ],
+    "answer": 2,
+    "feedback": [
+      "The relative movement needed for washing is supplied by different objects in the two examples.",
+      "The examples deliberately show different movement arrangements.",
+      "The change is visible in the equipment and animation, while water supply and treatment retain their supporting roles."
+    ],
+    "sourceConcepts": [
+      "depot-water-recovery",
+      "depot-wash-plant",
+      "depot-wash-gantry",
+      "depot-wash-pump"
+    ]
   }
 ];
-
-TOURS.push(...EXTRA_TOURS);
-
-// Keep the existing lesson links while connecting the expanded facility views.
-Object.assign(TOURS.find(t=>t.id==='depot-journey'),{
-  title:'Follow one maintenance visit',
-  explanation:'In this example, a train crosses the network boundary, reaches reception, and is assigned to the work it needs. Inspection may lead to the maintenance hall or wheel and bogie shop; cleaning and stabling are other destinations. The work record then connects maintenance release with the fleet plan for departure.',
-  actionText:'Start at the whole depot. Open Arrival & yard, inspect a maintenance area, then open Stores & work planning to follow the handover.',
-  actionLabel:'Explore the connected depot',
-  question:'A train has been parked after inspection. What else connects it to a return to service?',
-  choices:['Its location alone','The work and release record, fleet allocation and the separate movement arrangements','The number of empty sidings'],
-  answer:1,
-  feedback:['A berth describes where the train is, not what work remains.','Yes. Vehicle condition and operational movement are different responsibilities.','Spare space does not establish vehicle readiness.'],
-  sourceConcepts:['depot-layout','depot-network-boundary','depot-reception','depot-work-planning','depot-maintenance-release','depot-dispatch'],
-});
-Object.assign(TOURS.find(t=>t.id==='depot-water'),{
-  explanation:'Select Water circuit to open the tanks and trace collection, treatment and reuse. The fresh-water supply and residual discharge have separate connections. Then compare Drive-through with Travelling gantry to see which object moves during washing.',
-  actionText:'Trace the coloured water paths, then compare the two washing arrangements.',
-  question:'How does the travelling-gantry arrangement differ from the drive-through wash?',
-  choices:['The train stays still while the gantry travels','The train and all plant must stay still','The water-treatment system replaces the brushes'],
-  answer:0,
-  feedback:['Yes. The moving gantry replaces the fixed brush-bank arrangement.','One arrangement moves the train; the other moves the wash equipment.','Treatment supports the water circuit; it does not perform the mechanical washing action.'],
-  sourceConcepts:['depot-water-recovery','depot-wash-plant','depot-wash-gantry','depot-wash-pump'],
-});
-

@@ -14,14 +14,17 @@ const begin=source.indexOf('function writeHash(){'),end=source.indexOf('function
 assert(begin>=0&&end>begin,'Navigation implementation markers changed');
 const restoreBegin=source.indexOf('function restoreNavigation()'),restoreEnd=source.indexOf("window.addEventListener('hashchange'",restoreBegin);
 assert(restoreBegin>=0&&restoreEnd>restoreBegin,'History restoration markers changed');
+const returnBegin=source.indexOf("else if(b.id==='return-context')"),returnEnd=source.indexOf('\n  else if(b.dataset.destination)',returnBegin);
+assert(returnBegin>=0&&returnEnd>returnBegin,'Context restoration handler markers changed');
 const dependencies={DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent};
 const harness=new Function(...Object.keys(dependencies),`
   const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
   const savedTechnology={};
-  let state={},historyMode='replace',returnContext=null,lastReadUrl='',configurationEffect='',allComponents=false;
+  let state={},historyMode='replace',returnContext=null,lastReadUrl='',configurationEffect='',allComponents=false,lastExplorationContext='';
   let location=new URL('https://example.test/railway-anatomy/');
   const history={state:null,pushState(value,title,url){this.state=value;location=new URL(url,location);},replaceState(value,title,url){this.state=value;location=new URL(url,location);}};
   const localStorage={setItem(){}};
+  function announce(){}
   function applyLesson(){throw new Error('This bounded harness exercises explorer URLs only');}
   function render(){writeHash();}
   ${source.slice(begin,end)}
@@ -29,11 +32,15 @@ const harness=new Function(...Object.keys(dependencies),`
   return {
     roundTrip(value){state=structuredClone(value);writeHash();const url=location.href;state={};readHash();return {url,state:structuredClone(state)};},
     parse(url){location=new URL(url);state={};readHash();return structuredClone(state);},
-    restore(url,saved,current){location=new URL(url);history.state={railway:structuredClone(saved),returnContext:null};state=structuredClone(current);lastReadUrl='';restoreNavigation();return structuredClone(state);}
+    restore(url,saved,current){location=new URL(url);history.state={railway:structuredClone(saved),returnContext:null};state=structuredClone(current);lastReadUrl='';restoreNavigation();return structuredClone(state);},
+    returnTo(saved,current){returnContext=structuredClone(saved);state=structuredClone(current);lastExplorationContext='departing-view';const b={id:'return-context'};
+      ${source.slice(returnBegin+5,returnEnd)}
+      return {state:structuredClone(state),context:lastExplorationContext};
+    }
   };
 `)(...Object.values(dependencies));
 
-const base={page:'explore',domain:'vehicle',view:'vehicle',component:'carbody',variant:'default',technology:{propulsion:'lim',control:'loop'},mode:'coasting',scenario:'nominal',sink:'train',cutaway:false,exploded:0,playing:false,labels:true,lesson:0};
+const base={page:'explore',domain:'vehicle',view:'vehicle',component:'carbody',variant:'default',technology:{propulsion:'lim',control:'loop'},mode:'coasting',scenario:'nominal',sink:'train',cutaway:false,exploded:0,explodeScope:'all',playing:false,labels:true,labelMode:'nearby',lesson:0};
 let routes=0;
 for(const [view,config]of Object.entries(VIEWS)){
   const domain=domainForView(view,DOMAINS)?.id;assert(domain,`No area owns ${view}`);
@@ -61,14 +68,23 @@ for(const component of ['train-radio','wayside-radio']){
 const invalid=harness.parse('https://example.test/railway-anatomy/?propulsion=invalid&control=invalid&mode=invalid#explore/invalid/invalid/invalid');
 assert.equal(invalid.view,'railway');assert.equal(invalid.component,'network-overview');
 assert.deepEqual(invalid.technology,{propulsion:'lim',control:'loop'});
-const previous={...base,page:'reference',domain:'control',view:'etcs',component:'etcs-level-2',variant:'level-2',technology:{propulsion:'rotary',control:'etcs2'},cutaway:true,exploded:.35,labels:false};
+const previous={...base,page:'reference',domain:'control',view:'etcs',component:'etcs-level-2',variant:'level-2',technology:{propulsion:'rotary',control:'etcs2'},cutaway:true,exploded:.35,explodeScope:'selected',labels:false,labelMode:'off'};
 const later={...base,view:'lim',component:'lim-primary'};
 const restored=harness.restore('https://example.test/railway-anatomy/?propulsion=rotary&control=etcs2#reference',previous,later);
-for(const key of ['page','domain','view','component','variant','cutaway','exploded','labels'])assert.equal(restored[key],previous[key],`Back to the field guide lost its explorer ${key}`);
+for(const key of ['page','domain','view','component','variant','cutaway','exploded','explodeScope','labels','labelMode'])assert.equal(restored[key],previous[key],`Back to the field guide lost its explorer ${key}`);
 assert.deepEqual(restored.technology,previous.technology,'Back to the field guide let a later component overwrite its technology');
+for(const explodeScope of ['all','selected'])for(const labelMode of ['nearby','selected','off']){
+  const saved={...base,domain:'station',view:'station-networks',component:'bas-controller',variant:'building',
+    cutaway:false,exploded:.6,explodeScope,labels:labelMode!=='off',labelMode};
+  const historyRestored=harness.restore('https://example.test/railway-anatomy/?propulsion=lim&control=loop#explore/station/station-networks/bas-controller/building',saved,later);
+  for(const key of ['cutaway','exploded','explodeScope','labels','labelMode'])assert.equal(historyRestored[key],saved[key],`History restoration lost ${key} for ${explodeScope}/${labelMode}`);
+  const contextRestored=harness.returnTo(saved,later);
+  assert.equal(contextRestored.context,'','Context return retained the departing view and would reset saved separation');
+  for(const key of ['cutaway','exploded','explodeScope','labels','labelMode'])assert.equal(contextRestored.state[key],saved[key],`Context return lost ${key} for ${explodeScope}/${labelMode}`);
+}
 for(const view of Object.keys(VIEWS)){
   const trail=viewTrail(view,VIEWS);
   assert.equal(trail.at(-1),view,`${view} disappeared from its own trail`);
   assert.equal(new Set(trail).size,trail.length,`${view} contains a navigation cycle`);
 }
-console.log(`PASS production route round trips: ${routes} view/variant/mode routes, 40 independent vehicle configurations, ETCS radio bookmarks, malformed-route fallback and parent trails`);
+console.log(`PASS production route round trips: ${routes} view/variant/mode routes, 40 independent vehicle configurations, ETCS radio bookmarks, 6 history/context presentation combinations, malformed-route fallback and parent trails`);
