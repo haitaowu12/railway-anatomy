@@ -6,6 +6,7 @@ import { SIGNALLING_VIEWS, buildSignallingView } from './signalling-models.js';
 import { STATION_VIEWS, buildStationView } from './station-models.js';
 import { OPERATIONS_VIEWS, buildOperationsView } from './operations-models.js';
 import { PLATFORM_VIEWS, buildPlatformView } from './platform-models.js';
+import { NETWORK_VIEWS, buildNetworkView } from './network-model.js';
 
 /*
  * Original procedural explanatory models. Geometry is a teaching composition,
@@ -23,7 +24,7 @@ const C = {
   brake: 0xe49268, accent: 0xd4ede1, signal: 0xb3a6f6, service: 0x7fcea5, warning: 0xff936c,
 };
 const VIEW = {
-  ...TRACK_VIEWS, ...SIGNALLING_VIEWS, ...STATION_VIEWS, ...OPERATIONS_VIEWS, ...PLATFORM_VIEWS,
+  ...TRACK_VIEWS, ...SIGNALLING_VIEWS, ...STATION_VIEWS, ...OPERATIONS_VIEWS, ...PLATFORM_VIEWS, ...NETWORK_VIEWS,
   system: { camera: [25, 26, 32], target: [0, .9, 1], distance: 55 },
   substation: { camera: [12.5, 12, 16], target: [0, 1, 0], distance: 31 },
   guideway: { camera: [7, 5.7, 7.6], target: [0, .3, .15], distance: 19 },
@@ -212,10 +213,10 @@ export function createViewer(container, callbacks = {}) {
   // still compare LIM and rotary propulsion. No real installation is prescribed.
   function controlTechnology(s, context) {
     const view = context || s.view;
-    if (view === 'seltrac') return s.variant === 'loop' ? 'loop' : 'radio';
+    if (view === 'seltrac') return ['radio','g9'].includes(s.variant) ? 'radio' : 'loop';
     if (view === 'cbtc-network') return 'radio';
     if (view === 'signalling' || view === 'interlocking' || view === 'train-detection') return 'fixed';
-    if (view === 'etcs') return s.variant === 'level-1' ? 'etcs1' : 'etcs2';
+    if (view === 'etcs') return s.variant === 'level-2' ? 'etcs2' : 'etcs1';
     return s.technology?.control || 'loop';
   }
   function makeLoopEquipment(parent, length, context) {
@@ -238,6 +239,81 @@ export function createViewer(container, callbacks = {}) {
     registerAnimator(s=>{g.visible=controlTechnology(s,context)==='loop';});
     g.visible = !['cbtc-network','etcs','signalling','interlocking','train-detection'].includes(context);
     return g;
+  }
+
+  // Each control alternative has replacement equipment, not just hidden loop
+  // wires. These small arrangements are schematic context for the selected
+  // vehicle; the dedicated architecture views explain their responsibilities.
+  function makeSelectedControlEquipment(parent, length, context) {
+    if (!['system','guideway','bogie','vehicle','control','communications'].includes(context)) return;
+    const arrangements = {};
+    const x = -length / 2 + .7, z = -2.05;
+    const hasSeparateWayside = ['control','communications'].includes(context);
+    function equipmentBox(host, component, at, height = 1.25) {
+      const p = part(host, component, at);
+      box(p, [.72,.1,.65], M.edge, [0,.05,0]);
+      box(p, [.58,height,.46], M.core, [0,height/2+.1,0]);
+      for (let y=.3;y<height;y+=.28) box(p,[.44,.13,.035],M.signal,[0,y,.25]);
+      const door=group(p, 'control-equipment-cover');
+      box(door,[.59,height-.07,.035],M.white,[0,height/2+.1,.3]);
+      box(door,[.3,.12,.02],M.dark,[0,height*.75,.33]);
+      shell(door);explode(door,[0,.1,.5]);
+      return p;
+    }
+    function radioMast(host) {
+      const p=part(host,'wayside-radio',[x,0,z]);
+      box(p,[.64,.12,.64],M.edge,[0,.06,0]);
+      cylinder(p,.05,2.7,M.steel,[0,1.47,0],null,10);
+      for(const side of [-1,1])box(p,[.17,.63,.14],M.white,[side*.2,2.55,.04]);
+      box(p,[.36,.4,.28],M.core,[0,.7,.1]);
+      return p;
+    }
+    function signalPost(host, sx) {
+      const p=part(host,'lineside-signal',[sx,0,z]);
+      box(p,[.56,.1,.55],M.edge,[0,.05,0]);
+      cylinder(p,.045,1.8,M.steel,[0,1,0],null,10);
+      roundedPanel(p,.38,1.0,.19,M.dark,[0,2.17,0],.06);
+      // Unlit aspects identify the equipment without issuing a route indication.
+      for(const y of [1.88,2.17,2.46])cylinder(p,.105,.025,M.glass,[0,y,.11],[Math.PI/2,0,0],12);
+      return p;
+    }
+    function transponders(host) {
+      const tags=part(host,'balise');
+      // Offset for legibility beside the reaction rail in the LIM example.
+      for(const sx of [-.5,.5]) {
+        roundedPanel(tags,.54,.085,.27,M.yellow,[sx,.29,-.43],.035);
+        box(tags,[.38,.018,.17],M.dark,[sx,.345,-.43]);
+      }
+      return tags;
+    }
+    function informationPath(host, points) {
+      const p=group(host,'selected-control-information-path');
+      const line=tube(p,points,.013,M.signal,{segments:8});
+      registerAnimator(s=>{p.visible=s.signals!==false&&(s.exploded||0)<.5;});
+      return line;
+    }
+    const radio=arrangements.radio=group(parent,'selected-radio-control-equipment');
+    if(!hasSeparateWayside){radioMast(radio);equipmentBox(radio,'zone-controller',[x+1.05,0,z],1.3);}
+    transponders(radio);
+    const fixed=arrangements.fixed=group(parent,'selected-fixed-block-equipment');
+    signalPost(fixed,x+.15);
+    const section=part(fixed,'fixed-block');
+    for(const sx of [-length*.27,length*.27])box(section,[.055,.04,1.65],M.signal,[sx,.24,0]);
+    const circuit=equipmentBox(fixed,'track-circuit',[x+1.05,0,z],.75);
+    for(const rz of [-.72,.72])tube(circuit,[[0,.35,0],[.2,.12,.6],[-x-1.05,.12,rz-z]],.015,M.dark,{segments:6});
+    const level1=arrangements.etcs1=group(parent,'selected-etcs-level-1-equipment');
+    signalPost(level1,x+.15);transponders(level1);
+    equipmentBox(level1,'leu',[x+1.05,0,z],1.0);
+    informationPath(level1,[[x+1.05,.55,z+.25],[x+1.1,.35,-1.4],[.5,.35,-.43]]);
+    const level2=arrangements.etcs2=group(parent,'selected-etcs-level-2-equipment');
+    if(!hasSeparateWayside)radioMast(level2);
+    transponders(level2);equipmentBox(level2,'rbc',[x+1.1,0,z],1.75);
+    informationPath(level2,[[x+1.1,1.1,z+.25],[x+.4,1.25,z+.5],[x,1.45,z+.1]]);
+    registerAnimator(s=>{
+      const selected=controlTechnology(s,context);
+      for(const [name,node]of Object.entries(arrangements))node.visible=name===selected;
+    });
+    for(const node of Object.values(arrangements))node.visible=false;
   }
 
   // Rails: conductor rails are paired vertically on ONE side of the guideway.
@@ -290,6 +366,7 @@ export function createViewer(container, callbacks = {}) {
       }
     }
     if (!['seltrac','cbtc-network','etcs','signalling','interlocking','train-detection'].includes(trackContext)) makeLoopEquipment(g,length,trackContext);
+    makeSelectedControlEquipment(g,length,trackContext);
     return g;
   }
 
@@ -387,6 +464,13 @@ export function createViewer(container, callbacks = {}) {
     registerAnimator(s=>{pickup.visible=pickupContext!=='seltrac'&&controlTechnology(s,pickupContext)==='loop';});
     pickup.visible=!['seltrac','cbtc-network','etcs','signalling','interlocking','train-detection'].includes(pickupContext);
 
+    const baliseReader=part(frame,'etcs-onboard',[.48,.66,-.42]);
+    roundedPanel(baliseReader,.58,.10,.34,M.white);
+    box(baliseReader,[.44,.03,.24],M.dark,[0,-.065,0]);
+    tube(baliseReader,[[.22,.035,0],[.32,.19,0],[.32,.33,.2]],.018,M.dark,{segments:5});
+    registerAnimator(s=>{baliseReader.visible=['etcs1','etcs2'].includes(controlTechnology(s,pickupContext));});
+    baliseReader.visible=false;
+
     makeCollector(frame, [.5, 0, 0]);
     if (detailed) makeWheelSensor(frame);
     return frame;
@@ -478,6 +562,10 @@ export function createViewer(container, callbacks = {}) {
       box(module,[.58,.14,.03],M.dark,[0,0,.3]);
       for(let i=0;i<4;i++)box(module,[.07,.04,.025],M.steel,[-.2+i*.13,0,.325]);
       indicator(module,[.34,.015,.32],id);
+      registerAnimator(s=>{
+        const selected=controlTechnology(s,communicationsContext);
+        module.visible=id==='tcms'||(id==='atp'&&selected!=='fixed')||(id==='ato'&&['loop','radio'].includes(selected));
+      });
     }
     const rackDoor=group(control,'control-rack-door');
     box(rackDoor,[.9,1.48,.04],M.white,[0,.78,.39]);shell(rackDoor);explode(rackDoor,[0,0,.65]);
@@ -550,6 +638,8 @@ export function createViewer(container, callbacks = {}) {
       for(const y of [.4,.8,1.2])box(zc,[.7,.23,.07],M.signal,[0,y,.4]);
       const door=group(zc,'wayside-control-door');box(door,[.85,1.5,.035],M.white,[0,.8,.46]);shell(door);
       indicator(zc,[.3,1.4,.44],'atp');
+      const waysideContext=building.root.name.slice(5);
+      registerAnimator(s=>{zc.visible=['loop','radio'].includes(controlTechnology(s,waysideContext));});
     }
     if(radio) {
       const wireless=part(g,'wayside-radio',[.65,.1,0]);
@@ -922,7 +1012,6 @@ export function createViewer(container, callbacks = {}) {
         makeSupervision(root);
         signal(root,[[4.7,1.5,4.2],[2,2.2,4.8],[-2,2.2,4.8],[-6.15,1.5,4.6]],'wayside-link');
       }
-      makeBalise(root,[.2,.24,-.43]);
       signal(root,[[-4.85,3.75,4.2],[-3,5.2,3],[-1,5,1],[-.7,4.18,.45]],'radio');
       signal(root,[[-6.15,1.2,4.6],[-5.5,1.3,4.9],[-4.85,.95,4.45]],'wayside-link');
       signal(root,[[.2,.32,-.43],[.2,.8,-.43],[.6,1.65,-.43],[3,1.9,-.4],[6.6,2.45,-.15]],'balise-link');
@@ -938,6 +1027,7 @@ export function createViewer(container, callbacks = {}) {
     else if(Object.hasOwn(STATION_VIEWS,id))buildStationView(id,modelApi);
     else if(Object.hasOwn(OPERATIONS_VIEWS,id))buildOperationsView(id,modelApi);
     else if(Object.hasOwn(PLATFORM_VIEWS,id))buildPlatformView(id,modelApi);
+    else if(Object.hasOwn(NETWORK_VIEWS,id))buildNetworkView(id,modelApi);
     return models.has(id);
   }
   function nodeVisible(node) { for(let p=node;p;p=p.parent)if(!p.visible)return false;return true; }
@@ -988,7 +1078,7 @@ export function createViewer(container, callbacks = {}) {
     for(const connection of r.signals){
       const controlType=controlTechnology(state);
       const controlRadioPath=['radio','antenna-link','control-link','wayside-link'].includes(connection.kind);
-      const technologyPath=connection.kind==='loop-link'?controlType==='loop':controlRadioPath?['radio','etcs2'].includes(controlType):true;
+      const technologyPath=connection.kind==='loop-link'?controlType==='loop':connection.kind==='balise-link'?['radio','etcs1','etcs2'].includes(controlType):controlRadioPath?['radio','etcs2'].includes(controlType):true;
       const visible=technologyPath&&state.signals&&state.exploded<.5&&((viewSignalKinds[state.view]||[]).includes(connection.kind)||(state.view==='vehicle'&&focusedDigital));
       const failed=['radio','loop-link'].includes(connection.kind)&&state.scenario==='radio-loss';
       // These paths specifically forward external control updates. Hold their
@@ -1048,7 +1138,7 @@ export function createViewer(container, callbacks = {}) {
     if (!ensureModel(id)) return;
     state.view = id;
     for (const [key, value] of models) value.root.visible = key === id;
-    resetCamera(); updateAssembly(); animateModel(); requestRender();
+    updateAssembly(); animateModel(); resetCamera(); requestRender();
   }
   function resetCamera() {
     const config = VIEW[state.view];
@@ -1156,6 +1246,10 @@ export function createViewer(container, callbacks = {}) {
       animateModel();updateSelection();if(changed){fitToView();controls.update();}requestRender();
     },
     getTechnology(){return {...state.technology};},
+    getViewCapabilities() {
+      const record=models.get(state.view);
+      return {cutaway:Boolean(record?.shells.length),explode:Boolean(record?.exploded.length)};
+    },
     setSelected(id) { state.selected = id || null; updateSelection(); animateModel(); requestRender(); },
     setMode(mode) { if (!['motoring', 'regeneration', 'coasting', 'isolated'].includes(mode)) return; state.mode = mode; animateModel(); requestRender(); },
     setExploded(value) { state.exploded = THREE.MathUtils.clamp(Number(value) || 0, 0, 1); updateAssembly(); animateModel(); requestRender(); },
@@ -1194,3 +1288,4 @@ export function createViewer(container, callbacks = {}) {
     getComponentIds(view = state.view) { ensureModel(view);return [...(models.get(view)?.parts.keys() || [])]; },
   };
 }
+

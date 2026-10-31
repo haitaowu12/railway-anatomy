@@ -1,3 +1,5 @@
+import {applyDepotCatalog} from './depot-data.js';
+import {NETWORK_SOURCES,NETWORK_CONCEPTS} from './network-data.js';
 import {EXTRA_SOURCES, EXTRA_CONCEPTS} from './expansion-data.js';
 // Public-source educational content. Geometry and selected arrangements are illustrative.
 export const SOURCES = [
@@ -3012,3 +3014,9 @@ export const ARCHITECTURES = [
 
 SOURCES.push(...EXTRA_SOURCES);
 CONCEPTS.push(...EXTRA_CONCEPTS);
+
+
+SOURCES.push(...NETWORK_SOURCES);
+CONCEPTS.push(...NETWORK_CONCEPTS);
+
+applyDepotCatalog(SOURCES,CONCEPTS);

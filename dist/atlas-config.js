@@ -1,3 +1,5 @@
+import {applyDepotConfig} from './depot-data.js';
+import {NETWORK_VIEWS,NETWORK_CONCEPTS,NETWORK_PRIMARY,NETWORK_DOMAIN} from './network-data.js';
 import {EXTRA_VIEWS,EXTRA_PRIMARY,EXTRA_DOMAINS,EXTRA_CONCEPTS} from './expansion-data.js';
 export const SYSTEMS = [
   {
@@ -4082,3 +4084,14 @@ NEW_VIEWS.seltrac.variants[0].sources=['S02','S03','X01'];
 
 SYSTEMS.find(x=>x.id==='vehicle').label='Vehicles & propulsion';
 SYSTEMS.find(x=>x.id==='vehicle').description='Drive, brake and support the train';
+
+
+Object.assign(NEW_VIEWS,NETWORK_VIEWS);
+SYSTEMS.unshift(NETWORK_DOMAIN);
+for(const [id,[view,variant]] of Object.entries(NETWORK_PRIMARY)) {
+ PART_VIEWS[id]=view;PART_VARIANTS[id]=variant;PART_CONTEXTS[id]=[view];
+ PART_VIEW_VARIANTS[id]={[view]:NETWORK_VIEWS[view].variants.map(x=>x.id)};
+}
+for(const item of NETWORK_CONCEPTS)PART_RELATIONS[item.id]=item.related||[];
+
+applyDepotConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS});

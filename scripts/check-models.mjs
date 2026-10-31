@@ -6,6 +6,7 @@
  * Optional: --navigation-report=/absolute/path/navigation-audit.json
  */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -13,9 +14,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(repo, 'dist');
 const load = file => import(pathToFileURL(path.join(dist, file)).href);
-const [THREE, track, signalling, station, operations, platform, catalog, model, { TOURS }] = await Promise.all([
+const [THREE, track, signalling, station, operations, platform, network, networkData, catalog, model, { TOURS }] = await Promise.all([
   load('vendor/three.module.js'), load('track-models.js'), load('signalling-models.js'),
-  load('station-models.js'), load('operations-models.js'), load('platform-models.js'), load('catalog.js'), load('model.js'), load('tours.js'),
+  load('station-models.js'), load('operations-models.js'), load('platform-models.js'),
+  load('network-model.js'), load('network-data.js'), load('catalog.js'), load('model.js'), load('tours.js'),
 ]);
 const source = await readFile(path.join(dist, 'viewer.js'), 'utf8');
 function between(start, end) {
@@ -74,6 +76,7 @@ check('Expanded scenes construct one requested view at a time', () => {
     [station.STATION_VIEWS, station.buildStationView],
     [operations.OPERATIONS_VIEWS, operations.buildOperationsView],
     [platform.PLATFORM_VIEWS, platform.buildPlatformView],
+    [network.NETWORK_VIEWS, network.buildNetworkView],
   ];
   for (const [views, build] of registry) for (const id of Object.keys(views)) {
     assert(model.VIEWS[id], `Renderer exposes an unregistered view ${id}`);
@@ -127,6 +130,51 @@ check('Every concept has a reachable primary model anchor', () => {
 check('Every view opens with a reachable default selection', () => {
   const missing = Object.entries(model.VIEWS).filter(([view, config]) => !available(view, model.defaultVariant(view), config.component));
   assert.equal(missing.length, 0, missing.map(([view, config]) => `${view}/${model.defaultVariant(view)} → ${config.component}`).join('; '));
+});
+check('Railway overlays change visible paths while preserving their physical context', () => {
+  const expectedParts = networkData.NETWORK_CONCEPTS.map(c => c.id).sort();
+  const shapes = new Set();
+  let physicalBaseline;
+  for (const variant of ['movement', 'power', 'information']) {
+    const record = setScene('railway', variant, {cutaway:false, phase:0});
+    assert.deepEqual(visibleParts(record).sort(), expectedParts, `${variant} loses a selectable railway area`);
+    const layers = record.root.children.filter(node => node.userData.networkLayer);
+    assert.deepEqual(layers.filter(visible).map(node => node.userData.networkLayer), [variant], `${variant} mixes relationship overlays`);
+    const hash = createHash('sha256');
+    let renderedPaths = 0;
+    // Inspect actual render geometry and world transforms, not the layer's
+    // name: relabelling an identical path cannot satisfy this regression.
+    layers.filter(visible).forEach(layer => layer.traverse(node => {
+      if (!visible(node) || (!node.isMesh && !node.isLineSegments)) return;
+      const positions = node.geometry.attributes.position;
+      assert(positions?.count, `${variant} contains an empty path`);
+      for (const value of positions.array) assert(Number.isFinite(value), `${variant} contains a non-finite path`);
+      hash.update(Buffer.from(positions.array.buffer, positions.array.byteOffset, positions.array.byteLength));
+      hash.update(JSON.stringify(node.matrixWorld.elements));
+      renderedPaths++;
+    }));
+    assert(renderedPaths > 0, `${variant} has no visible connection geometry`);
+    shapes.add(hash.digest('hex'));
+    const physical = record.picks.filter(visible).map(node => [...node.matrixWorld.elements]);
+    if (physicalBaseline) assert.deepEqual(physical, physicalBaseline, `${variant} unexpectedly changes the stationary railway`);
+    else physicalBaseline = physical;
+  }
+  assert.equal(shapes.size, 3, 'Movement, power and information must have different visible path geometries');
+});
+check('Every railway area drills down to reachable equipment in its destination', () => {
+  const destinations = networkData.NETWORK_DESTINATIONS;
+  const areas = networkData.NETWORK_CONCEPTS.filter(c => c.id !== 'network-overview');
+  assert.deepEqual(Object.keys(destinations).sort(), areas.map(c => c.id).sort(), 'A selectable railway area lacks its drilldown');
+  for (const area of areas) {
+    const destination = destinations[area.id], config = model.VIEWS[destination.view];
+    assert(config, `${area.id} points to an unknown view`);
+    const domain = model.DOMAINS.find(d => d.id === destination.domain);
+    assert(domain?.views.includes(destination.view), `${area.id} points to a view outside its destination area`);
+    const variant = destination.variant || model.defaultVariant(destination.view);
+    assert(variantsFor(destination.view).includes(variant), `${area.id} points to an unknown variant`);
+    const record = setScene(destination.view, variant, {cutaway:model.cutawayFor(destination.view)});
+    assert((record.parts.get(model.targetFor(destination.component)) || []).some(visible), `${area.id} opens equipment absent from its destination`);
+  }
 });
 check('Every lesson action opens its selected component in a real variant', () => {
   const missing = [];
@@ -233,3 +281,4 @@ if (reportArgument) {
 export const GEOMETRY_CHECK_RESULT = { passed, failures };
 console.log(`\n${passed} geometry checks passed; ${failures.length} failed.`);
 if (failures.length) process.exitCode = 1;
+
