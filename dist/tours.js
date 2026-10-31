@@ -737,3 +737,26 @@ export const TOURS = [
 ];
 
 TOURS.push(...EXTRA_TOURS);
+
+// Keep the existing lesson links while connecting the expanded facility views.
+Object.assign(TOURS.find(t=>t.id==='depot-journey'),{
+  title:'Follow one maintenance visit',
+  explanation:'In this example, a train crosses the network boundary, reaches reception, and is assigned to the work it needs. Inspection may lead to the maintenance hall or wheel and bogie shop; cleaning and stabling are other destinations. The work record then connects maintenance release with the fleet plan for departure.',
+  actionText:'Start at the whole depot. Open Arrival & yard, inspect a maintenance area, then open Stores & work planning to follow the handover.',
+  actionLabel:'Explore the connected depot',
+  question:'A train has been parked after inspection. What else connects it to a return to service?',
+  choices:['Its location alone','The work and release record, fleet allocation and the separate movement arrangements','The number of empty sidings'],
+  answer:1,
+  feedback:['A berth describes where the train is, not what work remains.','Yes. Vehicle condition and operational movement are different responsibilities.','Spare space does not establish vehicle readiness.'],
+  sourceConcepts:['depot-layout','depot-network-boundary','depot-reception','depot-work-planning','depot-maintenance-release','depot-dispatch'],
+});
+Object.assign(TOURS.find(t=>t.id==='depot-water'),{
+  explanation:'Select Water circuit to open the tanks and trace collection, treatment and reuse. The fresh-water supply and residual discharge have separate connections. Then compare Drive-through with Travelling gantry to see which object moves during washing.',
+  actionText:'Trace the coloured water paths, then compare the two washing arrangements.',
+  question:'How does the travelling-gantry arrangement differ from the drive-through wash?',
+  choices:['The train stays still while the gantry travels','The train and all plant must stay still','The water-treatment system replaces the brushes'],
+  answer:0,
+  feedback:['Yes. The moving gantry replaces the fixed brush-bank arrangement.','One arrangement moves the train; the other moves the wash equipment.','Treatment supports the water circuit; it does not perform the mechanical washing action.'],
+  sourceConcepts:['depot-water-recovery','depot-wash-plant','depot-wash-gantry','depot-wash-pump'],
+});
+

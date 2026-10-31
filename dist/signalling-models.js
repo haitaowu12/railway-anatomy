@@ -312,10 +312,11 @@ export function buildSignallingView(id, api) {
 
   function conventional() {
     const railway = group(root, 'matched-train-and-track-scale'); railway.scale.setScalar(.6);
-    railbed(railway, 45, { joints: [-5 / .6, 5] });
+    // The control choice does not silently replace the selected propulsion or
+    // DC supply. Block markers overlay that same physical vehicle context.
+    makeTrack(railway,45,{detail:false,section:true});
     const fixed = [[-22.5, -5 / .6], [-5 / .6, 5], [5, 22.5]].map(([a, b]) => blockStrip(railway, a, b, 0));
-    const train = makeTrain(railway, { full: false, at: [7.5, .0325, 0] });
-    train.traverse(node => { if (['collector', 'lim-primary'].includes(node.userData.component)) node.visible = false; });
+    const train = makeTrain(railway, { full: false, at: [7.5, 0, 0] });
     rack(root, 'interlocking', [-3.2, 0, -3.4], ['interlocking', 'train-detection']);
     const signalsAt = [-5.25, 2.75].map(x => signalHead(root, [x, 0, 1.85]));
     const relay = rack(root, 'track-circuit', [-7.2, 0, -3.4], ['track-circuit', 'track-circuit'], [1.1, 1.7, .75]);
@@ -340,9 +341,8 @@ export function buildSignallingView(id, api) {
 
   function etcs() {
     const railway = group(root, 'matched-train-and-track-scale'); railway.scale.setScalar(.72);
-    railbed(railway, 25, { joints: [-4 / .72, 4 / .72] });
-    const vehicle = makeTrain(railway, { full: false, at: [-3.47, .0325, 0] });
-    vehicle.traverse(node => { if (['collector', 'lim-primary'].includes(node.userData.component)) node.visible = false; });
+    makeTrack(railway,25,{detail:false,section:true});
+    const vehicle = makeTrain(railway, { full: false, at: [-3.47, 0, 0] });
     rack(root, 'etcs-onboard', [-4.7, 0, 4.1], ['etcs-onboard', 'atp'], [1.5, 2.45, .95]);
     const cab = part(root, 'etcs-onboard', [-1.5, 0, 4.2]);
     box(cab, [2.1, .15, 1.15], M.edge, [0, .78, 0]);
@@ -601,3 +601,4 @@ export function buildSignallingView(id, api) {
   registerAnimator(s => { for (const fn of animations) fn(s); });
   return root;
 }
+

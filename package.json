@@ -1,11 +1,11 @@
 {
   "name": "railway-anatomy",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "check": "node scripts/check-site.mjs",
     "reading": "node scripts/generate-reading.mjs"
   },
-  "description": "Interactive public-source 3D guide to railway trackwork, vehicles, train control and station systems"
+  "description": "Interactive public-source 3D guide to the connected railway, its systems, vehicles, stations and depots"
 }

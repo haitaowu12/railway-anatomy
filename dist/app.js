@@ -1,4 +1,6 @@
 import {DEFAULT_TECHNOLOGY,PROPULSION_CHOICES,CONTROL_CHOICES,normalizeTechnology,technologyFromUrl,technologyForView,technologyForComponent,controlRoute,technologyScope,technologyNote,technologyFlow} from './technology.js';
+import {NAVIGATION_GROUPS,VIEW_PARENTS,domainForView,viewTrail,routeState,PROPULSION_EFFECTS,CONTROL_EFFECTS} from './navigation.js';
+import {NETWORK_DESTINATIONS} from './network-data.js';
 import {SOURCES,CONCEPTS,ARCHITECTURES} from './catalog.js';
 import {TOURS} from './tours.js';
 import {DOMAINS,VIEWS,RELATED,MODES,EXPERIMENTS,targetFor,domainFor,viewFor,applyExperiment,describeFlow,wheelEstimate,variantFor,variantsFor,defaultVariant,cutawayFor,PART_CONTEXTS} from './model.js';
@@ -9,7 +11,8 @@ const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
 const sources=new Map(SOURCES.map(s=>[s.id,s]));
 let savedTechnology={};try{savedTechnology=JSON.parse(localStorage.getItem('railway-anatomy-technology-v1')||'{}');}catch{}
-let state={technology:technologyFromUrl(location.search,savedTechnology),page:'explore',domain:'station',view:'station',component:'station-pa',mode:'coasting',scenario:'nominal',variant:'all',sink:'train',cutaway:true,exploded:0,playing:false,labels:true,lesson:0};
+let state={technology:technologyFromUrl(location.search,savedTechnology),page:'explore',domain:'network',view:'railway',component:'network-overview',mode:'coasting',scenario:'nominal',variant:'movement',sink:'train',cutaway:true,exploded:0,playing:false,labels:true,lesson:0};
+let historyMode='replace',returnContext=null,lastReadUrl='',allComponents=false,configurationEffect='',lastDetailKey='';
 let viewer=null, rendererStatus='', loadingViewer=false, labelFrame=0,lastLabelTime=0;
 let lessonAnswers={}, lessonAttempts={}, quizSelections={};
 const progressKey='railway-anatomy-learning-v1';
@@ -17,34 +20,47 @@ try{const saved=JSON.parse(localStorage.getItem(progressKey)||'{}');for(const t 
 function saveProgress(){try{localStorage.setItem(progressKey,JSON.stringify({completed:lessonAnswers,choices:quizSelections,attempts:lessonAttempts}));}catch{}}
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const labelElements=new Map();
-const shortLabels={utility:'AC supply','ac-switchgear':'AC switchgear',transformer:'Transformer',rectifier:'Rectifier','dc-switchgear':'DC distribution',breaker:'DC breaker','wayside-resistor':'Braking resistor',grounding:'Bonding / return','facility-transformer':'Facility supply',disconnect:'Isolation boundary','positive-rail':'+ DC conductor','negative-rail':'Return conductor','running-rail':'Running rails','reaction-rail':'Reaction rail',collector:'Collector',carbody:'Carbody',bogie:'Bogie','traction-inverter':'Traction inverter','lim-primary':'LIM primary',apu:'Auxiliary converter','vehicle-battery':'Auxiliary battery',hvac:'HVAC',brakes:'Friction brakes',compressor:'Air supply',doors:'Doors','control-battery':'Control battery','substation-control':'Station control',atp:'ATP protection',ato:'ATO driving',ats:'ATS supervision','train-control':'Control computer',tcms:'TCMS','train-radio':'Control radio','radio-antenna':'Antenna','wayside-radio':'Wayside radio','zone-controller':'Zone controller',balise:'Position reference',tachometer:'Wheel-speed sensor',accelerometer:'Inertial sensor','door-control':'Door controller','passenger-info':'Passenger display','pa-intercom':'PA / intercom',cctv:'CCTV','train-network':'Onboard network'};
+const shortLabels={'network-overview':'Railway','network-route':'Running line','network-station':'Station','network-turnback':'Turnback','network-train':'Train','network-depot':'Depot & yard','network-maintenance':'Maintenance','network-stabling':'Stabling','network-control-centre':'Control centre','network-substation':'Substation','network-telecommunications':'Information links','depot-layout':'Depot','depot-stabling':'Stabling','depot-throat':'Yard throat','depot-controller':'Depot control','depot-inspection-pit':'Inspection pit','depot-roof-access':'Roof access','depot-bogie-drop':'Bogie drop','depot-lifting-jacks':'Lifting jacks','depot-wheel-lathe':'Wheel lathe','depot-maintenance-road':'Maintenance road','depot-network-boundary':'Control boundary','depot-reception':'Reception road','depot-dispatch':'Departure road','depot-yard-points':'Yard points','depot-shunt-signal':'Shunt signal','depot-wash-plant':'Wash plant','depot-water-recovery':'Water treatment','depot-stores':'Stores','depot-facility-power':'Facility power','depot-work-planning':'Work planning','depot-maintenance-release':'Maintenance release','depot-wash-gantry':'Moving gantry','depot-wash-pump':'Wash pump','depot-compressed-air':'Workshop air','depot-material-handling':'Handling route','depot-personnel-protection':'Work protection','depot-energy-isolation':'Energy isolation',utility:'AC supply','ac-switchgear':'AC switchgear',transformer:'Transformer',rectifier:'Rectifier','dc-switchgear':'DC distribution',breaker:'DC breaker','wayside-resistor':'Braking resistor',grounding:'Bonding / return','facility-transformer':'Facility supply',disconnect:'Isolation boundary','positive-rail':'+ DC conductor','negative-rail':'Return conductor','running-rail':'Running rails','reaction-rail':'Reaction rail',collector:'Collector',carbody:'Carbody',bogie:'Bogie','traction-inverter':'Traction inverter','lim-primary':'LIM primary',apu:'Auxiliary converter','vehicle-battery':'Auxiliary battery',hvac:'HVAC',brakes:'Friction brakes',compressor:'Air supply',doors:'Doors','control-battery':'Control battery','substation-control':'Station control',atp:'ATP protection',ato:'ATO driving',ats:'ATS supervision','train-control':'Control computer',tcms:'TCMS','train-radio':'Control radio','radio-antenna':'Antenna','wayside-radio':'Wayside radio','zone-controller':'Zone controller',balise:'Position reference',tachometer:'Wheel-speed sensor',accelerometer:'Inertial sensor','door-control':'Door controller','passenger-info':'Passenger display','pa-intercom':'PA / intercom',cctv:'CCTV','train-network':'Onboard network'};
 
 function sourceChips(ids){return `<div class="source-chips">${[...new Set(ids)].filter(id=>sources.has(id)).map(id=>`<button data-source="${id}" title="${safe(sources.get(id).title)}">${safe(sources.get(id).publisher)} ↗</button>`).join('')}</div>`;}
 function announce(text){$('#announce').textContent=text;}
+function rememberCurrentEntry(){history.replaceState({railway:routeState(state),returnContext},'',location.href);}
 function writeHash(){
   const value=state.page==='reference'?'reference':state.page==='learn'?`learn/${TOURS[state.lesson].id}`:`explore/${state.domain}/${state.view}/${state.component}${state.variant!=='default'?'/'+state.variant:''}`;
-  const url=new URL(location.href);url.searchParams.set('propulsion',state.technology.propulsion);url.searchParams.set('control',state.technology.control);url.hash=value;history.replaceState(null,'',url.pathname+url.search+url.hash);
+  const url=new URL(location.href);url.searchParams.set('propulsion',state.technology.propulsion);url.searchParams.set('control',state.technology.control);url.hash=value;
+  for(const [key,value,initial] of [['mode',state.mode,['power','vehicle'].includes(state.domain)?'motoring':'coasting'],['scenario',state.scenario,'nominal'],['sink',state.sink,'train']]){
+    if(value!==initial)url.searchParams.set(key,value);else url.searchParams.delete(key);
+  }
+  const next=url.pathname+url.search+url.hash,current=location.pathname+location.search+location.hash;
+  if(next!==current||historyMode==='replace')history[historyMode==='push'&&next!==current?'pushState':'replaceState']({railway:routeState(state),returnContext},'',next);
+  historyMode='replace';lastReadUrl=location.href;
   try{localStorage.setItem('railway-anatomy-technology-v1',JSON.stringify(state.technology));}catch{}
 }
 function readHash(){
   const [page,a,b,c,v]=location.hash.slice(1).split('/');
+  state.technology=technologyFromUrl(location.search,savedTechnology);
   if(page==='reference'){state.page='reference';}
   else if(page==='learn'){
-    state.page='learn';const index=TOURS.findIndex(t=>t.id===a);state.lesson=Math.max(0,index); applyLesson(false);
-  }else if(page==='explore'){
+    state.page='learn';state.lesson=Math.max(0,TOURS.findIndex(t=>t.id===a));applyLesson(false);
+  }else{
     state.page='explore';
-    const domain=DOMAINS.find(d=>d.id===a);if(domain){state.domain=a;state.view=domain.view;state.component=domain.component;}
+    const domain=DOMAINS.find(d=>d.id===a)||DOMAINS.find(d=>d.id==='network');
+    Object.assign(state,{domain:domain.id,view:domain.view,component:domain.component});
     if(VIEWS[b])state.view=b;
-    if(parts.has(c)){state.component=c;state.domain=domainFor(c).id;}
-    if(parts.has(c)&&!variantsFor(c,state.view).length)state.view=viewFor(c);
-    const visibleVariants=variantsFor(state.component,state.view);
-    state.variant=visibleVariants.includes(v)?v:variantFor(state.component,state.view);
-    if(!VIEWS[state.view].variants?.some(x=>x.id===state.variant))state.variant=defaultVariant(state.view);
-    state.cutaway=cutawayFor(state.view);
-    state.mode=['power','vehicle'].includes(state.domain)?'motoring':'coasting';
+    state.domain=domainForView(state.view,DOMAINS,domain.id)?.id||domain.id;
+    if(parts.has(c))state.component=c;else state.component=VIEWS[state.view].component;
+    state.variant=VIEWS[state.view].variants?.some(x=>x.id===v)?v:variantFor(state.component,state.view);
+    if(state.variant!=='default'&&!VIEWS[state.view].variants?.some(x=>x.id===state.variant))state.variant=defaultVariant(state.view);
+    state.cutaway=cutawayFor(state.view);state.exploded=0;
+    const q=new URLSearchParams(location.search);
+    state.mode=MODES.some(x=>x.id===q.get('mode'))?q.get('mode'):['power','vehicle'].includes(state.domain)?'motoring':'coasting';
+    state.scenario=['nominal','radio-loss','door-open','wheel-slip','regen-limited'].includes(q.get('scenario'))?q.get('scenario'):'nominal';
+    state.sink=q.get('sink')==='resistor'?'resistor':'train';
   }
   state.technology=technologyForView(technologyForComponent(state.technology,state.component),state.view,state.variant);
+  configurationEffect='';allComponents=false;
 }
+
 function activeDomain(){return DOMAINS.find(d=>d.id===state.domain);}
 function syncViewer(changedView=false){
   if(!viewer)return;
@@ -52,7 +68,7 @@ function syncViewer(changedView=false){
   if(changedView)viewer.setView(state.view);
   viewer.setVariant(state.variant);viewer.setMode(state.mode);viewer.setScenario(state.scenario);viewer.setReceptivity(state.sink);
   viewer.setExploded(state.exploded);viewer.setCutaway(state.cutaway);viewer.setSignals(['track','control','communications','station','operations','depot'].includes(state.domain));
-  viewer.setSelected(targetFor(state.component));
+  viewer.setSelected(['network-overview','depot-layout'].includes(state.component)?null:targetFor(state.component));
   state.playing=viewer.setPlaying(state.playing);syncControls();
 }
 function syncControls(){
@@ -60,36 +76,60 @@ function syncControls(){
   $('#play').textContent=state.playing?'Ⅱ Pause':'▶ Animate';$('#play').setAttribute('aria-pressed',String(state.playing));
   $('#play').disabled=reducedMotion.matches;
   $('#play').title=reducedMotion.matches?'Reduced motion is enabled. Use the phase slider to inspect each state.':'Animate the model';
-  $('#render-badge').textContent=rendererStatus==='svg'?'3D · COMPATIBILITY VIEW':'SCHEMATIC 3D';
+  const capabilities=viewer?.getViewCapabilities();
+  $('#cutaway').closest('label').hidden=state.view==='railway'||capabilities?.cutaway===false;$('#explode').closest('label').hidden=state.view==='railway'||capabilities?.explode===false;
+  $('#render-badge').textContent=rendererStatus==='svg'?'Schematic · SVG':'Schematic · 3D';
 }
 function renderNavigation(){
   $$('.main-nav [data-page]').forEach(b=>{if(b.dataset.page===state.page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
   $('#explorer-page').hidden=state.page==='reference';$('#reference-page').hidden=state.page!=='reference';
-  $('#intro-copy').textContent=state.page==='learn'?'Choose a short tour, inspect the mechanism, then check your understanding.':state.page==='reference'?'A searchable guide to the components and their public references.':'From rail clips to control centres. Explore the mechanisms and the systems around them.';
-  $('#domains').innerHTML=DOMAINS.map(d=>`<button data-domain="${d.id}" class="${d.id===state.domain?'active':''}" aria-pressed="${d.id===state.domain}"><span>${d.number}</span><div><strong>${d.label}</strong><small>${d.description}</small></div></button>`).join('');
-  const viewIds=[...new Set([...activeDomain().views,state.view])];
+  const d=activeDomain(),network=DOMAINS.find(x=>x.id==='network');
+  $('#intro-copy').textContent=state.page==='learn'?'Inspect the model, then check your understanding.':state.domain==='network'?'Select an area to see its equipment and connections.':'Select equipment in the model or browse the components below.';
+  const domainButton=item=>`<button data-domain="${item.id}" class="domain-button ${item.id===state.domain?'active':''}" aria-pressed="${item.id===state.domain}"><span class="domain-number">${item.number}</span><strong>${safe(item.label)}</strong></button>${item.id===state.domain&&item.views.length>1?`<div class="area-views">${item.views.map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}`;
+  $('#domains').innerHTML=`<button class="network-home ${state.domain==='network'?'active':''}" data-domain="network" aria-pressed="${state.domain==='network'}"><span class="network-mark" aria-hidden="true">00</span><strong>Whole railway</strong><small>Network & connections</small></button>`+NAVIGATION_GROUPS.map(g=>`<div class="navigation-group"><h2>${safe(g.label)}</h2>${g.ids.map(id=>DOMAINS.find(x=>x.id===id)).filter(Boolean).map(domainButton).join('')}</div>`).join('');
+  $('#navigator-current').textContent=d.label;
+  const trail=viewTrail(state.view,VIEWS).filter(id=>id!==network.view);
+  $('#location-trail').innerHTML=`<button data-domain="network">Railway</button>`+(state.domain==='network'?'':`<span aria-hidden="true">/</span><button data-domain="${d.id}">${safe(d.label)}</button>`)+trail.filter(id=>id!==d.view).map(id=>`<span aria-hidden="true">/</span><button data-view="${id}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
+  $('#return-context').hidden=!returnContext;
+  if(returnContext)$('#return-context').textContent=`← Return to ${VIEWS[returnContext.view]?.label||'previous view'}`;
+  const viewIds=[...new Set([...d.views,state.view])];
+  $('.scene-toolbar').hidden=viewIds.length<=1;
   $('#view-nav').innerHTML=viewIds.map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" aria-pressed="${id===state.view}">${VIEWS[id].label}</button>`).join('');
-  $('#scene-index').textContent=`${activeDomain().number} / ${activeDomain().label.toUpperCase()} · ${VIEWS[state.view].level||'SYSTEM / ASSEMBLY'}`;
-  $('#scene-title').textContent=state.view==='guideway'&&state.technology.propulsion==='rotary'?'Power, data and wheel guidance':VIEWS[state.view].title;
-  $('#propulsion-choice').value=state.technology.propulsion;$('#control-choice').value=state.technology.control;$('#technology-scope').textContent=technologyScope(state.technology,state.view);
+  $('#scene-index').textContent=`${d.label} / ${VIEWS[state.view].level||'System & equipment'}`;
+  $('#scene-title').textContent=VIEWS[state.view].label;
+  $('#propulsion-choice').value=state.technology.propulsion;$('#control-choice').value=state.technology.control;
+  $('#technology-summary').textContent=`${state.technology.propulsion==='lim'?'LIM':'Rotary drive'} · ${CONTROL_CHOICES.find(x=>x.id===state.technology.control)?.label}`;
+  $('#technology-scope').textContent=technologyScope(state.technology,state.view)+' Changing a technology opens its equipment when it is outside the current view.';
+  $('#configuration-effect').hidden=!configurationEffect;$('#configuration-effect').textContent=configurationEffect;
   $('#model-key').textContent=technologyNote(state,VIEWS[state.view].note)+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');
   $('#tour-bar').hidden=state.page!=='learn';
-  $('#tour-bar').innerHTML=`<label for="tour-select">CHOOSE A TOUR</label><select id="tour-select">${TOURS.map((t,i)=>`<option value="${i}" ${state.lesson===i?'selected':''}>${lessonAnswers[t.id]?'✓ ':''}${safe(t.label)}</option>`).join('')}</select><span>${Object.keys(lessonAnswers).length} of ${TOURS.length} checked</span>`;
+  $('#tour-bar').innerHTML=`<label for="tour-select">Guided tour</label><select id="tour-select">${TOURS.map((t,i)=>`<option value="${i}" ${state.lesson===i?'selected':''}>${lessonAnswers[t.id]?'✓ ':''}${safe(t.label)}</option>`).join('')}</select><span>${Object.keys(lessonAnswers).length} of ${TOURS.length} checked</span>`;
 }
+
 function renderDetail(){
   const c=parts.get(state.component);
+  if(lastDetailKey!==state.component){$('.inspector').scrollTop=0;lastDetailKey=state.component;}
   const related=(RELATED[c.id]||activeDomain().parts.filter(id=>id!==c.id).slice(0,3)).filter(id=>parts.has(id));
-  const contexts=(PART_CONTEXTS[c.id]||[]).filter(id=>VIEWS[id]&&id!==state.view);
+  const contexts=[...new Set([viewFor(c.id),...(PART_CONTEXTS[c.id]||[])])].filter(id=>VIEWS[id]&&id!==state.view);
+  const level=({'network-overview':'Railway','network-route':'Route','network-station':'Place','network-turnback':'Track connection','network-train':'Vehicle','network-depot':'Facility','network-maintenance':'Facility','network-stabling':'Area','network-control-centre':'Facility','network-substation':'Subsystem','network-telecommunications':'System','depot-layout':'Facility'})[c.id]||'Equipment';
+  const destination=NETWORK_DESTINATIONS[c.id];
+  $('#selection-summary').innerHTML=`<strong>${safe(shortLabels[c.id]||c.label)}</strong><button id="read-selection">Read explanation</button>${destination?`<button data-destination="${c.id}">Explore area →</button>`:''}`;
+  const drilldown=destination?`<button class="open-area" data-destination="${c.id}">Explore ${safe(VIEWS[destination.view]?.label||c.label)} →</button>`:'';
   const anchor=targetFor(c.id)!==c.id?`<p class="practice-note">Model anchor: ${safe(parts.get(targetFor(c.id))?.label||targetFor(c.id))}. This concept is shown in its equipment context.</p>`:'';
-  $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / Component</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<p class="part-note">${safe(c.caveat)}</p>`:''}<h3 class="detail-heading">Connect it to</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)} ↗</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links"><button data-focus="${targetFor(c.id)}">Focus in 3D ↗</button><button data-reference="${c.id}">Open in field guide →</button></div>`;
+  $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / ${level}</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${drilldown}${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<details class="part-scope"><summary>Scope of this example</summary><p class="part-note">${safe(c.caveat)}</p></details>`:''}<h3 class="detail-heading">Interfaces & connected equipment</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)} ↗</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links"><button data-focus="${targetFor(c.id)}">Locate in model</button><button data-reference="${c.id}">Read in field guide →</button></div>`;
   $('#component-detail').hidden=state.page==='learn';$('#lesson-detail').hidden=state.page!=='learn';
-  $('#component-eyebrow').textContent=`${activeDomain().label.toUpperCase()} / ${activeDomain().parts.length} CONCEPTS`;
-  $('#component-heading').textContent=`Explore ${activeDomain().short.toLowerCase()}.`;
-  $('#component-grid').innerHTML=activeDomain().parts.map((id,i)=>{const p=parts.get(id);return `<button data-component="${id}" class="${id===c.id?'active':''}" aria-pressed="${id===c.id}"><span class="component-number">${String(i+1).padStart(2,'0')}</span><strong>${safe(p.label)}</strong><small>${safe(p.summary)}</small></button>`;}).join('');
+  const visible=new Set(viewer?.getVisibleComponentIds()||[]);
+  const candidates=allComponents?activeDomain().parts:[...new Set([...activeDomain().parts,...CONCEPTS.map(c=>c.id)])];
+  const current=candidates.filter(id=>allComponents||!viewer||visible.has(targetFor(id)));
+  $('#component-eyebrow').textContent=`${activeDomain().label} / ${current.length} ${allComponents?'components':'in this view'}`;
+  $('#component-heading').textContent=allComponents?'Equipment in this area':'Equipment in this view';
+  $('#component-scope').textContent=allComponents?'Show this view only':'Browse the whole area';$('#component-scope').setAttribute('aria-pressed',String(allComponents));
+  $('#component-grid').innerHTML=current.map((id,i)=>{const p=parts.get(id);return `<button data-component="${id}" class="${id===c.id?'active':''}" aria-pressed="${id===c.id}"><span class="component-number">${String(i+1).padStart(2,'0')}</span><span><strong>${safe(p.label)}</strong><small>${safe(p.summary)}</small></span><span class="row-arrow" aria-hidden="true">↗</span></button>`;}).join('');
 }
 function renderScenario(){
   const flow=technologyFlow(state,describeFlow(state)),variants=VIEWS[state.view].variants,electrical=!variants&&(['power','vehicle'].includes(state.domain)&&state.view!=='services'||state.view==='guideway');
-  $('#scenario-heading').textContent=variants?'Explore this arrangement':electrical?'Follow the energy':state.domain==='control'?'Trace the decisions':state.domain==='communications'?'Follow the messages':'Explore the supporting systems';
+  $('#arrangement-label').textContent=state.domain==='network'?'Trace a connection':variants?'Compare arrangements':'Operating condition';
+  $('#scenario-heading').textContent=variants?'How this arrangement works':electrical?'Follow the energy':state.domain==='control'?'Trace the decisions':state.domain==='communications'?'Follow the messages':'Explore the supporting systems';
   $('#scenario-buttons').innerHTML=variants?variants.map(x=>`<button data-variant="${x.id}" class="${x.id===state.variant?'active':''}" aria-pressed="${x.id===state.variant}">${x.label}</button>`).join(''):(electrical?MODES:EXPERIMENTS[state.view==='services'?'services':state.domain]||MODES).filter(x=>x.id!=='radio-loss'||['loop','radio','etcs2'].includes(state.technology.control)).map(x=>`<button data-experiment="${x.id}" class="${x.id===(electrical?state.mode:state.scenario)?'active':''}" aria-pressed="${x.id===(electrical?state.mode:state.scenario)}">${x.id==='radio-loss'&&state.technology.control==='loop'?'Hold loop update':x.label}</button>`).join('');
   $('#receptivity').hidden=!(electrical&&state.mode==='regeneration');
   $$('[data-sink]').forEach(b=>{b.classList.toggle('active',b.dataset.sink===state.sink);b.setAttribute('aria-pressed',String(b.dataset.sink===state.sink));});
@@ -119,7 +159,7 @@ function renderReference(){
 }
 function render(changedView=false){
   const focused=document.activeElement;
-  const focusKey=focused?.matches('#domains button,#view-nav button,#scenario-buttons button')?['domain','view','variant','experiment','sink'].find(key=>focused.dataset[key]):null;
+  const focusKey=focused?.matches('#domains button,#view-nav button,#scenario-buttons button,#location-trail button')?['domain','view','variant','experiment','sink'].find(key=>focused.dataset[key]):null;
   const focusValue=focusKey?focused.dataset[focusKey]:null;
   syncViewer(changedView);chooseVisibleRepresentative();renderNavigation();renderDetail();renderScenario();renderLesson();if(state.page==='reference')renderReference();syncControls();rebuildLabels();writeHash();
   if(focusKey)document.querySelector(`[data-${focusKey}="${focusValue}"]`)?.focus({preventScroll:true});
@@ -133,12 +173,14 @@ function setPage(page){
 }
 function setDomain(id){
   const d=DOMAINS.find(d=>d.id===id);if(!d)return;
+  returnContext=null;configurationEffect='';allComponents=false;
   state={...state,page:'explore',domain:id,view:d.view,component:d.component,scenario:'nominal',mode:['power','vehicle'].includes(id)?'motoring':'coasting',cutaway:cutawayFor(d.view),variant:defaultVariant(d.view),exploded:0};
   if(id==='control')Object.assign(state,controlRoute(state.technology.control));
   state.technology=technologyForView(state.technology,state.view,state.variant);render(true);announce(d.label);
 }
 function setView(id){
   if(!VIEWS[id])return;
+  state.domain=domainForView(id,DOMAINS,state.domain)?.id||state.domain;allComponents=false;configurationEffect='';
   state.view=id;state.variant=defaultVariant(id);state.scenario='nominal';state.mode=['power','vehicle'].includes(state.domain)?'motoring':'coasting';state.exploded=0;state.cutaway=cutawayFor(id);
   state.technology=technologyForView(state.technology,id,state.variant);viewer?.setTechnology(state.technology);
   const candidates=viewer?.getComponentIds(id)||[];
@@ -151,13 +193,14 @@ function chooseVisibleRepresentative(){
   const candidates=[variant?.component,config.component,...activeDomain().parts,...CONCEPTS.map(c=>c.id)];
   const candidate=candidates.find(id=>parts.has(id)&&visible.includes(targetFor(id)));if(candidate){state.component=candidate;viewer.setSelected(targetFor(candidate));}
 }
-function selectComponent(id,{explore=state.page!=='learn',focus=false}={}){
+function selectComponent(id,{explore=state.page!=='learn',focus=false,primary=false}={}){
   if(!parts.has(id))return;
-  const oldView=state.view,oldDomain=state.domain;
+  const origin=routeState(state),oldView=state.view,oldDomain=state.domain;
   state.technology=technologyForComponent(state.technology,id);viewer?.setTechnology(state.technology);
   const wasVisible=viewer?.getVisibleComponentIds().includes(targetFor(id));
-  if(explore)state.page='explore';state.component=id;state.domain=domainFor(id).id;
-  if(!viewer?.getComponentIds(state.view).includes(targetFor(id)))state.view=viewFor(id);
+  if(explore)state.page='explore';state.component=id;
+  if(primary||!viewer?.getComponentIds(state.view).includes(targetFor(id)))state.view=viewFor(id);
+  if(state.view!==oldView){state.exploded=0;state.domain=domainForView(state.view,DOMAINS,domainFor(id).id)?.id||domainFor(id).id;returnContext=origin;allComponents=false;}
   if(oldView!==state.view||!wasVisible){const desired=variantFor(id,state.view);state.variant=VIEWS[state.view].variants?.some(x=>x.id===desired)?desired:defaultVariant(state.view);}
   state.technology=technologyForView(state.technology,state.view,state.variant);
   if(oldDomain!==state.domain&&state.page!=='learn'){state.scenario='nominal';state.mode=['power','vehicle'].includes(state.domain)?'motoring':'coasting';}
@@ -205,11 +248,12 @@ function rebuildLabels(){
 }
 function updateLabels(){
   if(!viewer||state.page==='reference')return;
-  const width=$('#viewer').clientWidth,height=$('#viewer').clientHeight,limit=width<450?5:width<700?7:10;
+  const width=$('#viewer').clientWidth,height=$('#viewer').clientHeight,limit=width<450?5:width<700?6:8;
   for(const {button,line} of labelElements.values()){button.hidden=true;line.style.display='none';}
   if(!state.labels)return;
   const selected=targetFor(state.component),preferred=new Set(activeDomain().parts.map(targetFor));
-  const pts=viewer.getComponentScreenPositions().filter(p=>labelElements.has(p.id)).sort((a,b)=>(a.id===selected?-1000:preferred.has(a.id)?-100:0)-(b.id===selected?-1000:preferred.has(b.id)?-100:0));
+  const priorities=state.view==='railway'?new Set(['network-station','network-depot','network-control-centre','network-substation','network-telecommunications','network-train','network-turnback']):preferred;
+  const pts=viewer.getComponentScreenPositions().filter(p=>labelElements.has(p.id)&&!['network-overview','depot-layout'].includes(p.id)).sort((a,b)=>(a.id===selected?-1000:priorities.has(a.id)?-100:0)-(b.id===selected?-1000:priorities.has(b.id)?-100:0));
   const occupied=[];let count=0;
   for(const p of pts){if(count>=limit)break;
     const nodes=labelElements.get(p.id),bw=Math.min(width-30,Math.max(65,nodes.button.textContent.length*5.5+18)),bh=25,x0=p.x*width,y0=p.y*height;
@@ -230,7 +274,7 @@ async function startViewer(){
   if(loadingViewer||viewer)return;loadingViewer=true;$('#model-error').hidden=true;
   try{
     const {createViewer}=await import('./viewer.js');
-    viewer=createViewer($('#viewer'),{onSelect:id=>selectComponent(id),onReady:info=>{rendererStatus=info.renderer;$('#loading')?.remove();},onError:()=>{$('#model-error').hidden=false;}});
+    viewer=createViewer($('#viewer'),{onSelect:id=>{rememberCurrentEntry();historyMode='push';selectComponent(id);},onReady:info=>{rendererStatus=info.renderer;$('#loading')?.remove();},onError:()=>{$('#model-error').hidden=false;}});
     syncViewer(true);chooseVisibleRepresentative();render();rebuildLabels();syncControls();if(!labelFrame)labelFrame=requestAnimationFrame(labelLoop);
   }catch(error){$('#loading')?.remove();$('#model-error').hidden=false;console.error('The 3D renderer could not start.',error);}
   finally{loadingViewer=false;}
@@ -238,20 +282,28 @@ async function startViewer(){
 
 document.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b)return;
-  if(b.dataset.page)setPage(b.dataset.page);
+  rememberCurrentEntry();
+  historyMode=b.matches('[data-page],[data-domain],[data-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
+  if(b.matches('[data-domain],[data-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');}
+  if(b.id==='navigator-toggle'){const open=$('.railway-navigation').classList.toggle('is-open');b.setAttribute('aria-expanded',String(open));}
+  else if(b.id==='read-selection'){const heading=$('#component-detail h2');heading?.setAttribute('tabindex','-1');heading?.focus();heading?.scrollIntoView({block:'start',behavior:'instant'});}
+  else if(b.id==='component-scope'){allComponents=!allComponents;renderDetail();}
+  else if(b.id==='return-context'){if(returnContext){const destination=returnContext;returnContext=null;state={...state,...destination};configurationEffect='';render(true);announce(`Returned to ${VIEWS[state.view].label}`);}}
+  else if(b.dataset.destination)openDestination(b.dataset.destination);
+  else if(b.dataset.page)setPage(b.dataset.page);
   else if(b.dataset.domain)setDomain(b.dataset.domain);
   else if(b.dataset.view)setView(b.dataset.view);
-  else if(b.dataset.inspectView){const selected=state.component;setView(b.dataset.inspectView);if(viewer?.getComponentIds(state.view).includes(targetFor(selected)))selectComponent(selected,{explore:state.page!=='learn'});}
-  else if(b.dataset.variant){state.variant=b.dataset.variant;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();}
-  else if(b.dataset.component)selectComponent(b.dataset.component);
+  else if(b.dataset.inspectView){const origin=routeState(state),selected=state.component;setView(b.dataset.inspectView);returnContext=origin;if(viewer?.getComponentIds(state.view).includes(targetFor(selected)))selectComponent(selected,{explore:state.page!=='learn'});else render();}
+  else if(b.dataset.variant){configurationEffect='';state.variant=b.dataset.variant;const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();}
+  else if(b.dataset.component)selectComponent(b.dataset.component,{primary:Boolean(b.closest('#search-results'))});
   else if(b.dataset.source)openSources(b.dataset.source);
   else if(b.dataset.camera)viewer?.setCameraPreset(b.dataset.camera);
   else if(b.dataset.focus)viewer?.focusComponent(b.dataset.focus);
-  else if(b.dataset.exploreComponent){selectComponent(b.dataset.exploreComponent,{focus:false});$('#workspace').scrollIntoView({block:'start'});}
+  else if(b.dataset.exploreComponent){selectComponent(b.dataset.exploreComponent,{explore:true,focus:false,primary:true});$('#workspace').scrollIntoView({block:'start'});}
   else if(b.dataset.reference){state.page='reference';$('#reference-search').value='';$('#reference-domain').value='all';render();const entry=$(`#reference-${b.dataset.reference}`);entry.open=true;entry.scrollIntoView({block:'center'});}
   else if(b.dataset.lesson!==undefined){state.lesson=Number(b.dataset.lesson);applyLesson();}
-  else if(b.dataset.experiment){state=applyExperiment(state,b.dataset.experiment);renderScenario();syncViewer();announce(technologyFlow(state,describeFlow(state)).title);}
-  else if(b.dataset.sink){state.sink=b.dataset.sink;state.scenario=b.dataset.sink==='resistor'?'regen-limited':'nominal';renderScenario();syncViewer();}
+  else if(b.dataset.experiment){state=applyExperiment(state,b.dataset.experiment);render();announce(technologyFlow(state,describeFlow(state)).title);}
+  else if(b.dataset.sink){state.sink=b.dataset.sink;state.scenario=b.dataset.sink==='resistor'?'regen-limited':'nominal';render();}
   else if(b.id==='inspect-propulsion')openTechnologyModel('propulsion');
   else if(b.id==='inspect-control')openTechnologyModel('control');
   else if(b.id==='lesson-action')applyLesson();
@@ -263,24 +315,36 @@ document.addEventListener('click',event=>{
   }else if(b.id==='previous-lesson'){state.lesson=Math.max(0,state.lesson-1);applyLesson();}
   else if(b.id==='next-lesson'){if(state.lesson<TOURS.length-1){state.lesson++;applyLesson();}else setPage('explore');}
   else if(b.id==='play'){state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();}
-  else if(b.id==='reset-scene'){state.exploded=0;state.cutaway=cutawayFor(state.view);viewer?.resetCamera();syncViewer();}
+  else if(b.id==='reset-scene'){viewer?.resetCamera();}
   else if(b.id==='about-button')openSources();
   else if(b.id==='close-dialog')$('#about-dialog').close();
   else if(b.id==='reset-progress'){lessonAnswers={};lessonAttempts={};quizSelections={};saveProgress();$('#about-dialog').close();render();announce('Learning progress reset on this device.');}
   else if(b.id==='retry-model')startViewer();
 });
+function openDestination(id){
+  const route=NETWORK_DESTINATIONS[id];if(!route)return;
+  returnContext=routeState(state);allComponents=false;configurationEffect='';
+  state={...state,...route,page:'explore',scenario:'nominal',mode:'coasting',variant:route.variant||defaultVariant(route.view),exploded:0,cutaway:cutawayFor(route.view)};
+  state.technology=technologyForView(state.technology,state.view,state.variant);render(true);announce(VIEWS[state.view].label);
+}
 function openTechnologyModel(kind){
   const route=kind==='control'?controlRoute(state.technology.control):{view:'bogie',variant:'default',component:state.technology.propulsion==='rotary'?'rotary-traction-motor':'lim-primary'};
+  if(route.view!==state.view)returnContext=routeState(state);
+  allComponents=false;
   state={...state,...route,page:'explore',domain:domainFor(route.component).id,scenario:'nominal',mode:'coasting',exploded:0,cutaway:cutawayFor(route.view)};render(true);
 }
 function changeTechnology(kind,value){
+  rememberCurrentEntry();historyMode='push';
   state.technology=normalizeTechnology({...state.technology,[kind]:value});
-  if(kind==='control'&&['seltrac','cbtc-network','signalling','etcs'].includes(state.view)){openTechnologyModel('control');return;}
+  configurationEffect=(kind==='propulsion'?PROPULSION_EFFECTS:CONTROL_EFFECTS)[value];
+  const relevant=kind==='propulsion'?['system','guideway','vehicle','bogie','control','communications','signalling','etcs','seltrac','cbtc-network']:['system','guideway','vehicle','bogie','control','communications'];
+  if(!relevant.includes(state.view)){openTechnologyModel(kind);announce(configurationEffect);return;}
   state.scenario='nominal';viewer?.setTechnology(state.technology);
   const hidden=viewer&&!viewer.getVisibleComponentIds().includes(targetFor(state.component));
-  if(hidden&&kind==='propulsion'&&state.view==='bogie')state.component=state.technology.propulsion==='rotary'?'rotary-traction-motor':'lim-primary';
-  chooseVisibleRepresentative();render();announce('Example arrangement updated.');
+  if(hidden&&kind==='propulsion')state.component=state.technology.propulsion==='rotary'?'rotary-traction-motor':'lim-primary';
+  chooseVisibleRepresentative();render();announce(configurationEffect);
 }
+
 $('#propulsion-choice').innerHTML=PROPULSION_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
 $('#control-choice').innerHTML=CONTROL_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
 $('#propulsion-choice').addEventListener('change',e=>changeTechnology('propulsion',e.target.value));
@@ -289,17 +353,29 @@ $('#component-search').addEventListener('input',searchComponents);
 $('#component-search').addEventListener('keydown',e=>{if(e.key==='Escape')$('#search-results').hidden=true;if(e.key==='ArrowDown'){$('#search-results button')?.focus();e.preventDefault();}if(e.key==='Enter'){$('#search-results button')?.click();}});
 document.addEventListener('click',e=>{if(!e.target.closest('.inspector-search'))$('#search-results').hidden=true;});
 $('#reference-search').addEventListener('input',renderReference);$('#reference-domain').addEventListener('change',renderReference);
-$('#cutaway').addEventListener('change',e=>{state.cutaway=e.target.checked;syncViewer();});
-$('#explode').addEventListener('input',e=>{state.exploded=Number(e.target.value);syncViewer();$('#model-key').textContent=technologyNote(state,VIEWS[state.view].note)+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');});
-$('#labels').addEventListener('change',e=>{state.labels=e.target.checked;updateLabels();});
+$('#cutaway').addEventListener('change',e=>{state.cutaway=e.target.checked;syncViewer();rememberCurrentEntry();});
+$('#explode').addEventListener('input',e=>{state.exploded=Number(e.target.value);syncViewer();rememberCurrentEntry();$('#model-key').textContent=technologyNote(state,VIEWS[state.view].note)+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');});
+$('#labels').addEventListener('change',e=>{state.labels=e.target.checked;updateLabels();rememberCurrentEntry();});
 $('#phase').addEventListener('input',e=>{state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Number(e.target.value)*5);syncControls();});
 $('#sensor-error').addEventListener('input',updateSensor);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){state.playing=false;syncControls();}});
 reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches){state.playing=false;viewer?.setPlaying(false);}syncControls();});
-window.addEventListener('hashchange',()=>{readHash();render(true);});
+function restoreNavigation(){
+  if(location.href===lastReadUrl)return;
+  historyMode='replace';const stored=history.state;returnContext=stored?.returnContext||null;readHash();
+  const saved=stored?.railway;
+  if(saved&&VIEWS[saved.view]&&parts.has(saved.component)&&DOMAINS.some(d=>d.id===saved.domain)&&saved.page===state.page){
+    const variant=VIEWS[saved.view].variants?.some(x=>x.id===saved.variant)?saved.variant:defaultVariant(saved.view);
+    state={...state,...routeState(saved),variant,technology:technologyFromUrl(location.search,saved.technology),playing:false};
+    state.exploded=Number.isFinite(saved.exploded)?Math.max(0,Math.min(1,saved.exploded)):0;
+  }
+  render(true);
+}
+window.addEventListener('hashchange',restoreNavigation);window.addEventListener('popstate',restoreNavigation);
 window.addEventListener('pagehide',()=>{cancelAnimationFrame(labelFrame);labelFrame=0;state.playing=false;viewer?.setPlaying(false);});
 window.addEventListener('pageshow',event=>{if(event.persisted){syncControls();viewer?.resize();if(!labelFrame)labelFrame=requestAnimationFrame(labelLoop);}});
-document.addEventListener('change',e=>{if(e.target.id==='tour-select'){state.lesson=Number(e.target.value);applyLesson();}});
+document.addEventListener('change',e=>{if(e.target.id==='tour-select'){rememberCurrentEntry();historyMode='push';state.lesson=Number(e.target.value);applyLesson();}});
 $('.main-nav [data-page="learn"] span').textContent=TOURS.length;
 $('#reference-domain').insertAdjacentHTML('beforeend',DOMAINS.map(d=>`<option value="${d.id}">${d.label}</option>`).join(''));
 readHash();render();startViewer();
+
