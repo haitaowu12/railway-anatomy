@@ -9,14 +9,13 @@
 </head>
 <body>
 <a class="skip" href="#workspace">Skip to the explorer</a>
-<header class="site-header"><a class="brand" href="#explore"><img src="./assets/mark.svg" width="34" height="34" alt=""><span><strong>Railway</strong><small>ANATOMY</small></span></a><nav aria-label="Main navigation" class="main-nav"><button data-page="explore" aria-current="page">Explore railway</button><button data-page="learn">Guided tours <span>26</span></button><button data-page="reference">Field guide</button></nav><button id="about-button" class="about-button">Sources & scope</button></header>
+<header class="site-header"><a class="brand" href="#explore"><img src="./assets/mark.svg" width="34" height="34" alt=""><span><strong>Railway</strong><small>ANATOMY</small></span></a><nav aria-label="Main navigation" class="main-nav"><button data-page="explore" aria-current="page">Explore railway</button><button data-page="learn">Guided tours <span>32</span></button><button data-page="reference">Field guide</button></nav><button id="about-button" class="about-button">Sources & scope</button></header>
 <main id="workspace">
 <section id="explorer-page" aria-label="Interactive rail systems explorer">
 <div class="explorer-shell">
 <aside class="railway-navigation" aria-label="Railway hierarchy">
 <button id="navigator-toggle" aria-expanded="false" aria-controls="domains"><span>Browse railway</span><strong id="navigator-current">Whole railway</strong></button>
 <nav id="domains" class="domains" aria-label="Railway areas and systems"></nav>
-<p class="navigation-note">Explore an area, inspect its equipment, then follow the interfaces.</p>
 </aside>
 <div class="explorer-content">
 <div class="location-bar"><nav id="location-trail" aria-label="Location in the railway"></nav><button id="return-context" hidden></button></div>
@@ -24,7 +23,7 @@
 <div id="tour-bar" class="tour-bar" hidden></div>
 <div class="workspace-grid">
 <div class="model-column">
-<div class="scene-toolbar"><nav id="view-nav" aria-label="Model views"></nav></div>
+<div class="scene-toolbar"><label class="view-picker" for="view-choice"><span>Model view</span><select id="view-choice"></select></label></div>
 <section class="comparison-panel" aria-label="Compare the system in focus">
 <div id="technology-panel" class="technology-context" hidden><div class="technology-choice" id="propulsion-context"><label for="propulsion-choice">Drive arrangement</label><select id="propulsion-choice" aria-label="Propulsion technology"></select><button id="inspect-propulsion">Inspect the drive ↗</button></div><div class="technology-choice" id="control-context"><label for="control-choice">Control architecture</label><select id="control-choice" aria-label="Train-control technology"></select><button id="inspect-control">Inspect the architecture ↗</button></div></div>
 <div id="configuration-effect" class="configuration-effect" role="status" hidden></div>
@@ -38,7 +37,7 @@
 <div class="animation"><button id="play" aria-pressed="false">▶ Animate</button><label for="phase">Illustration phase</label><input type="range" id="phase" min="0" max="1" step="0.01" value="0" aria-label="Animation phase"><output id="phase-value" for="phase">0%</output></div>
 <section id="motion-guide" class="motion-guide" hidden><h3 id="motion-title"></h3><div id="motion-steps" aria-label="Stages in the illustration"></div><p id="motion-caption"></p></section>
 <details class="model-notes"><summary>What this model represents</summary><p id="model-key" class="model-key"></p></details>
-<section class="scenario-panel" aria-label="Explore system behavior"><div class="scenario-title"><h3 id="scenario-heading">Follow the energy</h3><span>Selected arrangement</span></div><div id="receptivity" class="receptivity" hidden><span>Braking energy destination</span><button data-sink="train">Another train</button><button data-sink="resistor">Wayside resistor</button></div><div id="flow-path" class="flow-path"></div><div class="scenario-copy"><strong id="scenario-title"></strong><p id="scenario-description"></p><div id="scenario-sources"></div></div></section>
+<section class="scenario-panel" aria-label="Explore system behavior"><div class="scenario-title"><h3 id="scenario-heading">Follow the energy</h3></div><div id="receptivity" class="receptivity" hidden><span>Braking energy destination</span><button data-sink="train">Another train</button><button data-sink="resistor">Wayside resistor</button></div><div id="flow-path" class="flow-path"></div><div class="scenario-copy"><strong id="scenario-title"></strong><p id="scenario-description"></p><div id="scenario-sources"></div></div></section>
 <section id="sensor-lab" class="sensor-lab" hidden><div><p class="eyebrow">Position measurement</p><h3>Compare wheel distance with a reference.</h3><p>A synthetic example: the vehicle travels 100 m. Change the wheel-distance error and see why a reference point or other measurement can matter.</p></div><label>Wheel-distance error <input type="range" id="sensor-error" min="-20" max="20" step="1" value="0"><output id="sensor-error-value">0%</output></label><div class="sensor-values"><div><small>EXAMPLE DISTANCE</small><strong>100 m</strong></div><div><small>WHEEL ESTIMATE</small><strong id="wheel-estimate">100 m</strong></div><div><small>KNOWN EXAMPLE REFERENCE</small><strong>100 m</strong></div></div><p class="small-note">Arithmetic illustration, not a positioning algorithm. Real systems estimate uncertainty and combine measurements; a reference update is not a universal guarantee of exact position.</p></section>
 </div>
 <aside class="inspector" aria-label="Component inspector"><div class="inspector-search"><label for="component-search">Find equipment</label><input id="component-search" type="search" autocomplete="off" placeholder="Try radio, brakes, HVAC…" aria-label="Find a component"><div id="search-results" hidden></div></div><div id="component-detail"></div><div id="lesson-detail" hidden></div></aside>

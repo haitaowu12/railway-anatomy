@@ -2,7 +2,7 @@
 
 An interactive public educational guide to the railway as a connected system. Start with the network, enter a place or vehicle, then inspect its systems, equipment and interfaces through original 3D schematics and optional guided learning.
 
-Version **5.0.0** contains **223 concepts, 128 public reading references, 44 model views and 26 revised guided tours across nine domains**. Five OCC views and eleven depot views connect operational responsibilities with equipment, maintenance work and evidence. Two substantive public reading guides develop these relationships beyond individual component descriptions. The complete application is a buildless static website in `dist/`.
+Version **5.1.0** contains **261 concepts, 143 public reading references, 50 model views and 32 guided tours across nine domains**. Six control-centre views and twelve depot views connect operational responsibilities with equipment, maintenance work and evidence. Eight public reading guides connect the component descriptions with system-level questions. Six new studies cover electrification, wheel–rail response, infrastructure maintenance, shared dependencies, passenger accessibility and configuration evidence. The complete application is a buildless static website in `dist/`.
 
 [Open Railway Anatomy](https://haitaowu12.github.io/railway-anatomy/).
 
@@ -20,7 +20,7 @@ Version **5.0.0** contains **223 concepts, 128 public reading references, 44 mod
 | Control centre | Role-based room, requests and indications, events and coordination, systems availability, operator workplace and duty handover |
 | Depot, yard & maintenance | Network interface, reception and stabling, inspection and diagnosis, running-gear and component maintenance, functional checks, washing, protection, facility services and work records |
 
-The **44 views** move from a whole railway or station to a rail clip, point drive, linear motor, fan or damper. Visitors can select equipment, orbit and zoom, use camera presets, open enclosures, separate parts and compare arrangements. Components link to related concepts and other useful model scales. Search and the field guide provide direct access without requiring a learning sequence.
+The **50 views** move from a whole railway or station to a rail clip, point drive, linear motor, fan or damper. Visitors can select equipment, orbit and zoom, use camera presets, open enclosures, separate parts and compare arrangements. Components link to related concepts and other useful model scales. Search and the field guide provide direct access without requiring a learning sequence.
 
 ### Start with the connected railway
 
@@ -34,9 +34,24 @@ Select a place or asset, then use its destination action to enter the relevant m
 
 Navigation separates **Places & fleet** from **Systems across the railway**. Breadcrumbs and named parent destinations expose the current level. Cross-system links describe interfaces instead of forcing every system into one physical containment tree. A return action restores the invoking view; browser history and deep links retain the selected location, component, alternative and technology choices. Search and the field guide provide direct entry to equipment.
 
-The **26 revised guided tours** use the same explorer, with an explanation, an action to try and an optional self-check with answer-specific feedback. Learning completion, choices and attempt counts are stored in the visitor's browser using `localStorage`. They are not uploaded or synchronized: another browser, device or hosting domain has separate progress. The interface includes a local progress reset.
+The **32 guided tours** use the same explorer, with an explanation, an action to try and an optional self-check with answer-specific feedback. Learning completion, choices and attempt counts are stored in the visitor's browser using `localStorage`. They are not uploaded or synchronized: another browser, device or hosting domain has separate progress. The interface includes a local progress reset.
 
-The [reading directory](dist/reading.html) provides publisher links, descriptions, scope notes and two longer guides: **Reading a control centre as a system** and **What happens during a maintenance visit?** The guides connect roles, equipment, information and evidence; source cards explain what each publication can help the reader investigate. This material remains readable without JavaScript and is also available through the field guide.
+The [reading directory](dist/reading.html) provides publisher links, descriptions, scope notes and eight longer guides, including **Reading a control centre as a system**, **What happens during a maintenance visit?**, and one guide for each new study. The guides connect roles, equipment, information and evidence; source cards explain what each publication can help the reader investigate. This material remains readable without JavaScript and is also available through the field guide.
+
+### Six connected system studies
+
+| View | What changes in the comparison |
+|---|---|
+| Electrification chain | DC conductor collection and wayside rectification versus AC overhead collection, onboard transformation and line conversion; matching supply and return circuits |
+| Wheel–rail response | Rolling, spin and slide, brake modulation and delivery of sand at the contact; wheel rotation remains distinct from travel |
+| Infrastructure maintenance | Culvert inspection, cleaning work, completion and follow-up evidence, with a separate bridge observation and fixed work boundary retained |
+| Shared dependencies | Communications, shared power, identity and recording loss; restored connectivity remains distinct from configuration checks and a retained history gap |
+| Accessible journey | Street, fare gate, two lifts, platform and doorway; lift outage, an alternative route, a boarding gap and a bridging plate change the usable path |
+| Configuration & handover | Installed module B, baseline identity, test subject, outstanding issue, disposition and reviewed decision change separately |
+
+These studies extend the existing hierarchy and link back to the relevant equipment and maintenance views. The electrification and wheel–rail studies are self-contained rotary-drive illustrations; their comparisons preserve stored propulsion and control choices elsewhere. Six new guided questions and source-backed guides accompany them. Public references include supplier equipment explanations, Network Rail infrastructure material, NIST and ENISA guidance, ERA and operator accessibility guidance, RNIB research, and public Crossrail and ORR evidence examples. Jurisdiction, edition and source scope remain explicit.
+
+The frontend uses a labelled **Model view** picker on smaller screens, larger comparison and assembly controls, readable explanation text and simpler reading layouts. The full sidebar remains available on desktop.
 
 ### Inspect the selected assembly
 
@@ -81,7 +96,7 @@ Specialist studies name their scope: the standalone LIM view is a mechanism clos
 
 The platform view compares open-trainway intrusion sensing, platform screen doors, train–door interspace sensing and platform-end access. Detection reports, physical barriers, closing-edge obstruction and closed/locked feedback are different concepts. The models do not calculate stopping response or simulate independent detector-health and lock-failure states.
 
-### Control centre: five connected views
+### Control centre: six connected views
 
 The OCC is represented as responsibilities, interfaces and supporting equipment as well as a physical room:
 
@@ -92,12 +107,13 @@ The OCC is represented as responsibilities, interfaces and supporting equipment 
 | Events & coordination | Event queue, video context, access information, field radio and passenger communications; reported, acknowledged and coordinated states |
 | Systems & availability | Desk, application services, network, gateway, recorder and UPS; connected, display-unavailable and selected alternative-service arrangements |
 | Operator workplace | Task displays, input devices, communications controls and room environment; task detail, shared overview and two-way handover records |
+| Shared dependencies | Communications, shared power, identity and recorder loss; restored connections, configuration checks and retained history gaps |
 
 The request animation keeps a received message separate from a returned indication and leaves the field equipment stationary. Acknowledgement adds a record of attention while retaining the reported condition. Display loss leaves the illustrated field equipment present; selecting an alternative application path does not claim automatic failover or a recovery time. Handover retains outstanding items on both records. These distinctions are explained in the component writeups and the longer control-centre guide.
 
-### Depot: eleven views across a maintenance visit
+### Depot: twelve views across maintenance and change
 
-The depot is a connected set of work locations, services and information interfaces. Eleven views make its different functions accessible:
+The depot is a connected set of work locations, services and information interfaces. Twelve views make its different functions accessible:
 
 | View | Equipment and alternatives |
 |---|---|
@@ -112,6 +128,7 @@ The depot is a connected set of work locations, services and information interfa
 | Facility services | Electrical distribution, compressed-air plant, ventilation, drainage, fire and security equipment; service and water-path alternatives |
 | Stores & work planning | Receiving, racks, transfer aisle and workbench; separate planning, completed-work and release information |
 | Work protection | Personnel protection, physical work boundaries, local indications and vehicle-energy isolation interfaces |
+| Configuration & handover | Installed module, baseline and test subject, requirement/interface records, RAMS questions, issue disposition and reviewed decision |
 
 Alternatives change the represented mechanism. In the bogie-drop view, one bogie is removed from the train assembly and shown below its original position; the table lowers and transfers it through an open channel while the body stays supported. Vehicle lifting keeps both bogies at floor level beneath the raised body. The component bench exposes different equipment for brakes, doors, HVAC and traction electronics, and the wash alternatives change which equipment moves. The phase guides explain these relationships without providing machining limits, inspection acceptance criteria or a work procedure. A stored vehicle, a completed maintenance record, movement permission and verified energy isolation remain distinct concepts.
 
@@ -143,11 +160,12 @@ node scripts/check-depot.mjs
 node scripts/check-occ.mjs
 node scripts/check-exploration.mjs
 node scripts/check-comparisons.mjs
+node scripts/check-studies.mjs
 ```
 
-Checks cover the static bundle, content and source references, navigation and tour targets, module syntax, model construction, component availability, finite geometry, independent technology combinations, alternative geometry and route-state handling. The dedicated mechanism suites contain **19 depot checks and 10 OCC checks**. Additional regressions exercise actual selected-assembly geometry, isolation and separation, camera framing, stale exploration state, contextual controls, authored phase steps and measured label clearance. Railway overlays are compared using actual vertex buffers and transforms; labels alone cannot satisfy that check. No package installation is needed for these checks or for running the site.
+Checks cover the static bundle, content and source references, navigation and tour targets, module syntax, model construction, component availability, finite geometry, independent technology combinations, alternative geometry and route-state handling. The dedicated suites contain **19 depot checks, 10 OCC checks and 12 new system-study checks**. Additional regressions exercise actual selected-assembly geometry, isolation and separation, camera framing, stale exploration state, contextual controls, authored phase steps and measured label clearance. Railway overlays are compared using actual vertex buffers and transforms; labels alone cannot satisfy that check. No package installation is needed for these checks or for running the site.
 
-Headless checks do not replace browser inspection or validate real railway safety logic. **The latest browser QA used the SVG compatibility renderer; hardware-WebGL browser rendering remains unverified.** Keep those evidence limits separate when reporting a release.
+Headless checks do not replace browser inspection or validate real railway safety logic. The 5.1.0 browser review used Chrome 156 with hardware-backed WebGL on an Apple M2 Pro Mac, at desktop and 390px widths. It covered the six new studies, guided questions, reading/search, motion controls and the frontend refinement. The native view picker's option selection and history restoration passed; physical keyboard selection remains unverified because the connector also failed to drive a plain native select. See the [release review and matched captures](docs/release-5.1.0.md) for scope and limits. Other hardware, mobile Safari and performance across devices remain outside this verification.
 
 ## Runtime and access
 
@@ -169,7 +187,9 @@ Explanatory text, search, component controls and source links complement the mod
 | `dist/network-model.js` | Stable network composition and separate movement, power and information path geometry |
 | `dist/depot-data.js` | Depot concepts, sources, grouped views, variants, routes and context updates |
 | `dist/occ-data.js` | OCC concepts, sources, five view descriptions, contexts, interface phases and the control-centre reading guide |
-| `dist/reading-guides.js` | Combined substantive public reading guides for the control centre and maintenance visit |
+| `dist/studies-data.js`, `dist/studies-models.js`, `dist/studies-learning.js` | Six connected system studies, their public references, geometry, guides and questions |
+| `dist/reading.css` | Static reading directory presentation |
+| `dist/reading-guides.js` | Combined eight public reading guides for the system studies, control centre and maintenance visit |
 | `dist/tours.js` | Guided-tour explanations, model actions, questions, feedback and supporting concepts |
 | `dist/viewer.js` | Three.js/SVG rendering, shared geometry primitives, base scenes, lazy scene dispatch, selection, cameras and animation |
 | `dist/exploration.js` | Selected-assembly membership, visible bounds, isolation, separation and framing helpers |

@@ -112,6 +112,7 @@ function renderNavigation(){
   $('#explorer-page').hidden=state.page==='reference';$('#reference-page').hidden=state.page!=='reference';
   const d=activeDomain(),network=DOMAINS.find(x=>x.id==='network');
   $('#intro-copy').textContent=state.page==='learn'?'Inspect the model, then check your understanding.':state.domain==='network'?'Select an area to see its equipment and connections.':'Select equipment in the model or browse the components below.';
+  $('#intro-copy').hidden=state.page!=='learn'&&state.domain!=='network';
   const domainButton=item=>`<button data-domain="${item.id}" class="domain-button ${item.id===state.domain?'active':''}" aria-pressed="${item.id===state.domain}"><span class="domain-number">${item.number}</span><strong>${safe(item.label)}</strong></button>${item.id===state.domain&&item.views.length>1?`<div class="area-views">${item.views.map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}`;
   $('#domains').innerHTML=`<button class="network-home ${state.domain==='network'?'active':''}" data-domain="network" aria-pressed="${state.domain==='network'}"><span class="network-mark" aria-hidden="true">00</span><strong>Whole railway</strong><small>Network & connections</small></button>`+NAVIGATION_GROUPS.map(g=>`<div class="navigation-group"><h2>${safe(g.label)}</h2>${g.ids.map(id=>DOMAINS.find(x=>x.id===id)).filter(Boolean).map(domainButton).join('')}</div>`).join('');
   $('#navigator-current').textContent=d.label;
@@ -121,7 +122,8 @@ function renderNavigation(){
   if(returnContext)$('#return-context').textContent=`← Return to ${VIEWS[returnContext.view]?.label||'previous view'}`;
   const viewIds=[...new Set([...d.views,state.view])];
   $('.scene-toolbar').hidden=viewIds.length<=1;
-  $('#view-nav').innerHTML=viewIds.map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" aria-pressed="${id===state.view}">${VIEWS[id].label}</button>`).join('');
+  $('#view-choice').innerHTML=viewIds.map(id=>`<option value="${id}">${safe(VIEWS[id].label)}</option>`).join('');
+  $('#view-choice').value=state.view;
   $('#scene-index').textContent=`${d.label} / ${VIEWS[state.view].level||'System & equipment'}`;
   $('#scene-title').textContent=VIEWS[state.view].label;
   const controls=technologyControlsFor(state.view);
@@ -147,8 +149,8 @@ function renderDetail(){
   const drilldown=destination?`<button class="open-area" data-destination="${c.id}">Explore ${safe(VIEWS[destination.view]?.label||c.label)} →</button>`:'';
   const anchor=targetFor(c.id)!==c.id?`<p class="practice-note">Model anchor: ${safe(parts.get(targetFor(c.id))?.label||targetFor(c.id))}. This concept is shown in its equipment context.</p>`:'';
   $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / ${level}</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${drilldown}${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<details class="part-scope"><summary>Scope of this example</summary><p class="part-note">${safe(c.caveat)}</p></details>`:''}<h3 class="detail-heading">Interfaces & connected equipment</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links"><button data-focus="${targetFor(c.id)}">Locate in model</button><button data-reference="${c.id}">Read in field guide →</button></div>`;
-  const guide=READING_GUIDES.find(g=>g.domain===state.domain);
-  if(guide)$('#component-detail').insertAdjacentHTML('beforeend',`<div class="system-reading"><span>Read the system guide</span><button data-reading-guide="${guide.id}">${safe(guide.title)} →</button></div>`);
+  const guides=READING_GUIDES.filter(g=>g.domain===state.domain&&(!g.view||g.view===state.view));
+  if(guides.length)$('#component-detail').insertAdjacentHTML('beforeend',`<div class="system-reading">${guides.map(g=>`<button data-reading-guide="${g.id}">${safe(g.title)} →</button>`).join('')}</div>`);
   $('#component-detail').hidden=state.page==='learn';$('#lesson-detail').hidden=state.page!=='learn';
   const visible=new Set(viewer?.getVisibleComponentIds()||[]);
   const candidates=allComponents?activeDomain().parts:[...new Set([...activeDomain().parts,...CONCEPTS.map(c=>c.id)])];
@@ -201,7 +203,7 @@ function renderReference(){
   const q=$('#reference-search').value.trim().toLowerCase(),filter=$('#reference-domain').value;
   const guides=READING_GUIDES.filter(g=>(filter==='all'||g.domain===filter)&&[g.title,g.summary,...g.sections.map(s=>s.text)].join(' ').toLowerCase().includes(q));
   $('#reading-guides').hidden=!guides.length;
-  $('#reading-guides').innerHTML=`<h3>Systems in context</h3>${guides.map(g=>`<details id="reading-${g.id}" class="reading-guide"><summary>${safe(g.title)}</summary><div><p class="reading-summary">${safe(g.summary)}</p>${g.sections.map(s=>`<h4>${safe(s.heading)}</h4><p>${safe(s.text)}</p>${s.sources?sourceChips(s.sources):''}`).join('')}${sourceChips(g.sources)}<button class="open-in-model" data-domain="${g.domain}">Explore this area →</button></div></details>`).join('')}`;
+  $('#reading-guides').innerHTML=`<h3>Systems in context</h3>${guides.map(g=>`<details id="reading-${g.id}" class="reading-guide"><summary>${safe(g.title)}</summary><div><p class="reading-summary">${safe(g.summary)}</p>${g.sections.map(s=>`<h4>${safe(s.heading)}</h4><p>${safe(s.text)}</p>${s.sources?sourceChips(s.sources):''}`).join('')}${sourceChips(g.sources)}<button class="open-in-model" ${g.component?`data-explore-component="${g.component}"`:`data-domain="${g.domain}"`}>Explore the model →</button></div></details>`).join('')}`;
   const match=c=>(filter==='all'||domainFor(c.id).id===filter)&&[c.label,c.summary,...c.details,...c.sources.map(id=>sources.get(id).title)].join(' ').toLowerCase().includes(q);
   const found=CONCEPTS.filter(match);$('#reference-count').textContent=`${found.length} concepts`;
   $('#reference-results').innerHTML=DOMAINS.filter(d=>filter==='all'||d.id===filter).map(d=>{
@@ -211,12 +213,10 @@ function renderReference(){
 }
 function render(changedView=false){
   const focused=document.activeElement;
-  const focusKey=focused?.matches('#domains button,#view-nav button,#scenario-buttons button,#location-trail button')?['domain','view','variant','experiment','sink'].find(key=>focused.dataset[key]):null;
+  const focusKey=focused?.matches('#domains button,#scenario-buttons button,#location-trail button')?['domain','view','variant','experiment','sink'].find(key=>focused.dataset[key]):null;
   const focusValue=focusKey?focused.dataset[focusKey]:null;
   syncViewer(changedView);chooseVisibleRepresentative();renderNavigation();renderDetail();renderScenario();renderLesson();if(state.page==='reference')renderReference();syncControls();rebuildLabels();writeHash();
   if(focusKey)document.querySelector(`[data-${focusKey}="${focusValue}"]`)?.focus({preventScroll:true});
-  const nav=$('#view-nav'),active=nav.querySelector('.active');
-  if(active&&nav.scrollWidth>nav.clientWidth){const left=active.offsetLeft-nav.offsetLeft;if(left<nav.scrollLeft||left+active.offsetWidth>nav.scrollLeft+nav.clientWidth)nav.scrollLeft=Math.max(0,left-(nav.clientWidth-active.offsetWidth)/2);}
 }
 function setPage(page){
   state.page=page;
@@ -409,6 +409,7 @@ function changeTechnology(kind,value){
 
 $('#propulsion-choice').innerHTML=PROPULSION_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
 $('#control-choice').innerHTML=CONTROL_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
+$('#view-choice').addEventListener('change',e=>{rememberCurrentEntry();historyMode='push';setView(e.target.value);announce(VIEWS[state.view].label);});
 $('#propulsion-choice').addEventListener('change',e=>changeTechnology('propulsion',e.target.value));
 $('#control-choice').addEventListener('change',e=>changeTechnology('control',e.target.value));
 $('#component-search').addEventListener('input',searchComponents);
