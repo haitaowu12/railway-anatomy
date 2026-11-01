@@ -617,3 +617,10 @@ main{max-width:1800px;padding:0 24px;margin:auto}
 }
 .diagram-quick-play{display:none}
 @media(max-width:740px){.diagram-quick-play{display:inline-flex;align-items:center;background:#245546;color:white;padding:9px 13px;min-height:44px;border-radius:3px;font-size:13px;margin:0 0 12px}}
+
+/* Phone orientation uses the breadcrumb and heading without a duplicate index. */
+@media(max-width:740px){
+ .stage-heading #scene-index{display:none}.explorer-content{padding-top:6px}.explorer-intro{margin:0 0 8px}.workspace-heading{margin-bottom:8px}.inspector-search{margin-top:0}.inspector-search>summary{padding:7px 0;min-height:40px}
+ .location-bar{margin-bottom:2px}.arrangement-bar{gap:4px}.scenario-buttons{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:3px;scrollbar-width:thin}.scenario-buttons button{flex-shrink:0;min-height:44px}
+}
+footer .author-link,footer .related-link{font-size:13px;min-height:44px;display:inline-flex;align-items:center}
