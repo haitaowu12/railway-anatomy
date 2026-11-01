@@ -1,3 +1,4 @@
+import {STUDY_TOURS} from './studies-learning.js';
 // Guided questions test the mechanism or interface introduced by each lesson.
 export const TOURS = [
   {
@@ -963,3 +964,4 @@ export const TOURS = [
     ]
   }
 ];
+TOURS.push(...STUDY_TOURS);

@@ -172,5 +172,10 @@ for (const aspect of [.32, .8, 1.6, 3]) for (const direction of [new THREE.Vecto
     assert(Math.abs(point.x) < .99 && Math.abs(point.y) < .99 && point.z > -1 && point.z < 1, `Visible geometry clipped at aspect ${aspect}`);
   }
 }
+viewer.setView('infrastructure-care');
+const backdrop=renderer.scene.children.find(n=>n.isMesh&&n.geometry.type==='PlaneGeometry');
+assert(backdrop.position.y<exploration.visibleBounds(activeRoot()).min.y,'The WebGL backdrop occludes the below-datum earthwork and culvert');
+viewer.setView('system');
+assert.equal(backdrop.position.y,-.27,'The infrastructure backdrop offset leaked into another scene');
 viewer.dispose();
-console.log('PASS exploration: actual selected-assembly geometry, isolation/technology visibility, production restore order, phase composition, stale-state resets, visible bounds, duplicate-instance tags and 12 perspective fits');
+console.log('PASS exploration: actual selected-assembly geometry, isolation/technology visibility, production restore order, phase composition, stale-state resets, visible bounds, duplicate-instance tags, 12 perspective fits and below-datum backdrop clearance');

@@ -121,8 +121,8 @@ if (catalog && model && tours && atlas) {
   };
 
   await check('Expanded concepts and source records have complete, public content', async () => {
-    assert.equal(CONCEPTS.length, 223, 'Update the published content count when the release scope changes');
-    assert.equal(SOURCES.length, 128, 'Update the published source count when the release scope changes');
+    assert.equal(CONCEPTS.length, 261, 'Update the published content count when the release scope changes');
+    assert.equal(SOURCES.length, 143, 'Update the published source count when the release scope changes');
     unique(CONCEPTS.map(item => item.id), 'Concepts');
     unique(SOURCES.map(item => item.id), 'Sources');
     for (const source of SOURCES) {
@@ -147,7 +147,7 @@ if (catalog && model && tours && atlas) {
 
   await check('Every concept is reachable through one domain and a valid view', async () => {
     assert.equal(DOMAINS.length, 9);
-    assert.equal(views.size, 44);
+    assert.equal(views.size, 50);
     unique(DOMAINS.map(item => item.id), 'Domains');
     const assigned = DOMAINS.flatMap(item => item.parts);
     unique(assigned, 'Domain assignments');
@@ -234,7 +234,7 @@ if (catalog && model && tours && atlas) {
   });
 
   await check('Guided tours have valid domains, actions, evidence and answer feedback', async () => {
-    assert.equal(tours.length, 26);
+    assert.equal(tours.length, 32);
     unique(tours.map(item => item.id), 'Lessons');
     for (const tour of tours) {
       for (const field of ['id', 'label', 'title', 'explanation', 'actionText', 'actionLabel', 'question']) nonempty(tour[field], `${tour.id}.${field}`);
@@ -401,3 +401,5 @@ await import('./check-depot.mjs');
 await import('./check-occ.mjs');
 await import('./check-exploration.mjs');
 await import('./check-comparisons.mjs');
+
+await import('./check-studies.mjs');

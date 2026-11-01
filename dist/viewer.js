@@ -8,6 +8,7 @@ import { OPERATIONS_VIEWS, buildOperationsView } from './operations-models.js';
 import { PLATFORM_VIEWS, buildPlatformView } from './platform-models.js';
 import { NETWORK_VIEWS, buildNetworkView } from './network-model.js';
 import { OCC_VIEWS, buildOccView } from './occ-models.js';
+import { STUDY_CAMERAS, buildStudyView } from './studies-models.js';
 import { nodeVisible, within, visibleBounds, componentBounds, assemblyRoots, restoreIsolation, applyIsolation,
   separationEntries, explorationCapabilities, restoreSeparation, applySeparation, fitPerspectiveBounds, screenPositions } from './exploration.js';
 
@@ -27,7 +28,7 @@ const C = {
   brake: 0xe49268, accent: 0xd4ede1, signal: 0xb3a6f6, service: 0x7fcea5, warning: 0xff936c,
 };
 const VIEW = {
-  ...TRACK_VIEWS, ...SIGNALLING_VIEWS, ...STATION_VIEWS, ...OPERATIONS_VIEWS, ...PLATFORM_VIEWS, ...NETWORK_VIEWS, ...OCC_VIEWS,
+  ...TRACK_VIEWS, ...SIGNALLING_VIEWS, ...STATION_VIEWS, ...OPERATIONS_VIEWS, ...PLATFORM_VIEWS, ...NETWORK_VIEWS, ...OCC_VIEWS, ...STUDY_CAMERAS,
   system: { camera: [25, 26, 32], target: [0, .9, 1], distance: 55 },
   substation: { camera: [12.5, 12, 16], target: [0, 1, 0], distance: 31 },
   guideway: { camera: [7, 5.7, 7.6], target: [0, .3, .15], distance: 19 },
@@ -1048,6 +1049,7 @@ export function createViewer(container, callbacks = {}) {
     else if(Object.hasOwn(SIGNALLING_VIEWS,id))buildSignallingView(id,modelApi);
     else if(Object.hasOwn(STATION_VIEWS,id))buildStationView(id,modelApi);
     else if(Object.hasOwn(OCC_VIEWS,id))buildOccView(id,modelApi);
+    else if(Object.hasOwn(STUDY_CAMERAS,id))buildStudyView(id,modelApi);
     else if(Object.hasOwn(OPERATIONS_VIEWS,id))buildOperationsView(id,modelApi);
     else if(Object.hasOwn(PLATFORM_VIEWS,id))buildPlatformView(id,modelApi);
     else if(Object.hasOwn(NETWORK_VIEWS,id))buildNetworkView(id,modelApi);
@@ -1173,6 +1175,8 @@ export function createViewer(container, callbacks = {}) {
     if (!ensureModel(id)) return;
     if (state.view !== id) clearStructuralExploration();
     state.view = id;
+    ground.position.y=VIEW[id].groundY??-.27;
+    grid.position.y=ground.position.y+.015;
     for (const [key, value] of models) value.root.visible = key === id;
     updateAssembly(); animateModel(); resetCamera(); requestRender();
   }

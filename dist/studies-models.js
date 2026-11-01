@@ -1,0 +1,269 @@
+// Original geometry: qualitative mechanisms, fictional records and interfaces.
+export const STUDY_CAMERAS = {
+  electrification:{camera:[23,21,28],target:[0,2,0],distance:46},
+  adhesion:{camera:[11,9,14],target:[0,1.5,0],distance:25},
+  'infrastructure-care':{camera:[20,17,23],target:[0,.5,0],distance:37,groundY:-1.8},
+  dependencies:{camera:[21,21,27],target:[0,1,0],distance:43},
+  'accessible-journey':{camera:[20,20,26],target:[0,2,0],distance:43},
+  'change-evidence':{camera:[18,19,25],target:[0,1,0],distance:39},
+};
+
+export function buildStudyView(id,api){
+  if(!STUDY_CAMERAS[id])return null;
+  const {THREE,M,mat,startModel,group,part,mesh,box,cylinder,tube,shell,explode,registerAnimator}=api;
+  const root=startModel(id),updates=[];
+  const P={amber:mat(0xe3b65c),cyan:mat(0x78c9d6),green:mat(0x77bda6),violet:mat(0xb7a7df),red:mat(0xd58d78),paper:mat(0xd8dfd5),earth:mat(0x70654d),ballast:mat(0x69746d),dark:mat(0x263f4a),blue:mat(0x507785),copper:mat(0xbd8759)};
+  const phase=s=>!s.playing&&s.phase===5?1:((s.phase||0)%5)/5;
+  function deck(w,d,at=[0,-.2,0]){return box(root,[w,.2,d],M.deck,at);}
+  function link(parent,name,points,material,r=.045){const g=group(parent,name);tube(g,points,r,material,{straight:true});return g;}
+  function crossed(parent,name,at,size=1){const g=group(parent,name,at);for(const sign of [-1,1])box(g,[size,.09,.1],P.red,[0,0,0],[0,0,sign*Math.PI/4]);return g;}
+  function card(parent,name,at,w=1.8,h=1.2){const g=group(parent,name,at);box(g,[w,.12,h],P.paper);return g;}
+  function mark(parent,at,color=P.green){return box(parent,[.22,.12,.22],color,at);}
+  function letter(parent,char,at,size=.5){
+    const strokes={A:[[[0,1],[.5,0],[1,1]],[[.2,.6],[.8,.6]]],B:[[[0,1],[0,0],[.7,0],[1,.25],[.7,.5],[0,.5]],[[.7,.5],[1,.75],[.7,1],[0,1]]],R:[[[0,1],[0,0],[.7,0],[1,.25],[.7,.5],[0,.5]],[[.5,.5],[1,1]]],M:[[[0,1],[0,0],[.5,.6],[1,0],[1,1]]],S:[[[1,0],[0,0],[0,.5],[1,.5],[1,1],[0,1]]]};
+    const g=group(parent,`record-letter-${char}`,at);
+    for(const stroke of strokes[char]||[])link(g,'letter-stroke',stroke.map(([x,z])=>[(x-.5)*size,0,(z-.5)*size]),M.dark,.025);
+    return g;
+  }
+  function cabinet(parent,name,at,w=1.1,h=1.8){const g=group(parent,name,at);box(g,[w,h,.75],P.blue,[0,h/2,0]);for(let y=.45;y<h;y+=.36)box(g,[w*.72,.06,.04],M.dark,[0,y,.4]);return g;}
+  function rail(parent,x,z,length=12,y=.4){box(parent,[length,.18,.12],M.steel,[x,y,z]);}
+  function axle(parent,name,at,r=.75){const g=group(parent,name,at);cylinder(g,.1,2.65,M.steel,[0,0,0],[Math.PI/2,0,0]);for(const z of [-1.2,1.2]){cylinder(g,r,.2,M.steel,[0,0,z],[Math.PI/2,0,0]);box(g,[.1,r*.84,.04],P.amber,[0,r*.42,z+.12]);}return g;}
+  function trace(parent,name,points,material,{active=()=>true,moving=false}={}){
+    const g=link(parent,name,points,material),dot=box(g,[.15,.15,.15],material);
+    const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)),false,'catmullrom',.01);
+    updates.push(s=>{g.visible=active(s);dot.visible=moving;dot.position.copy(curve.getPoint(phase(s)));});return g;
+  }
+
+  if(id==='electrification'){
+    deck(23,9);const dc=group(root,'dc-arrangement'),ac=group(root,'ac-arrangement');
+    const supply=part(root,'supply-conversion',[-8,0,-1]);
+    box(supply,[3,.25,3],M.edge,[0,.05,0]);
+    for(const x of [-.65,.65]){box(supply,[.55,1.3,.9],M.core,[x,1,0]);cylinder(supply,.45,1.1,P.copper,[x,1,0]);}
+    const rectifier=group(supply,'wayside-dc-rectifier',[0,0,2]);cabinet(rectifier,'dc-rectifier-cabinet',[0,0,0]);explode(rectifier,[0,0,1.2]);
+    const acSwitch=cabinet(supply,'ac-line-switchgear',[1.8,0,0]);
+    for(const z of [-1.2,1.2])rail(root,2,z,14);
+    for(let x=-4;x<9;x+=.7)box(root,[.2,.14,3.2],P.ballast,[x,.15,0]);
+    const body=group(root,'study-vehicle');box(body,[8,.35,3.5],P.blue,[3,2.2,0]);
+    for(const x of [0,6])axle(body,'study-wheelset',[x,1.24,0]);
+    // The body outline leaves the conversion equipment exposed from above.
+    for(const z of [-1.65,1.65])box(body,[8,.12,.1],M.aluminum,[3,5.25,z]);
+    for(const x of [-1,7])for(const z of [-1.65,1.65])box(body,[.1,3,.1],M.aluminum,[x,3.75,z]);
+    const collector=part(root,'study-collector');
+    const shoe=group(collector,'dc-collector-shoes');
+    for(const z of [-2.1,2.1]){box(shoe,[1,.16,.22],P.copper,[.3,.65,z]);link(shoe,'shoe-arm',[[.3,1.8,Math.sign(z)*1.5],[.3,.65,z]],M.steel,.07);}
+    const pantograph=group(collector,'ac-pantograph');
+    link(pantograph,'pantograph-arms',[[1.8,5.25,0],[1.1,6.25,0],[1.8,7.15,0],[2.5,6.25,0],[1.8,5.25,0]],M.aluminum,.075);
+    box(pantograph,[1.2,.12,1.7],P.copper,[1.8,7.15,0]);
+    for(const z of [-2.1,2.1])box(dc,[14,.12,.2],z<0?P.amber:P.cyan,[2,.65,z]);
+    for(const x of [-3,8]){box(ac,[.15,7.5,.15],M.steel,[x,3.5,-2.5]);box(ac,[.15,.15,3.2],M.steel,[x,7.4,-1]);}
+    link(ac,'overhead-contact-wire',[[-4,7.25,0],[9,7.25,0]],P.amber,.06);
+    const tx=part(root,'study-onboard-transformer',[1.4,2.5,0]);
+    box(tx,[2,.4,1.8],M.core,[0,.25,0]);for(const z of [-.5,.5])cylinder(tx,.48,1.2,P.copper,[0,.8,z]);
+    explode(tx,[0,2,0]);
+    const conversion=part(root,'study-converter',[3.6,2.45,0]);
+    box(conversion,[1.4,.15,1.7],M.edge);for(const z of [-.5,.5])cylinder(conversion,.22,.9,P.cyan,[.3,.55,z]);
+    const lineModule=group(conversion,'ac-line-converter',[-.55,.5,0]);box(lineModule,[.5,.8,1.3],P.blue);explode(lineModule,[0,1.4,0]);
+    const cover=box(conversion,[1.5,.1,1.8],M.aluminum,[0,1.1,0]);shell(cover);
+    const drive=part(root,'study-drive',[5.4,2.4,0]);box(drive,[1.2,.9,1.4],P.blue,[0,.5,0]);
+    const motor=group(drive,'traction-motor-and-coupling',[.6,-.9,0]);cylinder(motor,.4,1.3,M.teal,[0,0,0],[Math.PI/2,0,0]);link(motor,'axle-coupling',[[0,0,.7],[0,-.25,1.2]],M.steel,.09);explode(motor,[0,0,1.4]);
+    const ret=part(root,'study-return');
+    const dcFeed=link(dc,'dc-feed',[[-8,1,1],[-6,.65,-2.1],[.3,.65,-2.1],[.3,2.5,-1.4],[3.6,2.5,-1.4]],P.amber);
+    link(ret,'dc-return',[[3.6,2.5,1.2],[.3,2.5,1.2],[.3,.65,2.1],[-6,.65,2.1],[-8,1,1]],P.cyan);
+    const dcReturn=ret.children[0];
+    const primary=link(ac,'ac-primary-supply',[[-8,2,-1],[-5,7.25,0],[-4,7.25,0]],P.amber);
+    link(ac,'pantograph-primary',[[1.8,7.15,0],[1.8,5.2,.2],[1.4,3.6,.2]],P.amber);
+    const acReturn=link(ret,'ac-primary-return',[[1.4,3.6,-.5],[0,1.24,-1.2],[0,.4,-1.2],[-5,.4,-1.2],[-8,1.5,-1]],P.cyan);
+    const secondary=link(ac,'transformer-secondary',[[1.4,3.6,.7],[2.4,3.6,.7],[3.05,2.95,.7]],P.copper);
+    link(ac,'transformer-secondary-return',[[3.05,2.95,-.7],[2.4,3.6,-.7],[1.4,3.6,-.7]],P.copper);
+    link(conversion,'dc-link-to-inverter',[[.4,.4,0],[1.8,.4,0]],P.amber);
+    for(const [name,parent,points,material]of [
+      ['dc-energy-token',dcFeed,[[-8,1,1],[-6,.65,-2.1],[.3,.65,-2.1],[3.6,2.5,-1.4]],P.amber],
+      ['ac-energy-token',primary,[[-8,2,-1],[-5,7.25,0],[1.8,7.25,0]],P.amber],
+      ['secondary-token',secondary,[[1.4,3.6,.7],[2.4,3.6,.7],[3.05,2.95,.7]],P.copper],
+    ])trace(parent,name,points,material,{moving:true});
+    updates.push(s=>{const isAC=s.variant==='ac';dc.visible=shoe.visible=rectifier.visible=dcReturn.visible=!isAC;ac.visible=pantograph.visible=tx.visible=lineModule.visible=acReturn.visible=acSwitch.visible=isAC;});
+  }
+
+  if(id==='adhesion'){
+    deck(12,8);const contact=part(root,'adhesion-contact');
+    rail(contact,0,-1.2,11,.1);rail(contact,0,1.2,11,.1);
+    const travelling=group(contact,'travelling-wheel-centre');
+    const wheel=axle(travelling,'contact-wheelset',[0,.94,0],.75);
+    const axleFrame=group(travelling,'axle-support');for(const z of [-1.4,1.4])box(axleFrame,[1.5,.25,.35],P.blue,[0,1.2,z]);
+    const demand=part(root,'adhesion-demand',[-4.5,0,-2.8]);box(demand,[1.5,.12,1],M.edge);
+    const demandBar=box(demand,[.25,1.7,.25],P.amber,[0,.9,0]);
+    const ref=part(root,'adhesion-reference',[0,0,2.6]);ref.name='fixed-travel-reference';
+    for(let x=-5;x<=5;x+=.5)box(ref,[.08,.12,.6],P.paper,[x,.15,0]);
+    const travelMarker=box(ref,[.3,.3,.85],P.cyan,[0,.35,0]);
+    box(part(travelling,'adhesion-reference',[0,1.2,1.7]),[.3,.3,.3],P.violet);
+    cabinet(ref,'fixed-reference-sensor',[-4.8,0,1],.65,1);
+    const wsp=part(root,'adhesion-wsp',[-3.5,0,0]);cabinet(wsp,'wheel-slide-controller',[0,0,-2],1.1,1.6);
+    const wspLamp=mark(wsp,[0,1.8,-2],P.green);
+    const brake=part(travelling,'adhesion-brake');
+    const disc=group(brake,'rotating-brake-disc',[0,.94,.65]);cylinder(disc,.5,.12,P.copper,[0,0,0],[Math.PI/2,0,0]);
+    const pads=[];
+    for(const side of [-1,1]){
+      const assembly=group(brake,side<0?'rear-caliper':'front-caliper',[.25,.94,.65]);
+      cylinder(assembly,.17,.45,P.blue,[0,0,side*.5],[Math.PI/2,0,0]);
+      const pad=box(assembly,[.28,.45,.12],M.dark,[0,0,side*.12]);pad.name=side<0?'rear-friction-pad':'front-friction-pad';
+      const piston=cylinder(assembly,.06,1,M.steel,[0,0,0],[Math.PI/2,0,0]);
+      pads.push({side,pad,piston});
+    }
+    const sander=part(root,'adhesion-sander',[0,0,-2.6]);
+    box(sander,[1,1.4,.9],P.paper,[2.7,2,0]);
+    link(sander,'sand-hose',[[2.7,1.3,0],[2,1.1,.5],[.7,.34,1.4]],M.dark,.07);
+    const grains=group(sander,'sand-delivery-grains');for(let n=0;n<12;n++)box(grains,[.055,.055,.055],P.amber,[.7-n*.035,.34-n*.012,1.4]);
+    updates.push(s=>{
+      const t=phase(s),v=s.variant,slide=['slide','sanding'].includes(v),protection=v==='protection';
+      const x=-1.6+t*3.2;travelling.position.x=x;travelMarker.position.x=x;
+      const rotation=v==='spin'?t*12:slide?t*.45:protection?t*3.8:t*3.2/.75;
+      wheel.rotation.z=-rotation;disc.rotation.z=-rotation;
+      const effort=protection?.45+.3*Math.cos(t*Math.PI*6):v==='rolling'||v==='spin'?.3:1;
+      demandBar.scale.y=effort;demandBar.position.y=.1+.85*effort;
+      const brakeEffort=['rolling','spin'].includes(v)?0:effort;
+      for(const {side,pad,piston}of pads){const offset=.12+.13*(1-brakeEffort),end=offset+.06;pad.position.z=side*offset;piston.position.z=side*(.5+end)/2;piston.scale.y=.5-end;}
+      wspLamp.visible=protection;grains.visible=v==='sanding';
+      sander.position.x=x;
+      grains.children.forEach((g,n)=>{const q=(t*3+n/12)%1;g.position.set(.7-q*.25,.34-.15*q,1.4);});
+    });
+  }
+
+  if(id==='infrastructure-care'){
+    deck(19,11,[0,-1.6,0]);const formation=part(root,'route-formation');
+    const section=new THREE.Shape();section.moveTo(-3,-1.4);section.lineTo(-1.8,-.2);section.lineTo(1.8,-.2);section.lineTo(3,-1.4);section.closePath();
+    const embankment=new THREE.ExtrudeGeometry(section,{depth:4.2,bevelEnabled:false});embankment.translate(0,0,-2.1);
+    for(const x of [-5.9,-.1])mesh(formation,embankment,P.earth,[x,0,0],[0,Math.PI/2,0]);box(formation,[10,.3,3.5],P.ballast,[-3,0,0]);
+    for(const z of [-1.1,1.1])rail(formation,0,z,17,.45);
+    for(let x=-8;x<8;x+=.65)box(formation,[.2,.16,3],M.aluminum,[x,.2,0]);
+    const bridge=part(root,'route-bridge',[5,0,0]);
+    box(bridge,[4,.4,3.4],P.blue,[0,-.1,0]);
+    for(const x of [-1.65,1.65]){box(bridge,[.5,1.4,4],P.earth,[x,-1,0]);for(const z of [-1,1])box(bridge,[.4,.22,.4],M.dark,[x,-.42,z]);}
+    const bearingFlag=crossed(bridge,'bearing-observation',[1.65,.1,1.7],.7);
+    const drain=part(root,'route-drainage',[-3,-.8,0]);
+    // Four walls leave a real open culvert section rather than a solid cylinder.
+    for(const x of [-.7,.7])box(drain,[.15,1,7],P.paper,[x,0,0]);
+    for(const y of [-.55,.55])box(drain,[1.55,.15,7],P.paper,[0,y,0]);
+    const blocked=group(drain,'drain-obstruction');for(let n=0;n<7;n++)box(blocked,[.25,.3,.4],P.earth,[-.45+(n%3)*.4,-.2+(n%2)*.2,2.7+(n%2)*.3]);
+    link(drain,'visible-water-path',[[0,-.35,-4],[0,-.35,4]],P.cyan,.06);
+    const inspection=part(root,'route-inspection',[-3,-.9,4]);
+    box(inspection,[.08,.8,.08],P.amber,[1,.3,0]);const probe=group(inspection,'culvert-probe');box(probe,[.7,.25,.45],P.blue);cylinder(probe,.12,.16,M.dark,[0,.05,-.28],[Math.PI/2,0,0]);
+    const boundary=part(root,'route-work-boundary');
+    for(const x of [-5,-1])for(const z of [-4,4]){box(boundary,[.1,1,.1],P.amber,[x,-.5,z]);}
+    for(const z of [-4,4])link(boundary,'fixed-work-limit',[[-5,0,z],[-1,0,z]],P.amber,.04);
+    const work=group(boundary,'drain-cleaning-equipment');
+    cylinder(work,.6,.45,P.blue,[-1.5,-.5,4],[Math.PI/2,0,0]);
+    link(work,'cleaning-hose',[[-1.5,-.5,4],[-2,-.6,4],[-3,-.8,3.3],[-3,-.8,1]],M.dark,.08);
+    const record=part(root,'route-record',[1,.5,4]);card(record,'observation-record',[0,0,0],2.4,1.5);
+    const check=group(record,'follow-up-drainage-check');mark(check,[-.7,.15,0]);
+    const open=group(record,'open-follow-up');crossed(open,'check-outstanding',[-.7,.16,0],.5);
+    const bearing=mark(record,[.7,.15,0],P.red);
+    trace(record,'observation-connection',[[-4,-1.2,0],[-2,-.3,0],[0,.1,0]],P.violet);
+    updates.push(s=>{blocked.visible=s.variant==='inspect';probe.visible=s.variant==='inspect'||s.variant==='check';work.visible=s.variant==='work';check.visible=s.variant==='check';open.visible=s.variant!=='check';bearingFlag.visible=bearing.visible=true;});
+  }
+
+  if(id==='dependencies'){
+    deck(23,13);
+    for(const [name,at]of [['station-information-application',[-5,0,-2]],['power-supervision-application',[-5,0,2]],['station-field-interface',[8,0,-2]],['power-field-interface',[8,0,2]]])cabinet(part(root,'dependency-services',at),name,[0,0,0]);
+    const fieldA=root.getObjectByName('station-field-interface'),fieldB=root.getObjectByName('power-field-interface');
+    const power=part(root,'dependency-power',[0,0,-5]);box(power,[15,.2,.4],P.amber);cabinet(power,'shared-power-source',[-8,0,0]);
+    const powerFail=crossed(power,'power-loss-marker',[0,.5,0]);
+    for(const z of [-2,2])link(power,'power-feeder',[[-5,.15,0],[-5,.15,z+5]],P.amber,.035);
+    const network=part(root,'dependency-network');
+    for(const [x,z,name]of [[0,-2,'conduit-A'],[0,3.5,'conduit-B']]){box(network,[2,.25,.8],P.blue,[x,.2,z]);}
+    // Zone boundary markers show grouping, without network or access settings.
+    for(const x of [-2,5])for(const z of [-3,3])box(network,[.1,.15,2],M.edge,[x,.1,z]);
+    const identity=part(root,'dependency-identity',[-8,0,0]);cabinet(identity,'identity-service',[0,0,0],.8,1.4);
+    const identityFail=crossed(identity,'identity-unavailable',[0,1.8,0]);
+    const config=part(root,'dependency-configuration',[2,0,-5]);card(config,'configuration-record',[0,.2,0]);
+    const configMismatch=crossed(config,'configuration-unconfirmed',[0,.4,0]);const configCheck=mark(config,[0,.4,0]);
+    const recording=part(root,'dependency-recording',[3,0,5]);cabinet(recording,'service-recorder',[0,0,0],.8,1.5);
+    for(let n=0;n<7;n++)mark(recording,[-2+n*.55,.25,1],P.violet);
+    const gap=group(recording,'historical-record-gap');box(gap,[.65,.13,.4],P.red,[-.35,.28,1]);
+    const recovery=part(root,'dependency-recovery',[6,0,5]);card(recovery,'restoration-check-record',[0,.2,0]);
+    const recoveryChecks=group(recovery,'separate-restoration-checks');mark(recoveryChecks,[-.45,.4,0]);mark(recoveryChecks,[.45,.4,0],P.violet);
+    const powered=s=>s.variant!=='power-loss';const main=s=>powered(s)&&s.variant!=='network-loss';
+    trace(network,'station-path-A',[[-5,1,-2],[0,.7,-2],[8,1,-2]],P.cyan,{active:main});
+    trace(network,'station-path-B',[[-5,1,-2],[-3,.6,3.5],[3,.6,3.5],[6,.6,-2],[8,1,-2]],P.green,{active:powered});
+    trace(network,'power-supervision-path-A',[[-5,1,2],[0,.7,-2],[5,.7,-2],[8,1,2]],P.violet,{active:main});
+    trace(identity,'new-operator-request',[[0,1.2,0],[3,1.2,-2]],P.amber,{active:s=>powered(s)&&s.variant!=='identity-loss'});
+    trace(recording,'recording-branch',[[-8,1,-7],[0,1,0]],P.violet,{active:s=>powered(s)&&s.variant!=='record-loss'});
+    const pathFail=crossed(network,'path-A-loss',[0,.8,-2]);
+    updates.push(s=>{powerFail.visible=s.variant==='power-loss';pathFail.visible=s.variant==='network-loss';identityFail.visible=s.variant==='identity-loss';configMismatch.visible=s.variant==='restored';configCheck.visible=s.variant==='checked';gap.visible=['record-loss','restored','checked'].includes(s.variant);recoveryChecks.visible=s.variant==='checked';
+      // Equipment is retained even when its service is unavailable.
+      fieldA.visible=fieldB.visible=true;
+    });
+  }
+
+  if(id==='accessible-journey'){
+    deck(22,13);const entrance=part(root,'access-entrance',[-8,0,2]);box(entrance,[4,.25,5],P.paper);for(const x of [-1.6,1.6])box(entrance,[.2,2.5,.2],P.blue,[x,1.2,1.5]);
+    const gate=part(root,'access-gate',[-5,0,2]);for(const z of [-1.25,1.25])box(gate,[1.3,1.1,.5],P.blue,[0,.55,z]);for(const z of [-1,1])box(gate,[.6,.6,.08],P.green,[.4,.65,z]);
+    // Street and platform are different levels, connected by lift cabins.
+    box(root,[10,.3,5.5],mat(0x708b88),[3,3.3,0]);
+    const lift=group(root,'lift-and-route-context');
+    const lifts=[];for(const [x,z,name]of [[-1,2,'near-lift'],[4,-3,'alternate-lift']]){
+      const shaft=group(part(lift,'access-lift',[x,0,z]),name);for(const dx of [-.85,.85])for(const dz of [-.85,.85])box(shaft,[.1,5.6,.1],M.aluminum,[dx,2.7,dz]);
+      box(shaft,[1.7,.2,1.7],P.blue,[0,5.5,0]);box(shaft,[1.7,.2,1.7],P.blue,[0,.15,0]);
+      const cabin=group(shaft,`${name}-cabin`);box(cabin,[1.5,.15,1.5],P.green,[0,.075,0]);for(const dx of [-.72,.72])box(cabin,[.08,2,1.5],P.blue,[dx,1.15,0]);
+      lifts.push({shaft,cabin});
+    }
+    const outage=crossed(lifts[0].shaft,'near-lift-outage',[0,2.2,1],1.4);
+    const stairs=group(root,'stairs-retained');for(let n=0;n<12;n++)box(stairs,[.4,.28*(n+1),1.3],M.edge,[-2+n*.4,.14*(n+1),-2]);
+    const info=part(root,'access-information',[-6,0,-2]);cabinet(info,'route-information-display',[0,0,0],1.7,1.8);
+    const message=box(info,[1.3,.35,.05],P.red,[0,1.2,.41]);
+    for(let x=-8;x<7;x+=.6)box(info,[.35,.04,.4],P.amber,[x+6,.18,3]);
+    const assistance=part(root,'access-assistance',[-6,0,4.5]);cabinet(assistance,'passenger-help-point',[0,0,0],.6,1.4);cabinet(assistance,'assistance-position',[13,0,0],1,1.6);
+    const boarding=part(root,'access-boarding',[6,3.34,0]);
+    // A doorway frame, threshold and floor expose the actual boarding opening.
+    const doorway=group(boarding,'vehicle-doorway',[0,0,-3.6]);box(doorway,[3,.22,2],P.blue,[0,0,0]);
+    for(const x of [-1.45,1.45]){box(doorway,[.12,2.7,2],P.paper,[x,1.4,0]);box(doorway,[.14,.65,1.1],M.glass,[x,1.7,-.15]);}
+    box(doorway,[3,.12,2],P.paper,[0,2.8,0]);box(doorway,[3,2.7,.12],P.blue,[0,1.4,-1]);
+    for(const x of [-1.1,1.1])box(doorway,[.18,2.7,.2],M.aluminum,[x,1.35,.8]);box(doorway,[2.4,.18,.2],M.aluminum,[0,2.7,.8]);
+    const bridge=box(boarding,[1.9,.12,1.25],P.green,[0,.05,-3.35]);
+    const gap=crossed(boarding,'boarding-gap-marker',[0,.2,-3.35],.9);
+    const available=s=>!['outage'].includes(s.variant);
+    trace(entrance,'entrance-to-gate',[[0,.3,0],[3,.3,0]],P.green);
+    trace(lift,'near-step-free-route',[[-5,.3,2],[-1,.3,2],[-1,3.65,2],[6,3.65,2],[6,3.65,-2.5]],P.green,{active:s=>available(s)&&s.variant!=='alternative'});
+    trace(lift,'route-before-unavailable-lift',[[-5,.3,2],[-2.1,.3,2]],P.green,{active:s=>s.variant==='outage'});
+    trace(lift,'alternate-step-free-route',[[-5,.3,2],[-3,.3,4.5],[7,.3,4.5],[8,.3,-3],[4,.3,-3],[4,3.65,-3],[4,3.65,1],[6,3.65,1],[6,3.65,-2.5]],P.green,{active:s=>s.variant==='alternative'});
+    trace(boarding,'level-boarding-route',[[0,.25,-2.5],[0,.25,-3.7]],P.green,{active:s=>['available','alternative'].includes(s.variant)});
+    trace(boarding,'assisted-boarding-route',[[0,.25,-2.5],[0,.25,-4.7]],P.green,{active:s=>s.variant==='aid-placed'});
+    trace(assistance,'help-information-path',[[0,1,0],[13,1,0]],P.violet,{active:s=>['outage','aid-required'].includes(s.variant)});
+    updates.push(s=>{const failed=['outage','alternative'].includes(s.variant),needsAid=['aid-required','aid-placed'].includes(s.variant);outage.visible=failed;message.visible=failed||needsAid;
+      lifts[0].cabin.position.y=failed?0:3.3;lifts[1].cabin.position.y=s.variant==='alternative'?3.3:0;
+      doorway.position.z=needsAid?-4.7:-3.7;bridge.visible=s.variant==='aid-placed';gap.visible=s.variant==='aid-required';
+    });
+  }
+
+  if(id==='change-evidence'){
+    deck(21,12);const item=part(root,'change-item',[-7,0,0]);
+    box(item,[2.6,.25,2.5],M.edge,[0,.8,0]);for(const x of [-1,1])for(const z of [-1,1])box(item,[.12,.8,.12],M.steel,[x,.4,z]);
+    const module=group(item,'installed-version-B',[0,1.1,0]);box(module,[2,.9,1.7],P.blue,[0,.4,0]);
+    for(const z of [-.5,.5])cylinder(module,.16,.3,P.copper,[1.1,.4,z],[0,0,Math.PI/2]);
+    explode(module,[0,1.7,0]);const cover=box(module,[2.1,.12,1.8],M.aluminum,[0,.95,0]);shell(cover);
+    const baseline=part(root,'change-baseline',[-2.8,0,-3]);card(baseline,'baseline-subject-card',[0,.2,0],2.3,1.5);
+    const baselineA=group(baseline,'baseline-version-A');mark(baselineA,[0,.4,0],P.red);
+    const baselineB=group(baseline,'baseline-version-B');for(const x of [-.35,.35])mark(baselineB,[x,.4,0],P.green);
+    letter(baselineA,'A',[-.7,.4,0]);letter(baselineB,'B',[-.7,.4,0]);
+    const requirement=part(root,'change-requirement',[-2.8,0,3]);card(requirement,'two-channel-requirement',[0,.2,0],2.3,1.5);for(const z of [-.35,.35])box(requirement,[1.4,.08,.12],P.violet,[0,.4,z]);
+    const iface=part(root,'change-interface',[.8,0,-3]);card(iface,'interface-definition',[0,.2,0],2.2,1.5);for(const z of [-.4,.4])mark(iface,[0,.4,z],P.copper);
+    link(iface,'two-connector-interface',[[-6.7,1.5,2.5],[-3,.6,1],[-1,.6,0]],P.copper);
+    const test=part(root,'change-test',[.8,0,3]);card(test,'test-subject-and-result',[0,.2,0],2.2,1.5);
+    const oldTest=group(test,'test-subject-A');mark(oldTest,[0,.4,0],P.red);
+    const newTest=group(test,'test-subject-B');for(const z of [-.35,.35])mark(newTest,[0,.4,z],P.green);
+    letter(oldTest,'A',[-.7,.4,0]);letter(newTest,'B',[-.7,.4,0]);
+    const testPaths=group(test,'two-channel-test-evidence');for(const z of [-.5,.5])link(testPaths,'channel-evidence',[[-6.7,1.5,z-3],[-4,.5,z],[-.6,.5,z]],P.violet);
+    const issues=part(root,'change-issues',[4.5,0,0]);card(issues,'rams-question-board',[0,.2,0],2.6,3);
+    for(let n=0;n<4;n++){box(issues,[1,.07,.1],M.dark,[.2,.4,-1+n*.65]);letter(issues,['R','A','M','S'][n],[-.9,.42,-1+n*.65],.35);}
+    const openIssue=mark(issues,[.9,.45,.3],P.red);
+    const disposition=group(issues,'issue-disposition-record');card(disposition,'disposition-entry',[.8,.55,1.2],1.2,.6);mark(disposition,[.8,.7,1.2],P.amber);
+    const acceptance=part(root,'change-acceptance',[8,0,0]);card(acceptance,'handover-decision-record',[0,.2,0],2,2);
+    const decision=group(acceptance,'reviewed-decision');for(const z of [-.4,.4])mark(decision,[0,.4,z],P.green);
+    trace(baseline,'configuration-mismatch',[[-4.2,1,3],[-1,.5,0],[0,.4,0]],P.red,{active:s=>s.variant==='installed'});
+    trace(baseline,'matched-configuration',[[-4.2,1,3],[-1,.5,0],[0,.4,0]],P.green,{active:s=>s.variant!=='installed'});
+    trace(requirement,'requirement-to-test',[[0,.5,0],[3.6,.5,0]],P.violet);
+    trace(acceptance,'reviewed-evidence-links',[[-7.2,.5,3],[-3.5,.5,0],[0,.5,0],[-3.5,.5,-3]],P.green,{active:s=>s.variant==='reviewed'});
+    updates.push(s=>{const tested=['tested','reviewed'].includes(s.variant),reviewed=s.variant==='reviewed';baselineA.visible=s.variant==='installed';baselineB.visible=!baselineA.visible;oldTest.visible=!tested;newTest.visible=testPaths.visible=tested;decision.visible=disposition.visible=reviewed;openIssue.visible=true;});
+  }
+  registerAnimator(s=>updates.forEach(update=>update(s)));
+  return root;
+}

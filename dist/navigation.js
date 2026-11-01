@@ -5,6 +5,7 @@ export const NAVIGATION_GROUPS = [
 ];
 
 export const VIEW_PARENTS = {
+  electrification:'system',adhesion:'bogie','infrastructure-care':'track-support',dependencies:'occ-equipment','accessible-journey':'station','change-evidence':'depot-testing',
   'platform-interface':'station','station-plant':'station','tunnel-ventilation':'station',
   'ventilation-unit':'station-plant','station-networks':'station','fire-systems':'station',
   bogie:'vehicle',lim:'bogie',services:'vehicle',

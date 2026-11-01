@@ -42,6 +42,7 @@ export function technologyNote(state,fallback){
   return fallback;
 }
 export function technologyFlow(state,base){
+  if(['electrification','adhesion','infrastructure-care','dependencies','accessible-journey','change-evidence'].includes(state.view))return base;
   const t=state.technology||DEFAULT_TECHNOLOGY,rotary=t.propulsion==='rotary',loop=t.control==='loop';
   if(state.view&&['lim','seltrac','cbtc-network','signalling','etcs','interlocking','train-detection'].includes(state.view))return base;
   if(state.scenario==='radio-loss'&&loop)return {title:'Hold a train-control update',description:'The chosen loop information path is interrupted in this teaching case. Passenger displays and operational voice do not supply replacement movement permission. No timeout, stopping distance or real operating response is calculated.',nodes:['Loop update held','External information unavailable','Onboard protection remains distinct'],kind:'signal',sources:['S02','S03']};

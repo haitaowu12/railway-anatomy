@@ -20,6 +20,7 @@ const [THREE, track, signalling, station, operations, platform, network, network
   load('network-model.js'), load('network-data.js'), load('occ-models.js'), load('catalog.js'), load('model.js'), load('tours.js'),
 ]);
 const source = await readFile(path.join(dist, 'viewer.js'), 'utf8');
+const studies = await load('studies-models.js');
 function between(start, end) {
   const a = source.indexOf(start), b = source.indexOf(end, a + start.length);
   assert(a >= 0 && b > a, `Shared geometry marker changed: ${start}; update this harness`);
@@ -76,6 +77,7 @@ check('Expanded scenes construct one requested view at a time', () => {
     [station.STATION_VIEWS, station.buildStationView],
     [Object.fromEntries(Object.entries(operations.OPERATIONS_VIEWS).filter(([id])=>!occ.OCC_VIEWS[id])), operations.buildOperationsView],
     [occ.OCC_VIEWS, occ.buildOccView],
+    [studies.STUDY_CAMERAS, studies.buildStudyView],
     [platform.PLATFORM_VIEWS, platform.buildPlatformView],
     [network.NETWORK_VIEWS, network.buildNetworkView],
   ];

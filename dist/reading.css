@@ -1,0 +1,20 @@
+main{max-width:1120px;margin:auto;padding:40px 32px 64px}
+h1{font-size:clamp(32px,5vw,48px);font-weight:550;letter-spacing:-1.4px;line-height:1.15;margin:12px 0 24px}
+h2{font-size:28px;font-weight:550;letter-spacing:-.5px;margin:48px 0 20px}
+h3{font-size:21px;font-weight:600;line-height:1.4;margin:0 0 12px}
+h4{font-size:18px;line-height:1.5;margin:28px 0 10px}
+p,li{max-width:72ch;font-size:16px;line-height:1.8}
+main>nav{display:flex;flex-wrap:wrap;gap:8px 20px;padding:20px 0;border-block:1px solid var(--line);margin:28px 0}
+main>nav a{padding:5px 0;font-size:14px}
+article{padding:24px 0;border-top:1px solid var(--line);scroll-margin-top:24px}
+article p{color:var(--muted);margin:10px 0 18px}
+article a{font-size:14px;overflow-wrap:anywhere}
+article small{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
+article summary{cursor:pointer;font-size:17px;font-weight:550;line-height:1.5;padding:4px 0}
+article details>p{margin-left:20px}
+article details>a{display:inline-block;margin:4px 0 0 20px}
+.source-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 36px}
+.source-grid article{min-width:0}
+.source-grid h3{font-size:18px}
+.source-grid p{font-size:15px}
+@media(max-width:700px){main{padding:28px 20px 48px}.source-grid{grid-template-columns:1fr}h2{font-size:25px}main>nav{gap:6px 18px}.site-header>a:last-child{font-size:13px;padding:8px 0}}

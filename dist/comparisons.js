@@ -1,6 +1,7 @@
 // Comparisons belong to the model in focus. Stored vehicle choices remain
 // independent, but their controls do not follow the visitor into other systems.
 export const COMPARISON_LABELS = {
+  electrification:'Complete electrification arrangement',adhesion:'Wheel–rail response','infrastructure-care':'Infrastructure work and evidence',dependencies:'Shared dependency or restoration state','accessible-journey':'Passenger route and boarding interface','change-evidence':'Configuration and evidence state',
   railway:'Trace a railway connection',
   'track-support':'Track construction',
   'rail-fastening':'Rail fastening arrangement',

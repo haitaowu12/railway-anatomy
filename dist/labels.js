@@ -107,3 +107,18 @@ Object.assign(SHORT_LABELS,{
   "occ-workstation-input": "Input devices",
   "occ-workplace-environment": "Room & sightlines"
 });
+
+Object.assign(SHORT_LABELS,{
+  'supply-conversion':'Wayside conversion','study-collector':'Collector','study-onboard-transformer':'Onboard transformer',
+  'study-converter':'Line converter / DC link','study-drive':'Motor inverter / drive','study-return':'Supply return',
+  'adhesion-contact':'Wheel–rail contact','adhesion-demand':'Effort demand','adhesion-reference':'Travel reference',
+  'adhesion-wsp':'Slide protection','adhesion-sander':'Sand reservoir / nozzle','adhesion-brake':'Disc brake',
+  'route-formation':'Formation / earthwork','route-drainage':'Culvert / outfall','route-bridge':'Bridge / bearings',
+  'route-inspection':'Inspection location','route-work-boundary':'Work boundary','route-record':'Follow-up record',
+  'dependency-services':'Application / field service','dependency-power':'Shared power bus','dependency-network':'Communications paths',
+  'dependency-identity':'Operator identity','dependency-configuration':'Configuration record','dependency-recording':'Recorder / timeline','dependency-recovery':'Recovery checks',
+  'access-entrance':'Street entrance','access-gate':'Wide fare gate','access-lift':'Lift','access-information':'Journey information',
+  'access-assistance':'Assistance interface','access-boarding':'Boarding interface',
+  'change-item':'Installed module B','change-baseline':'Configuration baseline','change-requirement':'Requirement',
+  'change-interface':'Interface definition','change-test':'Test subject / result','change-issues':'RAMS questions / issue','change-acceptance':'Handover decision',
+});
