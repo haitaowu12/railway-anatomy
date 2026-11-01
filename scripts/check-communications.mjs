@@ -3,6 +3,7 @@
 // information/physical-state distinctions, authored separation and data links;
 // they do not certify an installation, device or operating procedure.
 import assert from 'node:assert/strict';
+import {explorationCapabilities,separationEntries} from '../dist/exploration.js';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
@@ -76,6 +77,20 @@ check('Station rack separates passive fibre, optical module, active board and su
   const before=world(n);n.position.copy(e.base).add(e.delta);r.root.updateWorldMatrix(true,true);assert(world(n).distanceTo(before)>.3);
  }
  const sfp=one(r,'removable-optical-transceiver');assert.equal(sfp.userData.component,'optical-transceiver');assert(one(r,'fibre-management-tray').parent.userData.component==='fiber-patch-panel');
+});
+check('Separation exposes named physical pieces in the learner inspection contract',()=>{
+ for(const [view,config]of Object.entries(data.COMMUNICATIONS_VIEW_DATA))for(const variant of config.variants){
+  const r=set(view,variant.id,{cutaway:false});
+  for(const {node}of separationEntries(r))assert(node.userData.explorationLabel?.trim(),`${view}/${variant.id}: unnamed removable piece ${node.name}`);
+ }
+ const r=set('communications-network','station',{cutaway:false});
+ const switchParts=explorationCapabilities(r,'network-switch').pieceNames;
+ for(const name of ['Switch cover','Switch circuit board','Switch power-supply module','Copper port bank','Optical transceiver'])assert(switchParts.includes(name),`Inspection omits ${name}`);
+ const optical=explorationCapabilities(r,'optical-transceiver');
+ assert.equal(optical.canExplodeSelected,false,'Naming a removable module must not invent internal subparts');
+ const rtu=set('communications-scada','status',{cutaway:false});
+ const inputParts=explorationCapabilities(rtu,'scada-input-module').pieceNames;
+ assert.deepEqual(inputParts,['Digital input card','Analogue input card']);
 });
 check('Onboard backbone has two consist interfaces and separate local device spurs',()=>{
  const r=set('communications-network','onboard');assert.equal(r.parts.get('onboard-ethernet-gateway').filter(visible).length,2);assert.equal(nodes(r,'onboard-network-board').length,2);
@@ -155,3 +170,4 @@ check('Station contexts retain real internally separable communication and plant
 });
 
 console.log(`\n${passed} passed; ${failures.length} failed.`);if(failures.length)process.exitCode=1;
+

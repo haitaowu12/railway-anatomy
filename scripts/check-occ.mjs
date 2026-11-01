@@ -4,6 +4,7 @@ import * as electrificationHelpers from '../dist/electrification.js';
 // These checks verify teaching distinctions and geometry, not rendering quality
 // or the correctness of an operational control system.
 import assert from 'node:assert/strict';
+import {explorationCapabilities,separationEntries} from '../dist/exploration.js';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
@@ -136,4 +137,18 @@ check('Monitor, computing, network and UPS assemblies have independently movable
   for(const name of names){const n=nodes(r,name)[0];assert(n,view+': '+name);const registration=r.exploded.find(e=>e.node===n);assert(registration&&registration.delta.length()>.1,name+': no authored separation');}
  }
 });
+check('OCC inspection names removable hardware and distinguishes local and remote computing',()=>{
+ for(const [view,config]of Object.entries(data.OCC_VIEW_DATA))for(const variant of config.variants){
+  const r=set(view,variant.id,{cutaway:false});
+  for(const {node}of separationEntries(r))assert(node.userData.explorationLabel?.trim(),`${view}/${variant.id}: unnamed removable piece ${node.name}`);
+ }
+ const local=set('occ-workplace','task',{cutaway:false});
+ assert.deepEqual(explorationCapabilities(local,'occ-client-computer').pieceNames,['Client computer cover','Client computer board']);
+ const monitor=explorationCapabilities(local,'occ-task-display').pieceNames;
+ for(const name of ['Monitor rear enclosure','Monitor controller board','Monitor power board','LCD panel'])assert(monitor.includes(name));
+ const remote=set('occ-workplace','shared',{cutaway:false});
+ assert.deepEqual(explorationCapabilities(remote,'occ-kvm-interface').pieceNames,['KVM receiver cover','KVM interface board']);
+ assert(!explorationCapabilities(remote,'occ-console').pieceNames.includes('Client computer board'),'Remote console exposes hidden local-computer contents');
+});
 console.log('\n'+passed+' passed; '+failures.length+' failed.');if(failures.length)process.exitCode=1;
+

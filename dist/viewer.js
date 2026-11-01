@@ -198,6 +198,10 @@ export function createViewer(container, callbacks = {}) {
   function explode(node, delta) {
     building.exploded.push({ node, base: node.position.clone(), delta: new THREE.Vector3(...delta) });
   }
+  function inspectionStage(node, label, start, end) {
+    node.userData.inspectionStage = label;
+    node.userData.inspectionRange = [start, end];
+  }
   function shell(node) { building.shells.push(node); }
   function foot(parent, x, z) {
     cylinder(parent, .11, .09, M.steel, [x, .02, z], null, 6);
@@ -247,8 +251,10 @@ export function createViewer(container, callbacks = {}) {
       for(let z=-.8;z<=.8;z+=.2)box(tank,[.32,1.45,.035],M.steel,[x+Math.sign(x)*.15,1.12,z]);
     }
     const cover=group(g,'transformer-removable-front-cover');
+    cover.userData.explorationLabel='Front cover';
     box(cover,[2.55,1.95,.065],M.teal,[0,1.14,.95]);shell(cover);explode(cover,[0,0,2.1]);
     const lid=group(g,'transformer-removable-tank-lid');box(lid,[2.7,.085,2.02],M.steel,[0,2.15,0]);shell(lid);explode(lid,[0,1.65,0]);
+    lid.userData.explorationLabel='Tank lid';
     const core=powerPiece(g,'transformer-core','Laminated magnetic core',[0,.25,-.6]);
     for(const y of [.42,1.94])for(let z=-.06;z<=.06;z+=.06)box(core,[2.15,.22,.05],M.core,[0,y,z]);
     for(const x of [-.74,0,.74])for(let z=-.06;z<=.06;z+=.06)box(core,[.24,1.45,.05],M.core,[x,1.18,z]);
@@ -267,6 +273,9 @@ export function createViewer(container, callbacks = {}) {
         cylinder(row,.035,.17,M.copper,[x,2.69,z],null,10);
       }
     }
+    for (const node of [cover,lid,tank]) inspectionStage(node,'Expose the enclosure',0,.35);
+    for (const node of [core,terminals]) inspectionStage(node,'Locate core and terminals',.35,.65);
+    for (const node of [primary,secondary]) inspectionStage(node,'Compare the winding groups',.65,1);
     return g;
   }
   function makePowerRectifier(parent,id='rectifier',at=[0,0,0],scale=1) {
@@ -274,10 +283,13 @@ export function createViewer(container, callbacks = {}) {
     box(g,[2.35,.15,2.05],M.steel,[0,.1,0]);
     for(const x of [-1.05,1.05])for(const z of [-.85,.85])box(g,[.07,2.15,.07],M.core,[x,1.2,z]);
     const cover=group(g,'rectifier-removable-front');box(cover,[2.2,2.05,.06],M.white,[0,1.2,1.0]);shell(cover);explode(cover,[0,0,1.9]);
+    cover.userData.explorationLabel='Front cover';inspectionStage(cover,'Expose the enclosure',0,.3);
     for(const z of [-.42,.42]){
       const cooling=powerPiece(g,'rectifier-cooling','Heat-sink bank',[0,.15,Math.sign(z)*1.3]);
+      inspectionStage(cooling,'Locate cooling and connections',.3,.65);
       for(let x=-.88;x<=.88;x+=.14)box(cooling,[.035,1.7,.3],M.aluminum,[x,1.15,z]);
       const stack=powerPiece(g,'rectifier-diode-stack','Clamped semiconductor devices',[0,.65,Math.sign(z)*.62]);
+      inspectionStage(stack,'Inspect the device stacks',.65,1);
       for(const x of [-.65,0,.65]){
         cylinder(stack,.135,.12,M.dark,[x,1.15,z+.2],[Math.PI/2,0,0],16);
         for(const dz of [-.1,.1])cylinder(stack,.17,.045,M.copper,[x,1.15,z+.2+dz],[Math.PI/2,0,0],16);
@@ -285,6 +297,7 @@ export function createViewer(container, callbacks = {}) {
       }
     }
     const buses=powerPiece(g,'rectifier-busbar','AC terminals and DC busbars',[0,1.4,0]);
+    inspectionStage(buses,'Locate cooling and connections',.3,.65);
     for(const [y,z,face,material]of [[1.88,.9,.72,M.positive],[.47,-.65,-.32,M.negative]]){
       box(buses,[1.85,.07,.07],material,[0,y,z]);
       for(const x of [-.65,0,.65])tube(buses,[[x,y,z],[x,y,face],[x,1.15,face]],.022,M.copper,{straight:true,segments:5});
@@ -569,6 +582,9 @@ export function createViewer(container, callbacks = {}) {
     // Authored teaching separation of the three real functional assemblies;
     // this is not a removal sequence or a manufacturing winding drawing.
     explode(mounting, [0, .7, 0]); explode(core, [0, .2, 0]); explode(winding, [0, .2, .8]);
+    inspectionStage(mounting,'Locate the mounting frame',0,.3);
+    inspectionStage(core,'Inspect the laminated core',.3,.65);
+    inspectionStage(winding,'Reveal the winding groups',.65,1);
     return g;
   }
 
@@ -620,15 +636,32 @@ export function createViewer(container, callbacks = {}) {
     for(let i=0;i<4;i++){const a=i*Math.PI/2;cylinder(shaft,.017,.15,M.dark,[Math.cos(a)*.075,Math.sin(a)*.075,-.08],[Math.PI/2,0,0],6);}
     const gear=part(rotary,'traction-gearbox',[-1.02,.56,.36]);
     gear.userData.explorationLabel = 'Gearbox';
-    roundedPanel(gear,.9,.7,.28,M.core,[0,0,0],.08);
-    const gearCover=group(gear,'removable-gearbox-cover');roundedPanel(gearCover,.88,.68,.035,M.teal,[0,0,.17],.07);shell(gearCover);explode(gearCover,[0,0,.4]);
+    // A hollow teaching housing: a solid block would conceal the gears even
+    // after its removable front was opened.
+    roundedPanel(gear,1.05,.7,.045,M.core,[0,0,-.16],.08);
+    for(const x of [-.50,.50])box(gear,[.045,.66,.3],M.core,[x,0,0]);
+    for(const y of [-.3275,.3275])box(gear,[1.05,.045,.3],M.core,[0,y,0]);
+    const gearCover=group(gear,'removable-gearbox-cover');gearCover.userData.explorationLabel='Gearbox cover';roundedPanel(gearCover,1.03,.68,.035,M.teal,[0,0,.17],.07);shell(gearCover);explode(gearCover,[0,0,.4]);
     // The axle gear is centred on the wheelset axle. The pinion is offset
     // radially by approximately the sum of the two illustrative pitch radii.
-    for(const [x,y,r] of [[0,0,.22],[.30,.1375,.11]]){
+    const contactAngle=Math.atan2(.1375,.30),gearModule=.22*2/24;
+    for(const [x,y,r,teeth] of [[0,0,.22,24],[.30,.1375,.11,12]]){
       const wheel=group(gear,'illustrative-gear',[x,y,.02]);
-      cylinder(wheel,r,.07,M.steel,[0,0,0],[Math.PI/2,0,0],16);
-      for(let i=0;i<12;i++){const a=i*Math.PI/6;box(wheel,[r*.27,r*.22,.085],M.aluminum,[Math.cos(a)*r,Math.sin(a)*r,0],[0,0,a]);}
-      registerAnimator(s=>{wheel.rotation.z=Number(s.phase||0)*(r>.15?.35:-.7);});
+      wheel.userData.gearPitchRadius=r;wheel.userData.gearToothCount=teeth;
+      wheel.userData.gearModule=gearModule;wheel.userData.gearProfile='schematic, not involute';
+      cylinder(wheel,r-gearModule*1.25,.07,M.steel,[0,0,0],[Math.PI/2,0,0],Math.max(24,teeth*2));
+      // Common pitch and 24:12 teeth agree with the illustrated 1:2 speed
+      // ratio. These tapered teeth are schematic, not a manufactured profile.
+      for(let i=0;i<teeth;i++){
+        const a=i*Math.PI*2/teeth,root=r-gearModule*1.25,tip=r+gearModule;
+        const halfWidth=Math.PI*gearModule*.24,shape=new THREE.Shape();
+        shape.moveTo(root,-halfWidth);shape.lineTo(tip,-halfWidth*.65);
+        shape.lineTo(tip,halfWidth*.65);shape.lineTo(root,halfWidth);shape.closePath();
+        const tooth=new THREE.ExtrudeGeometry(shape,{depth:.085,bevelEnabled:false});tooth.translate(0,0,-.0425);
+        mesh(wheel,tooth,M.aluminum,[0,0,0],[0,0,a]);
+      }
+      const phaseOffset=r>.15?contactAngle:contactAngle+Math.PI-Math.PI/teeth;
+      registerAnimator(s=>{wheel.rotation.z=phaseOffset+Number(s.phase||0)*(r>.15?.35:-.7);});
     }
     registerAnimator(s=>{rotary.visible=s.technology?.propulsion==='rotary';shaft.rotation.z=-Number(s.phase||0)*.7;});rotary.visible=false;
     explode(motor, [0, .3, -.65]); explode(gear, [0, .1, .65]);
@@ -1425,6 +1458,25 @@ export function createViewer(container, callbacks = {}) {
     if (!state.isolation) frameBeforeExploration = null;
     const fitted = fitToView(); controls.update(); requestRender(); return fitted;
   }
+  function inspectAssembly(id = state.selected) {
+    const record = models.get(state.view);
+    if (!explorationCapabilities(record, id, state).canExplodeSelected) return false;
+    rememberFrame();
+    setSelected(id);
+    state.playing = false;
+    state.cutaway = false;
+    state.explodeScope = 'selected'; state.exploded = 1; state.focused = id;
+    updateAssembly(); animateModel(); fitToView(); controls.update(); requestRender();
+    return true;
+  }
+  function restoreExploration() {
+    state.exploded = 0; state.explodeScope = 'all'; state.cutaway = false;
+    state.isolation = null; state.focused = null;
+    restoreIsolation(models.get(state.view));
+    updateAssembly(); animateModel();
+    if (!restoreFrame()) { fitToView(); controls.update(); }
+    requestRender();
+  }
   function setSelected(id) {
     const next = id || null, changed = state.selected !== next;
     let restoreSurroundings = false;
@@ -1578,6 +1630,9 @@ export function createViewer(container, callbacks = {}) {
       exploded: state.exploded, canRestoreFrame: Boolean(frameBeforeExploration) }; },
     setExplodeScope,
     setIsolation,
+    inspectAssembly,
+    restoreExploration,
+    getCutaway() { return state.cutaway; },
     frameSelection,
     restoreFrame,
     frameModel,
@@ -1637,4 +1692,5 @@ export function createViewer(container, callbacks = {}) {
     getComponentIds(view = state.view) { ensureModel(view);return [...(models.get(view)?.parts.keys() || [])]; },
   };
 }
+
 

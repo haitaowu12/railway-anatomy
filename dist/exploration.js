@@ -151,6 +151,11 @@ export function explorationCapabilities(record, componentId, { isolation = null 
     if (renderable(node) && !roots.some(root => within(node, root))) outside = true;
   });
   const internal = entries.filter(entry => !roots.includes(entry.node));
+  const stages = new Map();
+  for (const { node } of internal) {
+    const range = node.userData.inspectionRange, label = node.userData.inspectionStage;
+    if (label && validInspectionRange(range)) stages.set(`${range[0]}:${range[1]}:${label}`, { label, start: range[0], end: range[1] });
+  }
   return {
     componentId: componentId || null,
     anchorId: componentId || null,
@@ -163,7 +168,24 @@ export function explorationCapabilities(record, componentId, { isolation = null 
     contextSeparationCount: entries.length - internal.length,
     instanceCount: roots.length,
     pieceNames: [...new Set(internal.map(entry => entry.node.userData.explorationLabel).filter(Boolean))],
+    inspectionStages: [...stages.values()].sort((a, b) => a.start - b.start || a.end - b.end),
   };
+}
+
+function validInspectionRange(range) {
+  return Array.isArray(range) && range.length === 2 && range.every(Number.isFinite) &&
+    range[0] >= 0 && range[1] <= 1 && range[1] > range[0];
+}
+
+// A selected-assembly recipe is an authored teaching layout, not a maintenance
+// removal procedure. Unauthored parts and whole-view separation retain their
+// existing linear movement. Each range interpolates from the assembled state.
+export function separationProgress(entry, amount, staged = true) {
+  const fraction = MathUtils.clamp(Number(amount) || 0, 0, 1);
+  const range = entry.node.userData.inspectionRange;
+  if (!staged || !validInspectionRange(range)) return fraction;
+  const local = MathUtils.clamp((fraction - range[0]) / (range[1] - range[0]), 0, 1);
+  return local * local * (3 - 2 * local);
 }
 
 // Remove only the displacement we applied. Animators and builder-authored
@@ -185,7 +207,7 @@ export function applySeparation(record, { amount = 0, scope = 'all', componentId
   for (const entry of separationEntries(record, { componentId: scope === 'selected' ? componentId : null, isolation })) {
     if(fixedRoots.includes(entry.node))continue;
     if (!entry.explorationOffset) entry.explorationOffset = new Vector3();
-    entry.explorationOffset.copy(entry.delta).multiplyScalar(fraction);
+    entry.explorationOffset.copy(entry.delta).multiplyScalar(separationProgress(entry, fraction, scope === 'selected'));
     entry.node.position.add(entry.explorationOffset);
   }
 }
@@ -248,3 +270,4 @@ export function screenPositions(boundsByComponent, camera, anchorInstances = nul
   }
   return result;
 }
+

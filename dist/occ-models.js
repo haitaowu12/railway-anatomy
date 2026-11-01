@@ -19,6 +19,7 @@ export function buildOccView(id,api){
     cyan:new THREE.MeshBasicMaterial({color:0x84bdc7}),amber:new THREE.MeshBasicMaterial({color:0xd7b36d}),
     white:new THREE.MeshBasicMaterial({color:0xd5dfd9}),red:new THREE.MeshBasicMaterial({color:0xc78b78})};
   const progress=s=>Math.max(0,Math.min(1,(Number.isFinite(s.phase)?s.phase:0)/5));
+  const separate=(node,delta,label)=>{node.userData.explorationLabel=label;explode(node,delta);};
   const assembly=(parent,component,at=[0,0,0],scale=1)=>{const p=part(parent,component,at);p.userData.explorationAssembly=component;p.scale.setScalar(scale);return p;};
   const floor=(parent,w,d)=>box(parent,[w,.15,d],M.deck,[0,-.08,0]);
   const named=(node,name)=>{node.name=name;return node;};
@@ -66,11 +67,11 @@ export function buildOccView(id,api){
     const p=assembly(parent,component,at),back=group(p,'monitor-back-enclosure');
     box(back,[w,.06,.28],P.frame,[0,-h/2,0]);box(back,[w,.06,.28],P.frame,[0,h/2,0]);
     for(const x of [-w/2,w/2])box(back,[.055,h,.28],P.frame,[x,0,0]);
-    box(back,[w,h,.045],P.frame,[0,0,-.15]);shell(back);explode(back,[0,0,-.65]);
-    const pcb=F.board(p,'monitor-controller-board',w*.49,h*.56,[w*.12,0,-.065]);explode(pcb,[w*.45,0,-.45]);
+    box(back,[w,h,.045],P.frame,[0,0,-.15]);shell(back);separate(back,[0,0,-.65],'Monitor rear enclosure');
+    const pcb=F.board(p,'monitor-controller-board',w*.49,h*.56,[w*.12,0,-.065]);separate(pcb,[w*.45,0,-.45],'Monitor controller board');
     const supply=group(p,'monitor-power-board',[-w*.3,-h*.13,-.03]);box(supply,[w*.21,h*.42,.055],P.board);
-    for(const y of [-.12,.12])cylinder(supply,.055,.13,M.copper,[0,y,.07],[Math.PI/2,0,0],10);explode(supply,[-w*.4,.1,-.45]);
-    const panel=group(p,'monitor-lcd-panel');box(panel,[w*.97,h*.95,.035],P.dark,[0,0,.1]);explode(panel,[0,0,.44]);
+    for(const y of [-.12,.12])cylinder(supply,.055,.13,M.copper,[0,y,.07],[Math.PI/2,0,0],10);separate(supply,[-w*.4,.1,-.45],'Monitor power board');
+    const panel=group(p,'monitor-lcd-panel');box(panel,[w*.97,h*.95,.035],P.dark,[0,0,.1]);separate(panel,[0,0,.44],'LCD panel');
     const display=mimic(panel,w*.91,h*.87,mode,options);display.node.position.z=.125;
     const stand=group(p,'monitor-stand');box(stand,[.11,.48,.11],M.steel,[0,-h/2-.22,-.05]);box(stand,[w*.34,.04,.32],P.dark,[0,-h/2-.45,.03]);
     return {node:p,display,pcb,panel,supply};
@@ -82,8 +83,8 @@ export function buildOccView(id,api){
   function clientComputer(parent,at=[0,0,0],remote=false){
     const p=assembly(parent,remote?'occ-kvm-interface':'occ-client-computer',at),w=remote?.78:1.1,h=remote?.25:.55,d=remote?.55:.8;
     box(p,[w,.045,d],M.steel,[0,-h/2,0]);for(const x of [-w/2,w/2])box(p,[.035,h,d],P.frame,[x,0,0]);
-    const lid=group(p,remote?'kvm-receiver-cover':'client-computer-cover');box(lid,[w,.04,d],P.blue,[0,h/2,0]);shell(lid);explode(lid,[0,.5,0]);
-    const pcb=F.board(p,remote?'kvm-interface-board':'client-computer-board',w*.8,d*.7,[0,-h*.3,0]);pcb.rotation.x=-Math.PI/2;explode(pcb,[0,.3,.2]);
+    const lid=group(p,remote?'kvm-receiver-cover':'client-computer-cover');box(lid,[w,.04,d],P.blue,[0,h/2,0]);shell(lid);separate(lid,[0,.5,0],remote?'KVM receiver cover':'Client computer cover');
+    const pcb=F.board(p,remote?'kvm-interface-board':'client-computer-board',w*.8,d*.7,[0,-h*.3,0]);pcb.rotation.x=-Math.PI/2;separate(pcb,[0,.3,.2],remote?'KVM interface board':'Client computer board');
     for(let i=0;i<3;i++)box(p,[w*.16,h*.3,.045],P.dark,[-w*.27+i*w*.27,0,d/2+.01]);
     const active=indicator(p,remote?'kvm-received-frame':'client-rendered-frame',[-w*.35,h*.2,d/2+.04],.065);
     return {node:p,active};
@@ -93,11 +94,11 @@ export function buildOccView(id,api){
     box(p,[4.8,.14,1.95],P.blue,[0,1.25,0]);for(const x of [-1.95,1.95]){box(p,[.13,1.2,1.05],M.core,[x,.6,0]);box(p,[.5,.08,1.5],M.steel,[x,.035,0]);}
     const controls=assembly(p,'occ-workstation-input');
     const keyboard=group(controls,'removable-keyboard',[-.63,1.37,.4]);box(keyboard,[1.26,.055,.4],P.dark);
-    for(let j=0;j<4;j++)for(let i=0;i<9;i++)box(keyboard,[.09,.014,.044],P.muted,[-.49+i*.12,.035,-.13+j*.08]);explode(keyboard,[0,.4,.4]);
-    const pointing=group(controls,'pointing-device',[.43,1.38,.4]);box(pointing,[.37,.025,.41],P.frame);box(pointing,[.14,.07,.22],P.dark,[0,.05,0]);explode(pointing,[.4,.4,.4]);
+    for(let j=0;j<4;j++)for(let i=0;i<9;i++)box(keyboard,[.09,.014,.044],P.muted,[-.49+i*.12,.035,-.13+j*.08]);separate(keyboard,[0,.4,.4],'Keyboard');
+    const pointing=group(controls,'pointing-device',[.43,1.38,.4]);box(pointing,[.37,.025,.41],P.frame);box(pointing,[.14,.07,.22],P.dark,[0,.05,0]);separate(pointing,[.4,.4,.4],'Pointing device');
     const radio=assembly(p,'operations-radio-dispatch',[1.75,1.4,.25]);box(radio,[.5,.16,.51],P.dark);box(radio,[.29,.14,.27],P.blue,[0,.12,-.04]);
     const hand=group(radio,'communications-handset',[.35,.19,0]);box(hand,[.14,.52,.14],P.dark);
-    for(const y of [-.22,.22])box(hand,[.21,.13,.19],P.blue,[0,y,0]);explode(hand,[.35,.4,.2]);cable(radio,[[.3,0,0],[.2,-.07,.3],[-.12,.1,.16]],P.dark,.017);
+    for(const y of [-.22,.22])box(hand,[.21,.13,.19],P.blue,[0,y,0]);separate(hand,[.35,.4,.2],'Communications handset');cable(radio,[[.3,0,0],[.2,-.07,.3],[-.12,.1,.16]],P.dark,.017);
     const main=monitor(p,'occ-task-display',[-.73,2.48,-.47],2.45,1.37,mode,{information,legacy});main.node.name='task-monitor';
     const side=monitor(p,'occ-task-display',[1.35,2.42,-.45],1.42,1.25,'station');side.node.name='event-monitor';
     const queue=part(side.panel,'occ-alarm-queue',[0,0,.173]);box(queue,[.91,.055,.018],P.frame,[0,.28,0]);
@@ -124,7 +125,7 @@ export function buildOccView(id,api){
     const p=assembly(parent,'occ-equipment-cabinet',at,scale);
     for(const x of [-1.35,1.35])for(const z of [-.85,.85])box(p,[.09,5.35,.09],M.steel,[x,2.73,z]);
     for(const y of [.08,5.4])box(p,[2.85,.12,1.85],P.frame,[0,y,0]);
-    const side=group(p,'rack-side-enclosure');box(side,[.045,5.3,1.8],P.blue,[-1.43,2.72,0]);box(side,[2.85,5.3,.045],P.frame,[0,2.72,-.93]);shell(side);explode(side,[-.65,.1,-.5]);return p;
+    const side=group(p,'rack-side-enclosure');box(side,[.045,5.3,1.8],P.blue,[-1.43,2.72,0]);box(side,[2.85,5.3,.045],P.frame,[0,2.72,-.93]);shell(side);separate(side,[-.65,.1,-.5],'Rack side and rear enclosure');return p;
   }
   function systems(parent,{at=[0,0,0],scale=1}={}){
     const p=assembly(parent,'operations-equipment-room',at,scale);
@@ -159,7 +160,7 @@ export function buildOccView(id,api){
   }
   if(id==='operations-centre'){
     const room=assembly(root,'operations-centre');floor(room,18,12.6);
-    const enclosure=group(room,'room-cutaway-enclosure');box(enclosure,[18,3.6,.12],P.frame,[0,1.8,-6.3]);box(enclosure,[.12,3.6,12.6],P.frame,[-9,1.8,0]);shell(enclosure);explode(enclosure,[0,.6,-.5]);
+    const enclosure=group(room,'room-cutaway-enclosure');box(enclosure,[18,3.6,.12],P.frame,[0,1.8,-6.3]);box(enclosure,[.12,3.6,12.6],P.frame,[-9,1.8,0]);shell(enclosure);separate(enclosure,[0,.6,-.5],'Room enclosure');
     const wall=sharedWall(room,[-3.1,0,-4.5],.95);
     const desks=[[-5.7,0,-.6],[-.7,0,-.6],[-5.7,0,3.3],[-.7,0,3.3]].map((at,i)=>consoleAssembly(room,at,.78,{mode:['traffic','power','station','traffic'][i],remote:true}));
     const technical=systems(room,{at:[5.5,0,-1.8],scale:.53});
@@ -189,3 +190,4 @@ export function buildOccView(id,api){
   for(const update of updates)update({phase:0,variant:id==='occ-workplace'?'task':id==='occ-equipment'?'normal':'traffic'});
   return root;
 }
+

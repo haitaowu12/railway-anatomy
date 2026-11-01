@@ -157,11 +157,26 @@ function syncControls(){
   $('#isolate-selection').hidden=overview||!exploration?.canIsolate;
   $('#isolate-selection').setAttribute('aria-pressed',String(Boolean(current?.isolation)));
   $('#isolate-selection').textContent=current?.isolation?'Assembly isolated':'Isolate assembly';
-  $('#restore-context').hidden=!current?.isolation&&!current?.canRestoreFrame;
+  const inspecting=current?.explodeScope==='selected'&&current?.exploded>0;
+  $('#inspect-assembly').hidden=overview||!exploration?.canExplodeSelected;
+  $('#inspect-assembly').textContent=inspecting?'Reassemble':'Inspect inside';
+  $('#inspect-assembly').setAttribute('aria-pressed',String(inspecting));
+  $('#restore-context').hidden=!current?.isolation&&!current?.canRestoreFrame&&!current?.exploded;
   $('#explode-scope').value=current?.explodeScope||'all';
   $('#explode-scope option[value="selected"]').disabled=!exploration?.canExplodeSelected;
   $('#exploration-note').hidden=!(current?.isolation||current?.explodeScope==='selected');
-  $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.internalSeparationCount||exploration?.separatedPartCount||0} separable internal parts in this assembly. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
+  const names=exploration?.pieceNames||[],instances=exploration?.instanceCount||1;
+  $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.internalSeparationCount||0} movable pieces${instances>1?` across ${instances} instances of this assembly`:''}. ${names.length?`Named groups: ${names.join('; ')}. `:''}Separation is a teaching layout; it is not a maintenance removal sequence. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
+  const inspectionStages=inspecting?(exploration?.inspectionStages||[]):[];
+  $('#inspection-stages').hidden=!inspectionStages.length;
+  const inspectionKey=JSON.stringify(inspectionStages);
+  if($('#inspection-stages').dataset.recipe!==inspectionKey){
+    $('#inspection-stages').innerHTML=inspectionStages.map((stage,index)=>`<button data-inspection-progress="${stage.end}" aria-pressed="false">${index+1}. ${safe(stage.label)}</button>`).join('');
+    $('#inspection-stages').dataset.recipe=inspectionKey;
+  }
+  // Keep the existing buttons while scrubbing or stepping so keyboard focus
+  // remains on the learner's chosen stage.
+  $$('#inspection-stages button').forEach((button,index)=>button.setAttribute('aria-pressed',String(current.exploded>=inspectionStages[index].end&&(index===inspectionStages.length-1||current.exploded<inspectionStages[index+1].end))));
   updateMotionGuide();
   $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':'Information diagram'):rendererStatus==='svg'?'Schematic teaching model · SVG':'Schematic teaching model';
 }
@@ -487,7 +502,9 @@ document.addEventListener('click',event=>{
   else if(b.id==='component-scope'){allComponents=!allComponents;renderDetail();}
   else if(b.id==='focus-selection'){labelLayoutKey='';viewer?.frameSelection?.(targetFor(state.component));syncControls();updateLabels();}
   else if(b.id==='isolate-selection'){const current=viewer?.getExplorationState?.();viewer?.setIsolation?.(current?.isolation?null:targetFor(state.component));renderDetail();syncControls();rebuildLabels();}
-  else if(b.id==='restore-context'){viewer?.setIsolation?.(null);viewer?.restoreFrame?.();state.exploded=viewer?.getExplorationState?.().exploded||0;renderDetail();syncControls();rebuildLabels();}
+  else if(b.id==='inspect-assembly'){const current=viewer?.getExplorationState?.();if(current?.explodeScope==='selected'&&current?.exploded>0)viewer?.restoreExploration?.();else viewer?.inspectAssembly?.(targetFor(state.component));state.cutaway=viewer?.getCutaway?.()||false;state.playing=false;renderDetail();syncControls();rebuildLabels();rememberCurrentEntry();}
+  else if(b.dataset.inspectionProgress){viewer?.setExploded(Number(b.dataset.inspectionProgress));syncControls();updateLabels();rememberCurrentEntry();}
+  else if(b.id==='restore-context'){viewer?.restoreExploration?.();state.cutaway=viewer?.getCutaway?.()||false;renderDetail();syncControls();rebuildLabels();rememberCurrentEntry();}
   else if(b.id==='larger-model'){const expanded=$('.explorer-shell').classList.toggle('model-expanded');b.setAttribute('aria-pressed',String(expanded));b.textContent=expanded?'Standard model size':'Larger model';requestAnimationFrame(()=>{viewer?.resize();viewer?.frameModel?.();syncControls();updateLabels();});}
   else if(b.id==='return-context'){if(returnContext){const destination=returnContext;returnContext=null;state={...state,...destination};configurationEffect='';lastExplorationContext='';render(true);announce(`Returned to ${VIEWS[state.view].label}`);}}
   else if(b.dataset.process)openProcess(b.dataset.process);
@@ -604,4 +621,5 @@ $('.main-nav [data-page="learn"] span').textContent=TOURS.length;
 $('#reference-domain').insertAdjacentHTML('beforeend','<option value="processes">Processes & evidence</option><option value="people">People & automation</option>');
 $('#reference-domain').insertAdjacentHTML('beforeend',DOMAINS.map(d=>`<option value="${d.id}">${d.label}</option>`).join(''));
 readHash();render();startViewer();
+
 
