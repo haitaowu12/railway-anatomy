@@ -45,6 +45,17 @@ nextFrame(0);
 const activeRoot = () => renderer.scene.children.find(node => node.name.startsWith('view-') && node.visible);
 const position = name => activeRoot().getObjectByName(name).getWorldPosition(new THREE.Vector3());
 
+viewer.setView('railway');nextFrame(1);
+const overviewProjection=renderer.camera.projectionMatrix.clone();
+const overviewPosition=renderer.camera.position.clone();
+assert(viewer.getComponentScreenPositions().some(p=>p.id==='network-station'&&!p.occluded),'The station has no visible model pin');
+viewer.setSelected('network-station');assert(viewer.frameSelection('network-station'));nextFrame(2);
+assert(!renderer.camera.projectionMatrix.equals(overviewProjection),'Focused framing retained the overview crop');
+assert(viewer.restoreFrame());nextFrame(3);
+assert(renderer.camera.projectionMatrix.equals(overviewProjection),'Restore frame lost the overview projection');
+assert(renderer.camera.position.distanceTo(overviewPosition)<1e-8,'Restore frame lost the overview camera position');
+
+
 viewer.setView('bogie'); viewer.setSelected('bogie');
 let capabilities = viewer.getExplorationCapabilities();
 assert(capabilities.canFocus && capabilities.canIsolate && capabilities.canExplodeSelected);

@@ -29,6 +29,8 @@ Different questions need different representations:
 
 In a model, select equipment to inspect it, frame it or isolate its visible assembly. Authored cutaways and separation expose parts where that helps explain construction. Comparisons change the represented equipment or relationship; phase controls explain selected mechanisms and information exchanges. Sequences have named steps, manual previous/next controls and a finite end state; repeating is optional. Numbered pins remain attached to visible equipment and correspond to a fixed parts key. The complete explanation and public references open below the workspace.
 
+Use **Find a view** to search places and systems, or browse the labelled area navigation. On a phone, **Browse railway** opens that same hierarchy. The inspection dock keeps a numbered part selector, equipment search and the selected explanation together; **Show parts list** opens the complete key.
+
 The railway also has systems that cross physical boundaries. Power supply reaches trains and stations; communications connect endpoints in several locations; train control combines onboard, trackside and control-centre functions. The navigation and cross-links preserve these relationships instead of giving each component only one place in a rigid tree.
 
 ## Learn through selected examples
@@ -83,7 +85,7 @@ For a larger addition, explain the learner's question and how it connects to exi
 The application is a buildless static website in `dist/`. From the repository root:
 
 ```bash
-python -m http.server --directory dist
+python3 -m http.server --directory dist
 ```
 
 Open [http://localhost:8000](http://localhost:8000). Serving over HTTP allows the browser's JavaScript modules to load consistently. The runtime is included in `dist/vendor/`; no package installation is needed to serve the site.

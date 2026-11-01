@@ -25,7 +25,7 @@ import { nodeVisible, within, visibleBounds, componentBounds, assemblyRoots, res
  * component positions and fields are illustrative; there are no asset ratings.
  */
 const C = {
-  background: 0x10202b, deck: 0x263744, edge: 0x38505c,
+  background: 0xf8faff, deck: 0x263744, edge: 0x38505c,
   white: 0xe9e9df, teal: 0x1d8684, yellow: 0xd7b949,
   dark: 0x1b2b35, glass: 0x254551, steel: 0x9aaab2,
   aluminum: 0xcbd5d9, copper: 0xb77447, core: 0x4a5963,
@@ -122,11 +122,12 @@ export function createViewer(container, callbacks = {}) {
     negative: mat(C.negative, .4, .35), brake: mat(C.brake, .6),
     signal: mat(C.signal, .5), service: mat(C.service, .5),
   };
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), mat(0x13232e, .96, 0));
+  const groundMaterial = compatibility ? new THREE.MeshBasicMaterial({color:C.background, toneMapped:false}) : new THREE.ShadowMaterial({color:0x142344, opacity:.12});
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), groundMaterial);
   ground.rotation.x = -Math.PI / 2; ground.position.y = -.27; ground.receiveShadow = true; ground.renderOrder = -1000; scene.add(ground);
-  const grid = new THREE.GridHelper(80, 40, 0x182b36, 0x182b36);
+  const grid = new THREE.GridHelper(80, 40, 0xdde4f1, 0xdde4f1);
   grid.position.y = -.255; grid.renderOrder = -900;
-  grid.material.transparent = true; grid.material.opacity = .1;
+  grid.material.transparent = true; grid.material.opacity = .06;
   grid.visible = !compatibility; scene.add(grid);
 
   const models = new Map();
@@ -139,7 +140,7 @@ export function createViewer(container, callbacks = {}) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const selectionBounds = new THREE.Box3();
   const selectionGeometry = new THREE.BufferGeometry();
-  const selectionCorners = new THREE.LineSegments(selectionGeometry, new THREE.LineBasicMaterial({ color: 0xf6d17a, transparent: true, opacity: .85, depthTest: false }));
+  const selectionCorners = new THREE.LineSegments(selectionGeometry, new THREE.LineBasicMaterial({ color: 0x244acb, transparent: true, opacity: .9, depthTest: false }));
   selectionCorners.renderOrder = 20; selectionCorners.visible = false; scene.add(selectionCorners);
 
   function startModel(id) {
@@ -1357,14 +1358,16 @@ export function createViewer(container, callbacks = {}) {
   function rememberFrame() {
     if (frameBeforeExploration) return;
     frameBeforeExploration = { view: state.view, position: camera.position.clone(), target: controls.target.clone(),
-      minDistance: controls.minDistance, maxDistance: controls.maxDistance, far: camera.far };
+      minDistance: controls.minDistance, maxDistance: controls.maxDistance, far: camera.far, zoom:camera.zoom, projectionView:camera.view?{...camera.view}:null };
   }
   function restoreFrame() {
     if (!frameBeforeExploration || frameBeforeExploration.view !== state.view) return false;
     const previous = frameBeforeExploration; frameBeforeExploration = null;
     camera.position.copy(previous.position); controls.target.copy(previous.target);
     controls.minDistance = previous.minDistance; controls.maxDistance = previous.maxDistance;
-    camera.far = previous.far; camera.updateProjectionMatrix();
+    camera.far = previous.far; camera.zoom=previous.zoom;
+    if(previous.projectionView?.enabled){const v=previous.projectionView;camera.setViewOffset(v.fullWidth,v.fullHeight,v.offsetX,v.offsetY,v.width,v.height);}else camera.clearViewOffset();
+    camera.updateProjectionMatrix();
     state.focused = null; controls.update(); requestRender(); return true;
   }
   function viewFocus(){return (state.view === 'station' ? STATION_FOCUS : state.view === 'platform-interface' ? PLATFORM_FOCUS : null)?.[state.variant];}
@@ -1383,15 +1386,32 @@ export function createViewer(container, callbacks = {}) {
     fitToView(); controls.update(); requestRender();
   }
   function fitToView(nodes = null) {
+    camera.clearViewOffset(); camera.zoom=1; camera.updateProjectionMatrix();
     const authored = !nodes && !state.focused && !state.isolation && viewFocus()?.bounds;
     const bounds = authored ? new THREE.Box3(new THREE.Vector3(...authored.min),new THREE.Vector3(...authored.max)) : visibleBounds(nodes||frameRoots());
     const fit = fitPerspectiveBounds(bounds, { direction: camera.position.clone().sub(controls.target),
-      up: camera.up, fov: camera.fov, aspect: camera.aspect });
+      up: camera.up, fov: camera.fov, aspect: camera.aspect, padding:state.view==='railway'?1.05:1.16 });
     if (!fit) return false;
     controls.target.copy(fit.target); camera.position.copy(fit.position);
     controls.minDistance = fit.minimumDistance;
     controls.maxDistance = Math.max(VIEW[state.view].distance * 1.65, fit.distance * 2);
     camera.far = fit.far; camera.updateProjectionMatrix();
+    // A shallow overview is asymmetric in perspective. Center its projected
+    // board rather than leaving the near edge against the camera controls.
+    if(state.view==='railway'&&!state.focused&&!state.isolation){
+      camera.lookAt(controls.target);camera.updateMatrixWorld(true);
+      const points=[];
+      for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])points.push(new THREE.Vector3(x,y,z).project(camera));
+      const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x)),bottom=Math.min(...points.map(p=>p.y)),top=Math.max(...points.map(p=>p.y));
+      const width=container.clientWidth,height=container.clientHeight;
+      const footer=container.parentElement?.querySelector('.stage-footer');
+      const footerHeight=footer&&getComputedStyle(footer).position==='absolute'?footer.offsetHeight:0;
+      const bottomEdge=-1+2*(footerHeight+12)/height,topEdge=.92;
+      camera.zoom=Math.min(1.35,1.88/(right-left),(topEdge-bottomEdge)/(top-bottom));
+      const center=(topEdge+bottomEdge)/2;
+      camera.setViewOffset(width,height,(left+right)*camera.zoom*width/4,(center-(top+bottom)*camera.zoom/2)*height/2,width,height);
+      camera.updateProjectionMatrix();
+    }
     return true;
   }
   function frameSelection(id = state.selected) {

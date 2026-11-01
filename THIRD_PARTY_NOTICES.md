@@ -40,7 +40,7 @@ THE SOFTWARE.
 
 ## Public reading materials
 
-The [reading directory](dist/reading.html) contains 85 primary public references supporting the site's six subject areas. Source records in `dist/catalog.js` identify publishers, links, descriptions and the scope of each reference. Citations and links acknowledge the basis and limits of the educational explanations; they do not transfer ownership of the linked publications, extend Railway Anatomy's MIT licence to those publications, or imply endorsement by their authors or publishers.
+The [reading directory](dist/reading.html) contains the public references used across the atlas. Source records in `dist/catalog.js` identify publishers, links, descriptions and the scope of each reference. Citations and links acknowledge the basis and limits of the educational explanations; they do not transfer ownership of the linked publications, extend Railway Anatomy's MIT licence to those publications, or imply endorsement by their authors or publishers.
 
 Linked standards descriptions and supplier materials are further reading. No complete standards text, compliance certification or licence to redistribute a publisher's material is supplied by this project. Product and architecture names, including SelTrac, identify the public examples being discussed; they do not indicate affiliation with their owners.
 
@@ -49,3 +49,9 @@ The procedural geometry and explanatory diagrams are original schematic composit
 ## Original project materials
 
 Copyright 2026 Railway Anatomy contributors. The repository's [MIT License](LICENSE) covers the original application code, authored documentation, visual assets and schematic geometry.
+
+## Interface type and icons
+
+IBM Plex Sans Latin (400 and 600), distributed by Fontsource 5.3.0, is included under the SIL Open Font License. The licence is retained at `dist/assets/ibm-plex-sans-LICENSE.txt`.
+
+Nine Phosphor regular icons from `@phosphor-icons/core` 2.1.1 are included under the MIT licence. The licence is retained at `dist/assets/phosphor-LICENSE.txt`. The icons identify railway navigation areas; they are not equipment diagrams.
