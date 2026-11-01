@@ -1,3 +1,4 @@
+import * as electrificationHelpers from '../dist/electrification.js';
 // Execute shipping geometry and animations without a browser or renderer.
 import {readFile} from 'node:fs/promises';
 import * as THREE from '../dist/vendor/three.module.js';
@@ -7,19 +8,20 @@ export {THREE};
 export async function studyHarness(){
   const source=await readFile(new URL('../dist/viewer.js',import.meta.url),'utf8');
   const between=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b,source.indexOf(a)+a.length));
-  const create=new Function('THREE',`${between('const C = {','\nconst VIEW')}
+  const create=new Function('THREE','electrificationHelpers',`
+ const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;${between('const C = {','\nconst VIEW')}
     const compatibility=true,scene=new THREE.Scene(),models=new Map();let building;
     ${between('  const materials = new Map();','  const ground = ')}
     ${between('  function startModel(','  function registerAnimator(')}
     function registerAnimator(fn){building.animators.push(fn);}
-    return {scene,models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,cabinet,registerAnimator}};`);
-  const harness=create(THREE);
-  const set=(view,variant,phase=0)=>{
+    return {scene,models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator}};`);
+  const harness=create(THREE,electrificationHelpers);
+  const set=(view,variant,phase=0,options={})=>{
     if(!harness.models.has(view))buildStudyView(view,harness.api);
     const record=harness.models.get(view);
     for(const candidate of harness.models.values())candidate.root.visible=candidate===record;
     for(const node of record.shells)node.visible=false;
-    const state={view,variant,phase,playing:false,mode:'coasting',scenario:'nominal',cutaway:true,exploded:0,signals:true,technology:{propulsion:'lim',control:'loop'}};
+    const state={view,variant,phase,playing:false,mode:'coasting',scenario:'nominal',cutaway:true,exploded:0,signals:true,electrification:electrificationHelpers.DEFAULT_ELECTRIFICATION,technology:{propulsion:'lim',control:'loop'},...options};
     record.animators.forEach(fn=>fn(state));record.root.updateWorldMatrix(true,true);return record;
   };
   return {...harness,set};

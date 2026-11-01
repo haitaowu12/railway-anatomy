@@ -127,6 +127,21 @@ export function separationEntries(record, { componentId = null, isolation = null
     hasVisibleGeometry(entry.node));
 }
 
+// Moving a whole top-level context object is not an internal assembly study.
+// A real internal separator has an owning component/assembly above it. Study
+// aliases group references to equipment and do not turn context into internals.
+export function viewSeparationCapabilities(record, options = {}) {
+  const entries=separationEntries(record,options);
+  const internal=entries.filter(({node})=>{
+    for(let parent=node.parent;parent&&parent!==record.root;parent=parent.parent){
+      const id=parent.userData.component;
+      if(parent.userData.explorationAssembly || id && id!=='supply-conversion'&&!id.startsWith('study-'))return true;
+    }
+    return false;
+  });
+  return {explode:internal.length>0,internalParts:internal.length,contextParts:entries.length-internal.length};
+}
+
 export function explorationCapabilities(record, componentId, { isolation = null } = {}) {
   const roots = assemblyRoots(record, componentId);
   const entries = roots.length ? separationEntries(record, { componentId, isolation }) : [];
@@ -142,12 +157,12 @@ export function explorationCapabilities(record, componentId, { isolation = null 
     assemblyComponentId: roots.find(root => root.userData.explorationAssembly)?.userData.explorationAssembly || componentId || null,
     canFocus: visible,
     canIsolate: visible && (outside || Boolean(isolation)),
-    canExplodeSelected: entries.length > 0,
-    separatedPartCount: entries.length,
+    canExplodeSelected: internal.length > 0,
+    separatedPartCount: internal.length,
     internalSeparationCount: internal.length,
     contextSeparationCount: entries.length - internal.length,
     instanceCount: roots.length,
-    pieceNames: [...new Set(entries.map(entry => entry.node.userData.explorationLabel).filter(Boolean))],
+    pieceNames: [...new Set(internal.map(entry => entry.node.userData.explorationLabel).filter(Boolean))],
   };
 }
 
@@ -166,7 +181,9 @@ export function applySeparation(record, { amount = 0, scope = 'all', componentId
   restoreSeparation(record);
   const fraction = MathUtils.clamp(Number(amount) || 0, 0, 1);
   if (!fraction) return;
+  const fixedRoots=scope==='selected'?assemblyRoots(record,componentId):[];
   for (const entry of separationEntries(record, { componentId: scope === 'selected' ? componentId : null, isolation })) {
+    if(fixedRoots.includes(entry.node))continue;
     if (!entry.explorationOffset) entry.explorationOffset = new Vector3();
     entry.explorationOffset.copy(entry.delta).multiplyScalar(fraction);
     entry.node.position.add(entry.explorationOffset);
@@ -196,12 +213,12 @@ export function fitPerspectiveBounds(bounds, { direction = new Vector3(1, 1, 1),
     far: Math.max(250, distance + bounds.getSize(new Vector3()).length() * 3) };
 }
 
-export function screenPositions(boundsByComponent, camera) {
+export function screenPositions(boundsByComponent, camera, anchorInstances = null) {
   camera.updateMatrixWorld(true);
   const result = [];
   for (const [id, instances] of boundsByComponent) {
     const candidates = [];
-    for (const { bounds } of instances) {
+    for (const { node, bounds } of instances) {
       const point = bounds.getCenter(new Vector3()).project(camera);
       if (point.z <= -1 || point.z >= 1 || Math.abs(point.x) >= 1 || Math.abs(point.y) >= 1) continue;
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -210,12 +227,20 @@ export function screenPositions(boundsByComponent, camera) {
         minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
       }
       const width = (maxX - minX) * .5, height = (maxY - minY) * .5;
-      candidates.push({ id, x: (point.x + 1) * .5, y: (1 - point.y) * .5, depth: point.z,
+      candidates.push({ id, node, x: (point.x + 1) * .5, y: (1 - point.y) * .5, depth: point.z,
         width, height, instanceCount: instances.length, area: width * height });
     }
     candidates.sort((a, b) => b.area - a.area || a.depth - b.depth);
     if (candidates.length) {
-      const { area, ...position } = candidates[0];
+      const retained=anchorInstances?.get(id);
+      const stillVisible=retained&&instances.some(instance=>instance.node===retained);
+      const chosen=stillVisible?candidates.find(candidate=>candidate.node===retained):candidates[0];
+      // Retain a physical instance across camera rotation. If that instance is
+      // offscreen the label rests, rather than jumping to another wheelset.
+      if(!chosen)continue;
+      anchorInstances?.set(id,chosen.node);
+      const { area, node, ...position } = chosen;
+      position.instanceId=node?.uuid;
       result.push(position);
     }
   }

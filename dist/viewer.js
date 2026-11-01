@@ -9,8 +9,11 @@ import { PLATFORM_VIEWS, buildPlatformView } from './platform-models.js';
 import { NETWORK_VIEWS, buildNetworkView } from './network-model.js';
 import { OCC_VIEWS, buildOccView } from './occ-models.js';
 import { STUDY_CAMERAS, buildStudyView } from './studies-models.js';
+import { POWER_CAMERAS, buildPowerView } from './electrification-models.js';
+import { DEFAULT_ELECTRIFICATION, normalizeElectrification } from './electrification.js';
+import { COMMUNICATIONS_VIEWS, buildCommunicationsView } from './communications-models.js';
 import { nodeVisible, within, visibleBounds, componentBounds, assemblyRoots, restoreIsolation, applyIsolation,
-  separationEntries, explorationCapabilities, restoreSeparation, applySeparation, fitPerspectiveBounds, screenPositions } from './exploration.js';
+  separationEntries, viewSeparationCapabilities, explorationCapabilities, restoreSeparation, applySeparation, fitPerspectiveBounds, screenPositions } from './exploration.js';
 
 /*
  * Original procedural explanatory models. Geometry is a teaching composition,
@@ -28,7 +31,7 @@ const C = {
   brake: 0xe49268, accent: 0xd4ede1, signal: 0xb3a6f6, service: 0x7fcea5, warning: 0xff936c,
 };
 const VIEW = {
-  ...TRACK_VIEWS, ...SIGNALLING_VIEWS, ...STATION_VIEWS, ...OPERATIONS_VIEWS, ...PLATFORM_VIEWS, ...NETWORK_VIEWS, ...OCC_VIEWS, ...STUDY_CAMERAS,
+  ...TRACK_VIEWS, ...SIGNALLING_VIEWS, ...STATION_VIEWS, ...OPERATIONS_VIEWS, ...PLATFORM_VIEWS, ...NETWORK_VIEWS, ...OCC_VIEWS, ...STUDY_CAMERAS, ...POWER_CAMERAS, ...COMMUNICATIONS_VIEWS,
   system: { camera: [25, 26, 32], target: [0, .9, 1], distance: 55 },
   substation: { camera: [12.5, 12, 16], target: [0, 1, 0], distance: 31 },
   guideway: { camera: [7, 5.7, 7.6], target: [0, .3, .15], distance: 19 },
@@ -126,8 +129,9 @@ export function createViewer(container, callbacks = {}) {
 
   const models = new Map();
   let building;
-  const state = { view: 'system', selected: null, mode: 'motoring', exploded: 0, explodeScope: 'all', isolation: null, focused: null, cutaway: false, playing: false, phase: 0, receptivity: 'train', scenario: 'nominal', variant: 'default', signals: true, technology: { propulsion: 'lim', control: 'loop' } };
+  const state = { view: 'system', selected: null, mode: 'motoring', exploded: 0, explodeScope: 'all', isolation: null, focused: null, cutaway: false, playing: false, phase: 0, receptivity: 'train', scenario: 'nominal', variant: 'default', signals: true, electrification: DEFAULT_ELECTRIFICATION, technology: { propulsion: 'lim', control: 'loop' } };
   let frameBeforeExploration = null, cachedComponentBounds = null;
+  const labelAnchorInstances = new Map();
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -211,6 +215,130 @@ export function createViewer(container, callbacks = {}) {
       parent.add(bead); dots.push(bead);
     }
     building.flows.push({ m, curve, dots, tag, material: lineMaterial });
+  }
+
+  // Kept within the shared geometry contract so headless model checks exercise
+  // exactly the same physical substitutions as the browser renderer.
+  function electricMode(s) {
+    const value=s.electrification || (s.view==='electrification'?s.variant:null);
+    if(value==='ac')return 'overhead-ac';
+    return ['fourth-rail-dc','third-rail-dc','overhead-dc','overhead-ac'].includes(value)?value:'fourth-rail-dc';
+  }
+  function powerTrace(parent,name,points,material,predicate=()=>true) {
+    const g=group(parent,name);g.userData.circuitPath=points.map(point=>point.slice());
+    tube(g,points,.027,material,{straight:true,segments:Math.max(2,points.length*3)});
+    // Static topology: there are no decorative travelling current particles.
+    registerAnimator(s=>{g.visible=predicate(s)&&s.mode!=='isolated'&&(s.exploded||0)<.15;});
+    return g;
+  }
+  function powerPiece(parent,id,label,delta,at=[0,0,0]) {
+    const p=part(parent,id,at);p.userData.explorationLabel=label;
+    if(delta)explode(p,delta);return p;
+  }
+  function makePowerTransformer(parent,id='transformer',at=[0,0,0],scale=1) {
+    const g=part(parent,id,at);g.scale.setScalar(scale);g.userData.explorationAssembly=id;
+    box(g,[2.8,.15,2.15],M.steel,[0,.1,0]);
+    const tank=powerPiece(g,'transformer-tank','Tank and cooling surfaces',[0,0,-1.9]);
+    box(tank,[2.55,1.95,.09],M.teal,[0,1.14,-.91]);
+    for(const x of [-1.28,1.28]){
+      box(tank,[.08,1.95,1.9],M.teal,[x,1.14,0]);
+      for(let z=-.8;z<=.8;z+=.2)box(tank,[.32,1.45,.035],M.steel,[x+Math.sign(x)*.15,1.12,z]);
+    }
+    const cover=group(g,'transformer-removable-front-cover');
+    box(cover,[2.55,1.95,.065],M.teal,[0,1.14,.95]);shell(cover);explode(cover,[0,0,2.1]);
+    const lid=group(g,'transformer-removable-tank-lid');box(lid,[2.7,.085,2.02],M.steel,[0,2.15,0]);shell(lid);explode(lid,[0,1.65,0]);
+    const core=powerPiece(g,'transformer-core','Laminated magnetic core',[0,.25,-.6]);
+    for(const y of [.42,1.94])for(let z=-.06;z<=.06;z+=.06)box(core,[2.15,.22,.05],M.core,[0,y,z]);
+    for(const x of [-.74,0,.74])for(let z=-.06;z<=.06;z+=.06)box(core,[.24,1.45,.05],M.core,[x,1.18,z]);
+    const primary=powerPiece(g,'transformer-primary-winding','Primary winding groups',[-1.5,.55,1.0]);
+    const secondary=powerPiece(g,'transformer-secondary-winding','Secondary winding groups',[1.5,.55,1.0]);
+    for(const x of [-.74,0,.74])for(let y=.57;y<1.82;y+=.125){
+      mesh(primary,torus(.29,.035,5,18),M.positive,[x,y,0],[Math.PI/2,0,0]);
+      mesh(secondary,torus(.195,.03,5,18),M.copper,[x,y,0],[Math.PI/2,0,0]);
+    }
+    const terminals=powerPiece(g,'transformer-bushing','Insulated terminals',[0,1.8,0]);
+    for(const z of [-.55,.55]){
+      const row=group(terminals,z<0?'transformer-primary-terminal-row':'transformer-secondary-terminal-row');
+      for(const x of [-.74,0,.74]){
+        cylinder(row,.085,.45,M.white,[x,2.4,z],null,12);
+        for(let y=2.24;y<2.56;y+=.09)cylinder(row,.12,.035,M.white,[x,y,z],null,12);
+        cylinder(row,.035,.17,M.copper,[x,2.69,z],null,10);
+      }
+    }
+    return g;
+  }
+  function makePowerRectifier(parent,id='rectifier',at=[0,0,0],scale=1) {
+    const g=part(parent,id,at);g.scale.setScalar(scale);g.userData.explorationAssembly=id;
+    box(g,[2.35,.15,2.05],M.steel,[0,.1,0]);
+    for(const x of [-1.05,1.05])for(const z of [-.85,.85])box(g,[.07,2.15,.07],M.core,[x,1.2,z]);
+    const cover=group(g,'rectifier-removable-front');box(cover,[2.2,2.05,.06],M.white,[0,1.2,1.0]);shell(cover);explode(cover,[0,0,1.9]);
+    for(const z of [-.42,.42]){
+      const cooling=powerPiece(g,'rectifier-cooling','Heat-sink bank',[0,.15,Math.sign(z)*1.3]);
+      for(let x=-.88;x<=.88;x+=.14)box(cooling,[.035,1.7,.3],M.aluminum,[x,1.15,z]);
+      const stack=powerPiece(g,'rectifier-diode-stack','Clamped semiconductor devices',[0,.65,Math.sign(z)*.62]);
+      for(const x of [-.65,0,.65]){
+        cylinder(stack,.135,.12,M.dark,[x,1.15,z+.2],[Math.PI/2,0,0],16);
+        for(const dz of [-.1,.1])cylinder(stack,.17,.045,M.copper,[x,1.15,z+.2+dz],[Math.PI/2,0,0],16);
+        for(const dx of [-.19,.19])box(stack,[.035,.44,.3],M.steel,[x+dx,1.15,z+.2]);
+      }
+    }
+    const buses=powerPiece(g,'rectifier-busbar','AC terminals and DC busbars',[0,1.4,0]);
+    for(const [y,z,face,material]of [[1.88,.9,.72,M.positive],[.47,-.65,-.32,M.negative]]){
+      box(buses,[1.85,.07,.07],material,[0,y,z]);
+      for(const x of [-.65,0,.65])tube(buses,[[x,y,z],[x,y,face],[x,1.15,face]],.022,M.copper,{straight:true,segments:5});
+    }
+    for(const x of [-.65,0,.65]){
+      box(buses,[.075,.55,.075],M.copper,[x,2.0,-.64]);
+      tube(buses,[[x,1.73,-.64],[x,1.4,-.12],[x,1.15,-.12]],.022,M.copper,{straight:true,segments:5});
+      tube(buses,[[x,1.4,-.12],[x,1.4,.52],[x,1.15,.52]],.022,M.copper,{straight:true,segments:5});
+    }
+    return g;
+  }
+  function makePowerSwitchgear(parent,id='ac-switchgear',at=[0,0,0],{dc=false,scale=1}={}) {
+    const g=part(parent,id,at);g.scale.setScalar(scale);g.userData.explorationAssembly=id;
+    box(g,[1.05,.12,1.15],M.steel,[0,.08,0]);
+    for(const x of [-.51,.51])box(g,[.055,2.32,1.1],M.core,[x,1.25,0]);
+    box(g,[1.05,2.3,.055],M.core,[0,1.25,-.55]);box(g,[1.05,.07,1.15],M.steel,[0,2.43,0]);
+    const door=group(g,'switchgear-removable-front');box(door,[.98,2.25,.05],dc?M.teal:M.white,[0,1.25,.6]);
+    box(door,[.43,.25,.035],M.dark,[0,1.94,.64]);box(door,[.045,.25,.035],M.dark,[.37,1.2,.64]);shell(door);explode(door,[0,0,1.5]);
+    const bus=powerPiece(g,'switchgear-busbar','Main busbars',[0,1.15,-.2]);
+    const xs=dc?[0]:[-.29,0,.29];
+    for(const x of xs)box(bus,[.07,1.8,.075],M.copper,[x,1.32,-.28]);
+    const poles=powerPiece(g,'switchgear-pole',dc?'DC breaker pole':'AC interrupter poles',[0,.15,.8]);
+    for(const x of xs){
+      cylinder(poles,dc?.16:.11,.75,M.white,[x,1.52,.04],null,12);
+      for(const y of [1.06,1.96])box(poles,[.14,.09,.24],M.copper,[x,y,.06]);
+      const contact=group(poles,'feeder-breaker-moving-contact',[x,1.05,.15]);
+      box(contact,[.045,.39,.045],M.copper,[0,.195,0]);building.contacts.push(contact);
+    }
+    const drive=powerPiece(g,'switchgear-drive','Operating mechanism',[0,-.05,1.45]);
+    box(drive,[.72,.34,.36],M.dark,[0,.55,.08]);cylinder(drive,.13,.65,M.steel,[0,.55,.18],[0,0,Math.PI/2],12);
+    for(const x of xs)box(drive,[.04,.47,.04],M.steel,[x,.89,.1]);
+    if(dc){
+      const breaker=part(g,'breaker');
+      const chute=powerPiece(breaker,'breaker-arc-chute','DC arc-chute plates',[0,.8,.8]);
+      for(let y=1.61;y<2.25;y+=.08)box(chute,[.65,.035,.48],M.steel,[0,y,.25]);
+    }
+    return g;
+  }
+  function makePantograph(parent,at=[0,3.78,0]) {
+    const g=part(parent,'pantograph',at);g.userData.explorationAssembly='pantograph';
+    for(const x of [-.6,.6])for(const z of [-.42,.42])cylinder(g,.07,.14,M.white,[x,0,z],null,10);
+    const base=powerPiece(g,'pantograph-base','Roof insulators and base',[0,0,-.65]);
+    box(base,[1.5,.08,1.05],M.core,[0,.1,0]);
+    const arms=powerPiece(g,'pantograph-arms','Articulated arms',[0,.6,0]);
+    for(const z of [-.24,.24])tube(arms,[[-.5,.16,z],[.6,.72,z],[-.15,1.32,z]],.035,M.steel,{straight:true,segments:4});
+    const head=powerPiece(g,'pantograph-head','Contact strips and head',[0,1.1,0]);
+    box(head,[.4,.065,1.45],M.core,[-.15,1.35,0]);
+    for(const x of [-.27,-.03])box(head,[.07,.035,1.3],M.copper,[x,1.4025,0]);
+    registerAnimator(s=>{g.visible=electricMode(s).startsWith('overhead');});g.visible=false;
+    return g;
+  }
+  function makeWheelReturn(parent,at=[0,0,0]) {
+    const g=part(parent,'wheel-return',at);
+    cylinder(g,.085,.12,M.copper,[-1.02,.56,.88],[Math.PI/2,0,0],12);
+    tube(g,[[-1.02,.56,.94],[-.72,.86,.93],[.0,1.1,.9]],.023,M.negative,{straight:true,segments:5});
+    registerAnimator(s=>{g.visible=electricMode(s)!=='fourth-rail-dc';});g.visible=false;return g;
   }
 
   // Propulsion and control are independent selections. Specialist control
@@ -358,31 +486,55 @@ export function createViewer(container, callbacks = {}) {
       box(p, [length, .11, .025], M.steel, [0, y, 1.112]);
       box(p, [length, .018, .018], color, [0, y + .062, 1.12]);
     }
-    const covers = group(g, 'power-rail-coverboards');
+    const supports = group(g, 'conductor-rail-supports');
+    const returnSupports=group(supports,'separate-return-insulators');
+    const covers = group(supports, 'power-rail-coverboards');
     box(covers, [length, .045, .31], M.white, [0, .79, 1.22]);
     box(covers, [length, .56, .035], M.white, [0, .505, 1.385]);
     if (section) shell(covers);
     for (let x = -length / 2 + .4; x < length / 2; x += detail ? 1.2 : 2.4) {
-      box(g, [.1, .65, .1], M.core, [x, .28, 1.43]);
-      for (const y of [.37, .63]) cylinder(g, .06, .16, M.white, [x, y, 1.34], [Math.PI / 2, 0, 0], 12);
+      box(supports, [.1, .65, .1], M.core, [x, .28, 1.43]);
+      cylinder(supports,.06,.16,M.white,[x,.63,1.34],[Math.PI/2,0,0],12);
+      cylinder(returnSupports,.06,.16,M.white,[x,.37,1.34],[Math.PI/2,0,0],12);
       if (detail) for (const z of [-.72, .72]) {
         box(run, [.24, .035, .31], M.core, [x, -.01, z]);
         for (const dz of [-.13, .13]) cylinder(run, .026, .04, M.steel, [x, .028, z + dz], null, 6);
       }
     }
+    const overhead=group(g,'overhead-line-arrangement');
+    const wire=part(overhead,'overhead-contact-wire');
+    tube(wire,[[-length/2,5.2,0],[length/2,5.2,0]],.025,M.copper,{straight:true,segments:2});
+    tube(wire,[[-length/2,5.95,0],[0,5.65,0],[length/2,5.95,0]],.025,M.steel,{segments:10});
+    for(let x=-length/2+.5;x<length/2;x+=1.6)tube(wire,[[x,5.2,0],[x,5.68+Math.abs(x)/(length/2)*.25,0]],.012,M.steel,{straight:true,segments:2});
+    const poles=part(overhead,'overhead-support');
+    for(const x of [-length/2+.5,length/2-.5]){
+      box(poles,[.65,.16,.65],M.edge,[x,-.05,-2.15]);
+      box(poles,[.12,6.2,.12],M.steel,[x,3.1,-2.15]);
+      tube(poles,[[x,5.85,-2.15],[x,5.85,.35]],.045,M.steel,{straight:true,segments:2});
+      tube(poles,[[x,5.25,-2.15],[x,5.85,-.8]],.035,M.steel,{straight:true,segments:2});
+      for(const z of [-1.6,-1.42,-1.24])cylinder(poles,.09,.055,M.white,[x,5.85,z],[Math.PI/2,0,0],10);
+    }
+    const returnBond=part(g,'running-rail-return');
+    for(const z of [-.72,.72])tube(returnBond,[[-length/2+.25,.1,z],[-length/2+.25,.1,1.6]],.025,M.negative,{straight:true,segments:2});
+    box(returnBond,[.35,.22,.36],M.core,[-length/2+.25,.11,1.65]);
+    registerAnimator(s=>{const mode=electricMode(s),over=mode.startsWith('overhead');pos.visible=supports.visible=!over;neg.visible=returnSupports.visible=mode==='fourth-rail-dc';overhead.visible=over;returnBond.visible=mode!=='fourth-rail-dc';});
+    overhead.visible=returnBond.visible=false;
     if (!['seltrac','cbtc-network','etcs','signalling','interlocking','train-detection'].includes(trackContext)) makeLoopEquipment(g,length,trackContext);
     makeSelectedControlEquipment(g,length,trackContext);
     return g;
   }
 
   function makeCollector(parent, at = [0, 0, 0]) {
-    const g = part(parent, 'collector', at);
+    const g = part(parent, 'collector', at);g.userData.explorationAssembly='collector';
+    const shoes=[];
     for (const y of [.37, .63]) {
-      tube(g, [[-.2, .9, .77], [-.2, y + .08, .93], [.03, y, 1.035]], .035, M.core);
-      box(g, [.34, .08, .065], M.dark, [.03, y, 1.078]);
-      box(g, [.29, .07, .018], M.copper, [.03, y, 1.117]);
-      cylinder(g, .068, .1, M.white, [-.2, .9, .77], [Math.PI / 2, 0, 0]);
+      const shoe=powerPiece(g,y<.5?'collector-return-shoe':'collector-positive-shoe',y<.5?'Separate-return shoe':'Supply shoe',[0,y<.5?-.15:.2,.5]);shoes.push(shoe);
+      tube(shoe, [[-.2, .9, .77], [-.2, y + .08, .93], [.03, y, 1.035]], .035, M.core);
+      box(shoe, [.34, .08, .065], M.dark, [.03, y, 1.078]);
+      box(shoe, [.29, .07, .018], M.copper, [.03, y, 1.117]);
+      cylinder(shoe, .068, .1, M.white, [-.2, .9, .77], [Math.PI / 2, 0, 0]);
     }
+    registerAnimator(s=>{const mode=electricMode(s);g.visible=!mode.startsWith('overhead');shoes[0].visible=mode==='fourth-rail-dc';});
     return g;
   }
 
@@ -493,6 +645,7 @@ export function createViewer(container, callbacks = {}) {
     registerAnimator(s=>{baliseReader.visible=['etcs1','etcs2'].includes(controlTechnology(s,pickupContext));});
     baliseReader.visible=false;
 
+    makeWheelReturn(frame);
     const collector = makeCollector(frame, [.5, 0, 0]);
     collector.userData.explorationLabel = 'Current collector'; explode(collector, [0, .25, .55]);
     if (detailed) makeWheelSensor(wheelsets[1]);
@@ -758,8 +911,13 @@ export function createViewer(container, callbacks = {}) {
     if (full) makeOnboardSystems(train, body);
     else { makeAntenna(body, [5.7, 3.77, -.25]); makeHVAC(body, [-3.7, 3.72, 0], false); }
     const pcu = part(train, 'traction-inverter', [-1.8, .96, 0]);
-    box(pcu, [2.3, .45, 1.45], M.core);
-    for (let x = -.94; x <= .95; x += .12) box(pcu, [.055, .4, 1.53], M.steel, [x, 0, 0]);
+    box(pcu,[2.3,.08,1.45],M.core,[0,-.22,0]);
+    const converterCover=group(pcu,'traction-converter-removable-cover');box(converterCover,[2.3,.07,1.45],M.steel,[0,.24,0]);shell(converterCover);explode(converterCover,[0,.8,0]);
+    const dcLink=powerPiece(pcu,'dc-link','DC-link capacitors',[0,.55,-.65]);
+    for(const x of [-.8,-.35,.1])cylinder(dcLink,.15,.3,M.negative,[x,0,.25],null,12);
+    const modules=powerPiece(pcu,'inverter-power-module','Motor-inverter power modules',[0,.55,.65]);
+    for(const x of [.42,.73,1.04])box(modules,[.21,.29,.85],M.teal,[x,0,-.1]);
+    for (let x = -.94; x <= .95; x += .16) box(pcu, [.045,.35,.08],M.steel,[x,0,-.77]);
     box(pcu, [.42, .3, .04], M.teal, [-.58, 0, .8]);
     const apu = part(train, 'apu', [1.1, .95, 0]);
     box(apu, [1.5, .48, 1.35], M.white);
@@ -768,34 +926,48 @@ export function createViewer(container, callbacks = {}) {
     box(battery, [.95, .4, 1.1], M.dark);
     for (const x of [-.3, 0, .3]) box(battery, [.2, .28, .8], M.steel, [x, .08, 0]);
     explode(pcu, [0, .2, -1.6]); explode(apu, [0, .2, 1.5]); explode(battery, [0, .2, 1.5]);
-    // Distinct DC input and DC return meet at the inverter. The mint paths
-    // represent aggregate electrical-energy transfer between inverter and LIM,
-    // not instantaneous alternating phase currents or a wiring specification.
-    const tractionPositive = [[-4.47, .63, 1.117], [-4.2, 1.08, 1], [-3.1, 1.24, .86], [-1.8, 1.24, .6]];
-    const tractionNegative = [[-1.8, .89, .72], [-3.2, .76, .9], [-4.25, .69, 1], [-4.47, .37, 1.117]];
-    const motorPaths = [
-      [[-1.8, 1.2, -.6], [-3.25, 1.2, -.6], [-3.86, .87, -.32], [-4.16, .51, -.18], [-4.55, .48, -.27]],
-      [[-1.8, 1.2, -.6], [3.6, 1.2, -.6], [6.14, .87, -.32], [5.84, .51, -.18], [5.45, .48, -.27]],
-    ];
-    const tractionTag = energyRole === 'receiver' ? 'receiving-traction' : 'traction';
-    tube(train, tractionPositive, .028, M.dark);
-    tube(train, tractionNegative, .028, M.dark);
-    flow(train, tractionPositive, C.positive, `${tractionTag}-positive`, .034);
-    flow(train, tractionNegative, C.negative, `${tractionTag}-negative`, .034);
-    const limFeed=group(train,'lim-motor-power-paths'), rotaryFeed=group(train,'rotary-motor-power-paths');
-    for (const points of motorPaths) {
-      tube(limFeed, points, .028, M.dark);
-      flow(limFeed, points, C.field, `${tractionTag}-motor`, .034);
-    }
+    const pantograph=makePantograph(train);
+    const onboard=makePowerTransformer(train,'onboard-transformer',[1.15,.15,0],.4);
+    const line=part(train,'line-converter',[-.05,.96,0]);
+    box(line,[1.05,.08,1.3],M.core,[0,-.22,0]);
+    const lineModules=powerPiece(line,'line-converter-module','Line-converter semiconductor modules',[0,.6,0]);
+    for(const x of [-.33,0,.33])box(lineModules,[.22,.32,1.0],M.teal,[x,0,0]);
+    const lineCover=group(line,'line-converter-removable-cover');box(lineCover,[1.05,.06,1.3],M.steel,[0,.23,0]);shell(lineCover);explode(lineCover,[0,.8,0]);
+    const braking=part(train,'onboard-braking-resistor',[2.1,3.78,0]);
+    box(braking,[1.5,.08,1.2],M.core);
+    for(let x=-.6;x<=.6;x+=.15)box(braking,[.055,.28,1.05],M.brake,[x,.18,0]);
+    const brakeCover=group(braking,'onboard-resistor-guard');for(const z of [-.62,.62])box(brakeCover,[1.5,.38,.035],M.steel,[0,.18,z]);shell(brakeCover);explode(brakeCover,[0,.65,0]);
+    registerAnimator(s=>{const ac=electricMode(s)==='overhead-ac';onboard.visible=line.visible=braking.visible=ac;apu.position.x=ac?2.6:1.1;battery.position.set(ac?-1.8:2.7,ac?.435:.98,ac?0:-.15);});
+    onboard.visible=line.visible=braking.visible=false;
+    const fourth=s=>electricMode(s)==='fourth-rail-dc',third=s=>electricMode(s)==='third-rail-dc',overDC=s=>electricMode(s)==='overhead-dc',overAC=s=>electricMode(s)==='overhead-ac';
+    const traction=s=>s.mode!=='coasting'&&s.scenario!=='door-open'&&(energyRole!=='receiver'||s.mode==='regeneration'&&s.receptivity==='train');
+    const railFeed=[[-4.47,.63,1.117],[-4.2,1.08,1],[-3.1,1.24,.86],[-1.8,1.24,.6]];
+    powerTrace(train,'conductor-shoe-to-dc-link',railFeed,M.positive,s=>fourth(s)||third(s));
+    powerTrace(train,'separate-return-shoe-path',[[-1.8,.89,.72],[-3.2,.76,.9],[-4.25,.69,1],[-4.47,.37,1.117]],M.negative,fourth);
+    powerTrace(train,'dc-running-rail-return-path',[[-1.8,.89,.72],[-4.2,1.1,.9],[-6.02,.56,.94],[-6.02,.56,.72],[-6.02,.195,.72]],M.negative,s=>third(s)||overDC(s));
+    powerTrace(train,'overhead-dc-roof-to-dc-link',[[-.15,5.2,0],[-.15,3.9,.8],[-.5,3.75,1.27],[-.5,1.24,1.27],[-1.8,1.24,.6]],M.positive,overDC);
+    // Two separate AC circuits: no line joins a transformer primary terminal to
+    // its secondary terminal. The magnetic core is their energy interface.
+    powerTrace(train,'pantograph-to-transformer-primary',[[-.15,5.2,0],[-.15,3.9,.8],[1.0,3.75,1.27],[1.0,1.8,1.27],[.854,1.266,-.22]],M.positive,overAC);
+    powerTrace(train,'ac-primary-wheel-return',[[1.446,1.266,-.22],[1.5,1.12,.9],[-4.2,1.1,.9],[-6.02,.56,.94],[-6.02,.56,.72],[-6.02,.195,.72]],M.negative,overAC);
+    powerTrace(train,'transformer-secondary-to-line-converter',[[.854,1.266,.22],[.4,1.25,.5],[-.05,1.14,.5]],M.copper,overAC);
+    powerTrace(train,'transformer-secondary-return',[[-.05,1.14,-.5],[.4,1.25,-.5],[1.446,1.266,.22]],M.copper,overAC);
+    powerTrace(train,'line-converter-to-dc-link',[[-.55,.98,.45],[-1.8,1.12,.45]],M.positive,overAC);
+    powerTrace(train,'line-converter-dc-link-return',[[-1.8,.84,-.45],[-.55,.84,-.45]],M.negative,overAC);
     for(const x of [-5,5]){
-      const points=[[-1.8,1.2,-.6],[x,1.2,-.6],[x-.72,1.05,-.55],[x-.72,.9375,-.35]];
-      tube(rotaryFeed,points,.028,M.dark);flow(rotaryFeed,points,C.field,`${tractionTag}-motor`,.034);
+      powerTrace(train,'lim-motor-power-path',[[-1.8,1.2,-.6],[x,1.2,-.6],[x+.55,.48,-.27]],M.service,s=>traction(s)&&s.technology?.propulsion!=='rotary');
+      powerTrace(train,'rotary-motor-power-path',[[-1.8,1.2,-.6],[x,1.2,-.6],[x-.72,1.05,-.55],[x-.72,.9375,-.35]],M.service,s=>traction(s)&&s.technology?.propulsion==='rotary');
     }
-    registerAnimator(s=>{const rotary=s.technology?.propulsion==='rotary';limFeed.visible=!rotary;rotaryFeed.visible=rotary;});rotaryFeed.visible=false;
-    // The auxiliary branch remains supplied during coasting. It bypasses the
-    // traction inverter/LIM; line brightness is explanatory, not amperage.
-    flow(train, [[-4.47, .63, 1.117], [-4.3, .98, .94], [.35, 1.22, .77], [1.1, 1.22, .6]], C.positive, 'auxiliary-positive', .021);
-    flow(train, [[1.1, .95, .7], [.3, .84, .85], [-4.3, .78, .94], [-4.47, .37, 1.117]], C.negative, 'auxiliary-negative', .021);
+    powerTrace(train,'dc-link-auxiliary-feed',[[-1.8,1.12,.6],[.35,1.22,.77],[1.1,1.22,.6]],M.positive,s=>!overAC(s));
+    powerTrace(train,'dc-link-auxiliary-return',[[1.1,.95,.7],[.3,.84,.85],[-1.8,.84,.72]],M.negative,s=>!overAC(s));
+    powerTrace(train,'ac-auxiliary-dc-feed',[[-1.8,1.12,.6],[2.6,1.22,.77]],M.positive,overAC);
+    powerTrace(train,'ac-auxiliary-dc-return',[[2.6,.95,.7],[-1.8,.84,.72]],M.negative,overAC);
+    const resistorActive=s=>overAC(s)&&s.mode==='regeneration'&&s.receptivity==='resistor'&&energyRole!=='receiver'&&s.scenario!=='door-open';
+    powerTrace(train,'onboard-chopper-resistor-feed',[[-1.8,1.12,.6],[-1.0,1.2,1.28],[-1.0,3.8,1.28],[2.1,3.98,.5]],M.brake,resistorActive);
+    powerTrace(train,'onboard-resistor-return',[[2.1,3.98,-.5],[-.9,3.8,-1.28],[-.9,.84,-1.28],[-1.8,.84,-.6]],M.negative,resistorActive);
+    const heat=group(braking,'resistor-heat-destination');
+    for(const x of [-.45,0,.45])tube(heat,[[x,.4,0],[x-.08,.6,0],[x+.08,.8,0]],.02,M.brake,{segments:6});
+    registerAnimator(s=>{heat.visible=resistorActive(s);});heat.visible=false;
     return train;
   }
 
@@ -825,11 +997,13 @@ export function createViewer(container, callbacks = {}) {
     const g = part(parent, 'disconnect', position);
     box(g, [.9, .12, .85], M.edge, [0, .02, 0]);
     for (const z of [-.22, .22]) {
+      const pole=group(g,z<0?'supply-isolator-pole':'separate-return-isolator-pole');
+      if(z>0)registerAnimator(s=>{pole.visible=electricMode(s)==='fourth-rail-dc';});
       for (const x of [-.27, .27]) {
-        cylinder(g, .08, .43, M.white, [x, .28, z], null, 12);
-        cylinder(g, .12, .045, M.steel, [x, .5, z], null, 12);
+        cylinder(pole, .08, .43, M.white, [x, .28, z], null, 12);
+        cylinder(pole, .12, .045, M.steel, [x, .5, z], null, 12);
       }
-      const contact = group(g, 'isolating-contact', [-.27, .55, z]);
+      const contact = group(pole, 'isolating-contact', [-.27, .55, z]);
       box(contact, [.55, .045, .07], z < 0 ? M.positive : M.negative, [.275, 0, 0]);
       // This no-load isolator is an inspection object, not the device used by
       // the operating-mode animation to interrupt current.
@@ -852,43 +1026,16 @@ export function createViewer(container, callbacks = {}) {
       tube(utility, [[-7.9, 2.6, z], [-7, 2.6, z], [-6.5, 2.5, z], [-6.3, 1.4, z]], .04, M.dark);
       for (let x = -7.5; x < -7.1; x += .08) cylinder(utility, .095, .04, M.white, [x, 2.6, z], [0, 0, Math.PI / 2], 14);
     }
-    for (let i = 0; i < 3; i++) cabinet(g, [-5.75 + i * .82, .08, -2.1], [.78, 2.3, 1.3], 'ac-switchgear');
-    const tx = part(g, 'transformer', [-1.7, .1, -1.85]);
-    box(tx, [2.8, .16, 2.4], M.steel, [0, .1, 0]);
-    box(tx, [2.25, .2, 1.55], M.core, [0, .38, 0]);
-    box(tx, [2.25, .2, 1.55], M.core, [0, 2.04, 0]);
-    for (const x of [-.75, 0, .75]) {
-      box(tx, [.28, 1.55, 1.2], M.core, [x, 1.2, 0]);
-      for (const z of [-.44, .44]) {
-        for (let y = .62; y < 1.87; y += .075) mesh(tx, torus(.31, .027, 6, 22), z > 0 ? M.copper : M.positive, [x, y, z], [Math.PI / 2, 0, 0]);
-        cylinder(tx, .075, .35, M.white, [x, 2.3, z], null, 12);
-      }
-    }
-    for (const x of [-1.28, 1.28]) box(tx, [.08, 1.98, 2.1], M.steel, [x, 1.15, 0]);
-    explode(tx, [0, .8, 0]);
-    const rec = part(g, 'rectifier', [1.85, .1, -1.85]);
-    box(rec, [2, .15, 2.1], M.steel, [0, .1, 0]);
-    for (const z of [-.46, .46]) {
-      box(rec, [1.7, 1.9, .1], M.core, [0, 1.1, z]);
-      for (let x = -.76; x <= .77; x += .13) box(rec, [.035, 1.7, .26], M.aluminum, [x, 1.1, z]);
-      for (const y of [.65, 1.45]) for (const x of [-.56, 0, .56]) {
-        cylinder(rec, .105, .2, M.dark, [x, y, z + .21], [Math.PI / 2, 0, 0], 18);
-        for (const dy of [-.15, .15]) box(rec, [.08, .18, .07], M.copper, [x, y + dy, z + .21]);
-      }
-    }
-    tube(rec, [[-.8, 1.9, .8], [0, 2.1, .8], [.8, 1.9, .8]], .04, M.positive);
-    tube(rec, [[-.8, .4, .8], [0, .25, .8], [.8, .4, .8]], .04, M.negative);
-    explode(rec, [0, .8, 0]);
-    for (let i = 0; i < 3; i++) {
-      const cb = cabinet(g, [4.5 + i * .87, .08, -2.1], [.82, 2.25, 1.3], 'dc-switchgear', { dark: true });
-      const br = part(cb, 'breaker', [0, .85, .7]);
-      box(br, [.48, .57, .17], M.dark);
-      box(br, [.17, .22, .09], M.brake, [0, .01, .12]);
-      for (const x of [-.13, .13]) cylinder(br, .035, .06, M.steel, [x, .17, .14], [Math.PI / 2, 0, 0], 6);
-      const breakerContact = group(br, 'dc-feeder-breaker-contact', [-.14, -.13, .18]);
-      box(breakerContact, [.28, .035, .045], M.copper, [.14, 0, 0]);
-      building.contacts.push(breakerContact);
-    }
+    for(let i=0;i<3;i++)makePowerSwitchgear(g,'ac-switchgear',[-5.8+i*.88,.08,-2.1],{scale:.8});
+    const tx=makePowerTransformer(g,'transformer',[-1.7,.1,-1.85]);
+    const rec=makePowerRectifier(g,'rectifier',[1.85,.1,-1.85]);
+    const dcFeeders=group(g,'dc-feeder-switchgear-arrangement');
+    for(let i=0;i<3;i++)makePowerSwitchgear(dcFeeders,'dc-switchgear',[4.5+i*.87,.08,-2.1],{dc:true,scale:.8});
+    const acFeeders=group(g,'ac-feeder-switchgear-arrangement');
+    for(let i=0;i<2;i++)makePowerSwitchgear(acFeeders,'ac-feeder-switchgear',[3.7+i*1.5,.08,-2.1],{scale:1});
+    const returnTerminal=part(g,'supply-return-terminal',[6.8,.1,.03]);
+    box(returnTerminal,[.6,.5,.5],M.core,[0,.25,0]);box(returnTerminal,[.65,.07,.12],M.negative,[0,.53,.12]);
+    registerAnimator(s=>{const ac=electricMode(s)==='overhead-ac';rec.visible=dcFeeders.visible=!ac;acFeeders.visible=ac;});acFeeders.visible=false;
     cabinet(g, [-5.55, .08, 2], [1.3, 1.88, .8], 'substation-control');
     const control = part(g, 'control-battery', [-3.95, .15, 2]);
     for (const z of [-.37, .37]) box(control, [1.3, .07, .06], M.steel, [0, .2, z]);
@@ -920,6 +1067,7 @@ export function createViewer(container, callbacks = {}) {
     explode(facility, [0, .8, 0]);
     makeDisconnect(g, [7.1, .12, .5]);
     const resistorBank = part(g, 'wayside-resistor', [4.2, .12, 2.1]);
+    registerAnimator(s=>{resistorBank.visible=electricMode(s)!=='overhead-ac';});
     box(resistorBank, [4.5, .13, 2.05], M.steel, [0, .12, 0]);
     for (const x of [-1.95, 1.95]) for (const z of [-.8, .8]) box(resistorBank, [.08, 1.7, .08], M.core, [x, .9, z]);
     for (const y of [.42, .82, 1.22]) {
@@ -938,14 +1086,16 @@ export function createViewer(container, callbacks = {}) {
       const points=[new THREE.Vector3(x,1.5,0),new THREE.Vector3(x-.12,1.8,0),new THREE.Vector3(x+.12,2.1,0),new THREE.Vector3(x,2.4,0)];
       const node=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),material);node.computeLineDistances();resistorBank.add(node);building.heat.push({node,material,offset:x});
     }
-    flow(g, [[-6.3, .25, -.95], [-3.8, .25, -.9], [-3.25, .55, -1.7]], C.accent, 'supply');
-    flow(g, [[-.1, .35, -1.1], [.65, .35, -1.1]], C.accent, 'supply');
-    // Diode rectification is one-way. These TRU-to-bus links must never reverse
-    // under regeneration: regenerated energy remains on the DC network.
-    flow(g, [[2.85, .45, -1.1], [3.7, .45, -1.1], [3.9, .38, -.55], [7, .38, -.55]], C.positive, 'tru-output');
-    flow(g, [[7, .25, .03], [3.7, .25, .03], [3.15, .26, -.2], [2.85, .28, -1]], C.negative, 'tru-return');
-    flow(g, [[7, .38, -.55], [7.3, .45, .5], [6.5, .45, 1.3], [4.2, .7, 1.3]], C.brake, 'wayside-resistor');
-    flow(g, [[4.2, .45, 1.45], [6.6, .25, 1.5], [7.45, .25, .55], [7, .25, .03]], C.negative, 'wayside-resistor');
+    powerTrace(g,'incoming-supply-connection',[[-6.3,.25,-.95],[-3.8,.25,-.9],[-2.44,2.79,-2.4]],M.copper);
+    const dcOnly=s=>electricMode(s)!=='overhead-ac',acOnly=s=>electricMode(s)==='overhead-ac';
+    powerTrace(g,'transformer-to-rectifier',[[-.96,2.79,-1.3],[.2,2.5,-1.3],[1.2,2.1,-2.49]],M.copper,dcOnly);
+    powerTrace(g,'rectifier-positive-bus',[[2.8,1.98,-.95],[3.7,1.98,-.95],[3.9,.38,-.55],[7,.38,-.55]],M.positive,dcOnly);
+    powerTrace(g,'rectifier-return-bus',[[7,.25,.03],[3.7,.25,.03],[3.15,.57,-2.5],[2.8,.57,-2.5]],M.negative,dcOnly);
+    powerTrace(g,'ac-transformer-to-feeder',[[-.96,2.79,-1.3],[.3,2.6,-1.3],[3.7,2.1,-2.38]],M.copper,acOnly);
+    powerTrace(g,'ac-feeder-output',[[5.2,2.0,-2.04],[6.1,1,-1.0],[7,.38,-.55]],M.positive,acOnly);
+    powerTrace(g,'ac-transformer-return',[[7,.25,.03],[.2,.25,.03],[-2.44,2.79,-1.3]],M.negative,acOnly);
+    powerTrace(g,'wayside-resistor-feed',[[7,.38,-.55],[7.3,.45,.5],[6.5,.45,1.3],[4.2,.7,1.3]],M.brake,s=>dcOnly(s)&&s.mode==='regeneration'&&s.receptivity==='resistor');
+    powerTrace(g,'wayside-resistor-return',[[4.2,.45,1.45],[6.6,.25,1.5],[7.45,.25,.55],[7,.25,.03]],M.negative,s=>dcOnly(s)&&s.mode==='regeneration'&&s.receptivity==='resistor');
     return g;
   }
 
@@ -964,10 +1114,15 @@ export function createViewer(container, callbacks = {}) {
     const stationPoint = p => station.localToWorld(new THREE.Vector3(...p)).toArray();
     // Endpoints are calculated from the same transformed assemblies used for
     // the meshes, rather than visually approximated feeder destinations.
-    flow(root, [stationPoint([7, .38, -.55]), [3.5, .36, 4], [4, .49, 0], railPoint([3.03, .63, 1.117])], C.positive, 'feeder-positive', .045);
-    flow(root, [railPoint([3.03, .37, 1.117]), [3.7, .29, .2], [3, .24, 4.5], stationPoint([7, .25, .03])], C.negative, 'feeder-negative', .04);
-    flow(railway, [[3.03, .63, 1.117], [-4, .63, 1.117], [-10, .63, 1.117], [-14.97, .63, 1.117]], C.field, 'receiving-train', .04);
-    flow(railway, [[-14.97, .37, 1.117], [-10, .37, 1.117], [-4, .37, 1.117], [3.03, .37, 1.117]], C.negative, 'receiving-train', .035);
+    for(const profile of ['fourth-rail-dc','third-rail-dc','overhead-dc','overhead-ac']){
+      const overhead=profile.startsWith('overhead'),feed=overhead?[3.03,5.2,0]:[3.03,.63,1.117],ret=profile==='fourth-rail-dc'?[3.03,.37,1.117]:[3.03,.195,.72];
+      const active=s=>electricMode(s)===profile;
+      powerTrace(root,`${profile}-supply-feeder`,[stationPoint([7,.38,-.55]),[3.5,.36,4],[4,overhead?3.5:.49,0],railPoint(feed)],M.positive,active);
+      powerTrace(root,`${profile}-return-feeder`,[railPoint(ret),[3.7,.29,.2],[3,.24,4.5],stationPoint([7,.25,.03])],M.negative,active);
+      const receiverPath=s=>active(s)&&s.mode==='regeneration'&&s.receptivity==='train';
+      powerTrace(railway,`${profile}-receiving-train-supply`,[feed,[-14.97,feed[1],feed[2]]],M.service,receiverPath);
+      powerTrace(railway,`${profile}-receiving-train-return`,[[-14.97,ret[1],ret[2]],ret],M.negative,receiverPath);
+    }
     const receiver = makeTrain(railway, { at: [-10.5, 0, 0], full: false, energyRole: 'receiver' });
     receiver.name = 'other-train';
     arrow(railway, [4.7, .15, -1.8], [8.8, .15, -1.8], C.field);
@@ -980,8 +1135,15 @@ export function createViewer(container, callbacks = {}) {
     makeDisconnect(root, [-3.3, -.06, 2.05]);
     const primary = makePrimary(root, [0, .48, 0], 2.1, true); explode(primary, [0, .8, 0]);
     makeCollector(root, [.6, 0, 0]);
-    flow(root, [[-4.4, .635, 1.12], [-2, .635, 1.12], [.65, .635, 1.12], [.4, .9, .8]], C.positive, 'positive');
-    flow(root, [[.4, .9, .7], [.65, .37, 1.12], [-2, .37, 1.12], [-4.4, .37, 1.12]], C.negative, 'negative');
+    const roofContext=group(root,'roof-collection-context');
+    box(roofContext,[2,.08,1.6],M.edge,[0,3.65,0]);makePantograph(roofContext);
+    const wheelContext=group(root,'wheel-return-context');
+    for(const z of [-.72,.72])cylinder(wheelContext,.365,.12,M.steel,[-1.02,.56,z],[Math.PI/2,0,0],20);
+    cylinder(wheelContext,.065,1.6,M.steel,[-1.02,.56,0],[Math.PI/2,0,0],12);makeWheelReturn(wheelContext);
+    registerAnimator(s=>{roofContext.visible=electricMode(s).startsWith('overhead');wheelContext.visible=electricMode(s)!=='fourth-rail-dc';});roofContext.visible=wheelContext.visible=false;
+    powerTrace(root,'guideway-conductor-supply',[[-4.4,.63,1.117],[.63,.63,1.117],[.4,.9,.8]],M.positive,s=>!electricMode(s).startsWith('overhead'));
+    powerTrace(root,'guideway-separate-return',[[.4,.9,.7],[.63,.37,1.117],[-4.4,.37,1.117]],M.negative,s=>electricMode(s)==='fourth-rail-dc');
+    powerTrace(root,'guideway-overhead-collection',[[-4.4,5.2,0],[-.15,5.2,0],[-.15,3.9,.3]],M.positive,s=>electricMode(s).startsWith('overhead'));
     arrow(root, [-.9, .23, -1.2], [1.7, .23, -1.2], C.field);
   }
   {
@@ -991,6 +1153,8 @@ export function createViewer(container, callbacks = {}) {
   {
     const root = startModel('bogie'); makeTrack(root, 5.7, { detail: true, section: true });
     const bogie = makeBogie(root); explode(bogie, [0, .6, 0]);
+    const roofContext=group(root,'roof-collection-context');box(roofContext,[2,.08,1.6],M.edge,[0,3.65,0]);makePantograph(roofContext);
+    registerAnimator(s=>{roofContext.visible=electricMode(s).startsWith('overhead');});roofContext.visible=false;
     arrow(root, [-1.2, .24, -1.25], [1.5, .24, -1.25], C.field);
   }
   {
@@ -1042,13 +1206,15 @@ export function createViewer(container, callbacks = {}) {
   }
 
   function registerAnimator(fn) { building.animators.push(fn); }
-  const modelApi={THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,cabinet,registerAnimator};
+  const modelApi={THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,cabinet,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,registerAnimator};
   function ensureModel(id) {
     if(models.has(id))return true;
     if(Object.hasOwn(TRACK_VIEWS,id))buildTrackView(id,modelApi);
     else if(Object.hasOwn(SIGNALLING_VIEWS,id))buildSignallingView(id,modelApi);
     else if(Object.hasOwn(STATION_VIEWS,id))buildStationView(id,modelApi);
     else if(Object.hasOwn(OCC_VIEWS,id))buildOccView(id,modelApi);
+    else if(Object.hasOwn(COMMUNICATIONS_VIEWS,id))buildCommunicationsView(id,modelApi);
+    else if(Object.hasOwn(POWER_CAMERAS,id))buildPowerView(id,modelApi);
     else if(Object.hasOwn(STUDY_CAMERAS,id))buildStudyView(id,modelApi);
     else if(Object.hasOwn(OPERATIONS_VIEWS,id))buildOperationsView(id,modelApi);
     else if(Object.hasOwn(PLATFORM_VIEWS,id))buildPlatformView(id,modelApi);
@@ -1166,6 +1332,7 @@ export function createViewer(container, callbacks = {}) {
     selectionBox.updateMatrixWorld(true);
   }
   function clearStructuralExploration() {
+    labelAnchorInstances.clear();
     for (const record of models.values()) { restoreIsolation(record); restoreSeparation(record); }
     if (state.explodeScope === 'selected') state.exploded = 0;
     state.explodeScope = 'all'; state.isolation = null; state.focused = null;
@@ -1349,9 +1516,15 @@ export function createViewer(container, callbacks = {}) {
       animateModel();if(changed){fitToView();controls.update();}requestRender();
     },
     getTechnology(){return {...state.technology};},
+    setElectrification(value) {
+      const next=normalizeElectrification(value),changed=next!==state.electrification;
+      if(changed)clearStructuralExploration();state.electrification=next;
+      animateModel();if(changed){fitToView();controls.update();}requestRender();return next;
+    },
+    getElectrification(){return state.electrification;},
     getViewCapabilities() {
       const record=models.get(state.view);
-      return {cutaway:Boolean(record?.shells.length),explode:separationEntries(record,{isolation:state.isolation}).length>0};
+      return {cutaway:Boolean(record?.shells.length),...viewSeparationCapabilities(record,{isolation:state.isolation})};
     },
     getExplorationCapabilities(id = state.selected) { return explorationCapabilities(models.get(state.view), id, state); },
     getExplorationState() { return { explodeScope: state.explodeScope, isolation: state.isolation, focused: state.focused,
@@ -1380,6 +1553,7 @@ export function createViewer(container, callbacks = {}) {
     setPlaying(value) { state.playing = Boolean(value) && !reducedMotion.matches && !document.hidden; lastTime = 0; requestRender(); return state.playing; },
     setPhase(value) { state.phase = Math.max(0, Number(value) || 0); animateModel(); requestRender(); },
     getPhase() { return state.phase; },
+    getView() { return state.view; },
     setReceptivity(value) { state.receptivity = value === 'resistor' ? 'resistor' : 'train'; animateModel(); requestRender(); },
     setVariant(value) {
       const variant = typeof value === 'string' ? value : 'default', changed = state.variant !== variant;
@@ -1395,7 +1569,7 @@ export function createViewer(container, callbacks = {}) {
     dispose,
     getComponentScreenPositions() {
       if (!cachedComponentBounds) cachedComponentBounds = componentBounds(models.get(state.view));
-      return screenPositions(cachedComponentBounds, camera);
+      return screenPositions(cachedComponentBounds, camera, labelAnchorInstances);
     },
     getVisibleComponentIds() {
       if (!cachedComponentBounds) cachedComponentBounds = componentBounds(models.get(state.view));

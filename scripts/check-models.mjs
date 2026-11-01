@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import * as electrificationHelpers from '../dist/electrification.js';
 /**
  * Headless scene/content contract check using Three.js and the actual shared
  * primitive functions from viewer.js. No DOM, renderer, browser or package
@@ -21,6 +22,7 @@ const [THREE, track, signalling, station, operations, platform, network, network
 ]);
 const source = await readFile(path.join(dist, 'viewer.js'), 'utf8');
 const studies = await load('studies-models.js');
+const power=await load('electrification-models.js'),comms=await load('communications-models.js');
 function between(start, end) {
   const a = source.indexOf(start), b = source.indexOf(end, a + start.length);
   assert(a >= 0 && b > a, `Shared geometry marker changed: ${start}; update this harness`);
@@ -32,7 +34,8 @@ const materials = between('  const materials = new Map();', '  const ground = ')
 // Using the implementation itself catches missing helpers and actual geometry
 // failures instead of passing because a mock silently accepts the wrong call.
 const shared = between('  function startModel(', '  function registerAnimator(');
-const createHarness = new Function('THREE', `
+const createHarness = new Function('THREE', 'electrificationHelpers', `
+ const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
   ${colors}
   const compatibility = true;
   const scene = new THREE.Scene();
@@ -43,9 +46,9 @@ const createHarness = new Function('THREE', `
   function registerAnimator(fn) { building.animators.push(fn); }
   return { models, api: { THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,
     torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,
-    makeBogie,cabinet,registerAnimator } };
+    makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator } };
 `);
-const { models, api } = createHarness(THREE);
+const { models, api } = createHarness(THREE,electrificationHelpers);
 const failures = [];
 let passed = 0;
 const check = (name, fn) => {
@@ -57,13 +60,13 @@ const visible = node => {
   return true;
 };
 const variantsFor = view => model.VIEWS[view]?.variants?.map(v => v.id) || ['default'];
-function setScene(view, variant, { cutaway = true, phase = 1, scenario = 'nominal', signals = true, technology = {propulsion:'lim',control:'loop'} } = {}) {
+function setScene(view, variant, { cutaway = true, phase = 1, scenario = 'nominal', signals = true, electrification = electrificationHelpers.DEFAULT_ELECTRIFICATION, technology = {propulsion:'lim',control:'loop'} } = {}) {
   const record = models.get(view);
   assert(record, `Missing constructed scene ${view}`);
   for (const candidate of models.values()) candidate.root.visible = candidate === record;
   for (const shell of record.shells) shell.visible = !cutaway;
   for (const e of record.exploded) e.node.position.copy(e.base);
-  const state = { view, variant, phase, scenario, signals, cutaway, technology, exploded: 0, mode: 'coasting', receptivity: 'train', selected: null };
+  const state = { view, variant, phase, scenario, signals, cutaway, technology, electrification, exploded: 0, mode: 'coasting', receptivity: 'train', selected: null };
   for (const animate of record.animators) animate(state);
   record.root.updateWorldMatrix(true, true);
   return record;
@@ -78,6 +81,8 @@ check('Expanded scenes construct one requested view at a time', () => {
     [Object.fromEntries(Object.entries(operations.OPERATIONS_VIEWS).filter(([id])=>!occ.OCC_VIEWS[id])), operations.buildOperationsView],
     [occ.OCC_VIEWS, occ.buildOccView],
     [studies.STUDY_CAMERAS, studies.buildStudyView],
+    [power.POWER_CAMERAS,power.buildPowerView],
+    [comms.COMMUNICATIONS_VIEWS,comms.buildCommunicationsView],
     [platform.PLATFORM_VIEWS, platform.buildPlatformView],
     [network.NETWORK_VIEWS, network.buildNetworkView],
   ];
@@ -109,8 +114,8 @@ check('Every scene variant animates with finite geometry and known component IDs
       const ids = new Set();
       // Some explanatory skins are intentionally only visible when assembled.
       // The union represents equipment reachable with the exposed cutaway toggle.
-      for (const cutaway of [false, true]) for(const propulsion of ['lim','rotary']) for(const control of ['loop','radio']) {
-        const active = setScene(view, variant, { cutaway, technology:{propulsion,control} });
+      for (const cutaway of [false, true]) for(const propulsion of ['lim','rotary']) for(const control of ['loop','radio']) for(const electrification of electrificationHelpers.ELECTRIFICATION_CHOICES.map(x=>x.id)) {
+        const active = setScene(view, variant, { cutaway, electrification, technology:{propulsion,control} });
         visibleParts(active).forEach(id => ids.add(id));
         active.root.traverse(node => {
           if (visible(node)) assert([...node.position.toArray(), ...node.scale.toArray()].every(Number.isFinite), `${view}/${variant} has an invalid pose`);

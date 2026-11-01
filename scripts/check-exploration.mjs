@@ -107,22 +107,34 @@ assert(viewer.getVisibleComponentIds().includes('reaction-rail'));
 
 viewer.setView('station-networks'); viewer.setVariant('building'); viewer.setCutaway(false);
 viewer.setSelected('bas-controller'); assert(viewer.setIsolation('bas-controller'));
-assert(viewer.getViewCapabilities().explode, 'The closed controller lost its removable cover');
+const closedBas=viewer.getExplorationCapabilities();
+assert(closedBas.canExplodeSelected&&closedBas.internalSeparationCount>=6,'The BAS panel lost its processor, I/O, power and terminal assemblies');
 viewer.setCutaway(true);
-assert.equal(viewer.getViewCapabilities().explode, false, 'A hidden cutaway cover offered a no-op separation slider');
-assert.equal(viewer.getExplorationCapabilities().canExplodeSelected, false);
-viewer.setCutaway(false);
-assert(viewer.getViewCapabilities().explode, 'Restoring the visible cover did not restore separation capability');
+const openBas=viewer.getExplorationCapabilities();
+assert(openBas.canExplodeSelected&&viewer.getViewCapabilities().explode,'Opening the cover incorrectly disabled real BAS internals');
+assert.equal(openBas.internalSeparationCount,closedBas.internalSeparationCount-1,'Hiding the BAS cover did not remove exactly its visible separation entry');
+const bas=activeRoot().getObjectByName('bas-controller'),basOrigin=bas.getWorldPosition(new THREE.Vector3());
+const basPieces=['rtu-processor-module','digital-input-card','analogue-input-card','rtu-power-module','rtu-field-terminal-strip'];
+const basBefore=new Map(basPieces.map(name=>[name,position(name)]));
+viewer.setExplodeScope('selected');viewer.setExploded(.6);
+for(const name of basPieces)assert(position(name).distanceTo(basBefore.get(name))>.1,`${name} did not physically separate from the BAS assembly`);
+assert(bas.getWorldPosition(new THREE.Vector3()).distanceTo(basOrigin)<1e-8,'BAS inspection translated the entire enclosure');
+assert.equal(activeRoot().getObjectByName('rtu-cabinet-cover').position.length(),0,'A hidden BAS cover received an invisible displacement');
+viewer.setExploded(0);viewer.setCutaway(false);
+assert.equal(viewer.getExplorationCapabilities().internalSeparationCount,closedBas.internalSeparationCount,'Restoring the cover lost a real separator');
 
 // Execute the application's production synchronization order against the real
-// viewer. A saved selected cover must be restored after its cutaway state,
-// otherwise it silently falls back to separating the whole scene.
+// viewer. Cutaway must be set before validating selected scope. Real BAS
+// internals survive an open cover; a leaf with only a context translation does not.
 const appSource = await readFile(new URL('../dist/app.js', import.meta.url), 'utf8');
 const syncStart = appSource.indexOf('function syncViewer('), syncEnd = appSource.indexOf('function syncControls()', syncStart);
 assert(syncStart >= 0 && syncEnd > syncStart, 'Viewer synchronization markers changed');
+const syncCalls=[];
+const synchronizationViewer=new Proxy(viewer,{get(target,key){const value=target[key];if(typeof value!=='function')return value;return (...args)=>{syncCalls.push(key);return value(...args);};}});
 const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', `
   let state, lastExplorationContext = '';
   function syncControls() {}
+  function isProcessPage(){return false;}
   ${appSource.slice(syncStart, syncEnd)}
   return (value, restoring = false) => {
     state = structuredClone(value);
@@ -130,7 +142,7 @@ const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', `
     syncViewer(true);
     return structuredClone(state);
   };
-`)(viewer, VIEWS, targetFor, canAnimate);
+`)(synchronizationViewer, VIEWS, targetFor, canAnimate);
 const savedController = { view: 'station-networks', domain: 'station', component: 'bas-controller', variant: 'building',
   technology: { propulsion: 'lim', control: 'loop' }, mode: 'coasting', scenario: 'nominal', sink: 'train',
   cutaway: false, exploded: .6, explodeScope: 'selected', playing: false };
@@ -140,11 +152,17 @@ synchronize(laterScene);
 const restoredController = synchronize(savedController, true);
 assert.equal(restoredController.explodeScope, 'selected', 'Restoring a covered assembly changed selected scope into whole-scene separation');
 assert.equal(viewer.getExplorationState().exploded, .6);
-assert(Math.abs(activeRoot().getObjectByName('automation-panel-cover').position.z - .48) < 1e-8,
+assert(syncCalls.lastIndexOf('setCutaway')<syncCalls.lastIndexOf('setExplodeScope'),'Production synchronization validates separation before applying the restored cutaway');
+assert(Math.abs(activeRoot().getObjectByName('rtu-cabinet-cover').position.z - .6) < 1e-8,
   'The restored BAS cover did not receive its saved physical displacement');
 const hiddenCover = synchronize({ ...savedController, cutaway: true });
-assert.equal(hiddenCover.explodeScope, 'all');
-assert.equal(viewer.getExplorationState().exploded, 0, 'Removing the only selected separator promoted its amount to whole-scene separation');
+assert.equal(hiddenCover.explodeScope,'selected','Opening a cover discarded valid internal separation');
+assert.equal(viewer.getExplorationState().exploded,.6,'Opening the BAS cover erased the requested internal separation');
+assert.equal(activeRoot().getObjectByName('rtu-cabinet-cover').position.length(),0,'The hidden cover retained an invisible separation offset');
+assert(Math.abs(activeRoot().getObjectByName('rtu-processor-module').position.x-(-.99-.7*.6))<1e-8,'The restored open BAS panel failed to separate its processor');
+const leaf=synchronize({...savedController,component:'scada-output-module',cutaway:true},true);
+assert.equal(leaf.explodeScope,'all','A context-only leaf falsely offered internal separation');
+assert.equal(viewer.getExplorationState().exploded,0,'Rejecting a selected separator promoted its amount to whole-scene separation');
 
 // Hidden descendants and duplicate instances must not distort the frame or
 // anchor a tag in empty space between two occurrences of a component.

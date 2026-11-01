@@ -121,8 +121,8 @@ if (catalog && model && tours && atlas) {
   };
 
   await check('Expanded concepts and source records have complete, public content', async () => {
-    assert.equal(CONCEPTS.length, 261, 'Update the published content count when the release scope changes');
-    assert.equal(SOURCES.length, 143, 'Update the published source count when the release scope changes');
+    assert.equal(CONCEPTS.length, 312, 'Update the published content count when the release scope changes');
+    assert.equal(SOURCES.length, 172, 'Update the published source count when the release scope changes');
     unique(CONCEPTS.map(item => item.id), 'Concepts');
     unique(SOURCES.map(item => item.id), 'Sources');
     for (const source of SOURCES) {
@@ -147,7 +147,7 @@ if (catalog && model && tours && atlas) {
 
   await check('Every concept is reachable through one domain and a valid view', async () => {
     assert.equal(DOMAINS.length, 9);
-    assert.equal(views.size, 50);
+    assert.equal(views.size, 59);
     unique(DOMAINS.map(item => item.id), 'Domains');
     const assigned = DOMAINS.flatMap(item => item.parts);
     unique(assigned, 'Domain assignments');
@@ -239,8 +239,8 @@ if (catalog && model && tours && atlas) {
     for (const tour of tours) {
       for (const field of ['id', 'label', 'title', 'explanation', 'actionText', 'actionLabel', 'question']) nonempty(tour[field], `${tour.id}.${field}`);
       assert.ok(domains.has(tour.domain), `${tour.id} has an unknown domain`);
-      assert.equal(domainFor(tour.component)?.id, tour.domain, `${tour.id} lesson domain does not match its component`);
-      assert.equal(domainFor(tour.action.component)?.id, tour.domain, `${tour.id} action domain does not match its component`);
+      assert.ok(DOMAINS.find(d=>d.id===tour.domain)?.parts.includes(tour.component), `${tour.id} lesson domain does not match its component`);
+      assert.ok(DOMAINS.find(d=>d.id===tour.domain)?.parts.includes(tour.action.component), `${tour.id} action domain does not match its component`);
       assert.ok(views.has(tour.view) && views.has(tour.action.view), `${tour.id} has an unknown model view`);
       assert.ok(concepts.has(tour.component) && concepts.has(tour.action.component), `${tour.id} targets a missing component`);
       assert.ok(modes.has(tour.action.mode), `${tour.id} has an unsupported mode`);
@@ -403,3 +403,7 @@ await import('./check-exploration.mjs');
 await import('./check-comparisons.mjs');
 
 await import('./check-studies.mjs');
+
+await import('./check-processes.mjs');
+await import('./check-electrification.mjs');
+await import('./check-communications.mjs');

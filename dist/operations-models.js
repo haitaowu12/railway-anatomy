@@ -1,6 +1,7 @@
 /* Original educational geometry: fictional control room and depot. Paths and
  * animations explain functional relationships, not a layout, maintenance method,
  * isolation sequence, movement authority or performance prediction. */
+import {addRoleFigure} from './people-models.js';
 export const OPERATIONS_VIEWS = {
   'operations-centre': { camera: [17, 14, 20], target: [0, 1.4, 0], distance: 38 },
   'depot-overview': { camera: [34, 31, 38], target: [0, .8, 1], distance: 68 },
@@ -785,10 +786,10 @@ export function buildOperationsView(id, api) {
     const fresh=part(root,'depot-wash-pump',[9,.2,-5.7]);box(fresh,[1.1,.08,1.1],P.floor);pipe(fresh,[[0,0,0],[0,1.1,0],[-3,1.1,1.9]],M.steel,.055);
     const residual=part(root,'depot-drainage',[7,.25,4.4]);pipe(residual,[[0,.3,0],[3,.3,0],[3,-.25,1.9]],P.red,.06);
     animations.push(state=>{
-      const phase=Number.isFinite(state.phase)?state.phase:0;
-      movingTrain.position.x=-1.4+Math.sin(phase*.32)*2;
-      gantry.position.x=Math.sin(phase*.35)*4.5;
-      for(const brush of [...fixedBrushes,...mobileBrushes])brush.rotation.y=phase*.7;
+      const phase=studyPhase(state),travel=(1-Math.cos(phase*Math.PI*2))/2;
+      movingTrain.position.x=-3.4+travel*4;
+      gantry.position.x=-4.5+travel*9;
+      for(const brush of [...fixedBrushes,...mobileBrushes])brush.rotation.y=phase*Math.PI*8;
       for(const {lid}of tanks)lid.visible=chosen(state)!=='recovery';
     });
     path(root,[[3,1.5,4.4],[5,2.6,4.4],[7,1.5,4.4],[9,.6,-3.8],[6,.6,-3.8]],C.negative,['recovery']);
@@ -874,6 +875,17 @@ export function buildOperationsView(id, api) {
     path(root,[[5,1.6,3.7],[1,2.5,4.5],[-7,1.7,5]],C.signal,['indication']);
     animations.push(state=>{display.scale.setScalar(chosen(state)==='indication'?1.1:1);});
   }
+  const roleLocations={
+    'depot-overview':[['depot-layout',[-9,.15,8],'depot-coordinator']],
+    'depot-yard':[['depot-shunter',[0,.15,5],'depot-coordinator']],
+    'depot-maintenance':[['depot-inspection-pit',[0,.2,4.7],'maintenance-work']],
+    'depot-workshop':[['depot-wheel-lathe',[-4,.15,4.2],'maintenance-work']],
+    'depot-components':[['depot-brake-rig',[-3,.15,3.7],'verification-team']],
+  };
+  for(const [component,at,role]of roleLocations[id]||[]){
+    const owner=buildingRoleParent(component);addRoleFigure(owner,api,at,{role});
+  }
+  function buildingRoleParent(component){let found=null;root.traverse(n=>{if(!found&&n.userData?.component===component)found=n;});return found||root;}
   alternatives.forEach(a=>a.node.visible=a.name===VARIANTS[id][0]);
   registerAnimator(state=>{
     const safe={...state,phase:Number.isFinite(state.phase)?state.phase:0};

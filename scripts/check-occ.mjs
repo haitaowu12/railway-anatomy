@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import * as electrificationHelpers from '../dist/electrification.js';
 // Exercise actual OCC builders with the viewer's primitives, without a DOM.
 // These checks verify teaching distinctions and geometry, not rendering quality
 // or the correctness of an operational control system.
@@ -16,15 +17,16 @@ const sources=catalog.SOURCES.map(s=>({...s})),concepts=catalog.CONCEPTS.map(c=>
 data.applyOccCatalog(sources,concepts);
 const source=await readFile(path.join(dist,'viewer.js'),'utf8');
 const between=(a,b)=>{const x=source.indexOf(a),y=source.indexOf(b,x+a.length);assert(x>=0&&y>x,`Viewer helper marker changed: ${a}`);return source.slice(x,y);};
-const harness=new Function('THREE',`
+const harness=new Function('THREE','electrificationHelpers',`
+ const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
  ${between('const C = {','\nconst VIEW')}
  const compatibility=true,scene=new THREE.Scene(),models=new Map();let building;
  ${between('  const materials = new Map();','  const ground = ')}
  ${between('  function startModel(','  function registerAnimator(')}
  function registerAnimator(fn){building.animators.push(fn);}
- return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,cabinet,registerAnimator}};
+ return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator}};
 `);
-const {models,api}=harness(THREE);
+const {models,api}=harness(THREE,electrificationHelpers);
 for(const id of Object.keys(occ.OCC_VIEWS))occ.buildOccView(id,api);
 const visible=node=>{for(let p=node;p;p=p.parent)if(!p.visible)return false;return true;};
 function set(view,variant,{phase=0,playing=false,signals=true,cutaway=true}={}){
@@ -57,8 +59,8 @@ check('OCC builders, data, variants and public references form a complete contra
 check('All OCC alternatives have finite geometry and visibly different meshes or paths',()=>{
  for(const [view,config]of Object.entries(data.OCC_VIEW_DATA)){
   const hashes=[];
-  for(const variant of config.variants){const r=set(view,variant.id);r.root.traverse(n=>{if(n.geometry?.attributes.position)for(const f of n.geometry.attributes.position.array)assert(Number.isFinite(f),`${view}: invalid vertex`);for(const f of [...n.position.toArray(),...n.scale.toArray()])assert(Number.isFinite(f),`${view}: invalid transform`);});hashes.push(geometryDigest(r.root));}
-  assert.equal(new Set(hashes).size,config.variants.length,`${view}: alternatives do not change visible geometry`);
+  for(const variant of config.variants.filter(v=>v.presentation!=='process')){const r=set(view,variant.id);r.root.traverse(n=>{if(n.geometry?.attributes.position)for(const f of n.geometry.attributes.position.array)assert(Number.isFinite(f),`${view}: invalid vertex`);for(const f of [...n.position.toArray(),...n.scale.toArray()])assert(Number.isFinite(f),`${view}: invalid transform`);});hashes.push(geometryDigest(r.root));}
+  assert.equal(new Set(hashes).size,config.variants.filter(v=>v.presentation!=='process').length,`${view}: alternatives do not change visible geometry`);
  }
 });
 check('Every OCC primary and advertised context contains selectable visible equipment',()=>{
@@ -69,6 +71,11 @@ check('Every OCC primary and advertised context contains selectable visible equi
   assert(data.OCC_VIEW_DATA[view].variants.some(v=>v.id===variant));const r=set(view,variant);
   assert(r.picks.some(n=>n.userData.component===id&&visible(n)),`${id}: promised context absent in ${view}/${variant}`);
  }
+});
+check('Control-room furniture persists across all legacy activity links',()=>{
+ const names=['persistent-coordination-position','operations-traffic-supervision','operations-signalling-workstation','operations-power-control','operations-station-supervision','operations-radio-dispatch'];
+ const r=set('operations-centre','service');const original=names.map(name=>geometryDigest(one(r,name)));
+ for(const variant of ['incident','handover']){set('operations-centre',variant);assert.deepEqual(names.map(name=>geometryDigest(one(r,name))),original,`${variant}: furniture appeared, disappeared or moved`);}
 });
 check('Request receipt and returned indication have different geometry and phase endpoints',()=>{
  for(const variant of ['traffic','power','station']){

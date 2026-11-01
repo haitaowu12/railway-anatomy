@@ -1,4 +1,5 @@
 import {SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS} from './atlas-config.js';
+import {applyMotionGuides} from './motion-guides.js';
 export {PART_CONTEXTS};
 export const variantsFor=(id,view)=>PART_VIEW_VARIANTS[id]?.[view]||[];
 export const variantFor=(id,view)=>{const preferred=PART_VARIANTS[id]||'default',available=view?variantsFor(id,view):[];return available.length&&!available.includes(preferred)?available[0]:preferred;};
@@ -17,8 +18,10 @@ export const VIEWS = {
 };
 
 Object.assign(VIEWS,NEW_VIEWS);
+applyMotionGuides(VIEWS);
+VIEWS['depot-support'].variants.find(v=>v.id==='planning').presentation='process';
 export const defaultVariant=view=>VIEWS[view]?.variants?.[0]?.id||'default';
-export const cutawayFor=view=>['control','communications','services','station','station-plant','tunnel-ventilation','station-networks','fire-systems','ventilation-unit','switch-drive','cbtc-network','etcs','seltrac','interlocking','train-detection','platform-interface','operations-centre','depot-maintenance','depot-wash','depot-protection','depot-workshop','depot-utilities','depot-support','depot-condition','depot-components','depot-testing','occ-supervision','occ-incident','occ-equipment','occ-workplace'].includes(view);
+export const cutawayFor=view=>['communications-network','communications-scada','communications-telephony','communications-passenger','communications-security','control','communications','services','station','station-plant','tunnel-ventilation','station-networks','fire-systems','ventilation-unit','switch-drive','cbtc-network','etcs','seltrac','interlocking','train-detection','platform-interface','operations-centre','depot-maintenance','depot-wash','depot-protection','depot-workshop','depot-utilities','depot-support','depot-condition','depot-components','depot-testing','occ-supervision','occ-incident','occ-equipment','occ-workplace'].includes(view);
 const VIEW_OVERRIDES = {
   utility:'system','ac-switchgear':'substation',transformer:'substation',rectifier:'substation','dc-switchgear':'substation',breaker:'substation','wayside-resistor':'substation',grounding:'substation','facility-transformer':'substation',disconnect:'substation','substation-control':'substation','control-battery':'substation','positive-rail':'guideway','negative-rail':'guideway',collector:'guideway','running-rail':'guideway','reaction-rail':'guideway',carbody:'vehicle',bogie:'bogie','traction-inverter':'vehicle','lim-primary':'lim','motor-slip':'lim',brakes:'bogie','parking-brake':'bogie',regeneration:'system',tachometer:'bogie',accelerometer:'control',balise:'control','brake-control':'control',ats:'control','wayside-radio':'communications','zone-controller':'control',apu:'services','vehicle-battery':'services',hvac:'services',compressor:'services',doors:'services','door-control':'services',
 };
@@ -44,9 +47,9 @@ Object.assign(RELATED,PART_RELATIONS);
 
 export const MODES = [{id:'motoring',label:'Accelerate'},{id:'regeneration',label:'Regenerate'},{id:'coasting',label:'Coast & supply loads'},{id:'isolated',label:'Line supply removed'}];
 export const EXPERIMENTS = {
-  control:[{id:'nominal',label:'Normal information flow'},{id:'door-open',label:'Door proof incomplete'},{id:'wheel-slip',label:'Wheel-slide cue'}],
+  control:[{id:'nominal',label:'Normal information flow'},{id:'door-open',label:'Door closure not confirmed'},{id:'wheel-slip',label:'Wheel-slide cue'}],
   communications:[{id:'nominal',label:'Messages flowing'},{id:'radio-loss',label:'Hold control radio'}],
-  services:[{id:'nominal',label:'Supporting loads'},{id:'door-open',label:'Door proof incomplete'}],
+  services:[{id:'nominal',label:'Supporting loads'},{id:'door-open',label:'Door closure not confirmed'}],
 };
 
 export function applyExperiment(state, value) {
@@ -65,7 +68,7 @@ export function describeFlow(state) {
   const variants=VIEWS[state.view]?.variants;
   if(variants){const item=variants.find(v=>v.id===state.variant)||variants[0];return {...item,kind:['track','station'].includes(domain)?'structure':'signal'};}
   if(scenario==='radio-loss') return {title:'A passenger service is not movement permission',description:'This authored example holds control-radio updates: the radio path is interrupted while onboard information services remain distinct. No radio timeout, permitted travel distance or universal stopping response is simulated.',nodes:['Train state','Control-radio update held','Onboard protection'],kind:'signal',sources:['T02','T05','T12']};
-  if(scenario==='door-open') return {title:'An incomplete door condition blocks departure in this example',description:'The door leaves open and the model suppresses propulsion. This selected interlock rule separates a request to depart from proof that the required conditions are met. Actual door proving and protection arrangements vary.',nodes:['Door condition incomplete','Departure request withheld','No propulsion demand'],kind:'signal',sources:['T09','T04']};
+  if(scenario==='door-open') return {title:'The required door-closed and locked confirmations are missing',description:'The door controller has not received all the required closed-and-locked status signals. A door may still be open, unlocked or have an unconfirmed status; the missing confirmation alone does not identify the cause. This illustration shows an open door and withholds propulsion. A close command is not the same as a returned confirmation. Actual interlocks and degraded-operation rules depend on the railway.',nodes:['Close command','Closed / locked status not confirmed','Departure condition not satisfied','Propulsion withheld'],kind:'signal',sources:['T09','T04']};
   if(scenario==='wheel-slip') return {title:'Wheel rotation can disagree with vehicle motion',description:'The highlighted axle sensor illustrates a wheel-slide concern during friction braking. The arithmetic experiment below is a separate, invented distance bias. It does not imply that wheel slide always overestimates distance or that this LIM drives the wheels.',nodes:['Wheel rotation','Compare independent sensing','Position estimate + uncertainty'],kind:'signal',sources:['T06','T07','T08']};
   if(domain==='control') return {title:'A request, a permission and a response are different things',description:'ATO manages driving within the ATP operating envelope. Vehicle management coordinates subsystem commands and status. Motion sensors provide feedback; ATS supervises the service across the railway.',nodes:['Wayside information + sensors','ATP limits / ATO request','Vehicle equipment','Measured response'],kind:'signal',sources:['T01','T03','T04']};
   if(domain==='communications') return {title:'Follow the information, then find the decision',description:'Radio and onboard networks transport information. Train-control functions interpret control information; displays, speakers, intercom and video serve other purposes. Colours identify logical paths, not mandatory separate cables.',nodes:['Wayside network','Radio link','Onboard network','Control / passenger services'],kind:'signal',sources:['T02','T05','T10','T12']};
