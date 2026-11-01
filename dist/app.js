@@ -23,6 +23,8 @@ const $$=s=>[...document.querySelectorAll(s)];
 const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
 const sources=new Map(SOURCES.map(s=>[s.id,s]));
+const domainIcons={network:'map-trifold',station:'buildings',vehicle:'train',depot:'wrench',operations:'monitor',track:'path',power:'lightning',control:'traffic-signal',communications:'broadcast'};
+const domainIcon=id=>`<img class="domain-icon" src="./assets/icons/${domainIcons[id]}.svg" width="22" height="22" alt="">`;
 let savedTechnology={};try{savedTechnology=JSON.parse(localStorage.getItem('railway-anatomy-technology-v1')||'{}');}catch{}
 let state={technology:technologyFromUrl(location.search,savedTechnology),electrification:normalizeElectrification(new URLSearchParams(location.search).get('electrification')),platformEdge:'open',platformSensor:'lidar',presentation:'equipment',processId:'configuration-change',processStep:'',roleId:'traffic-coordinator',page:'explore',domain:'network',view:'railway',component:'network-overview',mode:'coasting',scenario:'nominal',variant:'movement',sink:'train',cutaway:true,exploded:0,explodeScope:'all',playing:false,loop:false,labels:true,labelMode:'nearby',lesson:0};
 let historyMode='replace',returnContext=null,lastReadUrl='',allComponents=false,configurationEffect='',lastDetailKey='';
@@ -149,6 +151,7 @@ function syncControls(){
   $('#cutaway').closest('label').hidden=state.view==='railway'||capabilities?.cutaway===false;$('#separation-controls').hidden=state.view==='railway'||capabilities?.explode===false;
   const selected=targetFor(state.component),overview=['network-overview','depot-layout','operations-centre'].includes(selected);
   const exploration=viewer?.getExplorationCapabilities?.(selected),current=viewer?.getExplorationState?.();
+  $('#exploration-selection').hidden=overview;
   $('#exploration-selection').textContent=overview?'Explore the model':`Selected: ${shortLabels[state.component]||parts.get(state.component)?.label||''}`;
   $('#focus-selection').hidden=overview||!exploration?.canFocus;
   $('#isolate-selection').hidden=overview||!exploration?.canIsolate;
@@ -160,21 +163,21 @@ function syncControls(){
   $('#exploration-note').hidden=!(current?.isolation||current?.explodeScope==='selected');
   $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.internalSeparationCount||exploration?.separatedPartCount||0} separable internal parts in this assembly. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
   updateMotionGuide();
-  $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':'Information diagram'):rendererStatus==='svg'?'Schematic · SVG':'Schematic · 3D';
+  $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':'Information diagram'):rendererStatus==='svg'?'Schematic teaching model · SVG':'Schematic teaching model';
 }
 function renderNavigation(){
   $$('.main-nav [data-page]').forEach(b=>{if(b.dataset.page===(state.page==='people'?'processes':state.page))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
   $('#explorer-page').hidden=state.page==='reference'||isProcessPage();$('#reference-page').hidden=state.page!=='reference';$('#processes-page').hidden=!isProcessPage();
   const d=activeDomain(),network=DOMAINS.find(x=>x.id==='network');
   $('#intro-copy').textContent=state.page==='learn'?'Inspect the model, then check your understanding.':state.domain==='network'?'Select a place in this schematic railway to explore its systems.':'Select equipment in the model or browse the components below.';
-  $('#intro-copy').hidden=state.page!=='learn'&&state.domain!=='network';
+  $('#intro-copy').hidden=state.page!=='learn';
   const viewButtons=ids=>ids.filter(id=>VIEWS[id]&&!PROCESS_REDIRECTS[id]).map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
   const domainViews=item=>{const groups=VIEW_GROUPS[item.id];if(!groups)return viewButtons(item.views);const grouped=new Set(groups.flatMap(g=>g.views));return groups.map(g=>`<div class="view-subgroup"><h3>${safe(g.label)}</h3>${viewButtons(g.views)}</div>`).join('')+(item.id==='communications'?'':viewButtons(item.views.filter(id=>!grouped.has(id))));};
-  const domainButton=item=>`<button data-domain="${item.id}" class="domain-button ${item.id===state.domain?'active':''}" aria-pressed="${item.id===state.domain}"><strong>${safe(item.label)}</strong></button>${item.id===state.domain&&item.views.length>1?`<div class="area-views">${domainViews(item)}</div>`:''}`;
-  $('#domains').innerHTML=`<button class="network-home ${state.domain==='network'?'active':''}" data-domain="network" aria-pressed="${state.domain==='network'}"><span class="network-mark" aria-hidden="true">00</span><strong>Whole railway</strong><small>Network & connections</small></button>`+NAVIGATION_GROUPS.map(g=>`<div class="navigation-group"><h2>${safe(g.label)}</h2>${g.ids.map(id=>DOMAINS.find(x=>x.id===id)).filter(Boolean).map(domainButton).join('')}</div>`).join('');
+  const domainButton=item=>`<button data-domain="${item.id}" class="domain-button ${item.id===state.domain?'active':''}" aria-pressed="${item.id===state.domain}">${domainIcon(item.id)}<strong>${safe(item.label)}</strong></button>${item.id===state.domain&&item.views.length>1?`<div class="area-views">${domainViews(item)}</div>`:''}`;
+  $('#domains').innerHTML=`<button class="network-home ${state.domain==='network'?'active':''}" data-domain="network" aria-pressed="${state.domain==='network'}">${domainIcon(network.id)}<strong>Whole railway</strong></button>`+NAVIGATION_GROUPS.map(g=>`<div class="navigation-group"><h2>${safe(g.label)}</h2>${g.ids.map(id=>DOMAINS.find(x=>x.id===id)).filter(Boolean).map(domainButton).join('')}</div>`).join('');
   $('#navigator-current').textContent=d.label;
   const trail=viewTrail(state.view,VIEWS).filter(id=>id!==network.view);
-  $('#location-trail').innerHTML=`<button data-domain="network">Railway</button>`+(state.domain==='network'?'':`<span aria-hidden="true">/</span><button data-domain="${d.id}">${safe(d.label)}</button>`)+trail.filter(id=>id!==d.view).map(id=>`<span aria-hidden="true">/</span><button data-view="${id}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
+  $('#location-trail').innerHTML=`<button data-domain="network" ${state.domain==='network'?'aria-current="location"':''}>Whole railway</button>`+(state.domain==='network'?'':`<span aria-hidden="true">/</span><button data-domain="${d.id}">${safe(d.label)}</button>`)+trail.filter(id=>id!==d.view).map(id=>`<span aria-hidden="true">/</span><button data-view="${id}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
   $('#return-context').hidden=!returnContext;
   if(returnContext)$('#return-context').textContent=`← Return to ${VIEWS[returnContext.view]?.label||'previous view'}`;
   const viewIds=[...new Set([...d.views,state.view])].filter(id=>!PROCESS_REDIRECTS[id]);
@@ -208,7 +211,7 @@ function renderDetail(){
   const contexts=[...new Set([viewFor(c.id),...(PART_CONTEXTS[c.id]||[])])].filter(id=>VIEWS[id]&&id!==state.view&&!PROCESS_REDIRECTS[id]);
   const level=({'network-overview':'Railway','network-route':'Route','network-station':'Place','network-turnback':'Track connection','network-train':'Vehicle','network-depot':'Facility','network-maintenance':'Facility','network-stabling':'Area','network-control-centre':'Facility','network-substation':'Subsystem','network-telecommunications':'System','depot-layout':'Facility','operations-centre':'Facility'})[c.id]||'Equipment';
   const destination=NETWORK_DESTINATIONS[c.id];
-  $('#selection-summary').innerHTML=`<div><strong>${safe(shortLabels[c.id]||c.label)}</strong><p>${safe(c.summary)}</p></div><div class="selection-actions">${state.page==='learn'?`<button data-explore-component="${c.id}">Explore this equipment</button>`:'<button id="read-selection">Read explanation</button>'}${destination?`<button data-destination="${c.id}">Explore area →</button>`:''}</div>`;
+  $('#selection-summary').innerHTML=`<div><strong>${safe(shortLabels[c.id]||c.label)}</strong><p>${safe(c.summary)}</p></div><div class="selection-actions">${destination?`<button class="open-area" data-destination="${c.id}">Explore ${safe(shortLabels[c.id]||'area')} →</button>`:''}${state.page==='learn'?`<button data-explore-component="${c.id}">Explore this equipment</button>`:'<button id="read-selection">Read explanation</button>'}</div>`;
   const drilldown=destination?`<button class="open-area" data-destination="${c.id}">Explore ${safe(VIEWS[destination.view]?.label||c.label)} →</button>`:'';
   const anchor=!isConnections()&&targetFor(c.id)!==c.id?`<p class="practice-note">Model anchor: ${safe(parts.get(targetFor(c.id))?.label||targetFor(c.id))}. This concept is shown in its equipment context.</p>`:'';
   $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / ${level}</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${drilldown}${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<details class="part-scope"><summary>Scope of this example</summary><p class="part-note">${safe(c.caveat)}</p></details>`:''}<h3 class="detail-heading">Interfaces & connected equipment</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links"><button data-focus="${targetFor(c.id)}">Locate in model</button><button data-reference="${c.id}">Read in field guide →</button></div>`;
@@ -401,6 +404,13 @@ function applyLesson(doRender=true){
   if(doRender){render(true);requestAnimationFrame(()=>viewer?.resize());}
 }
 function updateSensor(){const error=Number($('#sensor-error').value);$('#sensor-error-value').textContent=`${error>0?'+':''}${error}%`;$('#wheel-estimate').textContent=`${wheelEstimate(error).toFixed(0)} m`;}
+function searchViews(){
+  const q=$('#view-search').value.trim().toLowerCase(),results=$('#view-results');
+  $('#domains').hidden=Boolean(q);results.hidden=!q;
+  if(!q){results.replaceChildren();return;}
+  const matches=Object.entries(VIEWS).filter(([id,view])=>!PROCESS_REDIRECTS[id]&&`${view.label} ${domainForView(id,DOMAINS)?.label||''}`.toLowerCase().includes(q));
+  results.innerHTML=matches.length?`<p class="view-search-count" role="status">${matches.length} matching ${matches.length===1?'view':'views'}</p>`+matches.map(([id,view])=>`<button data-view="${id}"><strong>${safe(view.label)}</strong><small>${safe(domainForView(id,DOMAINS)?.label||'')}</small></button>`).join(''):'<p role="status">No views found. Try a place or system name.</p>';
+}
 function searchComponents(){
   const q=$('#component-search').value.trim().toLowerCase();
   if(!q){$('#search-results').hidden=true;return;}
@@ -429,7 +439,10 @@ function rebuildLabels(){
     nodes.number=index+1;nodes.button.textContent=String(index+1).padStart(2,'0');nodes.button.setAttribute('aria-label',`${index+1}. Inspect ${parts.get(id).label}`);
   }
   const visible=new Set(viewer.getVisibleComponentIds()),selected=targetFor(state.component);
-  if($('#model-key-list'))$('#model-key-list').innerHTML=ids.filter(id=>visible.has(id)).map(id=>`<button class="part-key-item" data-component="${id}" aria-pressed="${id===selected}"><span class="part-key-number" aria-hidden="true">${String(labelElements.get(id).number).padStart(2,'0')}</span><span class="part-key-label">${safe(shortLabels[id]||parts.get(id).label)}</span></button>`).join('');
+  const visibleIds=ids.filter(id=>visible.has(id));
+  $('#equipment-choice').innerHTML='<option value="">Choose a part</option>'+visibleIds.map(id=>`<option value="${id}">${String(labelElements.get(id).number).padStart(2,'0')}  ${safe(shortLabels[id]||parts.get(id).label)}</option>`).join('');
+  $('#equipment-choice').value=visibleIds.includes(selected)?selected:'';
+  if($('#model-key-list'))$('#model-key-list').innerHTML=visibleIds.map(id=>`<button class="part-key-item" data-component="${id}" aria-pressed="${id===selected}"><span class="part-key-number" aria-hidden="true">${String(labelElements.get(id).number).padStart(2,'0')}</span><span class="part-key-label">${safe(shortLabels[id]||parts.get(id).label)}</span></button>`).join('');
   updateLabels();
 }
 function updateLabels(){
@@ -440,7 +453,7 @@ function updateLabels(){
   const points=viewer.getComponentScreenPositions()
     .filter(p=>labelElements.has(p.id)&&(state.labelMode!=='selected'||p.id===selected))
     .sort((a,b)=>(a.id===selected?-1000:priorities.has(a.id)?-100:0)-(b.id===selected?-1000:priorities.has(b.id)?-100:0)||labelElements.get(a.id).number-labelElements.get(b.id).number);
-  const positions=state.labels?placeModelPins(points,{width,height,top:$('#quick-play')?.getClientRects().length?58:12,bottom:$('.stage-footer').getBoundingClientRect().height+10,radius:matchMedia('(pointer:coarse)').matches?18:15,limit:state.labelMode==='selected'?1:width<500?5:12}):[];
+  const positions=state.labels?placeModelPins(points,{width,height,top:$('#quick-play')?.getClientRects().length?58:12,bottom:(getComputedStyle($('.stage-footer')).position==='absolute'?$('.stage-footer').getBoundingClientRect().height:0)+10,radius:matchMedia('(pointer:coarse)').matches?18:15,limit:state.labelMode==='selected'?1:width<500?5:12}):[];
   const placed=new Set(positions.map(p=>p.id));
   for(const [id,{button}] of labelElements)button.hidden=!placed.has(id);
   for(const p of positions){const {button}=labelElements.get(p.id);button.hidden=false;button.style.left=`${p.x}px`;button.style.top=`${p.y}px`;button.classList.toggle('selected',p.id===selected);button.setAttribute('aria-pressed',String(p.id===selected));}
@@ -456,7 +469,7 @@ function labelLoop(time){labelFrame=requestAnimationFrame(labelLoop);if(!documen
 async function startViewer(){
   if(loadingViewer||viewer)return;loadingViewer=true;$('#model-error').hidden=true;
   try{
-    const {createViewer}=await import('./viewer.js');
+    const {createViewer}=await import('./viewer.js?v=open-atlas');
     viewer=createViewer($('#viewer'),{onSelect:id=>{rememberCurrentEntry();historyMode='push';selectComponent(id);},onReady:info=>{rendererStatus=info.renderer;$('#loading')?.remove();},onError:()=>{$('#model-error').hidden=false;}});
     syncViewer(true);chooseVisibleRepresentative();render();rebuildLabels();syncControls();if(!labelFrame)labelFrame=requestAnimationFrame(labelLoop);
   }catch(error){$('#loading')?.remove();$('#model-error').hidden=false;console.error('The 3D renderer could not start.',error);}
@@ -468,7 +481,7 @@ document.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b)return;
   rememberCurrentEntry();
   historyMode=b.matches('[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
-  if(b.matches('[data-domain],[data-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');}
+  if(b.matches('[data-domain],[data-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');$('#view-search').value='';searchViews();}
   if(b.id==='navigator-toggle'){const open=$('.railway-navigation').classList.toggle('is-open');b.setAttribute('aria-expanded',String(open));}
   else if(b.id==='read-selection'){if($('#component-explanation'))$('#component-explanation').open=true;const heading=$('#component-detail h2');heading?.setAttribute('tabindex','-1');heading?.focus();heading?.scrollIntoView({block:'start',behavior:'instant'});}
   else if(b.id==='component-scope'){allComponents=!allComponents;renderDetail();}
@@ -552,6 +565,10 @@ $('#control-choice').innerHTML=CONTROL_CHOICES.map(x=>`<option value="${x.id}">$
 $('#view-choice').addEventListener('change',e=>{rememberCurrentEntry();historyMode='push';setView(e.target.value);announce(VIEWS[state.view].label);});
 $('#propulsion-choice').addEventListener('change',e=>changeTechnology('propulsion',e.target.value));
 $('#control-choice').addEventListener('change',e=>changeTechnology('control',e.target.value));
+$('#view-search').addEventListener('input',searchViews);
+$('#view-search').addEventListener('keydown',e=>{if(e.key==='Escape'){$('#view-search').value='';searchViews();}if(e.key==='ArrowDown'){e.preventDefault();$('#view-results button')?.focus();}if(e.key==='Enter'){$('#view-results button')?.click();}});
+$('#equipment-choice').addEventListener('change',e=>{if(!e.target.value)return;rememberCurrentEntry();historyMode='push';selectComponent(e.target.value);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('.railway-navigation').classList.contains('is-open')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');$('#navigator-toggle').focus();}});
 $('#component-search').addEventListener('input',searchComponents);
 $('#component-search').addEventListener('keydown',e=>{if(e.key==='Escape')$('#search-results').hidden=true;if(e.key==='ArrowDown'){$('#search-results button')?.focus();e.preventDefault();}if(e.key==='Enter'){$('#search-results button')?.click();}});
 document.addEventListener('click',e=>{if(!e.target.closest('.inspector-search'))$('#search-results').hidden=true;});

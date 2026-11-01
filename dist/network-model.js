@@ -63,6 +63,7 @@ export function buildNetworkView(id, api) {
   }
   function station(x) {
     const stop=part(root,'network-station',[x,0,-3.5]);
+    stop.userData.labelAnchor=[0,2.2,0];
     box(stop,[9,.37,1.6],palette.platform,[0,.22,0]);
     for(const z of [-.72,.72])box(stop,[8.8,.025,.09],palette.edge,[0,.42,z]);
     for(const dx of [-3,0,3])box(stop,[.09,1.65,.1],palette.steel,[dx,1.25,0]);
