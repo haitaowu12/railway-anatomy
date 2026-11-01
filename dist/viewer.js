@@ -14,6 +14,10 @@ import { DEFAULT_ELECTRIFICATION, normalizeElectrification } from './electrifica
 import { normalizePlatformEdge, normalizePlatformSensor } from './platform-config.js';
 import { advancePlayback } from './interaction-state.js';
 import { COMMUNICATIONS_VIEWS, buildCommunicationsView } from './communications-models.js';
+import { buildAssemblyIndex, instanceNode, instanceMetadata, assemblyTree, instanceAncestors, assemblyFunctionalPaths } from './assembly-contract.js';
+import { createEquipmentDetails } from './equipment-details.js';
+import { createMechanicalDetails } from './mechanical-details.js';
+import { installStudioEnvironment } from './studio-lighting.js';
 import { nodeVisible, within, visibleBounds, componentBounds, assemblyRoots, restoreIsolation, applyIsolation,
   separationEntries, viewSeparationCapabilities, explorationCapabilities, restoreSeparation, applySeparation, fitPerspectiveBounds, screenPositions } from './exploration.js';
 
@@ -70,7 +74,7 @@ export function createViewer(container, callbacks = {}) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.23;
+  renderer.toneMappingExposure = compatibility ? 1.23 : 1.08;
   renderer.shadowMap.enabled = !compatibility;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.setAttribute('aria-label', 'Interactive three-dimensional model. Use the component list for keyboard selection, and the view buttons to change the camera. Drag to orbit and scroll to zoom.');
@@ -80,6 +84,7 @@ export function createViewer(container, callbacks = {}) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(C.background);
+  const studioEnvironment = installStudioEnvironment({ THREE, renderer, scene });
   const camera = new THREE.PerspectiveCamera(36, 1, .03, 250);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = !compatibility;
@@ -93,8 +98,8 @@ export function createViewer(container, callbacks = {}) {
   controls.target.set(0, 1, 0);
 
   if (compatibility) scene.add(new THREE.AmbientLight(0xdce8ec, .42));
-  else scene.add(new THREE.HemisphereLight(0xc5e7f0, 0x26313b, 2.5));
-  const key = new THREE.DirectionalLight(0xfff0d9, compatibility ? .68 : 3.1);
+  else scene.add(new THREE.HemisphereLight(0xc5e7f0, 0x26313b, studioEnvironment.enabled ? 1.45 : 2.5));
+  const key = new THREE.DirectionalLight(0xfff0d9, compatibility ? .68 : 2.8);
   key.position.set(-12, 23, 14);
   key.castShadow = !compatibility;
   key.shadow.mapSize.set(2048, 2048);
@@ -103,7 +108,7 @@ export function createViewer(container, callbacks = {}) {
   key.shadow.camera.near = .5; key.shadow.camera.far = 80;
   key.shadow.bias = -.0005;
   key.shadow.normalBias = .03;
-  scene.add(key);
+  scene.add(key); scene.add(key.target);
   const rim = new THREE.DirectionalLight(0x7abacb, compatibility ? .23 : 1.8);
   rim.position.set(8, 9, -18); scene.add(rim);
 
@@ -114,15 +119,15 @@ export function createViewer(container, callbacks = {}) {
     return materials.get(key);
   }
   const M = {
-    deck: mat(C.deck, .95, .05), edge: mat(C.edge, .7), white: mat(C.white, .38),
-    teal: mat(C.teal, .4), yellow: mat(C.yellow, .42), dark: mat(C.dark, .65),
-    glass: mat(C.glass, .18, .6), steel: mat(C.steel, .34, .76),
-    aluminum: mat(C.aluminum, .27, .85), copper: mat(C.copper, .35, .65),
+    deck: mat(C.deck, .95, .02), edge: mat(C.edge, .7, .08), white: mat(C.white, .42, .06),
+    teal: mat(C.teal, .43, .08), yellow: mat(C.yellow, .46, .06), dark: mat(C.dark, .78, .06),
+    glass: mat(C.glass, .18, .02), steel: mat(C.steel, .38, .8),
+    aluminum: mat(C.aluminum, .32, .85), copper: mat(C.copper, .35, .82),
     core: mat(C.core, .46, .7), positive: mat(C.positive, .4, .35),
     negative: mat(C.negative, .4, .35), brake: mat(C.brake, .6),
     signal: mat(C.signal, .5), service: mat(C.service, .5),
   };
-  const groundMaterial = compatibility ? new THREE.MeshBasicMaterial({color:C.background, toneMapped:false}) : new THREE.ShadowMaterial({color:0x142344, opacity:.12});
+  const groundMaterial = compatibility ? new THREE.MeshBasicMaterial({color:C.background, toneMapped:false}) : new THREE.ShadowMaterial({color:0x142344, opacity:.18});
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), groundMaterial);
   ground.rotation.x = -Math.PI / 2; ground.position.y = -.27; ground.receiveShadow = true; ground.renderOrder = -1000; scene.add(ground);
   const grid = new THREE.GridHelper(80, 40, 0xdde4f1, 0xdde4f1);
@@ -133,6 +138,7 @@ export function createViewer(container, callbacks = {}) {
   const models = new Map();
   let building;
   const state = { view: 'system', selected: null, mode: 'motoring', exploded: 0, explodeScope: 'all', isolation: null, focused: null, cutaway: false, playing: false, phase: 0, duration: 12, loop: false, receptivity: 'train', scenario: 'nominal', variant: 'default', signals: true, platformEdge: 'open', platformSensor: 'lidar', electrification: DEFAULT_ELECTRIFICATION, technology: { propulsion: 'lim', control: 'loop' } };
+  Object.assign(state, { selectedInstanceId: null, isolationInstanceId: null, focusedInstanceId: null, allInstances: false, functionalPath: null });
   let frameBeforeExploration = null, cachedComponentBounds = null;
   const labelAnchorInstances = new Map();
   const raycaster = new THREE.Raycaster();
@@ -142,6 +148,9 @@ export function createViewer(container, callbacks = {}) {
   const selectionGeometry = new THREE.BufferGeometry();
   const selectionCorners = new THREE.LineSegments(selectionGeometry, new THREE.LineBasicMaterial({ color: 0x244acb, transparent: true, opacity: .9, depthTest: false }));
   selectionCorners.renderOrder = 20; selectionCorners.visible = false; scene.add(selectionCorners);
+  const functionalGeometry = new THREE.BufferGeometry();
+  const functionalLine = new THREE.Line(functionalGeometry, new THREE.LineDashedMaterial({ color: 0xbd6d22, dashSize: .12, gapSize: .07, transparent: true, opacity: .9, depthTest: false }));
+  functionalLine.renderOrder = 19; functionalLine.visible = false; scene.add(functionalLine);
 
   function startModel(id) {
     const root = new THREE.Group(); root.name = `view-${id}`;
@@ -202,6 +211,8 @@ export function createViewer(container, callbacks = {}) {
     node.userData.inspectionStage = label;
     node.userData.inspectionRange = [start, end];
   }
+  function mechanicalDetails() { return createMechanicalDetails({ THREE, C, M, mat, group, part, mesh, box, cylinder, tube, explode, shell }); }
+  function equipmentDetails() { return createEquipmentDetails({ THREE, C, M, mat, group, part, mesh, box, cylinder, tube, explode, shell }); }
   function shell(node) { building.shells.push(node); }
   function foot(parent, x, z) {
     cylinder(parent, .11, .09, M.steel, [x, .02, z], null, 6);
@@ -276,6 +287,7 @@ export function createViewer(container, callbacks = {}) {
     for (const node of [cover,lid,tank]) inspectionStage(node,'Expose the enclosure',0,.35);
     for (const node of [core,terminals]) inspectionStage(node,'Locate core and terminals',.35,.65);
     for (const node of [primary,secondary]) inspectionStage(node,'Compare the winding groups',.65,1);
+    equipmentDetails().powerInterfaces(g,{kind:'transformer'});
     return g;
   }
   function makePowerRectifier(parent,id='rectifier',at=[0,0,0],scale=1) {
@@ -307,6 +319,7 @@ export function createViewer(container, callbacks = {}) {
       tube(buses,[[x,1.73,-.64],[x,1.4,-.12],[x,1.15,-.12]],.022,M.copper,{straight:true,segments:5});
       tube(buses,[[x,1.4,-.12],[x,1.4,.52],[x,1.15,.52]],.022,M.copper,{straight:true,segments:5});
     }
+    equipmentDetails().powerInterfaces(g,{kind:'rectifier'});
     return g;
   }
   function makePowerSwitchgear(parent,id='ac-switchgear',at=[0,0,0],{dc=false,scale=1}={}) {
@@ -334,6 +347,7 @@ export function createViewer(container, callbacks = {}) {
       const chute=powerPiece(breaker,'breaker-arc-chute','DC arc-chute plates',[0,.8,.8]);
       for(let y=1.61;y<2.25;y+=.08)box(chute,[.65,.035,.48],M.steel,[0,y,.25]);
     }
+    equipmentDetails().powerInterfaces(g,{kind:'switchgear',dc});
     return g;
   }
   function makePantograph(parent,at=[0,3.78,0]) {
@@ -466,6 +480,7 @@ export function createViewer(container, callbacks = {}) {
 
   // Rails: conductor rails are paired vertically on ONE side of the guideway.
   function makeTrack(parent, length = 12, { detail = true, section = false } = {}) {
+    const D = mechanicalDetails();
     const g = group(parent, 'guideway-assembly');
     box(g, [length + .35, .22, 3.15], M.deck, [0, -.12, 0]);
     box(g, [length + .42, .06, 3.23], M.edge, [0, -.24, 0]);
@@ -476,6 +491,7 @@ export function createViewer(container, callbacks = {}) {
       box(run, [length, .05, .095], M.aluminum, [0, .17, z]);
     }
     const reaction = part(g, 'reaction-rail');
+    D.mark(reaction,'LIM secondary reaction rail',{sources:['P02','P03'],function:'A passive conducting layer and backing iron form the selected track-side secondary. This is separate from supply and communication conductors.'});
     const trackContext = building.root.name.slice(5);
     registerAnimator(s=>{reaction.visible=(s.technology?.propulsion || 'lim')==='lim';});
     const moduleLength = 3;
@@ -485,15 +501,21 @@ export function createViewer(container, callbacks = {}) {
       const to = Math.min(length / 2, from + moduleLength - .04);
       const len = to - from, cx = (from + to) / 2;
       if (len <= 0) continue;
-      box(reaction, [len, .1, .4], M.core, [cx, .12, 0]);
-      box(reaction, [len, .025, .43], M.aluminum, [cx, .1825, 0]);
+      const segment=D.piece(reaction,'reaction-module-'+i,'Reaction-rail segment '+(i+1),undefined,{sources:['P02','P03']});
+      const iron=D.piece(segment,'reaction-backing-iron','Backing iron',undefined,{sources:['P03'],function:'Provides the ferromagnetic backing in the selected single-sided secondary.'});
+      const cap=D.piece(segment,'reaction-conducting-cap','Conducting secondary layer',undefined,{sources:['P03'],function:'Induced currents flow in the passive conducting layer; it is not a supplied traction conductor.'});
+      const supports=D.piece(segment,'reaction-support-brackets','Reaction-rail support brackets',undefined,{sources:['P02'],function:'Fix the passive secondary to the guideway and carry its reaction into the support.'});
+      box(iron, [len, .1, .4], M.core, [cx, .12, 0]);
+      box(cap, [len, .025, .43], M.aluminum, [cx, .1825, 0]);
+      if(detail)D.move(cap,[0,.23,0],'Separate secondary layers',[.45,1]);
       // A solid steel backing and conductive cap indicate the secondary layers.
       // The segmentation and supports are illustrative modelling choices.
       for (let x = from + .28; x < to; x += .8) {
-        box(reaction, [.13, .07, .67], M.core, [x, .035, 0]);
-        if (detail) for (const z of [-.27, .27]) foot(reaction, x, z);
+        box(supports, [.13, .07, .67], M.core, [x, .035, 0]);
+        if (detail) for (const z of [-.27, .27]) foot(supports, x, z);
       }
     }
+    reaction.userData.functionalPaths=[{id:'secondary-reaction',label:'Secondary current and reaction support',description:'The primary field induces currents in the passive layer; the backing and brackets belong to the magnetic and mechanical interfaces. No supply lead is attached to this secondary.',steps:[{label:'Conducting layer',nodeName:'reaction-conducting-cap'},{label:'Backing iron',nodeName:'reaction-backing-iron'},{label:'Support brackets',nodeName:'reaction-support-brackets'}],sources:['P02','P03']}];
     const pos = part(g, 'positive-rail'), neg = part(g, 'negative-rail');
     for (const [p, y, color] of [[pos, .63, M.positive], [neg, .37, M.negative]]) {
       // Aluminum conductor body and a separate stainless side-contact cap.
@@ -557,85 +579,65 @@ export function createViewer(container, callbacks = {}) {
     const g = part(parent, 'lim-primary', position);
     const primaryContext = building.root.name.slice(5);
     registerAnimator(s=>{g.visible=primaryContext==='lim'||(s.technology?.propulsion || 'lim')==='lim';});
-    const width = .57;
-    const mounting = group(g, 'primary-mounting-frame'); mounting.userData.explorationLabel = 'Mounting frame';
-    const core = group(g, 'primary-laminated-core'); core.userData.explorationLabel = 'Laminated core';
-    const winding = group(g, 'primary-winding-groups'); winding.userData.explorationLabel = 'Winding groups';
-    box(mounting, [length + .14, .09, width + .18], M.steel, [0, .2, 0]);
-    for (const z of [-.34, .34]) box(mounting, [length + .22, .07, .045], M.core, [0, .24, z]);
-    // Lamination lines make the iron core recognisable without implying a winding drawing.
-    for (let z = -.26; z <= .27; z += detailed ? .025 : .05) box(core, [length, .2, .015], M.core, [0, .075, z]);
-    const coils = 8;
-    for (let i = 0; i < coils; i++) {
-      const x = -length / 2 + .13 + i * (length - .26) / (coils - 1);
-      box(core, [.09, .12, width], M.core, [x, -.045, 0]);
-      for (const z of [-.27, .27]) {
-        const coil = mesh(winding, torus(.115, .035, 6, 14), M.copper, [x, .07, z], [0, Math.PI / 2, 0]);
-        coil.scale.set(1, 1.15, 1);
-      }
-    }
-    for (const x of [-length / 2 + .13, length / 2 - .13]) {
-      box(mounting, [.14, .23, .12], M.steel, [x, .36, 0]);
-      cylinder(mounting, .06, .2, M.steel, [x, .48, 0], [Math.PI / 2, 0, 0]);
-    }
-    tube(winding, [[length / 2, .14, -.18], [length / 2 + .22, .3, -.2], [length / 2 + .3, .5, -.32]], .035, M.dark);
-    // Authored teaching separation of the three real functional assemblies;
-    // this is not a removal sequence or a manufacturing winding drawing.
-    explode(mounting, [0, .7, 0]); explode(core, [0, .2, 0]); explode(winding, [0, .2, .8]);
-    inspectionStage(mounting,'Locate the mounting frame',0,.3);
-    inspectionStage(core,'Inspect the laminated core',.3,.65);
-    inspectionStage(winding,'Reveal the winding groups',.65,1);
+    mechanicalDetails().primaryDetail(g, { length, detailed });
     return g;
   }
 
   function makeBogie(parent, position = [0, 0, 0], detailed = true) {
     const frame = group(parent, 'bogie-assembly', position);
     frame.userData.explorationAssembly = 'bogie';
+    const D = mechanicalDetails(), E = equipmentDetails();
+    D.mark(frame, 'Bogie assembly', { function: 'Two suspension levels carry the vehicle load to wheelsets while propulsion, braking and collection retain separate roles.' });
     const g = part(frame, 'bogie');
-    const chassis = group(g, 'bogie-frame-and-suspension'); chassis.userData.explorationLabel = 'Frame and suspension';
+    const chassis = D.piece(g, 'bogie-frame-and-suspension', 'Frame and suspension');
     const wheelsets = [];
     for (const x of [-1.02, 1.02]) {
-      const wheelset = group(g, `wheelset-${x < 0 ? 'rear' : 'front'}`);
-      wheelset.userData.explorationLabel = 'Wheelsets'; wheelsets.push(wheelset);
-      cylinder(wheelset, .075, 1.72, M.steel, [x, .56, 0], [Math.PI / 2, 0, 0]);
+      const wheelset = D.piece(g, `wheelset-${x < 0 ? 'rear' : 'front'}`, x < 0 ? 'Rear wheelset' : 'Front wheelset'); wheelsets.push(wheelset);
+      const axle = D.piece(wheelset, 'wheelset-axle', 'Axle', [x, .56, 0], { function: 'Carries both wheels and bearing journals on one axis.', interfaces: ['Wheel hubs', 'Bearing inner races', 'Axle gear when rotary propulsion is selected'] });
+      cylinder(axle, .075, 2.12, M.steel, [0, 0, 0], [Math.PI / 2, 0, 0]);
       for (const z of [-.72, .72]) {
-        cylinder(wheelset, .365, .19, M.steel, [x, .56, z], [Math.PI / 2, 0, 0], 32);
-        cylinder(wheelset, .4, .035, M.core, [x, .56, z + (z > 0 ? -.105 : .105)], [Math.PI / 2, 0, 0], 32);
-        cylinder(wheelset, .14, .215, M.core, [x, .56, z], [Math.PI / 2, 0, 0]);
-        box(wheelset, [.35, .25, .27], M.core, [x, .76, z]);
+        const wheel = D.piece(wheelset, 'wheel-'+(z>0?'near':'far'), 'Wheel tread, flange and hub', [x,.56,z], { function: 'The tread supports the vehicle on the rail; the flange provides a guidance interface. This is not a contact-profile specification.' });
+        cylinder(wheel, .365, .19, M.steel, [0,0,0], [Math.PI / 2, 0, 0], 32);
+        cylinder(wheel, .4, .035, M.core, [0,0,z > 0 ? -.105 : .105], [Math.PI / 2, 0, 0], 32);
+        cylinder(wheel, .14, .215, M.core, [0,0,0], [Math.PI / 2, 0, 0]);
+        for(let i=0;i<6;i++){const angle=i*Math.PI/3;cylinder(wheel,.018,.014,M.aluminum,[Math.cos(angle)*.2,Math.sin(angle)*.2,Math.sign(z)*.103],[Math.PI/2,0,0],6);}
+        const axlebox = D.axlebox(wheelset,{at:[x,.56,Math.sign(z)*.99],side:Math.sign(z),detailed});
+        registerAnimator(s=>{const angle=Number(s.phase||0)*.35;wheel.rotation.z=angle;axlebox.bearing.inner.rotation.z=angle;});
         if (detailed) {
-          const brake = part(frame, 'brakes');
-          mesh(brake, torus(.29, .045, 7, 30), M.brake, [x, .56, z + (z > 0 ? .12 : -.12)]);
-          box(brake, [.19, .2, .21], M.dark, [x + .24, .69, z]);
-          brake.userData.explorationLabel = 'Brake equipment'; explode(brake, [0, 0, Math.sign(z) * .6]);
+          const brake = E.discBrake(frame, { component:'brakes', at:[x,.56,Math.sign(z)*.47], discRadius:.245, discThickness:.055, axleRadius:.075, context:'vehicle' });
+          // Orient the actuator toward the bogie end: an upright actuator at
+          // this disc plane would occupy the longitudinal frame beam.
+          brake.node.rotation.z=-Math.sign(x)*Math.PI/2;
+          const bracket=D.piece(brake.node,'brake-frame-reaction-bracket','Caliper-to-frame reaction bracket',undefined,{sources:['DP01','MD01'],function:'The stationary caliper reacts into the frame through a separate bracket; the rotating disc remains coaxial with the wheelset.'});
+          box(bracket,[.4,.05,.06],M.core,[-Math.sign(x)*.2,.27,Math.sign(z)*.13]);
+          D.move(brake.node,[0,0,Math.sign(z)*.55],'Locate brake interfaces',[.2,.5]);
+          registerAnimator(s=>{brake.rotate(Number(s.phase||0)*.35);brake.apply(0);});
         }
       }
       explode(wheelset, [Math.sign(x) * .38, -.08, 0]);
+      inspectionStage(wheelset,'Locate the wheelsets',.55,.85);
     }
     for (const z of [-.55, .55]) box(chassis, [2.65, .17, .18], M.teal, [0, .96, z]);
     for (const x of [-.83, .83]) box(chassis, [.2, .16, 1.25], M.teal, [x, .97, 0]);
-    for (const z of [-.55, .55]) {
-      cylinder(chassis, .23, .16, M.dark, [0, 1.15, z]);
-      cylinder(chassis, .26, .055, M.steel, [0, 1.25, z]);
-      for (let y = .82; y < 1.15; y += .055) mesh(chassis, torus(.12, .018, 6, 16), M.steel, [.75, y, z], [Math.PI / 2, 0, 0]);
-    }
+    D.suspension(chassis,{detailed});
     explode(chassis, [0, .85, 0]);
+    inspectionStage(chassis,'Expose the supporting frame',0,.3);
+    frame.userData.functionalPaths=[{id:'vertical-load',label:'Body to rail load path',description:'Body support → secondary air spring → frame → primary spring → axlebox bearing → axle and wheel → running rail. Lines show load relationships, not a stress solution.',steps:[{label:'Body interface',nodeName:'air-spring-body-interface'},{label:'Secondary spring',nodeName:'secondary-air-spring-near'},{label:'Frame',nodeName:'bogie-frame-and-suspension'},{label:'Primary spring',nodeName:'primary-spring-front-near'},{label:'Axlebox',nodePath:['wheelset-front','axlebox-near']},{label:'Bearing',nodePath:['wheelset-front','axlebox-near','axle-bearing']},{label:'Wheel',nodePath:['wheelset-front','wheel-near']},{label:'Running rail',conceptId:'running-rail'}],sources:['MD01','P10']}];
     makePrimary(frame, [0, .37, 0], 1.68, detailed);
     const rotary=group(frame,'selected-rotary-drive');
     const motor=part(rotary,'rotary-traction-motor',[-.72,.6975,-.45]);
     motor.userData.explorationLabel = 'Traction motor';
-    cylinder(motor,.235,.68,M.teal,[0,0,0],[Math.PI/2,0,0],20);
-    for(const z of [-.33,.33])cylinder(motor,.25,.045,M.steel,[0,0,z],[Math.PI/2,0,0],18);
-    for(let z=-.27;z<.3;z+=.09)mesh(motor,torus(.242,.013,5,18),M.steel,[0,0,z]);
-    box(motor,[.27,.15,.2],M.dark,[0,.24,.1]);
+    const motorDetails=D.rotaryMotor(motor,{detailed});
     // The motor and gearbox pinion share one straight z-axis. A separate
     // coupling spans the space between their housings; this is not a bent shaft.
     const shaft=group(motor,'straight-motor-pinion-shaft',[0,0,.585]);
+    D.mark(shaft,'Motor-to-pinion coupling',{sources:['MD02','MD04'],function:'A coaxial mechanical coupling transfers rotor torque to the gearbox pinion.'});
     cylinder(shaft,.055,.49,M.aluminum,[0,0,0],[Math.PI/2,0,0],12);
     cylinder(shaft,.105,.13,M.steel,[0,0,-.08],[Math.PI/2,0,0],12);
     for(let i=0;i<4;i++){const a=i*Math.PI/2;cylinder(shaft,.017,.15,M.dark,[Math.cos(a)*.075,Math.sin(a)*.075,-.08],[Math.PI/2,0,0],6);}
     const gear=part(rotary,'traction-gearbox',[-1.02,.56,.36]);
     gear.userData.explorationLabel = 'Gearbox';
+    D.gearboxSupports(gear);
     // A hollow teaching housing: a solid block would conceal the gears even
     // after its removable front was opened.
     roundedPanel(gear,1.05,.7,.045,M.core,[0,0,-.16],.08);
@@ -647,6 +649,7 @@ export function createViewer(container, callbacks = {}) {
     const contactAngle=Math.atan2(.1375,.30),gearModule=.22*2/24;
     for(const [x,y,r,teeth] of [[0,0,.22,24],[.30,.1375,.11,12]]){
       const wheel=group(gear,'illustrative-gear',[x,y,.02]);
+      D.mark(wheel,r>.15?'24-tooth axle gear':'12-tooth pinion',{sources:['MD02','MD03'],function:r>.15?'The axle gear turns at half the pinion speed in this original two-to-one example.':'The input pinion meshes with the axle gear using the same illustrative module.'});
       wheel.userData.gearPitchRadius=r;wheel.userData.gearToothCount=teeth;
       wheel.userData.gearModule=gearModule;wheel.userData.gearProfile='schematic, not involute';
       cylinder(wheel,r-gearModule*1.25,.07,M.steel,[0,0,0],[Math.PI/2,0,0],Math.max(24,teeth*2));
@@ -663,7 +666,9 @@ export function createViewer(container, callbacks = {}) {
       const phaseOffset=r>.15?contactAngle:contactAngle+Math.PI-Math.PI/teeth;
       registerAnimator(s=>{wheel.rotation.z=phaseOffset+Number(s.phase||0)*(r>.15?.35:-.7);});
     }
-    registerAnimator(s=>{rotary.visible=s.technology?.propulsion==='rotary';shaft.rotation.z=-Number(s.phase||0)*.7;});rotary.visible=false;
+    D.mark(rotary,'Selected rotary drive',{sources:['MD02','MD04']});
+    rotary.userData.functionalPaths=[{id:'torque-path',label:'Rotor to wheelset torque path',description:'The rotating drive is separate from stationary stator, bearing and casing support. The illustrated ratio follows the authored 12:24 tooth counts.',steps:[{label:'Stator input',nodeName:'motor-terminal-box'},{label:'Rotor',nodeName:'motor-rotor'},{label:'Coupling',nodeName:'straight-motor-pinion-shaft'},{label:'Pinion and axle gear',conceptId:'traction-gearbox'},{label:'Driven wheelset',conceptId:'bogie'}],sources:['MD02','MD03','MD04']}];
+    registerAnimator(s=>{rotary.visible=s.technology?.propulsion==='rotary';shaft.rotation.z=motorDetails.rotor.rotation.z=-Number(s.phase||0)*.7;});rotary.visible=false;
     explode(motor, [0, .3, -.65]); explode(gear, [0, .1, .65]);
     const pickup=part(frame,'loop-pickup',[.38,.65,-.43]);
     box(pickup,[.45,.12,.24],M.dark);
@@ -684,6 +689,17 @@ export function createViewer(container, callbacks = {}) {
     const collector = makeCollector(frame, [.5, 0, 0]);
     collector.userData.explorationLabel = 'Current collector'; explode(collector, [0, .25, .55]);
     if (detailed) makeWheelSensor(wheelsets[1]);
+    frame.userData.inspectionRecipe=[
+      {label:'Open covers and locate the frame',start:0,end:.3},
+      {label:'Separate support and interface groups',start:.3,end:.65},
+      {label:'Reveal the working interiors',start:.65,end:1},
+    ];
+    for(const entry of building.exploded){
+      let owner=entry.node;while(owner&&owner!==frame)owner=owner.parent;if(owner!==frame)continue;
+      const label=entry.node.userData.inspectionStage||'',name=entry.node.name;
+      const stage=/Open|Expose the supporting frame|Locate the mounting frame|Expose the motor interior/.test(label)||/cover|lid|enclosure/.test(name)?0:/rolling elements|winding groups|rotor and stator|Friction pair/i.test(label)?2:1;
+      const recipe=frame.userData.inspectionRecipe[stage];entry.inspectionOwnerRanges=new Map([[frame,[recipe.start,recipe.end]]]);
+    }
     return frame;
   }
 
@@ -1194,18 +1210,21 @@ export function createViewer(container, callbacks = {}) {
   }
   {
     const root = startModel('lim');
+    const D=mechanicalDetails();
     box(root, [6.4, .18, 3], M.deck, [0, -.12, 0]);
     const secondary = part(root, 'reaction-rail');
-    const iron = group(secondary, 'back-iron');
+    D.mark(secondary,'Passive LIM secondary',{sources:['P02','P03']});
+    const iron = D.piece(secondary, 'back-iron','Backing iron',undefined,{sources:['P03'],function:'Ferromagnetic backing of the selected single-sided secondary.'});
     box(iron, [5.5, .14, .7], M.core, [0, .08, 0]);
-    for (let i = 0; i < 6; i++) box(iron, [5.5, .008, .7], M.steel, [0, .025 + i * .025, 0]);
-    const cap = group(secondary, 'aluminum-cap');
+    const cap = D.piece(secondary, 'aluminum-cap','Conducting aluminium layer',undefined,{sources:['P03'],function:'The selected conductive plate carries induced currents without a direct supply connection.'});
     box(cap, [5.55, .035, .78], M.aluminum, [0, .1675, 0]);
-    explode(cap, [0, .23, 0]);
+    D.move(cap, [0, .23, 0],'Separate secondary layers',[.45,1]);
+    const brackets=D.piece(secondary,'secondary-support-brackets','Secondary support brackets',undefined,{sources:['P02'],function:'Fix the reaction rail to the guideway. The visible motor air gap remains free of any mechanical connection.'});
     for (const x of [-2.3, -1.55, -.8, -.05, .7, 1.45, 2.2]) {
-      box(secondary, [.14, .1, 1.07], M.core, [x, -.005, 0]);
-      for (const z of [-.46, .46]) foot(secondary, x, z);
+      box(brackets, [.14, .1, 1.07], M.core, [x, -.005, 0]);
+      for (const z of [-.46, .46]) foot(brackets, x, z);
     }
+    secondary.userData.functionalPaths=[{id:'secondary-force',label:'Field coupling and secondary support',description:'Conductive layer → backing iron → support brackets. This mechanical and magnetic relationship is separate from the train supply circuit.',steps:[{label:'Conducting layer',nodeName:'aluminum-cap'},{label:'Backing iron',nodeName:'back-iron'},{label:'Guideway brackets',nodeName:'secondary-support-brackets'}],sources:['P02','P03']}];
     const primary = makePrimary(root, [0, .92, 0], 3.5, true);
     explode(primary, [0, .85, 0]);
     // Field arches and induced-current loops are illustrative, not a solved field.
@@ -1243,7 +1262,7 @@ export function createViewer(container, callbacks = {}) {
   function registerAnimator(fn) { building.animators.push(fn); }
   const modelApi={THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,cabinet,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,registerAnimator};
   function ensureModel(id) {
-    if(models.has(id))return true;
+    if(models.has(id)){if(!models.get(id).instances)buildAssemblyIndex(models.get(id));return true;}
     if(Object.hasOwn(TRACK_VIEWS,id))buildTrackView(id,modelApi);
     else if(Object.hasOwn(SIGNALLING_VIEWS,id))buildSignallingView(id,modelApi);
     else if(Object.hasOwn(STATION_VIEWS,id))buildStationView(id,modelApi);
@@ -1254,6 +1273,7 @@ export function createViewer(container, callbacks = {}) {
     else if(Object.hasOwn(OPERATIONS_VIEWS,id))buildOperationsView(id,modelApi);
     else if(Object.hasOwn(PLATFORM_VIEWS,id))buildPlatformView(id,modelApi);
     else if(Object.hasOwn(NETWORK_VIEWS,id))buildNetworkView(id,modelApi);
+    if(models.has(id))buildAssemblyIndex(models.get(id));
     return models.has(id);
   }
   function updateAssembly() {
@@ -1353,14 +1373,20 @@ export function createViewer(container, callbacks = {}) {
         a.node.setColor(state.mode === 'regeneration' ? C.brake : C.field);
       }
     }
-    applySeparation(r, { amount: state.exploded, scope: state.explodeScope, componentId: state.selected, isolation: state.isolation });
-    if (state.isolation && !applyIsolation(r, state.isolation)) state.isolation = null;
+    // Record architecture/variant availability before any exploration mask.
+    // A removed cover remains an available part of the active assembly.
+    const shellSet=new Set(r.shells),available=new Set();
+    function availability(node,parentAvailable){const active=parentAvailable&&(node.visible||(state.cutaway&&shellSet.has(node)));if(active&&node.userData.instanceId)available.add(node.userData.instanceId);for(const child of node.children)availability(child,active);}
+    availability(r.root,true);r.inspectionAvailability=available;
+    applySeparation(r, { ...state, amount: state.exploded, scope: state.explodeScope, componentId: state.selected });
+    if (state.isolation && !applyIsolation(r, state.isolation, { instanceId: state.isolationInstanceId, allInstances: state.allInstances })) { state.isolation = null; state.isolationInstanceId = null; }
     cachedComponentBounds = null;
     updateSelection();
+    updateFunctionalPath();
   }
   function updateSelection() {
     const r = models.get(state.view);
-    visibleBounds(state.selected ? assemblyRoots(r, state.selected) : [], selectionBounds);
+    visibleBounds(state.selected ? assemblyRoots(r, state.selected, state) : [], selectionBounds);
     selectionCorners.visible = !selectionBounds.isEmpty();
     if (!selectionCorners.visible) return;
     selectionBounds.expandByScalar(.06);
@@ -1372,11 +1398,25 @@ export function createViewer(container, callbacks = {}) {
     selectionGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     selectionGeometry.computeBoundingSphere();
   }
+  function updateFunctionalPath() {
+    const record = models.get(state.view);
+    const path = state.functionalPath && assemblyFunctionalPaths(record, state.selectedInstanceId).find(item => item.id === state.functionalPath);
+    const points = [];
+    for (const step of path?.steps || []) {
+      const node = instanceNode(record, step.instanceId), bounds = node && visibleBounds(node);
+      if (bounds && !bounds.isEmpty()) points.push(bounds.getCenter(new THREE.Vector3()));
+    }
+    functionalLine.visible = points.length > 1;
+    if (!functionalLine.visible) return;
+    functionalGeometry.setFromPoints(points); functionalLine.computeLineDistances();
+    functionalGeometry.computeBoundingSphere();
+  }
   function clearStructuralExploration() {
     labelAnchorInstances.clear();
     for (const record of models.values()) { restoreIsolation(record); restoreSeparation(record); }
     if (state.explodeScope === 'selected') state.exploded = 0;
     state.explodeScope = 'all'; state.isolation = null; state.focused = null;
+    state.selectedInstanceId = null; state.isolationInstanceId = null; state.focusedInstanceId = null; state.functionalPath = null;
     frameBeforeExploration = null; cachedComponentBounds = null;
   }
   function setView(id) {
@@ -1401,12 +1441,12 @@ export function createViewer(container, callbacks = {}) {
     camera.far = previous.far; camera.zoom=previous.zoom;
     if(previous.projectionView?.enabled){const v=previous.projectionView;camera.setViewOffset(v.fullWidth,v.fullHeight,v.offsetX,v.offsetY,v.width,v.height);}else camera.clearViewOffset();
     camera.updateProjectionMatrix();
-    state.focused = null; controls.update(); requestRender(); return true;
+    state.focused = null; state.focusedInstanceId = null; controls.update(); requestRender(); return true;
   }
   function viewFocus(){return (state.view === 'station' ? STATION_FOCUS : state.view === 'platform-interface' ? PLATFORM_FOCUS : null)?.[state.variant];}
   function frameRoots() {
     const record = models.get(state.view);
-    const focused = state.focused && assemblyRoots(record, state.focused);
+    const focused = state.focused && assemblyRoots(record, state.focused, { instanceId: state.focusedInstanceId, allInstances: state.allInstances });
     const groupName = viewFocus()?.group;
     const focusGroup = groupName && record.root.getObjectByName(groupName);
     return focused?.length ? focused : focusGroup && nodeVisible(focusGroup) ? [focusGroup] : [record.root];
@@ -1425,6 +1465,12 @@ export function createViewer(container, callbacks = {}) {
     const fit = fitPerspectiveBounds(bounds, { direction: camera.position.clone().sub(controls.target),
       up: camera.up, fov: camera.fov, aspect: camera.aspect, padding:state.view==='railway'?1.05:1.16 });
     if (!fit) return false;
+    if (!compatibility) {
+      const center=bounds.getCenter(new THREE.Vector3()),span=Math.max(2,bounds.getSize(new THREE.Vector3()).length()*.62);
+      key.target.position.copy(center);key.position.copy(center).add(new THREE.Vector3(-.48,.92,.56).normalize().multiplyScalar(span*2.8));
+      Object.assign(key.shadow.camera,{left:-span,right:span,top:span,bottom:-span,near:.1,far:span*6});
+      key.shadow.normalBias=Math.min(.035,span*.002);key.shadow.camera.updateProjectionMatrix();
+    }
     controls.target.copy(fit.target); camera.position.copy(fit.position);
     controls.minDistance = fit.minimumDistance;
     controls.maxDistance = Math.max(VIEW[state.view].distance * 1.65, fit.distance * 2);
@@ -1448,53 +1494,70 @@ export function createViewer(container, callbacks = {}) {
     return true;
   }
   function frameSelection(id = state.selected) {
-    const roots = assemblyRoots(models.get(state.view), id);
+    const roots = assemblyRoots(models.get(state.view), id, state);
     if (!roots.length) return false;
-    rememberFrame(); state.focused = id;
+    rememberFrame(); state.focused = id; state.focusedInstanceId = state.selectedInstanceId;
     fitToView(roots); controls.update(); requestRender(); return true;
   }
   function frameModel() {
-    state.focused = null;
+    state.focused = null; state.focusedInstanceId = null;
     if (!state.isolation) frameBeforeExploration = null;
     const fitted = fitToView(); controls.update(); requestRender(); return fitted;
   }
   function inspectAssembly(id = state.selected) {
     const record = models.get(state.view);
     if (!explorationCapabilities(record, id, state).canExplodeSelected) return false;
-    rememberFrame();
     setSelected(id);
+    rememberFrame();
     state.playing = false;
     state.cutaway = false;
     state.explodeScope = 'selected'; state.exploded = 1; state.focused = id;
+    state.focusedInstanceId = state.selectedInstanceId;
+    state.isolation=id;state.isolationInstanceId=state.selectedInstanceId;
+    const inspected=instanceNode(record,state.selectedInstanceId);
+    for(let owner=inspected;owner;owner=owner.parent)if(owner.userData.inspectionDirection){
+      const direction=new THREE.Vector3(...owner.userData.inspectionDirection).applyQuaternion(owner.getWorldQuaternion(new THREE.Quaternion())).normalize();
+      camera.position.copy(controls.target).addScaledVector(direction,Math.max(2,camera.position.distanceTo(controls.target)));break;
+    }
     updateAssembly(); animateModel(); fitToView(); controls.update(); requestRender();
     return true;
   }
   function restoreExploration() {
     state.exploded = 0; state.explodeScope = 'all'; state.cutaway = false;
     state.isolation = null; state.focused = null;
+    state.isolationInstanceId = null; state.focusedInstanceId = null; state.functionalPath = null;
     restoreIsolation(models.get(state.view));
     updateAssembly(); animateModel();
     if (!restoreFrame()) { fitToView(); controls.update(); }
     requestRender();
   }
-  function setSelected(id) {
-    const next = id || null, changed = state.selected !== next;
+  function setSelected(id, { instanceId = null } = {}) {
+    const record = models.get(state.view), next = id || null;
+    const requested = instanceNode(record, instanceId);
+    const retained = state.selected === next && instanceNode(record, state.selectedInstanceId);
+    // Restore the mask for target resolution, then compose it again below. A
+    // repeated catalogue synchronization preserves the specific clicked part.
+    restoreIsolation(record);
+    const target = requested?.userData.conceptId === next ? requested : retained || assemblyRoots(record, next)[0];
+    const nextInstanceId = next ? target?.userData.instanceId || null : null;
+    const changed = state.selected !== next || state.selectedInstanceId !== nextInstanceId;
     let restoreSurroundings = false;
     if (changed) {
-      const record = models.get(state.view);
       // Drilling into a child of an isolated assembly retains that assembly.
       // Selecting equipment elsewhere restores its surroundings first.
       if (state.isolation) {
         restoreIsolation(record);
-        const isolated = assemblyRoots(record, state.isolation), selected = assemblyRoots(record, next);
+        const isolated = assemblyRoots(record, state.isolation, { instanceId: state.isolationInstanceId, allInstances: state.allInstances });
+        const selected = assemblyRoots(record, next, { instanceId: nextInstanceId, allInstances: state.allInstances });
         if (!selected.length || !selected.every(node => isolated.some(root => within(node, root)))) {
-          state.isolation = null; restoreSurroundings = true;
+          state.isolation = null; state.isolationInstanceId = null; restoreSurroundings = true;
         }
       }
       if (state.explodeScope === 'selected') { state.explodeScope = 'all'; state.exploded = 0; }
-      if (state.focused !== next) state.focused = null;
+      if (state.focused !== next || state.focusedInstanceId !== nextInstanceId) { state.focused = null; state.focusedInstanceId = null; }
+      state.functionalPath = null;
     }
-    state.selected = next;
+    state.selected = next; state.selectedInstanceId = nextInstanceId;
     animateModel();
     if (restoreSurroundings && !restoreFrame()) frameModel();
     requestRender();
@@ -1502,18 +1565,60 @@ export function createViewer(container, callbacks = {}) {
   }
   function setIsolation(id = null) {
     const record = models.get(state.view), previous = state.isolation;
-    if (id === previous) return true;
+    const nextInstanceId = id === state.selected ? state.selectedInstanceId : null;
+    if (id === previous && state.isolationInstanceId === nextInstanceId) return true;
     restoreIsolation(record);
-    if (id && !assemblyRoots(record, id).length) {
-      if (previous) applyIsolation(record, previous);
+    if (id && !assemblyRoots(record, id, { instanceId: nextInstanceId, allInstances: state.allInstances }).length) {
+      if (previous) applyIsolation(record, previous, { instanceId: state.isolationInstanceId, allInstances: state.allInstances });
       return false;
     }
     if (id) rememberFrame();
     state.isolation = id || null; state.focused = id || null;
+    state.isolationInstanceId = id ? nextInstanceId : null; state.focusedInstanceId = state.isolationInstanceId;
     animateModel();
     if (id) { fitToView(); controls.update(); }
     else if (!restoreFrame()) frameModel();
     requestRender(); return true;
+  }
+  function selectInstance(instanceId, { notify = true } = {}) {
+    const record = models.get(state.view), node = instanceNode(record, instanceId);
+    // Availability is recorded before section and isolation masks. A covered
+    // active part is selectable; hardware belonging to another arrangement is not.
+    if (!node?.userData.conceptId || record.inspectionAvailability && !record.inspectionAvailability.has(instanceId)) return false;
+    if (state.selectedInstanceId === instanceId && state.selected === node.userData.conceptId && !state.allInstances) return true;
+    state.allInstances = false;
+    setSelected(node.userData.conceptId, { instanceId });
+    if (notify) onSelect(node.userData.conceptId, { instanceId });
+    return true;
+  }
+  function setAllInstances(value) {
+    if (state.allInstances === Boolean(value)) return state.allInstances;
+    state.allInstances = Boolean(value);
+    animateModel(); if (state.focused || state.isolation) { fitToView(); controls.update(); }
+    requestRender(); return state.allInstances;
+  }
+  function setInspectionMode(mode) {
+    if (!['assembled', 'section', 'inspection'].includes(mode)) return false;
+    if (mode === 'inspection') return inspectAssembly();
+    state.playing = false; state.exploded = 0; state.explodeScope = 'all'; state.cutaway = mode === 'section';
+    updateAssembly(); animateModel(); fitToView(); controls.update(); requestRender(); return true;
+  }
+  function getInspectionState() {
+    const record = models.get(state.view);
+    if (!record?.instances) buildAssemblyIndex(record);
+    const selected = instanceNode(record, state.selectedInstanceId);
+    return { selectedInstanceId: state.selectedInstanceId, conceptId: state.selected, allInstances: state.allInstances,
+      mode: state.exploded > 0 ? 'inspection' : state.cutaway ? 'section' : 'assembled', functionalPath: state.functionalPath,
+      selected: instanceMetadata(selected),
+      tree: assemblyTree(record, { selectedInstanceId: state.selectedInstanceId, conceptId: state.selected, allInstances: state.allInstances }),
+      ancestors: instanceAncestors(record, state.selectedInstanceId),
+      stages: explorationCapabilities(record, state.selected, state).inspectionStages,
+      functionalPaths: assemblyFunctionalPaths(record, state.selectedInstanceId) };
+  }
+  function setFunctionalPath(id = null) {
+    const paths = assemblyFunctionalPaths(models.get(state.view), state.selectedInstanceId);
+    state.functionalPath = paths.some(path => path.id === id) ? id : null;
+    updateFunctionalPath(); requestRender(); return state.functionalPath;
   }
   function setExplodeScope(scope) {
     const selected = scope === 'selected' && explorationCapabilities(models.get(state.view), state.selected, state).canExplodeSelected;
@@ -1555,7 +1660,8 @@ export function createViewer(container, callbacks = {}) {
     });
     const hit = raycaster.intersectObjects(visible, false)[0];
     if (hit?.object.userData.component) {
-      const id = hit.object.userData.component; setSelected(id); onSelect(id);
+      const id = hit.object.userData.component, instanceId = hit.object.userData.pickInstanceId;
+      state.allInstances = false; setSelected(id, { instanceId }); onSelect(id, { instanceId: state.selectedInstanceId });
     }
   }
   renderer.domElement.addEventListener('pointerdown', down);
@@ -1592,13 +1698,18 @@ export function createViewer(container, callbacks = {}) {
     const geos = new Set(), mats = new Set();
     scene.traverse(o => { if (o.geometry) geos.add(o.geometry); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => mats.add(m)); });
     for (const g of geos) g.dispose(); for (const m of mats) m.dispose();
-    renderer.dispose(); renderer.domElement.remove();
+    studioEnvironment.dispose(); renderer.dispose(); renderer.domElement.remove();
   }
 
   setView('system'); resize(); animateModel(); frame = requestAnimationFrame(loop);
   onReady({ view: state.view, components: [...models.get(state.view).parts.keys()], renderer: rendererKind });
   return {
     setView,
+    getInspectionState, selectInstance, setAllInstances, setInspectionMode, setFunctionalPath,
+    getRenderDiagnostics() {
+      let visibleMeshes=0,triangles=0;models.get(state.view)?.root.traverseVisible(node=>{if(!node.isMesh)return;visibleMeshes++;triangles+=(node.geometry.index?.count||node.geometry.attributes.position?.count||0)/3;});
+      return {renderer:rendererKind,environment:studioEnvironment.enabled,shadows:!compatibility,visibleMeshes,triangles:Math.round(triangles),pixelRatio:Math.min(window.devicePixelRatio||1,2)};
+    },
     setTechnology(value={}) {
       const propulsion=['lim','rotary'].includes(value.propulsion)?value.propulsion:state.technology.propulsion;
       const control=['loop','radio','fixed','etcs1','etcs2'].includes(value.control)?value.control:state.technology.control;

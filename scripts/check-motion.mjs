@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import {createMechanicalDetails} from '../dist/mechanical-details.js';
+import {createEquipmentDetails} from '../dist/equipment-details.js';
+const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import * as electrificationHelpers from '../dist/electrification.js';
 // Exercise finite equipment mechanisms using the actual viewer primitives.
 // These checks verify teaching distinctions and geometry, not rendering quality
@@ -17,7 +20,8 @@ const sources=catalog.SOURCES.map(s=>({...s})),concepts=catalog.CONCEPTS.map(c=>
 data.applyOccCatalog(sources,concepts);
 const source=await readFile(path.join(dist,'viewer.js'),'utf8');
 const between=(a,b)=>{const x=source.indexOf(a),y=source.indexOf(b,x+a.length);assert(x>=0&&y>x,`Viewer helper marker changed: ${a}`);return source.slice(x,y);};
-const harness=new Function('THREE','electrificationHelpers',`
+const harness=new Function('THREE','electrificationHelpers','detailFactories',`
+ const {createMechanicalDetails,createEquipmentDetails}=detailFactories;
  const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
  ${between('const C = {','\nconst VIEW')}
  const compatibility=true,scene=new THREE.Scene(),models=new Map();let building;
@@ -26,7 +30,7 @@ const harness=new Function('THREE','electrificationHelpers',`
  function registerAnimator(fn){building.animators.push(fn);}
  return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator}};
 `);
-const {models,api}=harness(THREE,electrificationHelpers);
+const {models,api}=harness(THREE,electrificationHelpers,detailFactories);
 for(const id of Object.keys(occ.OCC_VIEWS))occ.buildOccView(id,api);
 const visible=node=>{for(let p=node;p;p=p.parent)if(!p.visible)return false;return true;};
 function set(view,variant,{phase=0,playing=false,signals=true,cutaway=true}={}){
@@ -90,11 +94,13 @@ check('Fixed-crossing examples move the wheelset without moving a switch',()=>{
 });
 check('Point drive separates unlock, blade movement and target position proof',()=>{
  for(const variant of ['proved','unproved']){
-  const r=set('switch-drive',variant,{phase:0}),machine=(r.parts.get('track-point-machine')||[]).find(visible),gear=one(r,'illustrative-drive-gear');
-  assert.equal(machine.userData.lockEngaged,true);assert.equal(machine.userData.targetProved,false);assert.equal(gear.rotation.x,0);
-  set('switch-drive',variant,{phase:2.5});assert.equal(machine.userData.lockEngaged,false);assert.equal(machine.userData.targetProved,false);assert(gear.rotation.x>0);
+  const r=set('switch-drive',variant,{phase:0}),machine=(r.parts.get('track-point-machine')||[]).find(visible),gear=one(r,'illustrative-drive-gear'),rod=one(r,'linear-output-rod');
+  const initialAngle=gear.rotation.x,initialTravel=rod.position.z;
+  assert.equal(machine.userData.lockEngaged,true);assert.equal(machine.userData.targetProved,false);
+  set('switch-drive',variant,{phase:.5});assert.equal(gear.rotation.x,initialAngle,'The pinion moved during the unlock interval');assert.equal(rod.position.z,initialTravel);
+  set('switch-drive',variant,{phase:2.5});assert.equal(machine.userData.lockEngaged,false);assert.equal(machine.userData.targetProved,false);assert(gear.rotation.x>initialAngle);
   set('switch-drive',variant,{phase:5});assert.equal(machine.userData.lockEngaged,variant==='proved');assert.equal(machine.userData.targetProved,variant==='proved');
-  assert(Math.abs(gear.rotation.x-(variant==='proved'?1:.52)*1.4)<1e-8);
+  assert(Math.abs(rod.position.z-initialTravel+gear.userData.gearPitchRadius*(gear.rotation.x-initialAngle))<1e-8,'Pinion rotation does not agree with rack travel');
   const atEnd=geometryDigest(r.root);set('switch-drive',variant,{phase:9});assert.equal(geometryDigest(r.root),atEnd,'Unproved example must not hunt');
  }
 });
@@ -123,3 +129,4 @@ check('Balise reference persists after leaving the localized coupling region',()
  assert.equal(nodes(r,'section-occupancy-indication').length,0,'Balise example must not imply track-section occupancy detection');
 });
 console.log('\n'+passed+' passed; '+failures.length+' failed.');if(failures.length)process.exitCode=1;
+

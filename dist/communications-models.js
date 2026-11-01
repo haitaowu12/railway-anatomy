@@ -1,3 +1,4 @@
+import {createEquipmentDetails} from './equipment-details.js';
 /* Original generic equipment geometry. Internal arrangements are explanatory,
  * not vendor drawings. Motion illustrates relationships with invented timing;
  * it does not implement railway operating rules or equipment safety functions. */
@@ -22,9 +23,11 @@ const VARIANTS={
 // Each assembly has real removable descendants, not a translated root alone.
 export function createCommunicationsAssemblies(api){
   const {THREE,C,M,mat,group,part,mesh,box,cylinder,tube,roundedPanel,shell,explode}=api;
+  const E=createEquipmentDetails(api);
+  const sourceFor=node=>{for(let n=node;n;n=n.parent){const id=n.userData.component||'';if(/scada|rtu|bas-/.test(id))return ['CM01','CM02'];if(/access|door/.test(id))return ['CM11'];if(/camera|cctv/.test(id))return ['CM09'];if(/record/.test(id))return ['CM10'];if(/pa-|station-pa/.test(id))return ['CM08'];if(/intercom/.test(id))return ['CM05'];if(/radio/.test(id))return ['CM06'];if(/power/.test(id))return ['DP03'];}return ['CM04'];};
   const P={metal:mat(0x7f9198,.58,.45),pale:mat(0xcbd6d3,.7,.12),dark:mat(0x1c313b,.8,.1),blue:mat(0x4c6f7b,.72,.13),board:mat(0x467971,.82,.08),chip:mat(0x243e44,.85,.08),copper:mat(0xbb9670,.55,.4),amber:new THREE.MeshBasicMaterial({color:0xd5b171}),cyan:new THREE.MeshBasicMaterial({color:0x80bdc8}),muted:mat(0x596970,.83,.08),red:new THREE.MeshBasicMaterial({color:0xc98975}),white:new THREE.MeshBasicMaterial({color:0xd7dfd8})};
-  const separate=(node,delta,label)=>{node.userData.explorationLabel=label;explode(node,delta);};
-  const assembly=(parent,id,at=[0,0,0],scale=1)=>{const g=part(parent,id,at);g.userData.explorationAssembly=id;g.scale.setScalar(scale);return g;};
+  const separate=(node,delta,label)=>E.separate(node,label,delta,{sources:sourceFor(node),stage:/cover|enclosure/i.test(label)?'Open enclosure':/terminal|connector|port|tray/i.test(label)?'Expose interfaces':'Working modules',range:/cover|enclosure/i.test(label)?[0,.3]:/terminal|connector|port|tray/i.test(label)?[.25,.6]:[.45,1]});
+  const assembly=(parent,id,at=[0,0,0],scale=1)=>{const g=part(parent,id,at);g.userData.explorationAssembly=id;g.scale.setScalar(scale);E.inspect(g,id.replaceAll('-',' '),{sources:sourceFor(g)});return g;};
   function board(parent,name,w,h,at=[0,0,0]){
     const g=group(parent,name,at);box(g,[w,h,.045],P.board);
     for(const [x,y]of [[-.23,.19],[.18,.16],[-.18,-.18],[.22,-.18]])box(g,[w*.2,h*.19,.045],P.chip,[x*w,y*h,.045]);
@@ -85,6 +88,11 @@ export function createCommunicationsAssemblies(api){
       box(sfp,[.25,.04,.13],P.board,[0,0,-.29]);separate(sfp,[0,0,.85],'Optical transceiver');
       box(g,[.46,.22,.05],P.dark,[.91,-.025,.63]);
     }else for(let i=0;i<7;i++)box(g,[.032,h+.035,d*.82],P.metal,[-.98+i*.32,0,-.04]);
+    E.port(g,{name:'switch-dc-inlet',label:'Switch DC supply terminals',at:[-1.04,0,-.67],kind:'power',sources:['CM04']});
+    E.route(g,{name:'switch-power-board-route',label:'Supply to conversion module',points:[[-1.04,0,-.67],[-1.04,0,-.48],[-1.01,0,-.2]],kind:'power',from:'Switch DC terminals',to:'Switch power-supply module',sources:['CM04']});
+    E.route(g,{name:'switch-logic-supply',label:'Converted supply to switching board',points:[[-.84,0,-.2],[-.6,-.04,-.2],[0,-.04,-.2]],kind:'power',from:'Supply module',to:'Switch circuit board',sources:['CM04']});
+    for(let i=0;i<4;i++){const x=-.93+i*.42;const pin=E.inspect(group(connectors,'switch-data-port-'+(i+1),[x,0,.68]),(rugged?'Onboard data connector ':'Copper data port ')+(i+1),{sources:['CM04'],description:'A distinct physical endpoint. Port numbering is invented; no cable pinout is specified.'});box(pin,[.27,.15,.012],P.dark,[0,-.02,.005]);E.route(g,{name:'switch-port-board-'+i,label:'Data port '+(i+1)+' to switch electronics',points:[[x,0,.61],[x,-.06,.35],[x*.7,-.06,.2]],kind:'data',from:'Data port '+(i+1),to:'Switch electronics',sources:['CM04'],radius:.009});}
+    E.paths(g,[{id:'switch-data',label:'Physical data path',description:'Copper connectors and the optical module are interfaces to active switching electronics.',steps:[{label:'Data connector',nodeName:'switch-data-port-1'},{label:'Interface route',nodeName:'switch-port-board-0'},{label:'Switching board',nodeName:rugged?'onboard-network-board':'switch-circuit-board'},...(rugged?[]:[{label:'Optical module',nodeName:'removable-optical-transceiver'}])],sources:['CM04']},{id:'switch-power',label:'Equipment supply',description:'A separate DC inlet powers the conversion module and circuit board.',steps:[{label:'DC terminals',nodeName:'switch-dc-inlet'},{label:'Power module',nodeName:'switch-supply-module'},{label:'Logic supply',nodeName:'switch-logic-supply'}],sources:['CM04']}]);
     return {node:g,pcb,lid};
   }
   function patchPanel(parent,at=[0,0,0]){
@@ -113,6 +121,7 @@ export function createCommunicationsAssemblies(api){
     for(const x of [-1.5,1.5])for(const z of [-.77,.77])box(g,[.09,5.05,.09],M.steel,[x,2.62,z]);
     for(const y of [.1,5.13])box(g,[3.12,.12,1.68],P.metal,[0,y,0]);
     const side=group(g,'network-rack-enclosure');box(side,[.05,5,1.64],P.blue,[-1.56,2.62,0]);box(side,[3.1,5,.045],P.muted,[0,2.62,-.83]);shell(side);separate(side,[-.75,.2,-.5],'Rack side and rear enclosure');
+    E.rackServices(g,{width:3.1,height:5.1,depth:1.65});
     patchPanel(g,[0,4.57,0]);networkSwitch(g,[0,3.65,0]);router(g,[0,2.6,0]);powerUnit(g,[0,.94,0]);
     for(const x of [-1,-.5,.0,.5,1])tube(g,[[x,4.57,.78],[x+.08,4.32,1.0],[x*.8,3.62,.77]],.018,P.amber,{segments:9});
     tube(g,[[.91,3.6,.84],[1.32,3.25,1.02],[.87,2.61,.8]],.025,P.cyan,{segments:9});
@@ -133,7 +142,11 @@ export function createCommunicationsAssemblies(api){
     const output=indicator(outputs,'scada-output-indication',[0,.4,.25],.13);separate(outputs,[.5,.1,.6],'Output module and relay');
     const ps=group(g,'rtu-power-module',[-.98,1.05,.15]);box(ps,[.55,.64,.4],P.dark);for(let i=0;i<4;i++)box(ps,[.025,.42,.04],P.metal,[-.17+i*.11,0,.23]);separate(ps,[-.7,0,.5],'Controller power module');
     const terminals=group(g,'rtu-field-terminal-strip',[.34,.94,.18]);for(let i=0;i<8;i++){box(terminals,[.18,.33,.23],P.blue,[-.8+i*.24,0,0]);cylinder(terminals,.035,.025,M.steel,[-.8+i*.24,.08,.14],[Math.PI/2,0,0],6);}separate(terminals,[0,-.35,.65],'Field terminal strip');
-    for(let i=0;i<5;i++)tube(g,[[-.5+i*.31,1.09,.23],[-.5+i*.31,1.52,.16],[-.33+i*.26,1.93,.25]],.012,i<3?P.cyan:P.amber,{segments:7});
+    const terminalNames=['Digital input','Digital common','Analogue input','Analogue reference','Control output','Output common','Supply positive','Supply return'];
+    for(let i=0;i<8;i++){const endpoint=E.inspect(group(terminals,'rtu-terminal-'+i,[-.8+i*.24,0,.16]),terminalNames[i],{sources:['CM01','CM02'],description:'An invented named terminal role, not an equipment wiring schedule.'});box(endpoint,[.12,.055,.012],i<4?P.cyan:i<6?P.amber:P.copper);}
+    for(const [i,x,y,label,kind]of [[0,-.27,1.93,'Digital input channel','data'],[2,.21,1.93,'Analogue input channel','data'],[4,.87,1.93,'Control output channel','information'],[6,-.98,1.05,'Controller supply','power']])E.route(g,{name:'rtu-channel-route-'+i,label,points:[[.34-.8+i*.24,.94,.34],[.34-.8+i*.24,1.52,.23],[x,1.52,.23],[x,y,.25]],kind,from:terminalNames[i],to:label,sources:['CM01','CM02'],radius:.012});
+    E.port(cpu,{name:'rtu-uplink-port',label:'Supervisory communications port',at:[0,-.3,.27],kind:'data',sources:['CM01','CM02']});
+    E.paths(g,[{id:'field-input',label:'Field evidence to supervisory record',description:'Position/contact → named input terminals → input card → processor → communications. A command uses a different route.',steps:[{label:'Input terminal',nodeName:'rtu-terminal-0'},{label:'Input route',nodeName:'rtu-channel-route-0'},{label:'Digital input card',nodeName:'digital-input-card'},{label:'Processor',nodeName:'rtu-processor-module'},{label:'Uplink',nodeName:'rtu-uplink-port'}],sources:['CM01','CM02','DP05']},{id:'field-output',label:'Request to output interface',description:'The output relay is a command interface; separate input evidence reports the outcome.',steps:[{label:'Output module',nodeName:'scada-output-relay-armature'},{label:'Output circuit',nodeName:'rtu-channel-route-4'},{label:'Field terminal',nodeName:'rtu-terminal-4'}],sources:['CM01','CM02']}]);
     return {node:g,input,output,relay};
   }
   function speaker(parent,at=[0,0,0],scale=1,component='station-pa'){
@@ -183,7 +196,10 @@ export function createCommunicationsAssemblies(api){
     const cover=group(g,recording?'recorder-cover':'application-server-cover');box(cover,[2.4,.05,1.45],P.blue,[0,1.93,0]);box(cover,[2.3,.65,.045],P.blue,[0,1.56,.72]);shell(cover);separate(cover,[0,.7,.3],recording?'Recorder cover':'Server cover');
     const pcb=board(g,recording?'recorder-main-board':'application-server-board',1.8,1.1,[0,.35,0]);pcb.rotation.x=-Math.PI/2;separate(pcb,[0,.6,-.2],recording?'Recorder main board':'Server main board');
     const drive=group(g,recording?'removable-recording-disk':'server-storage-carrier',[0,.88,.12]);box(drive,[1.85,.12,1.15],P.metal);for(const x of [-.52,.52]){box(drive,[.79,.23,.85],P.dark,[x,.15,0]);cylinder(drive,.24,.025,M.steel,[x,.28,0],null,18);}box(drive,[1.75,.2,.05],P.blue,[0,.06,.62]);separate(drive,[0,0,1.0],recording?'Recording-disk carrier':'Server storage carrier');
-    for(let i=0;i<3;i++)box(g,[.24,.15,.04],P.dark,[-.76+i*.44,1.56,.76]);const state=indicator(g,recording?'recording-state':'application-state',[.8,1.56,.77],.13);
+    for(const [i,label,kind]of [[0,'Network interface','data'],[1,'Service interface','data'],[2,'Equipment supply','power']])E.port(g,{name:'server-interface-'+i,label,at:[-.76+i*.44,1.56,.76],kind,sources:recording?['CM10']:['OC08','DP03']});const state=indicator(g,recording?'recording-state':'application-state',[.8,1.56,.77],.13);
+    E.route(g,{name:'server-network-board-route',label:'Network interface to main board',points:[[-.76,1.56,.76],[-1.02,1.56,.54],[-1.02,.36,.54],[0,.36,.25]],kind:'data',from:'Network interface',to:'Main board',sources:recording?['CM10']:['OC08'],radius:.014});
+    E.route(g,{name:'server-storage-interface',label:'Main board to storage carrier',points:[[0,.36,-.45],[.88,.36,-.45],[.88,.89,-.45],[.52,.89,-.45]],kind:'data',from:'Main board',to:'Storage carrier',sources:recording?['CM10']:['OC08'],radius:.014});
+    E.paths(g,[{id:'server-data-storage',label:recording?'Recording hardware path':'Application-host hardware path',description:'The network interface, main board and storage carrier are physically separate. Application execution and retained evidence remain different outcomes.',steps:[{label:'Network',nodeName:'server-interface-0'},{label:'Main board',nodeName:recording?'recorder-main-board':'application-server-board'},{label:'Storage link',nodeName:'server-storage-interface'},{label:'Storage',nodeName:recording?'removable-recording-disk':'server-storage-carrier'}],sources:recording?['CM10']:['OC08']}]);
     return {node:g,drive,pcb,state};
   }
   function amplifier(parent,at=[0,0,0],scale=1){
@@ -192,7 +208,11 @@ export function createCommunicationsAssemblies(api){
     const control=board(g,'amplifier-input-board',.9,1.1,[-.92,.35,-.1]);control.rotation.x=-Math.PI/2;separate(control,[-.6,.4,0],'Amplifier input board');
     const power=board(g,'amplifier-power-stage',1.3,1.15,[.44,.35,-.05]);power.rotation.x=-Math.PI/2;separate(power,[.45,.5,0],'Amplifier power stage');
     const sink=group(g,'amplifier-heat-sink',[.52,.66,-.3]);box(sink,[1.15,.07,.65],P.metal);for(let i=0;i<7;i++)box(sink,[.055,.34,.63],P.metal,[-.5+i*.17,.2,0]);separate(sink,[.35,.8,-.25],'Amplifier heat sink');
-    const output=group(g,'amplifier-loudspeaker-terminals',[.55,.61,-.9]);for(const x of [-.3,0,.3]){box(output,[.23,.25,.18],P.blue,[x,0,0]);cylinder(output,.035,.025,P.copper,[x,.14,0],null,6);}separate(output,[.35,.15,-.55],'Loudspeaker terminals');
+    const output=group(g,'amplifier-loudspeaker-terminals',[.55,.61,-.9]);for(let i=0;i<4;i++){const terminal=E.port(output,{name:'speaker-output-terminal-'+i,label:'Loudspeaker circuit '+(i<2?'A':'B')+(i%2?' return':' feed'),at:[-.36+i*.24,0,0],kind:'power',sources:['CM08']});terminal.rotation.y=Math.PI;}separate(output,[.35,.15,-.55],'Loudspeaker terminals');
+    E.port(g,{name:'amplifier-program-input',label:'Network program input',at:[-1.05,.61,-.9],kind:'data',sources:['CM08']});E.port(g,{name:'amplifier-supply-input',label:'Amplifier equipment supply',at:[-.73,.61,-.9],kind:'power',sources:['CM08']});
+    E.route(g,{name:'amplifier-program-route',label:'Program input to audio electronics',points:[[-1.05,.61,-.9],[-1.05,.36,-.6],[-.92,.36,-.1]],kind:'data',from:'Program input',to:'Input board',sources:['CM08']});
+    E.route(g,{name:'amplifier-powered-output-route',label:'Power stage to loudspeaker circuit',points:[[.44,.36,-.05],[.82,.36,-.55],[.55,.61,-.9]],kind:'power',from:'Amplifier power stage',to:'Loudspeaker terminals',sources:['CM08']});
+    E.paths(g,[{id:'announcement-output',label:'Program to powered loudspeaker circuit',description:'Information arrives at the input electronics. A separately supplied power stage drives an output circuit; packet delivery is not speaker power.',steps:[{label:'Program input',nodeName:'amplifier-program-input'},{label:'Input board',nodeName:'amplifier-input-board'},{label:'Power stage',nodeName:'amplifier-power-stage'},{label:'Speaker terminals',nodeName:'amplifier-loudspeaker-terminals'},{label:'Driver',conceptId:'station-pa'}],sources:['CM08']}]);
     const level=indicator(g,'amplifier-active-channel',[.85,.68,.91],.18);return {node:g,level,output};
   }
   function cabRadio(parent,at=[0,0,0],scale=1){
@@ -228,8 +248,8 @@ export function createCommunicationsAssemblies(api){
 export function buildCommunicationsView(id,api){
   if(!Object.hasOwn(COMMUNICATIONS_VIEWS,id))return null;
   const {THREE,M,group,part,mesh,box,cylinder,tube,explode,shell,startModel,registerAnimator}=api;
-  const root=startModel(id),A=createCommunicationsAssemblies(api),P=A.P,updates=[],alternatives=[];
-  const separate=(node,delta,label)=>{node.userData.explorationLabel=label;explode(node,delta);};
+  const root=startModel(id),A=createCommunicationsAssemblies(api),P=A.P,E=createEquipmentDetails(api),updates=[],alternatives=[];
+  const separate=(node,delta,label)=>E.separate(node,label,delta,{sources:['CM01','CM04'],stage:'Open enclosure',range:[0,.3]});
   const selected=s=>VARIANTS[id].includes(s.variant)?s.variant:VARIANTS[id][0];
   const phase=s=>{const p=Number.isFinite(s.phase)?Math.max(0,s.phase):0;return(!s.playing&&p===5?5:p%5)/5;};
   const clamp=x=>Math.max(0,Math.min(1,x));

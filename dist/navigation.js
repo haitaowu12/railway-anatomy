@@ -41,7 +41,8 @@ export function viewTrail(view, views) {
 export function routeState(state) {
   return {page:state.page,domain:state.domain,view:state.view,component:state.component,variant:state.variant,
     technology:{...state.technology},electrification:state.electrification,platformEdge:state.platformEdge||'open',platformSensor:state.platformSensor||'lidar',presentation:state.presentation,processId:state.processId,processStep:state.processStep,roleId:state.roleId,mode:state.mode,scenario:state.scenario,sink:state.sink,
-    cutaway:state.cutaway,exploded:state.exploded,explodeScope:state.explodeScope||'all',playing:false,labels:state.labels,labelMode:state.labelMode||(state.labels===false?'off':'nearby'),lesson:state.lesson};
+    cutaway:state.cutaway,exploded:state.exploded,explodeScope:state.explodeScope||'all',playing:false,labels:state.labels,labelMode:state.labelMode||(state.labels===false?'off':'nearby'),lesson:state.lesson,
+    instanceId:state.instanceId||null,functionalPath:state.functionalPath||null,allInstances:Boolean(state.allInstances),workspace:state.workspace||null,studyId:state.studyId||null};
 }
 
 export const PROPULSION_EFFECTS = {
@@ -55,3 +56,4 @@ export const CONTROL_EFFECTS = {
   etcs1:'Balises and a lineside electronic unit show the Level 1 information path.',
   etcs2:'A radio block centre, train radio and balise references show the Level 2 information path.'
 };
+

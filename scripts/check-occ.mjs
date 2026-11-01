@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import {createMechanicalDetails} from '../dist/mechanical-details.js';
+import {createEquipmentDetails} from '../dist/equipment-details.js';
+const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import * as electrificationHelpers from '../dist/electrification.js';
 // Exercise actual OCC builders with the viewer's primitives, without a DOM.
 // These checks verify teaching distinctions and geometry, not rendering quality
@@ -18,7 +21,8 @@ const sources=catalog.SOURCES.map(s=>({...s})),concepts=catalog.CONCEPTS.map(c=>
 data.applyOccCatalog(sources,concepts);
 const source=await readFile(path.join(dist,'viewer.js'),'utf8');
 const between=(a,b)=>{const x=source.indexOf(a),y=source.indexOf(b,x+a.length);assert(x>=0&&y>x,`Viewer helper marker changed: ${a}`);return source.slice(x,y);};
-const harness=new Function('THREE','electrificationHelpers',`
+const harness=new Function('THREE','electrificationHelpers','detailFactories',`
+ const {createMechanicalDetails,createEquipmentDetails}=detailFactories;
  const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
  ${between('const C = {','\nconst VIEW')}
  const compatibility=true,scene=new THREE.Scene(),models=new Map();let building;
@@ -27,7 +31,7 @@ const harness=new Function('THREE','electrificationHelpers',`
  function registerAnimator(fn){building.animators.push(fn);}
  return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator}};
 `);
-const {models,api}=harness(THREE,electrificationHelpers);
+const {models,api}=harness(THREE,electrificationHelpers,detailFactories);
 for(const id of Object.keys(occ.OCC_VIEWS))occ.buildOccView(id,api);
 const visible=node=>{for(let p=node;p;p=p.parent)if(!p.visible)return false;return true;};
 function set(view,variant,{phase=0,playing=false,signals=true,cutaway=true}={}){

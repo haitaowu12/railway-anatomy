@@ -1,6 +1,7 @@
 name: Publish Railway Anatomy
 
 on:
+  pull_request:
   push:
     branches: [main]
   workflow_dispatch:
@@ -8,13 +9,12 @@ on:
 permissions: {}
 
 concurrency:
-  group: github-pages
+  group: github-pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   prepare:
     name: Check and package the static site
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -35,15 +35,23 @@ jobs:
       - name: Check the static site
         run: node scripts/check-site.mjs
 
+      - name: Build a cache-consistent release
+        run: npm run build
+
+      - name: Verify the release artifact
+        run: npm run check:release
+
       - name: Configure Pages
+        if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v6.0.0
         with:
           enablement: false
 
       - name: Upload the deployable directory
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v5.0.0
         with:
-          path: ./dist
+          path: ./build
 
   deploy:
     name: Deploy to GitHub Pages

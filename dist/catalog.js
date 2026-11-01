@@ -6,8 +6,12 @@ import {applyElectrificationCatalog} from './electrification-data.js';
 import {applyElectricalCatalog} from './electrical-explainers.js';
 import {applyStationPlatformCatalog} from './station-platform-data.js';
 import {applyCommsCatalog} from './communications-data.js';
+import {PHYSICAL_LAB_SOURCES} from './physical-labs.js';
+import {EVIDENCE_LAB_SOURCES} from './evidence-labs.js';
 import {NETWORK_SOURCES,NETWORK_CONCEPTS} from './network-data.js';
 import {EXTRA_SOURCES, EXTRA_CONCEPTS} from './expansion-data.js';
+import {DEPTH_SOURCES} from './depth-content.js';
+import {MECHANICAL_SOURCES} from './mechanical-content.js';
 // Public-source educational content. Geometry and selected arrangements are illustrative.
 export const SOURCES = [
   {
@@ -3035,3 +3039,7 @@ applyCommsCatalog(SOURCES,CONCEPTS);
 applyElectrificationCatalog(SOURCES,CONCEPTS);
 applyElectricalCatalog(SOURCES,CONCEPTS);
 applyStationPlatformCatalog(SOURCES,CONCEPTS);
+// Source IDs are part of the evidence contract. Keep collisions visible to
+// the catalog gate instead of silently retaining an unrelated older record.
+SOURCES.push(...DEPTH_SOURCES,...MECHANICAL_SOURCES,...PHYSICAL_LAB_SOURCES,...EVIDENCE_LAB_SOURCES);
+

@@ -1,6 +1,7 @@
 /* Original public teaching geometry. Room dimensions, equipment quantities and
  * software deployment are illustrative. The animation demonstrates delivery
  * and presentation of information, never a railway operating procedure. */
+import {createEquipmentDetails} from './equipment-details.js';
 import {createCommunicationsAssemblies} from './communications-models.js';
 export const OCC_VIEWS = {
   'operations-centre':{camera:[20,17,24],target:[0,1.3,0],distance:39},
@@ -13,14 +14,14 @@ export const OCC_VIEWS = {
 export function buildOccView(id,api){
   if(!OCC_VIEWS[id])return null;
   const {THREE,M,mat,startModel,group,part,box,cylinder,tube,shell,explode,registerAnimator}=api;
-  const root=startModel(id),updates=[],F=createCommunicationsAssemblies(api);
+  const root=startModel(id),updates=[],F=createCommunicationsAssemblies(api),E=createEquipmentDetails(api);
   const P={dark:mat(0x1c303b,.8,.08),frame:mat(0x526b74,.76,.18),pale:mat(0xcbd7d4,.82,.08),
     blue:mat(0x496e7d,.76,.13),board:mat(0x42746c,.8,.1),muted:mat(0x52616a,.85,.03),
     cyan:new THREE.MeshBasicMaterial({color:0x84bdc7}),amber:new THREE.MeshBasicMaterial({color:0xd7b36d}),
     white:new THREE.MeshBasicMaterial({color:0xd5dfd9}),red:new THREE.MeshBasicMaterial({color:0xc78b78})};
   const progress=s=>Math.max(0,Math.min(1,(Number.isFinite(s.phase)?s.phase:0)/5));
-  const separate=(node,delta,label)=>{node.userData.explorationLabel=label;explode(node,delta);};
-  const assembly=(parent,component,at=[0,0,0],scale=1)=>{const p=part(parent,component,at);p.userData.explorationAssembly=component;p.scale.setScalar(scale);return p;};
+  const separate=(node,delta,label)=>E.separate(node,label,delta,{sources:['OC08','OC09','DP03'],stage:/cover|enclosure/i.test(label)?'Open enclosure':/keyboard|pointing|handset/i.test(label)?'Workplace interfaces':'Display and computing electronics',range:/cover|enclosure/i.test(label)?[0,.3]:[.35,1]});
+  const assembly=(parent,component,at=[0,0,0],scale=1)=>{const p=part(parent,component,at);p.userData.explorationAssembly=component;p.scale.setScalar(scale);E.inspect(p,component.replaceAll('-',' '),{sources:['OC08','OC09']});return p;};
   const floor=(parent,w,d)=>box(parent,[w,.15,d],M.deck,[0,-.08,0]);
   const named=(node,name)=>{node.name=name;return node;};
   const indicator=(parent,name,at,size=.1)=>F.indicator(parent,name,at,size);
@@ -74,6 +75,11 @@ export function buildOccView(id,api){
     const panel=group(p,'monitor-lcd-panel');box(panel,[w*.97,h*.95,.035],P.dark,[0,0,.1]);separate(panel,[0,0,.44],'LCD panel');
     const display=mimic(panel,w*.91,h*.87,mode,options);display.node.position.z=.125;
     const stand=group(p,'monitor-stand');box(stand,[.11,.48,.11],M.steel,[0,-h/2-.22,-.05]);box(stand,[w*.34,.04,.32],P.dark,[0,-h/2-.45,.03]);
+    E.port(p,{name:'monitor-video-input',label:'Monitor video input',at:[-w*.25,-h*.34,-.19],kind:'data',sources:['OC08','OC09']});
+    E.port(p,{name:'monitor-power-input',label:'Monitor electrical supply',at:[w*.24,-h*.34,-.19],kind:'power',sources:['DP03']});
+    E.route(p,{name:'monitor-video-controller',label:'Video input to display controller',points:[[-w*.25,-h*.34,-.19],[-w*.25,0,-.08],[w*.12,0,-.065]],kind:'data',from:'Video input',to:'Display controller board',sources:['OC08','OC09']});
+    E.route(p,{name:'monitor-supply-board',label:'Supply to monitor power board',points:[[w*.24,-h*.34,-.19],[w*.24,-h*.4,-.08],[-w*.3,-h*.4,-.08],[-w*.3,-h*.13,-.03]],kind:'power',from:'Supply inlet',to:'Power board',sources:['DP03']});
+    E.paths(p,[{id:'display-frame',label:'Video to visible frame',description:'A video interface, controller and panel are distinct from the display power supply.',steps:[{label:'Video input',nodeName:'monitor-video-input'},{label:'Controller',nodeName:'monitor-controller-board'},{label:'Panel',nodeName:'monitor-lcd-panel'}],sources:['OC08','OC09']},{id:'display-supply',label:'Display supply',description:'The power inlet supplies the power board independently of the video signal.',steps:[{label:'Power inlet',nodeName:'monitor-power-input'},{label:'Power board',nodeName:'monitor-power-board'}],sources:['DP03']}]);
     return {node:p,display,pcb,panel,supply};
   }
   function chair(parent,at){
@@ -87,6 +93,8 @@ export function buildOccView(id,api){
     const pcb=F.board(p,remote?'kvm-interface-board':'client-computer-board',w*.8,d*.7,[0,-h*.3,0]);pcb.rotation.x=-Math.PI/2;separate(pcb,[0,.3,.2],remote?'KVM interface board':'Client computer board');
     for(let i=0;i<3;i++)box(p,[w*.16,h*.3,.045],P.dark,[-w*.27+i*w*.27,0,d/2+.01]);
     const active=indicator(p,remote?'kvm-received-frame':'client-rendered-frame',[-w*.35,h*.2,d/2+.04],.065);
+    for(const [i,label,kind]of [[0,'Input devices','data'],[1,remote?'Remote workplace link':'Application network','data'],[2,'Display video','data'],[3,'Equipment supply','power']])E.port(p,{name:'client-interface-'+i,label,at:[-w*.35+i*w*.23,0,-d/2-.06],kind,scale:remote?.6:.8,sources:kind==='power'?['DP03']:['OC08']});
+    E.paths(p,[{id:'workplace-computing',label:remote?'Remote workplace interfaces':'Local computer interfaces',description:remote?'The receiver transports input and video; the remote host executes the application.':'The local computer accepts inputs and renders a frame for the display.',steps:[{label:'Input',nodeName:'client-interface-0'},{label:remote?'Remote link':'Network',nodeName:'client-interface-1'},{label:'Electronics',nodeName:remote?'kvm-interface-board':'client-computer-board'},{label:'Video',nodeName:'client-interface-2'}],sources:['OC08']}]);
     return {node:p,active};
   }
   function consoleAssembly(parent,at=[0,0,0],scale=1,{mode='traffic',information=false,legacy=false,remote=false}={}){
@@ -107,8 +115,12 @@ export function buildOccView(id,api){
     if(mode==='traffic'){const traffic=part(main.panel,'operations-traffic-supervision',[0,.35,.177]);box(traffic,[1.8,.06,.018],P.frame);}
     const local=clientComputer(p,[-1.74,.8,-.24],false),receiver=clientComputer(p,[-1.65,1.48,-.44],true);
     local.node.visible=!remote;receiver.node.visible=remote;
-    cable(p,[[-1.74,.75,-.64],[-1.8,1.05,-.76],[-.73,1.07,-.76],[-.73,2.24,-.63]]);
-    cable(p,[[1.35,2.2,-.62],[1.35,1.08,-.76],[-1.8,1.08,-.76]]);
+    const hostAt=remote?[-1.65,1.48,-.44]:[-1.74,.8,-.24],hostWidth=remote?.78:1.1,hostDepth=remote?.55:.8;
+    E.route(p,{name:'console-video-cable',label:remote?'KVM receiver to task display':'Local computer to task display',points:[[hostAt[0]+hostWidth*.11,hostAt[1],hostAt[2]-hostDepth/2-.06],[-1.9,1.08,-.88],[-1.3425,1.08,-.88],[-1.3425,2.0142,-.66]],kind:'data',from:remote?'KVM video output':'Computer video output',to:'Task monitor video input',sources:['OC08']});
+    E.route(p,{name:'console-input-cable',label:'Keyboard input connection',points:[[-.63,1.38,.2],[-.63,1.1,.12],[-1.95,1.1,-.9],[hostAt[0]-hostWidth*.35,hostAt[1],hostAt[2]-hostDepth/2-.06]],kind:'data',from:'Keyboard',to:remote?'KVM input':'Computer input',sources:['OC08']});
+    const powerStrip=E.terminalStrip(p,{name:'console-supply-distribution',at:[.65,.55,-.7],labels:['Computer supply','Task display supply','Event display supply'],kind:'power',sources:['DP03']});
+    E.route(p,{name:'console-display-supply',label:'Task monitor supply lead',points:[[.65,.55,-.7],[.65,1.05,-.87],[-.142,1.05,-.87],[-.142,2.0142,-.66]],kind:'power',from:'Console power distribution',to:'Task monitor supply',sources:['DP03']});
+    E.paths(p,[{id:'console-input-to-frame',label:remote?'Remote workstation path':'Local workstation path',description:'Select the individual input device, computing interface and monitor while keeping their physical identities.',steps:[{label:'Keyboard',nodeName:'removable-keyboard'},{label:'Input lead',nodeName:'console-input-cable'},{label:remote?'KVM receiver':'Local computer',conceptId:remote?'occ-kvm-interface':'occ-client-computer',nodeName:remote?'occ-kvm-interface':'occ-client-computer'},{label:'Video lead',nodeName:'console-video-cable'},{label:'Task monitor',nodeName:'task-monitor'}],sources:['OC08','OC09']}]);
     chair(p,[-.65,0,1.65]);
     return {node:p,main,side,local,receiver,set(t,options={}){main.display.set(t,options);side.display.set(t,{...options,arrives:.82});local.active.set(t>=.5);receiver.active.set(t>=.5);}};
   }
@@ -125,7 +137,7 @@ export function buildOccView(id,api){
     const p=assembly(parent,'occ-equipment-cabinet',at,scale);
     for(const x of [-1.35,1.35])for(const z of [-.85,.85])box(p,[.09,5.35,.09],M.steel,[x,2.73,z]);
     for(const y of [.08,5.4])box(p,[2.85,.12,1.85],P.frame,[0,y,0]);
-    const side=group(p,'rack-side-enclosure');box(side,[.045,5.3,1.8],P.blue,[-1.43,2.72,0]);box(side,[2.85,5.3,.045],P.frame,[0,2.72,-.93]);shell(side);separate(side,[-.65,.1,-.5],'Rack side and rear enclosure');return p;
+    const side=group(p,'rack-side-enclosure');box(side,[.045,5.3,1.8],P.blue,[-1.43,2.72,0]);box(side,[2.85,5.3,.045],P.frame,[0,2.72,-.93]);shell(side);separate(side,[-.65,.1,-.5],'Rack side and rear enclosure');E.rackServices(p,{width:2.85,height:5.4,depth:1.85});return p;
   }
   function systems(parent,{at=[0,0,0],scale=1}={}){
     const p=assembly(parent,'operations-equipment-room',at,scale);

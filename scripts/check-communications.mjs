@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import {createMechanicalDetails} from '../dist/mechanical-details.js';
+import {createEquipmentDetails} from '../dist/equipment-details.js';
+const detailFactories={createMechanicalDetails,createEquipmentDetails};
 // Exercise the actual builders with the viewer primitives. These checks protect
 // information/physical-state distinctions, authored separation and data links;
 // they do not certify an installation, device or operating procedure.
@@ -14,7 +17,8 @@ const [THREE,model,data,catalog,station]=await Promise.all([load('vendor/three.m
 const sources=catalog.SOURCES.map(s=>({...s})),concepts=catalog.CONCEPTS.map(c=>({...c}));data.applyCommsCatalog(sources,concepts);
 const source=await readFile(path.join(dist,'viewer.js'),'utf8');
 const between=(a,b)=>{const x=source.indexOf(a),y=source.indexOf(b,x+a.length);assert(x>=0&&y>x,`Viewer helper marker changed: ${a}`);return source.slice(x,y);};
-const harness=new Function('THREE',`
+const harness=new Function('THREE','detailFactories',`
+ const {createMechanicalDetails,createEquipmentDetails}=detailFactories;
  ${between('const C = {','\nconst VIEW')}
  const compatibility=true,scene=new THREE.Scene(),models=new Map();let building;
  ${between('  const materials = new Map();','  const ground = ')}
@@ -22,7 +26,7 @@ const harness=new Function('THREE',`
  function registerAnimator(fn){building.animators.push(fn);}
  return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,cabinet,registerAnimator}};
 `);
-const {models,api}=harness(THREE);
+const {models,api}=harness(THREE,detailFactories);
 for(const id of Object.keys(model.COMMUNICATIONS_VIEWS))model.buildCommunicationsView(id,api);
 for(const id of ['station','station-networks','fire-systems','ventilation-unit'])station.buildStationView(id,api);
 const visible=node=>{for(let p=node;p;p=p.parent)if(!p.visible)return false;return true;};

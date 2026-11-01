@@ -4,7 +4,7 @@ A growing public reference for understanding how a railway fits together: its pl
 
 Railway Anatomy is intended especially for graduates, newcomers and people moving into another railway discipline. It connects familiar things—a train, a platform, a control room—with the less visible systems behind them. The aim is to make those relationships easier to explore, discuss and learn, and to point readers toward useful public material for further study.
 
-**[Explore Railway Anatomy](https://haitaowu12.github.io/railway-anatomy/)** · [Read the guides and sources](https://haitaowu12.github.io/railway-anatomy/reading.html) · [Suggest a correction or addition](https://github.com/haitaowu12/railway-anatomy/issues/new/choose)
+**[Explore Railway Anatomy](https://haitaowu12.github.io/railway-anatomy/)** · [GPT Sites](https://rail-systems-atlas.techiesea.chatgpt.site) · [Read the guides and sources](https://haitaowu12.github.io/railway-anatomy/reading.html) · [Suggest a correction or addition](https://github.com/haitaowu12/railway-anatomy/issues/new/choose)
 
 This is a young project. Some topics are developed further than others, and railway practice varies between systems. Feedback from learners and practitioners is welcome: a confusing explanation, a missing interface, a misleading model or a better public reference is a useful contribution. You do not need to write code to help.
 
@@ -29,7 +29,9 @@ Different questions need different representations:
 
 In a model, select equipment to inspect it, frame it or isolate its visible assembly. Authored cutaways and separation expose parts where that helps explain construction. Comparisons change the represented equipment or relationship; phase controls explain selected mechanisms and information exchanges. Sequences have named steps, manual previous/next controls and a finite end state; repeating is optional. Numbered pins remain attached to visible equipment and correspond to a fixed parts key. The complete explanation and public references open below the workspace.
 
-Use **Find a view** to search places and systems, or browse the labelled area navigation. On a phone, **Browse railway** opens that same hierarchy. The inspection dock keeps a numbered part selector, equipment search and the selected explanation together; **Show parts list** opens the complete key.
+Use the six **Connected studies** workspaces to follow vehicle, energy, track, station, information or maintenance questions. The **Assembly anatomy** panel keeps an individual part, its parent assembly, inspection recipe, physical path and sources together. Expand a branch or search for a covered bearing, terminal or casing; technology alternatives stay outside the current configuration. **Study & check** pairs anatomy questions with applied calculations and evidence cases.
+
+Use **Find a view** to search places and systems, or **Browse by system** for the original area navigation. On a phone, **Browse railway** opens that same hierarchy. The inspection dock keeps a numbered part selector, equipment search and the selected explanation together; **Show parts list** opens the complete key.
 
 The railway also has systems that cross physical boundaries. Power supply reaches trains and stations; communications connect endpoints in several locations; train control combines onboard, trackside and control-centre functions. The navigation and cross-links preserve these relationships instead of giving each component only one place in a rigid tree.
 
@@ -82,7 +84,7 @@ For a larger addition, explain the learner's question and how it connects to exi
 
 ## Run locally
 
-The application is a buildless static website in `dist/`. From the repository root:
+The authored application is a dependency-free static website in `dist/`. For source development, serve it from the repository root:
 
 ```bash
 python3 -m http.server --directory dist
@@ -96,19 +98,23 @@ Use Node.js 24 for the repository checks:
 npm run check
 ```
 
+Create the same deterministic release artifact used by both hosts with `npm run build`. Serve `build/` to inspect the content-versioned production result; `build/release.json` identifies the artifact.
+
 After changing catalog explanations, guides or sources, regenerate the static reading directory:
 
 ```bash
 npm run reading
 ```
 
-Automated checks cover content references, routes, model construction and selected behavioural invariants. Changes to presentation or interaction also need inspection in a browser. Record the viewport, renderer and journeys actually checked; a passing script does not establish visual quality on every device. The [revision 7 review](docs/REVISION-7.md) records the latest changes, the matched layout comparison, screenshots and verification scope. The [revision 6 review](docs/REVISION-6.md) remains available for its earlier baseline. Historical review records in `docs/` describe their own revisions and scope.
+Automated checks cover content references, routes, model construction and selected behavioural invariants. Changes to presentation or interaction also need inspection in a browser. Record the viewport, renderer and journeys actually checked; a passing script does not establish visual quality on every device. The [revision 8 release record](docs/REVISION-8.md) maps the assembly, rendering, consolidation and applied-study work to its verification scope. The [revision 7 review](docs/REVISION-7.md) retains its earlier layout comparison and screenshots. The [revision 6 review](docs/REVISION-6.md) remains available for its earlier baseline. Historical review records in `docs/` describe their own revisions and scope.
 
 ## Where the code lives
 
 | Area | Files |
 |---|---|
-| Application and navigation | `dist/index.html`, `style.css`, `app.js`, `navigation.js` |
+| Application and navigation | `dist/index.html`, `style.css`, `depth.css`, `app.js`, `navigation.js`, `learning-workspaces.js` |
+| Physical identity and connected study UI | `dist/assembly-contract.js`, `depth-ui.js`, `labs-ui.js` |
+| Detailed shared construction and applied cases | `dist/mechanical-details.js`, `equipment-details.js`, `depth-content.js`, `physical-labs.js`, `evidence-labs.js` |
 | Concepts, sources and view configuration | `dist/catalog.js`, `atlas-config.js`, domain-specific `*-data.js` modules |
 | Equipment models and interaction | `dist/viewer.js`, `model.js`, `*-models.js`, `network-model.js`, `exploration.js` |
 | Technology comparisons | `dist/technology.js`, `electrification.js`, `platform-config.js`, `comparisons.js` |
@@ -122,6 +128,7 @@ The site uses WebGL for 3D rendering where available, with an SVG compatibility 
 
 ## Publication and licence
 
-[GitHub Pages](https://haitaowu12.github.io/railway-anatomy/) is the primary published destination. The repository's Pages workflow checks and deploys `dist/`. Other hosts are separate deployments; updating this repository does not synchronize them.
+[GitHub Pages](https://haitaowu12.github.io/railway-anatomy/) is the primary published destination. The repository's Pages workflow checks the source, builds and deploys `build/`. The existing [GPT Site](https://rail-systems-atlas.techiesea.chatgpt.site) receives the same application build through its separate source/version workflow. Both hosts expose `release.json` so matching application versions can be verified; a GitHub commit alone does not update the second host.
 
 Project code and original content are provided under the [MIT licence](LICENSE). Referenced publications and vendored dependencies retain their own licences and rights.
+

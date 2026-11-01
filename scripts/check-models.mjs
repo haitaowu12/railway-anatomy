@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import {createMechanicalDetails} from '../dist/mechanical-details.js';
+import {createEquipmentDetails} from '../dist/equipment-details.js';
+const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import {normalizePlatformState,platformForComponent} from '../dist/platform-config.js';
 import * as electrificationHelpers from '../dist/electrification.js';
 /**
@@ -35,7 +38,8 @@ const materials = between('  const materials = new Map();', '  const ground = ')
 // Using the implementation itself catches missing helpers and actual geometry
 // failures instead of passing because a mock silently accepts the wrong call.
 const shared = between('  function startModel(', '  function registerAnimator(');
-const createHarness = new Function('THREE', 'electrificationHelpers', `
+const createHarness = new Function('THREE', 'electrificationHelpers','detailFactories',`
+ const {createMechanicalDetails,createEquipmentDetails}=detailFactories;
  const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
   ${colors}
   const compatibility = true;
@@ -49,7 +53,7 @@ const createHarness = new Function('THREE', 'electrificationHelpers', `
     torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,
     makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator } };
 `);
-const { models, api } = createHarness(THREE,electrificationHelpers);
+const { models, api } = createHarness(THREE,electrificationHelpers,detailFactories);
 const failures = [];
 let passed = 0;
 const check = (name, fn) => {
@@ -291,4 +295,5 @@ if (reportArgument) {
 export const GEOMETRY_CHECK_RESULT = { passed, failures };
 console.log(`\n${passed} geometry checks passed; ${failures.length} failed.`);
 if (failures.length) process.exitCode = 1;
+
 

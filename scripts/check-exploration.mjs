@@ -177,7 +177,9 @@ assert.equal(openBas.internalSeparationCount,closedBas.internalSeparationCount-1
 const bas=activeRoot().getObjectByName('bas-controller'),basOrigin=bas.getWorldPosition(new THREE.Vector3());
 const basPieces=['rtu-processor-module','digital-input-card','analogue-input-card','rtu-power-module','rtu-field-terminal-strip'];
 const basBefore=new Map(basPieces.map(name=>[name,position(name)]));
-viewer.setExplodeScope('selected');viewer.setExploded(.6);
+viewer.setExplodeScope('selected');viewer.setExploded(.3);
+for(const name of basPieces.filter(name=>name!=='rtu-field-terminal-strip'))assert(position(name).distanceTo(basBefore.get(name))<1e-8,`${name} moved before the working-module inspection stage`);
+viewer.setExploded(1);
 for(const name of basPieces)assert(position(name).distanceTo(basBefore.get(name))>.1,`${name} did not physically separate from the BAS assembly`);
 assert(bas.getWorldPosition(new THREE.Vector3()).distanceTo(basOrigin)<1e-8,'BAS inspection translated the entire enclosure');
 assert.equal(activeRoot().getObjectByName('rtu-cabinet-cover').position.length(),0,'A hidden BAS cover received an invisible displacement');
@@ -208,6 +210,10 @@ const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', '
 const savedController = { view: 'station-networks', domain: 'station', component: 'bas-controller', variant: 'building',
   technology: { propulsion: 'lim', control: 'loop' }, mode: 'coasting', scenario: 'nominal', sink: 'train',
   cutaway: false, exploded: .6, explodeScope: 'selected', playing: false };
+synchronize(savedController);
+const savedCoverPosition=activeRoot().getObjectByName('rtu-cabinet-cover').position.clone();
+const savedProcessorPosition=activeRoot().getObjectByName('rtu-processor-module').position.clone();
+assert(savedCoverPosition.length()>.5,'The saved inspection did not open its enclosure');
 const laterScene = { ...savedController, view: 'lim', domain: 'vehicle', component: 'lim-primary', variant: 'default',
   cutaway: true, exploded: 0, explodeScope: 'all' };
 synchronize(laterScene);
@@ -215,13 +221,15 @@ const restoredController = synchronize(savedController, true);
 assert.equal(restoredController.explodeScope, 'selected', 'Restoring a covered assembly changed selected scope into whole-scene separation');
 assert.equal(viewer.getExplorationState().exploded, .6);
 assert(syncCalls.lastIndexOf('setCutaway')<syncCalls.lastIndexOf('setExplodeScope'),'Production synchronization validates separation before applying the restored cutaway');
-assert(Math.abs(activeRoot().getObjectByName('rtu-cabinet-cover').position.z - .6) < 1e-8,
+assert(activeRoot().getObjectByName('rtu-cabinet-cover').position.distanceTo(savedCoverPosition) < 1e-8,
   'The restored BAS cover did not receive its saved physical displacement');
 const hiddenCover = synchronize({ ...savedController, cutaway: true });
 assert.equal(hiddenCover.explodeScope,'selected','Opening a cover discarded valid internal separation');
 assert.equal(viewer.getExplorationState().exploded,.6,'Opening the BAS cover erased the requested internal separation');
+assert.equal(viewer.getCutaway(),true,'Staged-bookmark camera setup overrode the requested cutaway');
+assert(!exploration.nodeVisible(activeRoot().getObjectByName('rtu-cabinet-cover')),'The requested hidden BAS cover is still visible');
 assert.equal(activeRoot().getObjectByName('rtu-cabinet-cover').position.length(),0,'The hidden cover retained an invisible separation offset');
-assert(Math.abs(activeRoot().getObjectByName('rtu-processor-module').position.x-(-.99-.7*.6))<1e-8,'The restored open BAS panel failed to separate its processor');
+assert(activeRoot().getObjectByName('rtu-processor-module').position.distanceTo(savedProcessorPosition)<1e-8,'The restored open BAS panel failed to retain its processor stage');
 const leaf=synchronize({...savedController,component:'scada-output-module',cutaway:true},true);
 assert.equal(leaf.explodeScope,'all','A context-only leaf falsely offered internal separation');
 assert.equal(viewer.getExplorationState().exploded,0,'Rejecting a selected separator promoted its amount to whole-scene separation');

@@ -1,6 +1,7 @@
 /* Original educational geometry: fictional control room and depot. Paths and
  * animations explain functional relationships, not a layout, maintenance method,
  * isolation sequence, movement authority or performance prediction. */
+import {createEquipmentDetails} from './equipment-details.js';
 import {addRoleFigure} from './people-models.js';
 export const OPERATIONS_VIEWS = {
   'operations-centre': { camera: [17, 14, 20], target: [0, 1.4, 0], distance: 38 },
@@ -33,8 +34,9 @@ const VARIANTS = {
 export function buildOperationsView(id, api) {
   if (!OPERATIONS_VIEWS[id]) return null;
   const { THREE, C, M, mat, startModel, group, part, mesh, box, cylinder,
-    roundedPanel, tube, shell, explode, registerAnimator } = api;
-  const root = startModel(id), animations = [], paths = [], alternatives = [];
+    roundedPanel, tube, shell, explode:rawExplode, registerAnimator } = api;
+  const root = startModel(id), animations = [], paths = [], alternatives = [], E=createEquipmentDetails(api);
+  const explode=(node,delta)=>{const label=node.userData.explorationLabel||node.name.replaceAll('-',' ');E.inspect(node,label,{stage:node.userData.inspectionStage||(/cover|enclosure|roof/i.test(label)?'Open enclosure':'Working parts'),range:node.userData.inspectionRange||(/cover|enclosure|roof/i.test(label)?[0,.3]:[.4,1]),sources:node.userData.inspectionSources||[],description:node.userData.inspectionFunction||'A distinct physical piece in this generic teaching assembly.'});rawExplode(node,delta);};
   const P = {
     floor: mat(0x596c72,.9,.03), pale: mat(0xe2e6db,.8,.04), blue: mat(0x44677b,.7,.2),
     water: mat(0x77bdd1,.4,.2), brush: mat(0x508e94,.8,.05), red: mat(0xd37f65,.6,.1),
@@ -455,28 +457,17 @@ export function buildOperationsView(id, api) {
       cylinder(brake,.27,.25,P.blue,[0,1.65,z],[Math.PI/2,0,0],16);
     }
     cylinder(brake,.14,2.7,M.steel,[0,1.65,0],[Math.PI/2,0,0],16);
-    const disc=part(brake,'brakes');
-    const discMesh=cylinder(disc,1.1,.18,M.steel,[0,1.65,0],[Math.PI/2,0,0],32);discMesh.name='bench-brake-disc';
-    box(disc,[.23,1.1,2.1],P.red,[1.35,1.65,0]);
-    const pads=[];
-    for(const sign of [-1,1]){
-      box(disc,[.9,.18,.18],P.red,[.93,2.15,sign*.58]);
-      box(disc,[.8,.18,.22],P.red,[1.05,1.65,sign*.9]);
-      cylinder(disc,.2,.35,P.blue,[.72,1.65,sign*.79],[Math.PI/2,0,0],16);
-      const pad=box(disc,[.6,.75,.12],P.dark,[.72,1.65,sign*.35]);pad.name='bench-brake-pad';pad.userData.side=sign;
-      const rod=cylinder(disc,.075,1,M.steel,[.72,1.65,sign*.5],[Math.PI/2,0,0],12);rod.name='brake-test-pushrod';pads.push({pad,rod,sign});
-    }
+    const detailedBrake=E.discBrake(brake,{component:'brakes',at:[0,1.65,0],discRadius:1.1,discThickness:.18,axleRadius:.14,context:'depot'});
+    detailedBrake.rotor.userData.benchBrake=true;
+    E.paths(brake,[{id:'brake-test-evidence',label:'Test fixture and brake mechanism',description:'The same brake assembly used in the vehicle is supported by the fixture. Motion observation does not establish force or release acceptance.',steps:[{label:'Air interface',nodeName:'brake-air-inlet'},{label:'Actuator',nodeName:'brake-actuator-piston'},{label:'Opposed pads',nodeName:'brake-pad-carrier-1'},{label:'Disc',nodeName:'brake-disc-rotor'},{label:'Observed response',nodeName:'brake-test-response-indicator'}],sources:['DP01','D03']}]);
     const cover=group(brake,'brake-bench-removable-cover');box(cover,[.1,1.2,2.2],P.blue,[1.62,1.65,0]);shell(cover);explode(cover,[.8,.3,0]);
     cylinder(brake,.35,1.3,P.pale,[-2,.7,-.9],[0,0,Math.PI/2],16);
-    pipe(brake,[[-2,.7,-.9],[-1.5,.5,-1.5],[.72,.5,-1.5],[.72,1.65,-.97]],P.water,.045);
+    E.route(brake,{name:'brake-bench-air-supply',label:'Fixture air supply to actuator',points:[[-2,.7,-.9],[-2,3.55,-.9],[-.385,3.55,-.9],[-.385,3.55,.5],[-.385,3.322,.5],[-.385,3.322,.198]],kind:'fluid',from:'Fixture supply',to:'Brake actuator inlet',sources:['DP01'],radius:.035});
     plantCabinet(brake,'depot-brake-test',[4,.1,1.5],[1.5,1.8,.8]);
     const stroke=box(brake,[.12,.5,.025],P.yellow,[4.3,1.2,1.92]);stroke.name='brake-test-response-indicator';
     animations.push(state=>{
       const u=1-Math.abs(2*studyPhase(state)-1);
-      pads.forEach(({pad,rod,sign})=>{
-        const position=.35-.2*u;pad.position.z=sign*position;
-        rod.scale.y=.615-position-.06;rod.position.z=sign*(.615+position+.06)/2;
-      });
+      detailedBrake.apply(u);
       stroke.scale.y=.1+.9*u;stroke.position.y=.95+.25*stroke.scale.y;
       brake.userData.applicationFraction=u;
     });
@@ -507,25 +498,10 @@ export function buildOperationsView(id, api) {
     const hvacView=alt('hvac');
     workArea(hvacView,13,8);
     const hvac=equipmentBench(hvacView,'depot-hvac-service',[-1.6,.1,0],7,3.7);
-    const unit=part(hvac,'hvac',[0,1.04,0]);
-    box(unit,[6.4,.1,2.8],M.core,[0,.05,0]);box(unit,[6.3,1.5,.06],P.floor,[0,.8,-.55]);
-    const filter=group(unit,'hvac-removable-filter',[-2.5,.85,.55]);
-    box(filter,[.16,1.4,1.8],P.pale);for(let z=-.2;z<=1.3;z+=.22)box(filter,[.19,1.3,.035],P.floor,[0,0,z-.55]);explode(filter,[0,1.2,1.4]);
-    const coil=group(unit,'hvac-heat-exchanger',[-.75,.85,.55]);
-    box(coil,[.38,1.35,1.8],P.red);for(let y=-.5;y<=.5;y+=.12)box(coil,[.4,.025,1.85],M.steel,[0,y,0]);
-    const fan=group(unit,'hvac-supply-fan',[1.2,.85,.55]);
-    for(let i=0;i<5;i++){const blade=group(fan,'fan-blade');blade.rotation.x=i*Math.PI*2/5;box(blade,[.1,.6,.17],P.pale,[0,.3,0]);}
-    cylinder(fan,.14,.22,P.blue,[0,0,0],[0,0,Math.PI/2],14);
-    box(unit,[.18,.65,.2],M.steel,[1.42,.4,.55]);cylinder(unit,.24,.35,P.blue,[1.42,.85,.55],[0,0,Math.PI/2],16);
-    for(const z of [-.3,1.4])box(unit,[1.2,1.3,.06],P.floor,[2.6,.85,z]);
-    for(const y of [.2,1.5])box(unit,[1.2,.06,1.75],P.floor,[2.6,y,.55]);
-    cylinder(unit,.32,.85,P.blue,[1.1,.53,-1.02],null,16);
-    box(unit,[1.8,1.05,.48],M.steel,[-1,.65,-1.04]);
-    pipe(unit,[[1.1,.9,-1],[-1,.9,-1],[-1,.9,.55]],P.red,.045);
-    const hvacCover=group(unit,'hvac-unit-cover');box(hvacCover,[6.5,.1,2.9],P.blue,[0,1.65,0]);box(hvacCover,[6.5,1.6,.06],P.blue,[0,.85,1.48]);shell(hvacCover);explode(hvacCover,[0,1.3,0]);
+    const detailedHvac=E.hvac(hvac,{component:'hvac',at:[0,1.04,0],context:'depot'}),unit=detailedHvac.node,fan=detailedHvac.fan;
     plantCabinet(hvacView,'depot-hvac-service',[5.1,.1,1.7],[1.2,2,.8]);
     studyTrace(unit,'depot-hvac-service',[[-3.1,.85,.55],[-1.8,.85,.55],[.2,.85,.55],[3.2,.85,.55]],'hvac-supply-air',C.service);
-    animations.push(state=>{fan.rotation.x=studyPhase(state)*Math.PI*10;});
+    animations.push(state=>detailedHvac.animate(studyPhase(state)*5));
     const tractionView=alt('traction');
     workArea(tractionView,13,8);
     const traction=equipmentBench(tractionView,'depot-traction-service',[-1.5,.1,0],7.5,4.3);
@@ -930,4 +906,5 @@ export function buildOperationsView(id, api) {
   });
   return root;
 }
+
 
