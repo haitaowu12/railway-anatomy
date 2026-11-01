@@ -1,6 +1,7 @@
 /* Original, generic teaching geometry. Positions, proportions and service routes
  * are illustrative. These scenes are neither a station design nor an operating
  * sequence, fire simulation, hydraulic calculation or electrical single-line. */
+import { createEquipmentDetails } from './equipment-details.js';
 import { createCommunicationsAssemblies } from './communications-models.js';
 import { createPlatformAssemblies, PLATFORM_GEOMETRY } from './platform-models.js';
 import { normalizePlatformEdge, platformDoorPose, stationLiftPose } from './platform-config.js';
@@ -37,10 +38,11 @@ const VARIANTS = {
 export function buildStationView(id, api) {
   if (!STATION_VIEWS[id]) return null;
   const { THREE, C, M, mat, startModel, group, part, mesh, box,
-    cylinder, torus, tube, roundedPanel, explode, shell, makeTrack,
+    cylinder, torus, tube, roundedPanel, explode:rawExplode, shell, makeTrack,
     registerAnimator } = api;
   const root = startModel(id);
-  const comms = createCommunicationsAssemblies(api);
+  const comms = createCommunicationsAssemblies(api), E=createEquipmentDetails(api);
+  const explode=(node,delta)=>{const label=node.userData.explorationLabel||node.name.replaceAll('-',' ');E.inspect(node,label,{stage:node.userData.inspectionStage||(/cover|enclosure|roof/i.test(label)?'Open enclosure':'Working parts'),range:node.userData.inspectionRange||(/cover|enclosure|roof/i.test(label)?[0,.3]:[.4,1]),sources:node.userData.inspectionSources||[],description:node.userData.inspectionFunction||'A distinct physical piece in this generic teaching assembly.'});rawExplode(node,delta);};
   const animations = [], routes = [], alternatives = [];
   const paint = {
     concrete: mat(0x6c7b81, .9, .02), floor: mat(0xb8c2bf, .85, .02),
@@ -269,19 +271,17 @@ export function buildStationView(id, api) {
   }
   function ups(parent, at = [0, 0, 0], scale = 1) {
     const g = part(parent, 'station-ups', at); g.scale.setScalar(scale);
-    for (const x of [-.58, .58]) box(g, [1.05, 1.9, .86], M.core, [x, 1.02, 0]);
+    for(const x of [-.58,.58]){box(g,[1.05,1.9,.045],M.core,[x,1.02,-.43]);for(const side of [-1,1])box(g,[.035,1.9,.86],M.core,[x+side*.525,1.02,0]);box(g,[1.05,.055,.86],M.steel,[x,.1,0]);}
     for (let i = 0; i < 3; i++) {
       const y = .52 + i * .48;
-      box(g, [.82, .31, .57], paint.pale, [-.58, y, .2]);
-      for (let x = -.86; x < -.3; x += .1) box(g, [.035, .24, .04], M.steel, [x, y, .51]);
-      for (let j = 0; j < 3; j++) {
-        box(g, [.25, .3, .56], paint.black, [.28 + j * .3, y, .19]);
-        box(g, [.15, .06, .025], paint.air, [.28 + j * .3, y + .04, .49]);
-      }
+      const conversion=group(g,'station-ups-conversion-module-'+i,[-.58,y,.2]);box(conversion,[.82,.31,.57],paint.pale);for(let x=-.28;x<=.29;x+=.1)box(conversion,[.035,.24,.04],M.steel,[x,0,.31]);E.separate(conversion,'UPS conversion module '+(i+1),[-.5,.1,.75],{stage:'Conversion and storage',range:[.35,.8],sources:['F19','DP03']});
+      const tray=group(g,'station-ups-battery-tray-'+i,[.58,y,.19]);box(tray,[.98,.035,.64],M.steel,[0,-.17,0]);for(let j=0;j<3;j++){box(tray,[.25,.3,.56],paint.black,[-.3+j*.3,0,0]);for(const sign of [-1,1])box(tray,[.035,.04,.055],M.copper,[-.3+j*.3+sign*.06,.17,.16]);}E.separate(tray,'UPS battery tray '+(i+1),[.6,.1,.8],{stage:'Conversion and storage',range:[.45,1],sources:['F19','DP03']});
     }
     const doors = group(g, 'ups-covers');
     for (const x of [-.58, .58]) { box(doors, [1.01, 1.84, .035], paint.pale, [x, 1.02, .56]); screen(doors, .49, .3, [x, 1.64, .6], C.service); }
     shell(doors); explode(doors, [0, .15, .75]);
+    E.terminalStrip(g,{name:'station-ups-power-terminals',at:[0,.2,.5],labels:['Input supply','Protected output','Return'],kind:'power',sources:['F19','DP03']});
+    E.paths(g,[{id:'station-ups-hardware',label:'Supply conversion and storage',description:'Input, conversion, storage and output are separate hardware. No runtime or retained load is assigned.',steps:[{label:'Terminals',nodeName:'station-ups-power-terminals'},{label:'Conversion module',nodeName:'station-ups-conversion-module-0'},{label:'Storage tray',nodeName:'station-ups-battery-tray-0'}],sources:['F19','DP03']}]);
     return g;
   }
   function pump(parent, at = [0, 0, 0], scale = 1) {
@@ -296,12 +296,26 @@ export function buildStationView(id, api) {
     }
     cylinder(g, .08, .65, M.steel, [.08, .69, 0], [0, 0, Math.PI / 2], 10);
     const hydraulic = group(g, 'pump-hydraulic-section', [.65, .69, 0]);
-    cylinder(hydraulic, .48, .32, paint.fire, [0, 0, 0], [0, 0, Math.PI / 2], 18);
-    const front = group(hydraulic, 'pump-cover'); cylinder(front, .46, .08, paint.fire, [.23, 0, 0], [0, 0, Math.PI / 2], 18);
-    shell(front); explode(front, [.65, .1, .2]);
-    const impeller = group(hydraulic, 'pump-impeller', [.22, 0, 0]);
-    cylinder(impeller, .31, .025, M.copper, [0, 0, 0], [0, 0, Math.PI / 2], 16);
-    for (let i = 0; i < 6; i++) box(impeller, [.035, .21, .055], M.steel, [.03, Math.cos(i * Math.PI / 3) * .18, Math.sin(i * Math.PI / 3) * .18], [i * Math.PI / 3, 0, 0]);
+    E.inspect(hydraulic,'Pump casing and fluid collection passage',{sources:['DP04'],description:'An open annular working section keeps the impeller visible; a separate outlet carries the collected flow.'});
+    const casingShape=new THREE.Shape();
+    for(let j=0;j<=48;j++){const t=j/48,a=Math.PI/2+.24+t*(Math.PI*2-.48),r=.34+.08*t+.065,point=[r*Math.cos(a),r*Math.sin(a)];j?casingShape.lineTo(...point):casingShape.moveTo(...point);}
+    for(let j=48;j>=0;j--){const t=j/48,a=Math.PI/2+.24+t*(Math.PI*2-.48),r=.34+.08*t;casingShape.lineTo(r*Math.cos(a),r*Math.sin(a));}casingShape.closePath();
+    const casingGeometry=new THREE.ExtrudeGeometry(casingShape,{depth:.32,bevelEnabled:false});casingGeometry.rotateY(Math.PI/2);casingGeometry.translate(-.16,0,0);const volute=mesh(hydraulic,casingGeometry,paint.fire);volute.name='pump-volute-wall';E.inspect(volute,'Expanding collecting casing',{sources:['DP04'],description:'The original spiral passage grows toward the upper outlet. Its section is illustrative, not a pump performance design.'});
+    E.annulus(hydraulic,'pump-backplate',.083,.5,.035,M.steel,[-.17,0,0]).rotation.set(0,0,Math.PI/2);
+    const seal=E.inspect(group(g,'pump-shaft-seal',[.38,.69,0]),'Shaft sealing region',{sources:['DP04'],description:'The shaft crosses the stationary hydraulic boundary through an annular sealing region.'});
+    for(const x of [-.025,.025])E.annulus(seal,'pump-seal-face',.083,.135,.035,x<0?M.steel:M.copper,[x,0,0]).rotation.set(0,0,Math.PI/2);
+    const front = group(hydraulic, 'pump-cover'); E.annulus(front,'pump-inlet-cover',.12,.5,.08,paint.fire,[.23,0,0]).rotation.set(0,0,Math.PI/2);
+    shell(front); E.separate(front,'Hydraulic cover and inlet eye',[.65,.1,.2],{stage:'Open enclosure',range:[0,.35],sources:['DP04']});
+    const impeller = group(hydraulic, 'pump-impeller', [.02, 0, 0]);
+    E.annulus(impeller,'pump-impeller-back-shroud',.10,.31,.025,M.copper,[-.07,0,0]).rotation.set(0,0,Math.PI/2);
+    const vaneShape=new THREE.Shape();for(let j=0;j<=10;j++){const t=j/10,r=.12+.18*t,a=.6*t;const point=[r*Math.cos(a),r*Math.sin(a)];j?vaneShape.lineTo(...point):vaneShape.moveTo(...point);}for(let j=10;j>=0;j--){const t=j/10,r=.12+.18*t,a=.6*t+.12;vaneShape.lineTo(r*Math.cos(a),r*Math.sin(a));}vaneShape.closePath();
+    const vaneGeometry=new THREE.ExtrudeGeometry(vaneShape,{depth:.07,bevelEnabled:false});vaneGeometry.rotateY(Math.PI/2);
+    for(let i=0;i<6;i++){const vane=mesh(impeller,vaneGeometry,M.steel,[-.035,0,0],[i*Math.PI/3,0,0]);vane.name='pump-curved-impeller-vane';}
+    cylinder(impeller,.095,.18,M.steel,[-.06,0,0],[0,0,Math.PI/2],16);
+    E.separate(impeller,'Impeller and open vane passages',[.7,.2,.3],{stage:'Working section',range:[.4,1],sources:['DP04']});
+    E.port(g,{name:'pump-inlet-interface',label:'Axial fluid inlet',at:[1.18,.69,0],kind:'fluid',sources:['DP04']});
+    E.port(g,{name:'pump-discharge-interface',label:'Collected-flow outlet',at:[.65,1.65,0],kind:'fluid',sources:['DP04']});
+    E.paths(g,[{id:'pump-fluid',label:'Fluid through the pump',description:'Axial inlet → impeller eye and vanes → collecting casing → outlet. This is a directional anatomy, not a calculated flow field.',steps:[{label:'Inlet',nodeName:'pump-inlet-interface'},{label:'Impeller',nodeName:'pump-impeller'},{label:'Casing',nodeName:'pump-hydraulic-section'},{label:'Outlet',nodeName:'pump-discharge-interface'}],sources:['DP04']},{id:'pump-drive',label:'Drive and sealing',description:'Motor and shaft deliver work through the sealing region to the impeller.',steps:[{label:'Motor',nodeName:'pump-motor'},{label:'Seal',nodeName:'pump-shaft-seal'},{label:'Impeller',nodeName:'pump-impeller'}],sources:['DP04']}]);
     // Mechanical motion is a cutaway demonstration, never an alarm-driven start.
     animations.push(state => { impeller.rotation.x = id === 'station-plant' && variant(state) !== 'water' ? 0 : state.phase * .7; });
     pipes(g, [[1.18, .69, 0], [1.7, .69, 0], [1.9, .7, .8]], .11);
@@ -331,7 +345,7 @@ export function buildStationView(id, api) {
     for (const z of [-depth / 2, depth / 2]) mesh(g, torus(radius, .075, 5, 20), M.steel, [0, 0, z]);
     const housing = group(g, 'fan-casing');
     mesh(housing, new THREE.CylinderGeometry(radius, radius, depth, 20, 1, true), metalInside, [0, 0, 0], [Math.PI / 2, 0, 0]);
-    shell(housing); explode(housing, [0, 1.1, .25]);
+    shell(housing); E.separate(housing,'Axial fan casing',[0,1.1,.25],{stage:'Open enclosure',range:[0,.3],sources:['DP02']});
     for (const x of [-.73, .73]) box(g, [.12, 1.16, .13], M.core, [x, -.59, -.25]);
     box(g, [2.1, .14, 1.8], M.steel, [0, -1.13, -.3]);
     cylinder(g, .08, 1.9, M.steel, [0, 0, -.52], [Math.PI / 2, 0, 0], 10);
@@ -341,7 +355,7 @@ export function buildStationView(id, api) {
     shape.moveTo(.18, -.07); shape.lineTo(.8, -.14); shape.lineTo(.86, .16); shape.lineTo(.27, .14); shape.closePath();
     const bladeGeometry = new THREE.ExtrudeGeometry(shape, { depth: .045, bevelEnabled: false });
     for (let i = 0; i < 7; i++) mesh(rotor, bladeGeometry, paint.air, [0, 0, 0], [.18, 0, i * Math.PI * 2 / 7]);
-    explode(rotor, [0, 0, 1.0]);
+    E.separate(rotor,'Axial impeller',[0,0,1],{stage:'Working section',range:[.4,.8],sources:['DP02']});
     animations.push(state => { rotor.rotation.z = id==='ventilation-unit' ? Math.PI*4*Math.max(0,Math.min(1,state.phase/5)) : state.phase*.85; });
     const motor = group(g, 'fan-drive-motor', [0, 0, -1.22]);
     cylinder(motor, .37, .8, M.teal, [0, 0, 0], [Math.PI / 2, 0, 0], 16);
@@ -353,7 +367,8 @@ export function buildStationView(id, api) {
       cylinder(g, .18, .16, paint.pale, [0, 0, z], [Math.PI / 2, 0, 0], 12);
       box(g, [.4, .52, .22], M.core, [0, -.36, z]);
     }
-    explode(motor, [0, 0, -.7]);
+    E.separate(motor,'Fan drive motor',[0,0,-.7],{stage:'Drive and support',range:[.65,1],sources:['DP02']});
+    E.paths(g,[{id:'fan-work',label:'Motor, shaft and airflow',description:'Motor work reaches the impeller through the shaft; the fixed casing and supports stay separate.',steps:[{label:'Motor',nodeName:'fan-drive-motor'},{label:'Impeller',nodeName:'axial-impeller'},{label:'Casing',nodeName:'fan-casing'}],sources:['DP02']}]);
     return g;
   }
   function damper(parent, at = [0, 0, 0], scale = 1, rotation = [0, 0, 0]) {
@@ -443,15 +458,21 @@ export function buildStationView(id, api) {
     const actuator = part(g, 'bas-actuator', [1.05, 1.77, 1.2]);
     box(actuator, [.3, .27, .3], paint.fire, [0, .17, 0]);
     const rotor = group(g, 'supply-air-impeller', [1.98, 1.18, 0]);
-    cylinder(rotor, .52, .7, M.core, [0, 0, 0], [0, 0, Math.PI / 2], 16);
+    for(const x of [-.35,.35])E.annulus(rotor,'supply-fan-open-ring',.48,.52,.035,M.core,[x,0,0]).rotation.set(0,0,Math.PI/2);
     for (let i = 0; i < 10; i++) {
       const t = i * Math.PI / 5;
-      box(rotor, [.78, .1, .12], M.steel, [0, Math.cos(t) * .47, Math.sin(t) * .47], [t, 0, 0]);
+      box(rotor, [.055, .34, .13], M.steel, [0, Math.cos(t) * .30, Math.sin(t) * .30], [t, .35, 0]);
     }
     cylinder(rotor, .13, .86, paint.air, [0, 0, 0], [0, 0, Math.PI / 2], 12);
     explode(rotor, [.65, .3, 1.1]);
+    const fanDrive=E.inspect(group(g,'air-handler-fan-drive',[2.58,1.18,0]),'Supply fan drive and support',{sources:['DP02']});cylinder(fanDrive,.22,.35,M.teal,[0,0,0],[0,0,Math.PI/2],16);cylinder(fanDrive,.07,.22,M.steel,[-.23,0,0],[0,0,Math.PI/2],12);box(fanDrive,[.4,.64,.4],M.core,[0,-.54,0]);
     animations.push(state => { rotor.rotation.x = id==='ventilation-unit' ? Math.PI*4*Math.max(0,Math.min(1,state.phase/5)) : state.phase*.7; });
     sensor(g, [.56, 2.31, 0], true);
+    const pan=E.inspect(group(g,'air-handler-condensate-pan',[.49,.32,0]),'Condensate pan',{sources:['DP02'],description:'A dedicated liquid collection and drainage path sits below the coil.'});box(pan,[.9,.035,1.6],paint.water);for(const z of [-.78,.78])box(pan,[.9,.12,.025],M.steel,[0,.06,z]);
+    E.route(g,{name:'air-handler-condensate-drain',label:'Condensate drain',points:[[.49,.32,.8],[.49,.12,.95],[1.1,.12,1.2]],kind:'fluid',from:'Condensate pan',to:'Drain connection',sources:['DP02'],radius:.035});
+    E.port(g,{name:'air-handler-coil-supply',label:'Coil fluid supply',at:[1.4,1.77,1.2],kind:'fluid',sources:['DP02']});E.port(g,{name:'air-handler-coil-return',label:'Coil fluid return',at:[1.4,.62,1.2],kind:'fluid',sources:['DP02']});
+    for(const [node,label,stage,range]of [[pan,'Condensate pan','Thermal interfaces',[.4,.8]],[panels,'Air-handler access panels','Open enclosure',[0,.3]],[filter,'Pleated air filter','Air treatment',[.3,.6]],[coil,'Finned heat-exchanger coil','Air treatment',[.45,.8]],[rotor,'Supply-air impeller','Fan and drive',[.65,1]]])E.inspect(node,label,{stage,range,sources:['DP02']});
+    E.paths(g,[{id:'station-supply-air',label:'Air treatment path',description:'A selected intake → filter → coil → fan arrangement; fluid and condensate have separate routes.',steps:[{label:'Damper',nodeName:'air-handler-inlet-damper'},{label:'Filter',nodeName:'air-filter-section'},{label:'Coil',nodeName:'air-handler-coil'},{label:'Fan',nodeName:'supply-air-impeller'}],sources:['DP02']},{id:'station-coil-services',label:'Coil and condensate interfaces',description:'Thermal supply and return are distinct from the drainage route.',steps:[{label:'Coil supply',nodeName:'air-handler-coil-supply'},{label:'Coil',nodeName:'air-handler-coil'},{label:'Coil return',nodeName:'air-handler-coil-return'},{label:'Condensate',nodeName:'air-handler-condensate-pan'},{label:'Drain',nodeName:'air-handler-condensate-drain'}],sources:['DP02']}]);
     return g;
   }
   function duct(parent, at, size, component = 'station-hvac') {
@@ -502,6 +523,7 @@ export function buildStationView(id, api) {
     box(car,[1.85,2.15,.05],M.glass,[0,1.075,-.83]);
     for(const x of [-.90,.90])box(car,[.05,2.15,1.7],M.glass,[x,1.075,0]);
     box(car,[1.55,.035,.05],M.steel,[0,.95,-.77]);
+    for(const side of [-1,1])for(const y of [.16,2.02]){const shoe=E.inspect(group(car,'lift-car-guide-shoe',[side*1.0,y,-.72]),'Car guide shoe',{sources:['SP01'],description:'The car-mounted shoe follows the fixed rail while retaining a clear guide passage.'});for(const dx of [-.055,.055])box(shoe,[.03,.12,.17],M.core,[dx,0,0]);box(shoe,[.14,.12,.035],M.core,[0,0,-.09]);box(shoe,[.14,.055,.06],M.steel,[-side*.055,0,.085]);}
     const carLeaves=[];
     for(const direction of [-1,1]){
       const leaf=group(car,'lift-car-door',[direction*.25,1.04,.87]);
@@ -541,7 +563,7 @@ export function buildStationView(id, api) {
     const sheave=group(drive,'lift-traction-sheave',[0,0,-.20]);
     cylinder(sheave,.29,.10,M.steel,[0,0,0],[Math.PI/2,0,0],18);
     box(sheave,[.43,.03,.02],paint.pale,[0,0,.065]);sheave.userData.explorationLabel='Traction sheave';explode(sheave,[0,.45,.5]);
-    const counterweight=group(g,'lift-counterweight',[0,rise+.5,-1.0]);
+    const counterweight=E.inspect(group(g,'lift-counterweight',[0,rise+.5,-1.0]),'Guided counterweight',{sources:['SP01'],description:'The selected traction arrangement moves the counterweight oppositely to the cabin.'});
     for(let i=0;i<7;i++)box(counterweight,[1.25,.12,.16],M.core,[0,i*.13,0]);
     const ropes=[];
     for(const x of [-.22,.22]){
@@ -559,6 +581,7 @@ export function buildStationView(id, api) {
       for(const rope of ropes){rope.scale.y=top-roof;rope.position.y=(top+roof)/2;}
       g.userData.liftPose=pose;
     });
+    E.paths(g,[{id:'lift-mechanical',label:'Traction and guidance',description:'Drive, sheave, suspended car, counterweight and guide interfaces retain distinct motion.',steps:[{label:'Machine',nodeName:'lift-traction-machine'},{label:'Sheave',nodeName:'lift-traction-sheave'},{label:'Car',nodeName:'lift-carriage'},{label:'Guide shoe',nodeName:'lift-car-guide-shoe'},{label:'Counterweight',nodeName:'lift-counterweight'}],sources:['SP01']},{id:'lift-landing-evidence',label:'Car and landing doors',description:'The moving car doors are separate from each fixed landing and its contact target.',steps:[{label:'Car operator',nodeName:'lift-car-door-operator'},{label:'Car door',nodeName:'lift-car-door'},{label:'Landing door',nodeName:'lift-landing-door-0'},{label:'Contact',nodeName:'lift-landing-contact-0'},{label:'Target',nodeName:'lift-landing-contact-target-0'}],sources:['SP01']}]);
     return g;
   }
   function contextTrain(parent, at = [0, 0, 0]) {
@@ -868,4 +891,5 @@ export function buildStationView(id, api) {
   });
   return root;
 }
+
 

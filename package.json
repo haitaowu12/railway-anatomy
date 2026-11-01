@@ -1,11 +1,14 @@
 {
   "name": "railway-anatomy",
-  "version": "7.0.0",
+  "version": "8.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "check": "node scripts/check-site.mjs",
+    "build": "node scripts/build-release.mjs",
+    "check:release": "node scripts/check-release.mjs",
     "reading": "node scripts/generate-reading.mjs"
   },
   "description": "A public railway systems learning guide with equipment models, communication architecture, people and processes"
 }
+

@@ -12,6 +12,7 @@ import {DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForCompo
 import {PROCESS_VIEWS,PEOPLE_ROLES} from '../dist/process-data.js';
 import {processFor} from '../dist/process-ui.js';
 import {technologyFromUrl,technologyForView,technologyForComponent} from '../dist/technology.js';
+import {applyAnatomyQuery,writeAnatomyQuery} from '../dist/learning-workspaces.js';
 
 const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
 const begin=source.indexOf('function writeHash(){'),end=source.indexOf('function activeDomain(){',begin);
@@ -38,7 +39,7 @@ function createBrowserEnvironment(){
     return processMenu;
   }};
 }
-const dependencies={normalizePlatformState,platformForComponent,createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent};
+const dependencies={applyAnatomyQuery,writeAnatomyQuery,normalizePlatformState,platformForComponent,createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent};
 const harness=new Function(...Object.keys(dependencies),`
   const {window,matchMedia,processMenu,querySelector:$}=createBrowserEnvironment();
   const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
@@ -98,6 +99,17 @@ for(const [id,p]of Object.entries(PROCESS_VIEWS))for(const step of p.steps){cons
 for(const [hash,process]of [['explore/depot/change-evidence/change-baseline/installed','configuration-change'],['explore/operations/occ-incident/occ-alarm-queue/reported','incident-coordination'],['explore/operations/operations-centre/operations-centre/handover','duty-handover']]){const actual=harness.parse(`https://example.test/railway-anatomy/#${hash}`);assert.equal(actual.page,'processes','A legacy process route returned to a physical model');assert.equal(actual.processId,process);}
 for(const [legacy,profile]of [['ac','overhead-ac'],['dc','fourth-rail-dc']]){const actual=harness.parse(`https://example.test/railway-anatomy/#explore/power/electrification/supply-conversion/${legacy}`);assert.equal(actual.electrification,profile);assert.equal(actual.variant,'chain');}
 const map=harness.roundTrip({...base,domain:'communications',view:'communications-overview',component:'communications-system',variant:'supervision',presentation:'connections'}).state;assert.equal(map.presentation,'connections');
+for(const exploded of [.25,.65,1]){
+ const expected={...base,view:'bogie',component:'bogie',technology:{propulsion:'rotary',control:'etcs2'},instanceId:'view-bogie/group:2/axlebox:1',functionalPath:'view-bogie/load-path',workspace:'maintenance',studyId:'brake-unit-to-test',allInstances:true,cutaway:false,explodeScope:'selected',exploded};
+ const actual=harness.roundTrip(expected).state;
+ for(const key of ['instanceId','functionalPath','workspace','studyId','allInstances','cutaway','explodeScope','exploded'])assert.equal(actual[key],expected[key],'An anatomy bookmark lost '+key);
+ assert.deepEqual(actual.technology,expected.technology,'Inspection changed independent train control');
+}
+for(const [mode,cutaway]of [['assembled',false],['section',true]]){
+ const actual=harness.parse('https://example.test/railway-anatomy/?inspect='+mode+'#explore/vehicle/bogie/bogie/default');assert.equal(actual.cutaway,cutaway);assert.equal(actual.exploded,0);
+}
+const malformedAnatomy=harness.parse('https://example.test/railway-anatomy/?inspect=staged&exposure=NaN&workspace=missing&instance=%00#explore/vehicle/bogie/bogie/default');
+assert.equal(malformedAnatomy.exploded,1);assert.equal(malformedAnatomy.workspace,null);assert.equal(malformedAnatomy.instanceId,null);
 for(const platformEdge of ['open','half-height','full-height'])for(const platformSensor of ['lidar','radar'])for(const focus of ['open-platform','platform-doors','interspace','platform-end']){
  const normalized=normalizePlatformState({platformEdge,platformSensor,variant:focus});
  const expected={...base,...normalized,domain:'station',view:'platform-interface',component:'platform-intrusion',presentation:'equipment'};
@@ -139,3 +151,5 @@ for(const [width,open]of [[390,false],[740,false],[741,true],[1280,true]]){
   assert.deepEqual(result.state,result.before,'Resizing process navigation changed the active route');
 }
 console.log(`PASS production route round trips: ${routes} view/variant/mode routes, 40 independent vehicle configurations, 8 electrical/propulsion bookmarks, 31 process-step routes, legacy process/electrification redirects, connection-mode bookmarks, ETCS radio bookmarks, 6 history/context presentation combinations, malformed-route fallback, parent trails and process-menu resize events`);
+console.log('PASS anatomy bookmark contracts: physical instance, path, workspace, study, all instances and three staged exposures preserve independent train-control selection; invalid inputs are bounded');
+

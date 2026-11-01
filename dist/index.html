@@ -4,21 +4,22 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#244acb">
 <meta name="description" content="Explore how a railway works: equipment models, communication architectures, people, processes and public engineering references for curious readers and new rail professionals.">
 <title>Railway Anatomy · How railway systems work</title><meta name="author" content="Tony Wu"><link rel="canonical" href="https://haitaowu12.github.io/railway-anatomy/"><meta property="og:type" content="website"><meta property="og:title" content="Railway Anatomy · How railway systems work"><meta property="og:description" content="Explore a connected railway through original equipment models, guided tours, and public engineering references."><meta property="og:url" content="https://haitaowu12.github.io/railway-anatomy/"><meta name="twitter:card" content="summary">
-<link rel="preload" href="./assets/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="icon" href="./assets/mark.svg?v=open-atlas" type="image/svg+xml"><link rel="stylesheet" href="./style.css?v=open-atlas"><link rel="stylesheet" href="./electrical-explainers.css?v=open-atlas">
+<link rel="preload" href="./assets/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="icon" href="./assets/mark.svg?v=anatomy-depth-8" type="image/svg+xml"><link rel="stylesheet" href="./style.css?v=anatomy-depth-8"><link rel="stylesheet" href="./electrical-explainers.css?v=anatomy-depth-8"><link rel="stylesheet" href="./depth.css?v=anatomy-depth">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
 </head>
 <body>
 <a class="skip" href="#workspace">Skip to the explorer</a>
-<header class="site-header"><a class="brand" href="#explore"><img src="./assets/mark.svg?v=open-atlas" width="34" height="34" alt=""><span><strong>Railway</strong><small>ANATOMY</small></span></a><nav aria-label="Main navigation" class="main-nav"><button data-page="explore" aria-current="page">Explore railway</button><button data-page="learn">Guided tours <span>32</span></button><button data-page="processes">People & processes</button><button data-page="reference">Field guide</button></nav><button id="about-button" class="about-button">Sources & scope</button></header>
+<header class="site-header"><a class="brand" href="#explore"><img src="./assets/mark.svg?v=anatomy-depth-8" width="34" height="34" alt=""><span><strong>Railway</strong><small>ANATOMY</small></span></a><nav aria-label="Main navigation" class="main-nav"><button data-page="explore" aria-current="page">Explore railway</button><button data-page="learn">Guided tours <span>32</span></button><button data-page="processes">People & processes</button><button data-page="reference">Field guide</button></nav><button id="about-button" class="about-button">Sources & scope</button></header>
 <main id="workspace">
 <section id="explorer-page" aria-label="Interactive rail systems explorer">
 <div class="explorer-shell">
 <aside class="railway-navigation" aria-label="Railway hierarchy">
 <button id="navigator-toggle" aria-expanded="false" aria-controls="navigation-body"><span>Browse railway</span><strong id="navigator-current">Whole railway</strong><span class="navigation-chevron" aria-hidden="true">⌄</span></button>
-<div class="navigation-body" id="navigation-body"><label class="sr-only" for="view-search">Find a railway view</label><input id="view-search" type="search" autocomplete="off" placeholder="Find a view" aria-controls="view-results"><div id="view-results" hidden></div><nav id="domains" class="domains" aria-label="Railway areas and systems"></nav></div>
+<div class="navigation-body" id="navigation-body"><label class="sr-only" for="view-search">Find a railway view</label><input id="view-search" type="search" autocomplete="off" placeholder="Find a view" aria-controls="view-results"><div id="view-results" hidden></div><nav id="study-workspaces" aria-label="Connected learning workspaces"></nav><details class="all-domains"><summary>Browse by system</summary><nav id="domains" class="domains" aria-label="Railway areas and systems"></nav></details></div>
 </aside>
 <div class="explorer-content">
 <div class="location-bar"><nav id="location-trail" aria-label="Location in the railway"></nav><button id="return-context" hidden></button></div>
+<section id="study-orientation" aria-label="Connected study"></section>
 <p id="intro-copy" class="explorer-intro">Select an area in the model or browse the railway.</p>
 <section id="control-orientation" hidden></section>
 <div id="tour-bar" class="tour-bar" hidden></div>
@@ -39,12 +40,13 @@
   <div id="presentation-switch" class="presentation-switch" hidden><span>Explore this system</span><button data-presentation="equipment" aria-pressed="true">Equipment</button><button data-presentation="connections" aria-pressed="false">Connections</button></div>
   <div class="model-workspace">
     <div class="visual-workbench">
-      <section class="stage" aria-label="Three-dimensional model"><button id="quick-play" class="animation-quick-play" aria-pressed="false" hidden>Play sequence</button><div id="viewer" tabindex="0" aria-label="Interactive 3D model. Drag to orbit; scroll to zoom. Component controls provide a keyboard alternative."><div id="loading" class="loading">Preparing the model…</div></div><div id="model-labels" class="model-labels"></div><div id="model-error" hidden><h3>The model could not start.</h3><p>The component explanations and field guide remain available.</p><button id="retry-model">Try again</button></div><div class="stage-footer"><span>Drag to orbit · select equipment to inspect</span><div><button data-camera="isometric" aria-label="Isometric camera">ISO</button><button data-camera="side" aria-label="Side camera">SIDE</button><button data-camera="top" aria-label="Top camera">TOP</button><button id="reset-scene" title="Reset camera">RESET</button></div><div class="selection-tools"><span id="exploration-selection"></span><button id="focus-selection">Frame selection</button><button id="isolate-selection" aria-pressed="false">Isolate assembly</button><button id="restore-context" hidden>Restore scene</button><button id="larger-model" aria-pressed="false">Larger model</button></div><details class="model-options"><summary>Model options</summary><div class="model-tools"><label><input type="checkbox" id="cutaway"> Open enclosure</label><div id="separation-controls" class="separation-controls"><label>Separate parts <input type="range" id="explode" min="0" max="1" step="0.05" value="0" aria-label="Separate parts"></label><label class="scope-choice"><span class="sr-only">Separation scope</span><select id="explode-scope" aria-label="Separation scope"><option value="all">Whole view</option><option value="selected">Selected assembly</option></select></label></div><label for="label-density">Labels <select id="label-density"><option value="nearby">Key parts</option><option value="selected">Selection only</option><option value="off">Off</option></select></label></div>
+      <section class="stage" aria-label="Three-dimensional model"><button id="quick-play" class="animation-quick-play" aria-pressed="false" hidden>Play sequence</button><div id="viewer" tabindex="0" aria-label="Interactive 3D model. Drag to orbit; scroll to zoom. Component controls provide a keyboard alternative."><div id="loading" class="loading">Preparing the model…</div></div><div id="model-labels" class="model-labels"></div><div id="model-error" hidden><h3>The model could not start.</h3><p>The component explanations and field guide remain available.</p><button id="retry-model">Try again</button></div><div class="stage-footer"><span>Drag to orbit · select equipment to inspect</span><div><button data-camera="isometric" aria-label="Isometric camera">ISO</button><button data-camera="side" aria-label="Side camera">SIDE</button><button data-camera="top" aria-label="Top camera">TOP</button><button id="reset-scene" title="Reset camera">RESET</button></div><div class="selection-tools"><span id="exploration-selection"></span><button id="focus-selection">Frame selection</button><button id="isolate-selection" aria-pressed="false">Isolate assembly</button><button id="inspect-assembly" aria-pressed="false" hidden>Inspect inside</button><button id="restore-context" hidden>Restore scene</button><button id="larger-model" aria-pressed="false">Larger model</button></div><details class="model-options"><summary>Model options</summary><div class="model-tools"><label><input type="checkbox" id="cutaway"> Open enclosure</label><div id="separation-controls" class="separation-controls"><label>Separate parts <input type="range" id="explode" min="0" max="1" step="0.05" value="0" aria-label="Separate parts"></label><label class="scope-choice"><span class="sr-only">Separation scope</span><select id="explode-scope" aria-label="Separation scope"><option value="all">Whole view</option><option value="selected">Selected assembly</option></select></label></div><label for="label-density">Labels <select id="label-density"><option value="nearby">Key parts</option><option value="selected">Selection only</option><option value="off">Off</option></select></label></div>
 </details></div></section>
       <section id="connections-view" class="connections-view" hidden></section>
 
 
 <p id="exploration-note" class="exploration-note" hidden></p>
+<div id="inspection-stages" class="inspection-stages" role="group" aria-label="Assembly inspection stages" hidden></div>
 
     </div>
     <section class="sequence-panel" aria-label="Explore the illustrated sequence" hidden>
@@ -67,6 +69,7 @@
     </section>
   </div>
   <aside class="inspector" aria-label="Selected component explanation">
+    <section id="anatomy-panel" aria-label="Assembly parts, paths and study" hidden></section>
     <details id="component-explanation" class="component-explanation"><summary>Component explanation & references</summary><div id="component-detail"></div></details>
     <div id="lesson-detail" hidden></div>
   </aside>
@@ -85,6 +88,7 @@
 </main>
 <footer><span>RAILWAY ANATOMY</span><p>A public introduction to railway systems engineering.</p><a href="./reading.html">Reading & sources</a><a class="author-link" href="https://haitaowu12.github.io/tony-wu-home/">By Tony Wu</a><a class="related-link" href="https://haitaowu12.github.io/engine-anatomy/">Engine Anatomy ↗</a><a id="repo-link" href="https://github.com/haitaowu12/railway-anatomy" target="_blank" rel="noopener">Source code ↗</a></footer>
 <dialog id="about-dialog" aria-labelledby="dialog-title"><div class="dialog-heading"><div><p class="eyebrow">MODEL & REFERENCES</p><h2 id="dialog-title">About this atlas</h2></div><button id="close-dialog" aria-label="Close sources">×</button></div><div id="dialog-body"></div></dialog><div id="announce" class="sr-only" role="status" aria-live="polite"></div>
-<script type="module" src="./app.js?v=open-atlas"></script>
+<script type="module" src="./app.js?v=anatomy-depth-8"></script>
 </body></html>
+
 

@@ -1,6 +1,6 @@
 # Railway Anatomy: next learning studies
 
-**Prioritized proposals — 1 November 2026. These are future studies, not commitments for this revision.**
+**Original proposals — 1 November 2026. Revision 8 now implements bounded teaching cases for all ten questions below. See [the release mapping and explicit limits](REVISION-8.md#applied-studies-from-the-learning-roadmap). The original proposals are retained to distinguish these cases from broader calibrated or operational capabilities.**
 
 ## Implemented baseline
 
@@ -23,8 +23,9 @@ The proposals below deepen specific unanswered questions. They do not describe t
 | **9. Drainage, formation and structural observations** | How can water paths and support conditions affect different assets without one repair closing every observation? Track layers and a culvert/work example already exist; coupled deterioration is not modeled. | A soil/track/culvert cross-section with a time comparison and separate observation records. Show a changed drainage path while retaining an unresolved structural observation. | [Network Rail’s landslip explanation](https://www.networkrail.co.uk/rail-travel/delays-explained/landslips/). Add public geotechnical evidence before representing pore pressure, settlement or failure thresholds. |
 | **10. Change impact across interfaces** | Which interface definitions and test evidence become affected when one hardware or software version changes? Existing process views distinguish installation, evidence and review; a dependency-driven impact exercise would add depth. | A 2D traceability graph linking a fictional changed item to an I/O definition, consuming application, test case and outstanding issue. Let learners identify missing evidence without granting approval. | [Crossrail’s publicly released certification-package example](https://learninglegacy.crossrail.co.uk/wp-content/uploads/2023/05/CRL1-XRL-O4-GUI-CR001-50009-Rev-2.0-Certification-Package-Compilation-Process.pdf). Use the published evidence relationships, not its project forms or identifiers. |
 
-## Selection rule for a future revision
+## Selection rule for further expansion
 
 Choose a study when it adds a learning question, a representation that can answer it, and adequate public evidence for the claimed behaviour. Reuse the existing assemblies when the new question concerns information or decisions. Use new 3D geometry when the learner needs to inspect a physical mechanism. Every calculation should expose its assumptions; every animated state should have a visible consequence; every article should explain what remains outside the example.
 
 Primary links above were checked during this review. Supplier pages describe examples, dated guidance retains its jurisdiction and scope, and the proposed visualizations remain original educational material.
+

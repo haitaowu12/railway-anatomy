@@ -1,3 +1,4 @@
+import { createMechanicalDetails } from './mechanical-details.js';
 /*
  * Original, dimensionless teaching geometry for Railway Anatomy.
  * Rail profiles and mechanism proportions are illustrative, not product CAD.
@@ -18,6 +19,7 @@ export function buildTrackView(id, api) {
     THREE, C, M, mat, startModel, group, part, mesh, box, cylinder,
     torus, tube, explode, shell, registerAnimator,
   } = api;
+  const D = createMechanicalDetails(api);
   const root = startModel(id);
   // Finite teaching traces share the player's 0..5 scrubber. Phase5 is the
   // demonstrated end; replay is an explicit player action.
@@ -153,35 +155,44 @@ export function buildTrackView(id, api) {
 
   function seat(parent, x, z, y, { direct = false, detailed = true, lifted = true } = {}) {
     const assembly = group(parent, 'rail-seat', [x, y, z]);
+    assembly.userData.explorationAssembly='track-rail-clip';
+    D.mark(assembly,'Rail fastening assembly',{sources:['MD05'],function:'The rail seat separates support, elastic restraint and electrical insulation. The shoulders remain attached to the support in the inspection layout.'});
     if (direct) {
       const plate = part(assembly, 'track-baseplate');
+      D.mark(plate,'Baseplate and support interface',{sources:['MD05'],interfaces:['Support anchors','Rail pad']});
       box(plate, [.54, .06, .72], M.core, [0, -.075, 0]);
       box(plate, [.57, .035, .76], rubber, [0, -.123, 0]);
       for (const sx of [-.19, .19]) for (const sz of [-.30, .30]) bolt(plate, [sx, -.035, sz], .035, detailed);
-      if (lifted) explode(plate, [0, .14, 0]);
+      if (lifted) D.move(plate, [0, .14, 0],'Inspect the support interface',[.65,1]);
     }
     const pad = part(assembly, 'track-rail-pad');
+    D.mark(pad,'Resilient rail pad',{sources:['MD05'],function:'Distributes rail-seat load into the sleeper or baseplate through a resilient interface.',interfaces:['Rail foot underside','Sleeper or baseplate']});
     box(pad, [.39, .04, .34], rubber, [0, -.02, 0]);
     if (detailed) for (const dx of [-.12, -.04, .04, .12]) box(pad, [.018, .008, .34], concreteEdge, [dx, -.044, 0]);
     const clips = part(assembly, 'track-rail-clip');
     const insulation = part(assembly, 'track-insulator');
+    D.mark(clips,'Elastic clips and retained shoulders',{sources:['MD05']});D.mark(insulation,'Rail-foot insulating interfaces',{sources:['MD05'],function:'Separates the clip and shoulder interfaces from the steel rail foot.'});
     for (const side of [-1, 1]) {
-      box(clips, [.15, .095, .12], M.core, [-.025, .005, side * .25]);
-      box(insulation, [.21, .029, .078], insulator, [.018, .069, side * .116]);
-      box(insulation, [.22, .08, .026], insulator, [0, .025, side * .157]);
+      const shoulder=D.piece(clips,'retained-shoulder-'+side,'Retained fastening shoulder',[-.025,.027,side*.25],{sources:['MD05'],function:'The anchored shoulder reacts against the elastic clip. It stays on the support while the spring is separated.'});
+      box(shoulder,[.18,.035,.15],M.core,[0,-.055,0]);const socket=D.ring(shoulder,.031,.056,.15,M.core);socket.rotation.set(0,0,Math.PI/2);
+      const spring=D.piece(clips,'elastic-clip-'+side,'Elastic rail clip',undefined,{sources:['MD05'],function:'The spring bears through the toe insulator on the rail foot and reacts at the shoulder socket.',interfaces:['Shoulder socket','Toe insulator']});
+      const ins=D.piece(insulation,'toe-and-side-insulator-'+side,'Toe and side insulator',undefined,{sources:['MD05'],interfaces:['Clip toe','Rail foot','Shoulder side']});
+      box(ins, [.21, .029, .078], insulator, [.018, .069, side * .116]);
+      box(ins, [.22, .08, .026], insulator, [0, .025, side * .157]);
       if (detailed) {
-        tube(clips, [
+        tube(spring, [
           [-.11, .045, side * .255], [-.13, .135, side * .285],
           [-.025, .166, side * .31], [.105, .139, side * .268],
           [.117, .107, side * .18], [.047, .099, side * .111],
           [-.06, .095, side * .11],
         ], .024, M.teal, { segments: 14 });
-        cylinder(clips, .032, .17, M.steel, [-.025, .027, side * .25], [0, 0, Math.PI / 2], 10);
       } else {
-        tube(clips, [[-.10, .045, side * .25], [-.08, .13, side * .29], [.10, .13, side * .23], [.04, .095, side * .11]], .026, M.teal, { segments: 6 });
+        tube(spring, [[-.10, .045, side * .25], [-.08, .13, side * .29], [.10, .13, side * .23], [.04, .095, side * .11]], .026, M.teal, { segments: 6 });
       }
+      if(lifted)D.move(spring,[0,.60,side*.16],'Separate elastic restraints',[0,.35]);
     }
-    if (lifted) { explode(pad, [0, .30, 0]); explode(clips, [0, .60, 0]); explode(insulation, [0, .43, 0]); }
+    if (lifted) { D.move(pad, [0, .30, 0],'Inspect the support interface',[.65,1]);D.move(insulation, [0, .43, 0],'Expose the insulating interfaces',[.35,.65]); }
+    assembly.userData.functionalPaths=[{id:'rail-seat-load',label:'Rail support and fastening reactions',description:'Vertical load passes through the pad into the support. Clip restraint reacts through the toe insulator and retained shoulder.',steps:[{label:'Rail foot',conceptId:'running-rail'},{label:'Resilient pad',nodeName:'track-rail-pad'},{label:direct?'Baseplate':'Sleeper',conceptId:direct?'track-baseplate':'track-sleeper'},{label:'Retained shoulder',nodeName:'retained-shoulder-1'},{label:'Elastic clip',nodeName:'elastic-clip-1'},{label:'Toe insulation',nodeName:'toe-and-side-insulator-1'}],sources:['MD05']}];
     return assembly;
   }
 
@@ -446,33 +457,47 @@ export function buildTrackView(id, api) {
 
   function pointMachine(parent, position) {
     const machine = part(parent, 'track-point-machine', position);
+    D.mark(machine,'Point machine, mechanical output and lock',{sources:['K17'],function:'An original rack-drive example separates motion transmission, retention and independent position feedback.'});
     box(machine, [1.25, .12, .87], concreteEdge, [0, -.12, 0]);
     box(machine, [1.12, .055, .75], M.core, [0, -.035, 0]);
     for (const x of [-.48, .48]) for (const z of [-.30, .30]) bolt(machine, [x, .012, z], .032, true);
     const housing = group(machine, 'removable-machine-housing'); shell(housing);
-    explode(housing, [0, .85, 0]);
+    D.mark(housing,'Machine enclosure',{sources:['K17']});D.move(housing, [0, .85, 0],'Open the enclosure',[0,.3]);
     box(housing, [1.12, .045, .76], M.teal, [0, .39, 0]);
     for (const side of [-1, 1]) box(housing, [1.12, .37, .04], M.teal, [0, .195, side * .36]);
     box(housing, [.04, .37, .72], M.teal, [-.54, .195, 0]);
     box(housing, [.04, .37, .72], M.teal, [.54, .195, 0]);
     box(housing, [.58, .018, .30], M.white, [0, .424, 0]);
-    cylinder(machine, .145, .43, M.aluminum, [-.27, .19, -.08], [0, 0, Math.PI / 2], 20);
-    for (const x of [-.43, -.33, -.23, -.13]) cylinder(machine, .157, .017, M.core, [x, .19, -.08], [0, 0, Math.PI / 2], 16);
-    const gear = group(machine, 'illustrative-drive-gear', [.24, .20, -.08]);
-    cylinder(gear, .17, .065, M.copper, [0, 0, 0], [0, 0, Math.PI / 2], 18);
+    const motor=D.piece(machine,'point-drive-motor','Drive motor',[-.27,.19,-.08],{sources:['K17'],interfaces:['Electrical supply','Coaxial pinion shaft']});
+    cylinder(motor, .145, .43, M.aluminum, [0,0,0], [0, 0, Math.PI / 2], 20);
+    for (const x of [-.16, -.06, .04, .14]) cylinder(motor, .157, .017, M.core, [x,0,0], [0, 0, Math.PI / 2], 16);
+    const gear = D.piece(machine, 'illustrative-drive-gear','Drive pinion', [.24, .19, -.08],{sources:['K17','MD03'],function:'A schematic pinion converts shaft rotation into rack travel. The authored pitch radius relates angle to displacement.'});
+    const pitchRadius=.13,toothPitch=2*Math.PI*pitchRadius/12;
+    Object.assign(gear.userData,{gearPitchRadius:pitchRadius,gearToothCount:12,rackPitch:toothPitch,gearProfile:'schematic, not involute'});
+    cylinder(gear, .113, .065, M.copper, [0, 0, 0], [0, 0, Math.PI / 2], 24);
     for (let i = 0; i < 12; i++) {
       const a = i / 12 * Math.PI * 2;
-      box(gear, [.078, .055, .055], M.steel, [0, Math.cos(a) * .18, Math.sin(a) * .18], [a, 0, 0]);
+      box(gear, [.078, .038, toothPitch*.43], M.steel, [0, Math.cos(a) * pitchRadius, Math.sin(a) * pitchRadius], [a, 0, 0]);
     }
     cylinder(machine, .025, .50, M.steel, [0, .19, -.08], [0, 0, Math.PI / 2], 10);
     const output = group(machine, 'linear-output-rod', [0, .23, .25]);
+    D.mark(output,'Drive rack and output rod',{sources:['K17','MD03'],function:'The sliding rack moves the output rod; guide blocks react transverse force while allowing longitudinal travel.'});
     cylinder(output, .038, 2.45, M.aluminum, [0, 0, 1.06], [Math.PI / 2, 0, 0], 10);
     box(output, [.16, .10, .18], M.core, [0, 0, .08]);
+    const rack=D.piece(output,'point-drive-rack','Linear drive rack',[.24,-.197,-.25],{sources:['K17','MD03'],interfaces:['Drive pinion teeth','Output rod carrier']});
+    box(rack,[.075,.025,1.05],M.steel);for(let i=-7;i<=7;i++)box(rack,[.075,.036,toothPitch*.43],M.aluminum,[0,.03,i*toothPitch-.08]);
+    box(output,[.28,.06,.15],M.core,[.12,-.15,0]);box(output,[.08,.18,.15],M.core,[0,-.06,0]);
+    const guides=D.piece(machine,'point-rack-guide-blocks','Rack guide blocks',undefined,{sources:['K17'],function:'Stationary side guides support the moving rack without filling its travel passage.'});
+    for(const z of [-.34,.30])for(const x of [.17,.31])box(guides,[.035,.10,.10],M.core,[x,.055,z]);
+    for(const x of [.08,.41]){const b=D.piece(machine,'point-drive-shaft-support','Drive shaft bearing',[x,.19,-.08],{sources:['MD04']});const r=D.ring(b,.028,.05,.045,M.steel);r.rotation.set(0,0,Math.PI/2);box(b,[.07,.12,.1],M.core,[0,-.105,0]);}
     const lock = group(machine, 'illustrative-lock');
+    D.mark(lock,'Mechanical locking element',{sources:['K17'],function:'Retention is modeled separately from movement and from position detection.'});
     box(lock, [.20, .12, .11], M.yellow, [.12, .24, .26]);
     const detection = part(parent, 'track-point-detection', [position[0] + .43, position[1] + .15, position[2] + .49]);
+    D.mark(detection,'Independent blade-position detection',{sources:['K17'],function:'A separate reference link represents physical position feedback; the drive command alone is not proof.'});
     box(detection, [.28, .19, .35], M.signal, [0, 0, 0]);
     const detectorRod = group(detection, 'blade-reference-link');
+    D.mark(detectorRod,'Blade reference link',{sources:['K17']});
     cylinder(detectorRod, .019, .72, M.steel, [0, .02, .48], [Math.PI / 2, 0, 0], 8);
     box(detectorRod, [.10, .16, .08], M.core, [0, .07, .84]);
     const indicator = mesh(detection, new THREE.SphereGeometry(.064, 10, 6), cueMaterial, [0, .15, 0]);
@@ -480,12 +505,14 @@ export function buildTrackView(id, api) {
     const requestGroup=group(cues,'finite-drive-request'),feedbackGroup=group(cues,'finite-position-feedback');
     const request = animatedPath(requestGroup, [[position[0] - .9, .36, position[2] - .75], [position[0] -.5, .36, position[2] -.55], [position[0], .57, position[2] -.4]], C.signal, { radius: .018, beads: 1 });
     const feedback = animatedPath(feedbackGroup, [[position[0] + .43, .78, position[2] + .49], [position[0] + .85, .45, position[2] + .12], [position[0] + .9, .36, position[2] -.75]], C.service, { radius: .018, beads: 1 });
+    D.move(motor,[0,.4,-.3],'Locate drive and support',[.3,.6]);D.move(gear,[.25,.35,0],'Inspect motion transmission',[.6,1]);D.move(lock,[-.3,.3,0],'Inspect motion transmission',[.6,1]);
+    machine.userData.functionalPaths=[{id:'point-drive',label:'Drive, retain and prove',description:'Motor → pinion → rack/output rod → blades. The lock and independent position feedback are different functions. This is a qualitative mechanism, not signalling logic or an operating procedure.',steps:[{label:'Drive motor',nodeName:'point-drive-motor'},{label:'Pinion',nodeName:'illustrative-drive-gear'},{label:'Rack and output',nodeName:'linear-output-rod'},{label:'Switch blades',conceptId:'track-switch-rail'},{label:'Lock',nodeName:'illustrative-lock'},{label:'Position feedback',conceptId:'track-point-detection'}],sources:['K17','MD03']}];
     return {
       update(movement, state, shift) {
         const proved = state.pointProof ?? (state.variant !== 'unproved');
         output.position.z = .25 + shift;
         detectorRod.position.z = .75 * shift - .03;
-        gear.rotation.x = movement * 1.4;
+        gear.rotation.x = Math.PI/12-shift/pitchRadius;
         const lockFraction=state.pointLockFraction ?? (proved?1:0);
         lock.position.x = .12*(1-lockFraction);
         indicator.material = proved ? cueMaterial : warningMaterial;
@@ -725,4 +752,5 @@ export function buildTrackView(id, api) {
   else if (id === 'crossing') crossingView();
   return root;
 }
+
 

@@ -16,6 +16,8 @@ import {ABOUT_HTML} from './project-about.js';
 import {READING_GUIDES} from './reading-guides.js';
 import {SOURCES,CONCEPTS,ARCHITECTURES} from './catalog.js';
 import {TOURS} from './tours.js';
+import {LEARNING_WORKSPACES,workspaceRoute,workspaceFor,applyAnatomyQuery,writeAnatomyQuery} from './learning-workspaces.js';
+import {createDepthPanel,workspaceNavigation,workspaceOrientation,ANATOMY_STUDIES} from './depth-ui.js';
 import {DOMAINS,VIEWS,RELATED,MODES,EXPERIMENTS,targetFor,domainFor,viewFor,applyExperiment,describeFlow,wheelEstimate,variantFor,variantsFor,defaultVariant,cutawayFor,PART_CONTEXTS} from './model.js';
 
 const $=s=>document.querySelector(s);
@@ -30,6 +32,7 @@ let state={technology:technologyFromUrl(location.search,savedTechnology),electri
 let historyMode='replace',returnContext=null,lastReadUrl='',allComponents=false,configurationEffect='',lastDetailKey='';
 let viewer=null, rendererStatus='', loadingViewer=false, labelFrame=0,lastLabelTime=0,lastExplorationContext='';
 let lessonAnswers={}, lessonAttempts={}, quizSelections={};
+let depthPanel=null,depthFrame=0;
 const progressKey='railway-anatomy-learning-v2';
 try{const saved=JSON.parse(localStorage.getItem(progressKey)||'{}');for(const t of TOURS){if(saved.completed?.[t.id]===true)lessonAnswers[t.id]=true;if(Number.isInteger(saved.choices?.[t.id])&&saved.choices[t.id]>=0&&saved.choices[t.id]<t.choices.length)quizSelections[t.id]=saved.choices[t.id];if(Number.isFinite(saved.attempts?.[t.id]))lessonAttempts[t.id]=Math.max(0,saved.attempts[t.id]);}}catch{}
 function saveProgress(){try{localStorage.setItem(progressKey,JSON.stringify({completed:lessonAnswers,choices:quizSelections,attempts:lessonAttempts}));}catch{}}
@@ -69,7 +72,7 @@ function writeHash(){
   const url=new URL(location.href);url.searchParams.set('propulsion',state.technology.propulsion);url.searchParams.set('control',state.technology.control);if(state.electrification&&state.electrification!==DEFAULT_ELECTRIFICATION)url.searchParams.set('electrification',state.electrification);else url.searchParams.delete('electrification');
   if(state.presentation!==preferredPresentation(state.view,state.variant))url.searchParams.set('presentation',state.presentation);else url.searchParams.delete('presentation');
   for(const key of ['platformEdge','platformSensor']){if(state.view==='platform-interface'||state[key]!==({platformEdge:'open',platformSensor:'lidar'})[key])url.searchParams.set(key,state[key]);else url.searchParams.delete(key);}
-  url.hash=value;
+  url.hash=value;writeAnatomyQuery(url,state,cutawayFor(state.view));
   for(const [key,value,initial] of [['mode',state.mode,['power','vehicle'].includes(state.domain)?'motoring':'coasting'],['scenario',state.scenario,'nominal'],['sink',state.sink,'train']]){
     if(value!==initial)url.searchParams.set(key,value);else url.searchParams.delete(key);
   }
@@ -110,6 +113,7 @@ function readHash(){
   configurationEffect='';allComponents=false;state.playing=false;state.loop=false;
   syncPlatform({legacy:true});
   state.presentation=['connections','equipment'].includes(query.get('presentation'))?query.get('presentation'):preferredPresentation(state.view,state.variant);
+  applyAnatomyQuery(state,query);
 }
 
 function activeDomain(){return DOMAINS.find(d=>d.id===state.domain);}
@@ -124,15 +128,18 @@ function syncViewer(changedView=false){
   if(changedView||viewer.getView?.()!==state.view)viewer.setView(state.view);
   viewer.setVariant(state.variant);viewer.setMode(state.mode);viewer.setScenario(state.scenario);viewer.setReceptivity(state.sink);
   viewer.setSelected(['network-overview','depot-layout','operations-centre'].includes(state.component)?null:targetFor(state.component));
+  if(state.instanceId){const entry=viewer.getInspectionState?.().tree?.find(n=>n.instanceId===state.instanceId&&n.conceptId===targetFor(state.component)&&n.available!==false);if(entry)viewer.selectInstance?.(state.instanceId,{notify:false});else state.instanceId=null;}
+  viewer.setAllInstances?.(Boolean(state.allInstances));
   viewer.setCutaway(state.cutaway);
-  const requestedScope=state.explodeScope||'all';
+  const requestedScope=state.explodeScope||'all',requestedExposure=state.exploded,priorInspection=viewer.getExplorationState?.();
+  if(requestedScope==='selected'&&requestedExposure>0&&(changedView||priorInspection?.explodeScope!=='selected'||!priorInspection?.exploded)){viewer.setInspectionMode?.('inspection');viewer.setCutaway(state.cutaway);}
   state.explodeScope=viewer.setExplodeScope?.(requestedScope)||'all';
   if(requestedScope==='selected'&&state.explodeScope!=='selected')state.exploded=0;
-  viewer.setExploded(state.exploded);viewer.setSignals(['track','control','communications','station','operations','depot'].includes(state.domain));
+  viewer.setExploded(state.explodeScope==='selected'?requestedExposure:state.exploded);viewer.setSignals(['track','control','communications','station','operations','depot'].includes(state.domain));
   const sequenceKey=[state.view,state.variant,state.platformEdge,state.platformSensor].join('/');
   if(sequenceKey!==lastSequenceKey){state.playing=false;state.loop=Boolean(guideForState()?.loop);viewer.setPhase(0);lastSequenceKey=sequenceKey;lastTopologyStep='';}
   viewer.setPlayback({duration:guideForState()?.duration||12,loop:state.loop});
-  state.playing=viewer.setPlaying(state.playing);syncControls();
+  state.playing=viewer.setPlaying(state.playing);if(state.functionalPath)state.functionalPath=viewer.setFunctionalPath?.(state.functionalPath)||null;syncControls();
 }
 function syncControls(){
   const presentation=viewer?.getExplorationState?.();
@@ -157,13 +164,72 @@ function syncControls(){
   $('#isolate-selection').hidden=overview||!exploration?.canIsolate;
   $('#isolate-selection').setAttribute('aria-pressed',String(Boolean(current?.isolation)));
   $('#isolate-selection').textContent=current?.isolation?'Assembly isolated':'Isolate assembly';
-  $('#restore-context').hidden=!current?.isolation&&!current?.canRestoreFrame;
+  const inspecting=current?.explodeScope==='selected'&&current?.exploded>0;
+  $('#inspect-assembly').hidden=overview||!exploration?.canExplodeSelected;
+  $('#inspect-assembly').textContent=inspecting?'Reassemble':'Inspect inside';
+  $('#inspect-assembly').setAttribute('aria-pressed',String(inspecting));
+  $('#restore-context').hidden=!current?.isolation&&!current?.canRestoreFrame&&!current?.exploded;
   $('#explode-scope').value=current?.explodeScope||'all';
   $('#explode-scope option[value="selected"]').disabled=!exploration?.canExplodeSelected;
   $('#exploration-note').hidden=!(current?.isolation||current?.explodeScope==='selected');
-  $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.internalSeparationCount||exploration?.separatedPartCount||0} separable internal parts in this assembly. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
+  const names=exploration?.pieceNames||[],instances=exploration?.instanceCount||1;
+  $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.internalSeparationCount||0} movable pieces${instances>1?` across ${instances} instances of this assembly`:''}. ${names.length?`Named groups: ${names.join('; ')}. `:''}Separation is a teaching layout; it is not a maintenance removal sequence. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
+  const inspectionStages=inspecting?(exploration?.inspectionStages||[]):[];
+  $('#inspection-stages').hidden=!inspectionStages.length;
+  const inspectionKey=JSON.stringify(inspectionStages);
+  if($('#inspection-stages').dataset.recipe!==inspectionKey){
+    $('#inspection-stages').innerHTML=inspectionStages.map((stage,index)=>`<button data-inspection-progress="${stage.end}" aria-pressed="false">${index+1}. ${safe(stage.label)}</button>`).join('');
+    $('#inspection-stages').dataset.recipe=inspectionKey;
+  }
+  // Keep the existing buttons while scrubbing or stepping so keyboard focus
+  // remains on the learner's chosen stage.
+  $$('#inspection-stages button').forEach((button,index)=>button.setAttribute('aria-pressed',String(current.exploded>=inspectionStages[index].end&&(index===inspectionStages.length-1||current.exploded<inspectionStages[index+1].end))));
   updateMotionGuide();
   $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':'Information diagram'):rendererStatus==='svg'?'Schematic teaching model · SVG':'Schematic teaching model';
+  const anatomy=viewer?.getInspectionState?.();if(anatomy){state.instanceId=anatomy.selectedInstanceId;state.functionalPath=anatomy.functionalPath;state.allInstances=anatomy.allInstances;}
+  if(!depthFrame)depthFrame=requestAnimationFrame(()=>{depthFrame=0;renderDepth();});
+}
+function refreshDepthState(){
+  const current=viewer?.getExplorationState?.();if(current){state.exploded=current.exploded;state.explodeScope=current.explodeScope;}
+  state.cutaway=viewer?.getCutaway?.()??state.cutaway;state.playing=viewer?.getPlaying?.()||false;
+  syncControls();updateLabels();writeHash();rememberCurrentEntry();
+}
+function openDepthStudy(study,step=null){
+  if(!study||!VIEWS[study.view])return;
+  const prior=routeState(state);historyMode='push';
+  state={...state,page:'explore',view:study.view,domain:domainForView(study.view,DOMAINS)?.id||state.domain,component:study.conceptIds[0],variant:study.variant||defaultVariant(study.view),workspace:study.workspace,studyId:study.id,instanceId:null,functionalPath:null,allInstances:false,exploded:0,explodeScope:'all',cutaway:true,playing:false,scenario:'nominal',presentation:'equipment',...study.configuration};
+  if(study.technology)state.technology=normalizeTechnology({...state.technology,...study.technology});
+  syncPlatform({fromComponent:true});returnContext=prior;render(true);
+  if(step?.conceptId)selectStudyStep(study,step);
+  depthPanel?.setTab('learn');$('#anatomy-panel')?.scrollIntoView({block:'nearest'});
+}
+function selectStudyStep(study,step){
+  if(state.studyId!==study.id){openDepthStudy(study,step);return;}
+  if(step.view&&VIEWS[step.view]){
+    if(step.view!==state.view)setView(step.view);
+    if(step.variant&&VIEWS[state.view].variants?.some(v=>v.id===step.variant))state.variant=step.variant;
+    state.workspace=study.workspace;state.studyId=study.id;render(true);
+  }
+  historyMode='push';selectComponent(step.conceptId);
+  if(step.partLabel){const inspection=viewer?.getInspectionState?.(),entry=inspection?.tree?.find(n=>n.available!==false&&n.label===step.partLabel);if(entry)viewer.selectInstance(entry.instanceId);}
+  depthPanel?.setTab('learn');refreshDepthState();
+}
+function renderDepth(){
+  const host=$('#anatomy-panel');if(!host)return;
+  if(!depthPanel)depthPanel=createDepthPanel(host,{
+    instance:id=>{historyMode='push';if(viewer?.selectInstance?.(id))refreshDepthState();},
+    mode:mode=>{historyMode='replace';if(viewer?.setInspectionMode?.(mode)){refreshDepthState();if(mode==='inspection')$('#viewer').scrollIntoView({block:'center',behavior:'instant'});}},
+    allInstances:value=>{viewer?.setAllInstances?.(value);refreshDepthState();},
+    exposure:value=>{if(viewer?.getExplorationState?.().explodeScope!=='selected')viewer?.setInspectionMode?.('inspection');viewer?.setExplodeScope?.('selected');viewer?.setExploded(value);viewer?.setPlaying(false);refreshDepthState();},
+    focus:()=>{viewer?.frameSelection?.(targetFor(state.component));refreshDepthState();$('#viewer').scrollIntoView({block:'center',behavior:'instant'});},
+    path:id=>{state.functionalPath=viewer?.setFunctionalPath?.(id)||null;refreshDepthState();},
+    concept:id=>{historyMode='push';selectComponent(id);},
+    connections:()=>{state.presentation='connections';render();},
+    study:study=>openDepthStudy(study),studyStep:selectStudyStep,
+    lab:lab=>{if(!lab||!VIEWS[lab.view])return;historyMode='push';setView(lab.view);state.workspace=lab.workspace;if(lab.variant&&VIEWS[lab.view].variants?.some(v=>v.id===lab.variant))state.variant=lab.variant;render(true);selectComponent(lab.conceptId);depthPanel?.setTab('learn');$('#anatomy-panel').scrollIntoView({block:'start',behavior:'instant'});},
+    studyChoice:id=>{const study=ANATOMY_STUDIES.find(s=>s.id===id);if(study)openDepthStudy(study);}
+  });
+  depthPanel.render({inspection:viewer?.getInspectionState?.(),exploration:viewer?.getExplorationState?.(),state,parts,sourceChips,hasConnections:Boolean(currentTopology()||electricalStudy(state.view))});
 }
 function renderNavigation(){
   $$('.main-nav [data-page]').forEach(b=>{if(b.dataset.page===(state.page==='people'?'processes':state.page))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
@@ -176,6 +242,7 @@ function renderNavigation(){
   const domainButton=item=>`<button data-domain="${item.id}" class="domain-button ${item.id===state.domain?'active':''}" aria-pressed="${item.id===state.domain}">${domainIcon(item.id)}<strong>${safe(item.label)}</strong></button>${item.id===state.domain&&item.views.length>1?`<div class="area-views">${domainViews(item)}</div>`:''}`;
   $('#domains').innerHTML=`<button class="network-home ${state.domain==='network'?'active':''}" data-domain="network" aria-pressed="${state.domain==='network'}">${domainIcon(network.id)}<strong>Whole railway</strong></button>`+NAVIGATION_GROUPS.map(g=>`<div class="navigation-group"><h2>${safe(g.label)}</h2>${g.ids.map(id=>DOMAINS.find(x=>x.id===id)).filter(Boolean).map(domainButton).join('')}</div>`).join('');
   $('#navigator-current').textContent=d.label;
+  $('#study-workspaces').innerHTML=workspaceNavigation(state,VIEWS);$('#study-orientation').innerHTML=workspaceOrientation(state,VIEWS);$('#study-orientation').hidden=state.page!=='explore';
   const trail=viewTrail(state.view,VIEWS).filter(id=>id!==network.view);
   $('#location-trail').innerHTML=`<button data-domain="network" ${state.domain==='network'?'aria-current="location"':''}>Whole railway</button>`+(state.domain==='network'?'':`<span aria-hidden="true">/</span><button data-domain="${d.id}">${safe(d.label)}</button>`)+trail.filter(id=>id!==d.view).map(id=>`<span aria-hidden="true">/</span><button data-view="${id}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
   $('#return-context').hidden=!returnContext;
@@ -346,12 +413,13 @@ function setPage(page){
 }
 function setDomain(id){
   const d=DOMAINS.find(d=>d.id===id);if(!d)return;
-  returnContext=null;configurationEffect='';allComponents=false;
+  returnContext=null;configurationEffect='';allComponents=false;state.instanceId=null;state.functionalPath=null;state.workspace=null;state.studyId=null;state.allInstances=false;
   state={...state,page:'explore',domain:id,view:d.view,component:d.component,scenario:'nominal',mode:['power','vehicle'].includes(id)?'motoring':'coasting',cutaway:cutawayFor(d.view),variant:defaultVariant(d.view),exploded:0};
   state.presentation=preferredPresentation(state.view,state.variant);syncPlatform();
   state.technology=technologyForView(state.technology,state.view,state.variant);render(true);orientToView();announce(d.label);
 }
 function setView(id){
+  if(id!==state.view){state.instanceId=null;state.functionalPath=null;state.allInstances=false;}
   if(!VIEWS[id])return;if(PROCESS_REDIRECTS[id]){openProcess(PROCESS_REDIRECTS[id]);return;}state.page=state.page==='learn'?'learn':'explore';
   state.domain=domainForView(id,DOMAINS,state.domain)?.id||state.domain;allComponents=false;configurationEffect='';
   state.view=id;state.variant=defaultVariant(id);state.scenario='nominal';state.mode=['power','vehicle'].includes(state.domain)?'motoring':'coasting';state.exploded=0;state.cutaway=cutawayFor(id);
@@ -369,8 +437,9 @@ function chooseVisibleRepresentative(){
   const candidates=[variant?.component,config.component,...activeDomain().parts,...CONCEPTS.map(c=>c.id)];
   const candidate=candidates.find(id=>parts.has(id)&&equipmentInView(id)&&visible.includes(targetFor(id)));if(candidate){state.component=candidate;viewer.setSelected(targetFor(candidate));}
 }
-function selectComponent(id,{explore=state.page!=='learn',focus=false,primary=false}={}){
+function selectComponent(id,{explore=state.page!=='learn',focus=false,primary=false,instanceId=null}={}){
   if(!parts.has(id))return;const process=processFor(primary?viewFor(id):null,id);if(process){openProcess(process);return;}
+  if(instanceId)state.instanceId=instanceId;else if(id!==state.component){state.instanceId=null;state.allInstances=false;}
   const origin=routeState(state),oldView=state.view,oldDomain=state.domain;
   const staysInDiagram=!primary&&isConnections()&&Boolean(currentTopology()?.nodes.some(n=>n.component===id)||electricalStudy(state.view)&&viewer?.getComponentIds(state.view).includes(targetFor(id)));
   const destinationView=primary||!staysInDiagram&&!viewer?.getComponentIds(state.view).includes(targetFor(id))?viewFor(id):state.view;
@@ -469,8 +538,8 @@ function labelLoop(time){labelFrame=requestAnimationFrame(labelLoop);if(!documen
 async function startViewer(){
   if(loadingViewer||viewer)return;loadingViewer=true;$('#model-error').hidden=true;
   try{
-    const {createViewer}=await import('./viewer.js?v=open-atlas');
-    viewer=createViewer($('#viewer'),{onSelect:id=>{rememberCurrentEntry();historyMode='push';selectComponent(id);},onReady:info=>{rendererStatus=info.renderer;$('#loading')?.remove();},onError:()=>{$('#model-error').hidden=false;}});
+    const {createViewer}=await import('./viewer.js?v=anatomy-depth-8');
+    viewer=createViewer($('#viewer'),{onSelect:(id,metadata={})=>{rememberCurrentEntry();historyMode='push';selectComponent(id,{instanceId:metadata.instanceId});},onReady:info=>{rendererStatus=info.renderer;$('#loading')?.remove();},onError:()=>{$('#model-error').hidden=false;}});
     syncViewer(true);chooseVisibleRepresentative();render();rebuildLabels();syncControls();if(!labelFrame)labelFrame=requestAnimationFrame(labelLoop);
   }catch(error){$('#loading')?.remove();$('#model-error').hidden=false;console.error('The 3D renderer could not start.',error);}
   finally{loadingViewer=false;}
@@ -480,14 +549,18 @@ document.addEventListener('click',event=>{
   const diagramNode=event.target.closest('[data-topology-component]');if(diagramNode){const nodeId=diagramNode.dataset.topologyNode;rememberCurrentEntry();historyMode='push';selectComponent(diagramNode.dataset.topologyComponent);focusVisible(`[data-topology-node="${nodeId}"]`);return;}
   const b=event.target.closest('button');if(!b)return;
   rememberCurrentEntry();
-  historyMode=b.matches('[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
-  if(b.matches('[data-domain],[data-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');$('#view-search').value='';searchViews();}
-  if(b.id==='navigator-toggle'){const open=$('.railway-navigation').classList.toggle('is-open');b.setAttribute('aria-expanded',String(open));}
+  historyMode=b.matches('[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-workspace],[data-workspace-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
+  if(b.matches('[data-domain],[data-view],[data-workspace],[data-workspace-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');$('#view-search').value='';searchViews();}
+  if(b.dataset.workspace){const route=workspaceRoute(b.dataset.workspace);if(route){state.workspace=b.dataset.workspace;state.studyId=null;setView(route);}}
+  else if(b.dataset.workspaceView){const origin=routeState(state),selected=state.component;state.workspace=b.dataset.workspaceOwner;setView(b.dataset.workspaceView);returnContext=origin;if(viewer?.getComponentIds(state.view).includes(targetFor(selected)))selectComponent(selected);else render();}
+  else if(b.id==='navigator-toggle'){const open=$('.railway-navigation').classList.toggle('is-open');b.setAttribute('aria-expanded',String(open));}
   else if(b.id==='read-selection'){if($('#component-explanation'))$('#component-explanation').open=true;const heading=$('#component-detail h2');heading?.setAttribute('tabindex','-1');heading?.focus();heading?.scrollIntoView({block:'start',behavior:'instant'});}
   else if(b.id==='component-scope'){allComponents=!allComponents;renderDetail();}
   else if(b.id==='focus-selection'){labelLayoutKey='';viewer?.frameSelection?.(targetFor(state.component));syncControls();updateLabels();}
   else if(b.id==='isolate-selection'){const current=viewer?.getExplorationState?.();viewer?.setIsolation?.(current?.isolation?null:targetFor(state.component));renderDetail();syncControls();rebuildLabels();}
-  else if(b.id==='restore-context'){viewer?.setIsolation?.(null);viewer?.restoreFrame?.();state.exploded=viewer?.getExplorationState?.().exploded||0;renderDetail();syncControls();rebuildLabels();}
+  else if(b.id==='inspect-assembly'){const current=viewer?.getExplorationState?.();if(current?.explodeScope==='selected'&&current?.exploded>0)viewer?.restoreExploration?.();else viewer?.inspectAssembly?.(targetFor(state.component));state.cutaway=viewer?.getCutaway?.()||false;state.playing=false;renderDetail();syncControls();rebuildLabels();rememberCurrentEntry();}
+  else if(b.dataset.inspectionProgress){viewer?.setExploded(Number(b.dataset.inspectionProgress));syncControls();updateLabels();rememberCurrentEntry();}
+  else if(b.id==='restore-context'){viewer?.restoreExploration?.();state.cutaway=viewer?.getCutaway?.()||false;renderDetail();syncControls();rebuildLabels();rememberCurrentEntry();}
   else if(b.id==='larger-model'){const expanded=$('.explorer-shell').classList.toggle('model-expanded');b.setAttribute('aria-pressed',String(expanded));b.textContent=expanded?'Standard model size':'Larger model';requestAnimationFrame(()=>{viewer?.resize();viewer?.frameModel?.();syncControls();updateLabels();});}
   else if(b.id==='return-context'){if(returnContext){const destination=returnContext;returnContext=null;state={...state,...destination};configurationEffect='';lastExplorationContext='';render(true);announce(`Returned to ${VIEWS[state.view].label}`);}}
   else if(b.dataset.process)openProcess(b.dataset.process);
@@ -604,4 +677,5 @@ $('.main-nav [data-page="learn"] span').textContent=TOURS.length;
 $('#reference-domain').insertAdjacentHTML('beforeend','<option value="processes">Processes & evidence</option><option value="people">People & automation</option>');
 $('#reference-domain').insertAdjacentHTML('beforeend',DOMAINS.map(d=>`<option value="${d.id}">${d.label}</option>`).join(''));
 readHash();render();startViewer();
+
 

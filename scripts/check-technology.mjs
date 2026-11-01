@@ -1,3 +1,6 @@
+import {createMechanicalDetails} from '../dist/mechanical-details.js';
+import {createEquipmentDetails} from '../dist/equipment-details.js';
+const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import * as electrificationHelpers from '../dist/electrification.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -36,7 +39,8 @@ function section(start,end){
   const a=source.indexOf(start),b=source.indexOf(end,a+start.length);
   assert(a>=0&&b>a,`Shared scene marker changed: ${start}`);return source.slice(a,b);
 }
-const harness=new Function('THREE','electrificationHelpers',`
+const harness=new Function('THREE','electrificationHelpers','detailFactories',`
+ const {createMechanicalDetails,createEquipmentDetails}=detailFactories;
  const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
   ${section('const C = {','\nconst VIEW')}
   const compatibility=true,scene=new THREE.Scene(),models=new Map();let building;
@@ -44,7 +48,7 @@ const harness=new Function('THREE','electrificationHelpers',`
   ${section('  function startModel(','  function registerAnimator(')}
   function registerAnimator(fn){building.animators.push(fn);}
   return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator}};
-`)(THREE,electrificationHelpers);
+`)(THREE,electrificationHelpers,detailFactories);
 for(const [registry,build]of [[TRACK_VIEWS,buildTrackView],[SIGNALLING_VIEWS,buildSignallingView],[PLATFORM_VIEWS,buildPlatformView]])for(const view of Object.keys(registry))build(view,harness.api);
 const visible=node=>{for(let n=node;n;n=n.parent)if(!n.visible)return false;return true;};
 function scene(view,variant,technology,cutaway=true){
@@ -106,4 +110,5 @@ for(const view of [...Object.keys(TRACK_VIEWS),...Object.keys(SIGNALLING_VIEWS),
   compared+=variants.length;
 }
 console.log(`PASS actual geometry: 60 independent technology scenes, 10 architecture/propulsion combinations, ${compared} track/signalling/platform variants in assembled and cutaway states`);
+
 

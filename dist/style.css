@@ -475,3 +475,7 @@ main{max-width:1920px;padding:0;margin:auto}
 @media(max-width:740px){.diagram-quick-play{display:inline-flex;align-items:center;background:#244acb;color:white;padding:9px 13px;min-height:44px;border-radius:3px;font-size:13px;margin:0 0 12px}}
 
 footer .author-link,footer .related-link{font-size:13px;min-height:44px;display:inline-flex;align-items:center}
+
+
+/* Assembly inspection stays beside the model and uses the existing controls. */
+.inspection-stages{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}.inspection-stages[hidden]{display:none}.inspection-stages button{min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}.inspection-stages button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}

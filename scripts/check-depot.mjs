@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import {createMechanicalDetails} from '../dist/mechanical-details.js';
+import {createEquipmentDetails} from '../dist/equipment-details.js';
+const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import * as electrificationHelpers from '../dist/electrification.js';
 /**
  * Headless scene/content contract check using Three.js and the actual shared
@@ -28,7 +31,8 @@ const materials = between('  const materials = new Map();', '  const ground = ')
 // Using the implementation itself catches missing helpers and actual geometry
 // failures instead of passing because a mock silently accepts the wrong call.
 const shared = between('  function startModel(', '  function registerAnimator(');
-const createHarness = new Function('THREE', 'electrificationHelpers', `
+const createHarness = new Function('THREE', 'electrificationHelpers','detailFactories',`
+ const {createMechanicalDetails,createEquipmentDetails}=detailFactories;
  const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
   ${colors}
   const compatibility = true;
@@ -42,7 +46,7 @@ const createHarness = new Function('THREE', 'electrificationHelpers', `
     torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,
     makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator } };
 `);
-const { models, api } = createHarness(THREE,electrificationHelpers);
+const { models, api } = createHarness(THREE,electrificationHelpers,detailFactories);
 const failures = [];
 let passed = 0;
 const check = (name, fn) => {
@@ -309,29 +313,25 @@ check('Yard work handover changes the destination and retains a separate station
  setScene('depot-yard','dispatch');assert.equal(namedVisible(record,'handover-stationary-vehicle').length,0);
  assert(blades.filter(n=>n.rotation.y!==0).every(n=>n.userData.roadIndex===0),'Departure uses the handover destination');
 });
-check('Brake test pads contact both disc faces, stay connected to their actuators, and release',()=>{
+check('Shared brake fixture contacts the annular friction faces, retains pushrod contact, and releases',()=>{
  const record=setScene('depot-components','brakes',{phase:0});
- const disc=namedVisible(record,'bench-brake-disc')[0],pads=namedVisible(record,'bench-brake-pad'),rods=namedVisible(record,'brake-test-pushrod');
- assert(disc);assert.equal(pads.length,2);assert.equal(rods.length,2);
- const discPosition=disc.getWorldPosition(new THREE.Vector3()).toArray();
- const gap=pad=>{
-  const p=new THREE.Box3().setFromObject(pad),d=new THREE.Box3().setFromObject(disc);
-  return pad.userData.side>0?p.min.z-d.max.z:d.min.z-p.max.z;
- };
- assert(pads.every(p=>gap(p)>.19));
+ const mechanism=namedVisible(record,'shared-disc-brake')[0],disc=namedVisible(record,'brake-disc-rotor')[0];
+ const pads=[...namedVisible(record,'brake-pad-carrier-1'),...namedVisible(record,'brake-pad-carrier--1')],rods=namedVisible(record,'brake-pad-pushrod');
+ assert(mechanism&&disc);assert.equal(pads.length,2);assert.equal(rods.length,2);assert.equal(mechanism.userData.detailContext,'depot');
+ const discPosition=disc.getWorldPosition(new THREE.Vector3()).toArray(),carrier=namedVisible(record,'brake-caliper-carrier')[0],carrierPose=carrier.position.toArray();
+ const bounds=n=>new THREE.Box3().setFromObject(n);
+ const gap=pad=>{const p=bounds(pad.children.find(n=>n.name==='brake-friction-pad')),d=bounds(namedVisible(record,'disc-friction-ring-'+pad.userData.side)[0]);return pad.userData.side>0?p.min.z-d.max.z:d.min.z-p.max.z;};
+ const released=pads.map(gap);assert(released.every(value=>value>0));
  for(const phase of [0,.625,1.25,1.875,2.5,3.125,3.75,4.375,5]){
   setScene('depot-components','brakes',{phase});
-  assert(pads.every(p=>gap(p)>-.00001),'Pad penetrates the stationary disc');
-  for(const pad of pads){
-   const side=pad.userData.side,rod=rods.find(n=>Math.sign(n.position.z)===side);
-   const p=new THREE.Box3().setFromObject(pad),r=new THREE.Box3().setFromObject(rod);
-   assert(Math.abs(side>0?r.min.z-p.max.z:r.max.z-p.min.z)<.00001,'Pushrod loses contact with pad');
-   assert(Math.abs(side>0?r.max.z-.615:r.min.z+.615)<.00001,'Pushrod leaves its fixed actuator face');
+  for(const pad of pads){assert(gap(pad)>-.00001,'Pad penetrates the friction face');const side=pad.userData.side,rod=rods.find(n=>n.userData.side===side),p=bounds(pad),r=bounds(rod);
+   assert(Math.abs(side>0?r.min.z-p.max.z:r.max.z-p.min.z)<.00001,'Pushrod loses contact with pad backing');
+   const anchor=mechanism.userData.brakeDimensions.discThickness*2;assert(Math.abs(side>0?r.max.z-anchor:r.min.z+anchor)<.00001,'Pushrod leaves fixed caliper anchor');
   }
-  assert.deepEqual(disc.getWorldPosition(new THREE.Vector3()).toArray(),discPosition);
+  assert.deepEqual(disc.getWorldPosition(new THREE.Vector3()).toArray(),discPosition);assert.deepEqual(carrier.position.toArray(),carrierPose,'Stationary reaction frame moves with application');
  }
  setScene('depot-components','brakes',{phase:2.5});assert(pads.every(p=>Math.abs(gap(p))<.00001));
- setScene('depot-components','brakes',{phase:5});assert(pads.every(p=>gap(p)>.19));
+ setScene('depot-components','brakes',{phase:5});pads.forEach((p,i)=>assert(Math.abs(gap(p)-released[i])<.00001));
 });
 check('Door leaves clear the doorway and closed feedback follows physical position',()=>{
  const record=setScene('depot-components','doors',{phase:0});
@@ -415,3 +415,4 @@ check('New motion descriptions and maintenance article have valid public-source 
 });
 console.log(`${passed} checks passed, ${failures.length} failed.`);
 if(failures.length)process.exitCode=1;
+

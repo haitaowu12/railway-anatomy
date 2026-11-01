@@ -113,6 +113,55 @@ viewer.setExplodeScope('selected'); viewer.setExploded(1);
 const primary = activeRoot().getObjectByName('lim-primary');
 assert.equal(primary.position.y, .92, 'An isolated primary translated as a whole instead of separating its interior');
 assert(viewer.getVisibleComponentIds().every(id => id === 'lim-primary'));
+// Staged inspection is derived from the assembled transforms. Early stages
+// leave later internals in place; scrubbing backwards must reassemble them.
+viewer.setExploded(0);
+const coreStart=position('primary-laminated-core'),windingStart=position('primary-winding-groups');
+viewer.setExploded(.3);
+assert(position('primary-laminated-core').distanceTo(coreStart)<1e-8,'The core moved before its inspection stage');
+assert(position('primary-winding-groups').distanceTo(windingStart)<1e-8,'Windings moved before their inspection stage');
+viewer.setExploded(.65);
+assert(position('primary-laminated-core').distanceTo(coreStart)>.19,'The core stage did not finish');
+assert(position('primary-winding-groups').distanceTo(windingStart)<1e-8,'Windings moved before the final inspection stage');
+viewer.setExploded(1);viewer.setExploded(.3);
+assert(position('primary-winding-groups').distanceTo(windingStart)<1e-8,'Reverse scrubbing accumulated an inspection offset');
+assert.deepEqual(viewer.getExplorationCapabilities().inspectionStages.map(stage=>stage.end),[.3,.65,1]);
+viewer.restoreExploration();
+assert.equal(viewer.getExplorationState().exploded,0,'Restore left parts separated');
+assert.equal(viewer.getExplorationState().isolation,null,'Restore left the scene isolated');
+assert.equal(viewer.getExplorationState().explodeScope,'all');
+assert(position('primary-winding-groups').distanceTo(windingStart)<1e-8);
+viewer.setPlaying(true);assert(viewer.inspectAssembly('lim-primary'));
+assert.equal(viewer.getPlaying(),false,'Inspection must pause the mechanism');
+assert.equal(viewer.getExplorationState().explodeScope,'selected');
+assert.equal(viewer.getExplorationState().focused,'lim-primary');
+assert.equal(viewer.getExplorationState().exploded,1);
+assert.equal(viewer.getCutaway(),false,'Inspection must retain displaced covers instead of hiding them');
+viewer.restoreExploration();
+viewer.setView('power-transformer');viewer.setSelected('transformer');viewer.setCutaway(false);
+assert(viewer.inspectAssembly('transformer'));
+assert(viewer.getExplorationCapabilities().pieceNames.includes('Front cover'));
+viewer.setExploded(.35);
+assert.equal(activeRoot().getObjectByName('transformer-primary-winding').position.length(),0,'Transformer windings moved with the enclosure');
+viewer.restoreExploration();
+viewer.setView('bogie');viewer.setTechnology({propulsion:'rotary',control:'loop'});viewer.setCutaway(true);
+const gears=[];activeRoot().traverse(node=>{if(node.userData.gearToothCount)gears.push(node);});
+assert.equal(gears.length,2);
+assert.deepEqual(gears.map(node=>node.userData.gearToothCount),[24,12]);
+const [largeGear,pinion]=gears;
+assert(Math.abs(2*largeGear.userData.gearPitchRadius/24-2*pinion.userData.gearPitchRadius/12)<1e-12,'Gear teeth do not share a module');
+viewer.setPhase(0);const angles=gears.map(node=>node.rotation.z);viewer.setPhase(1);
+const turns=gears.map((node,index)=>node.rotation.z-angles[index]);
+assert(turns[0]*turns[1]<0&&Math.abs(turns[1]/turns[0]+2)<1e-10,'External gear speed ratio disagrees with its tooth counts');
+assert.equal(largeGear.userData.gearProfile,'schematic, not involute');
+// A front-facing ray reaches a gear after opening the cover. The housing
+// cannot be a solid block that conceals all the purported internal detail.
+const gearbox=activeRoot().getObjectByName('traction-gearbox');activeRoot().updateWorldMatrix(true,true);
+const rayOrigin=gearbox.localToWorld(new THREE.Vector3(.1,0,2));
+const rayDirection=new THREE.Vector3(0,0,-1).transformDirection(gearbox.matrixWorld);
+const gearRay=new THREE.Raycaster(rayOrigin,rayDirection),hits=gearRay.intersectObject(gearbox,true).filter(hit=>exploration.nodeVisible(hit.object));
+assert(hits.length&&exploration.within(hits[0].object,largeGear),'The opened gearbox still hides its gears behind a solid housing');
+viewer.setView('lim');
 viewer.setPhase(5); assert.equal(viewer.getPhase(), 5, 'The manual end-of-cycle position wrapped to zero');
 viewer.setIsolation(null);
 assert(viewer.getVisibleComponentIds().includes('reaction-rail'));
@@ -128,7 +177,9 @@ assert.equal(openBas.internalSeparationCount,closedBas.internalSeparationCount-1
 const bas=activeRoot().getObjectByName('bas-controller'),basOrigin=bas.getWorldPosition(new THREE.Vector3());
 const basPieces=['rtu-processor-module','digital-input-card','analogue-input-card','rtu-power-module','rtu-field-terminal-strip'];
 const basBefore=new Map(basPieces.map(name=>[name,position(name)]));
-viewer.setExplodeScope('selected');viewer.setExploded(.6);
+viewer.setExplodeScope('selected');viewer.setExploded(.3);
+for(const name of basPieces.filter(name=>name!=='rtu-field-terminal-strip'))assert(position(name).distanceTo(basBefore.get(name))<1e-8,`${name} moved before the working-module inspection stage`);
+viewer.setExploded(1);
 for(const name of basPieces)assert(position(name).distanceTo(basBefore.get(name))>.1,`${name} did not physically separate from the BAS assembly`);
 assert(bas.getWorldPosition(new THREE.Vector3()).distanceTo(basOrigin)<1e-8,'BAS inspection translated the entire enclosure');
 assert.equal(activeRoot().getObjectByName('rtu-cabinet-cover').position.length(),0,'A hidden BAS cover received an invisible displacement');
@@ -159,6 +210,10 @@ const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', '
 const savedController = { view: 'station-networks', domain: 'station', component: 'bas-controller', variant: 'building',
   technology: { propulsion: 'lim', control: 'loop' }, mode: 'coasting', scenario: 'nominal', sink: 'train',
   cutaway: false, exploded: .6, explodeScope: 'selected', playing: false };
+synchronize(savedController);
+const savedCoverPosition=activeRoot().getObjectByName('rtu-cabinet-cover').position.clone();
+const savedProcessorPosition=activeRoot().getObjectByName('rtu-processor-module').position.clone();
+assert(savedCoverPosition.length()>.5,'The saved inspection did not open its enclosure');
 const laterScene = { ...savedController, view: 'lim', domain: 'vehicle', component: 'lim-primary', variant: 'default',
   cutaway: true, exploded: 0, explodeScope: 'all' };
 synchronize(laterScene);
@@ -166,13 +221,15 @@ const restoredController = synchronize(savedController, true);
 assert.equal(restoredController.explodeScope, 'selected', 'Restoring a covered assembly changed selected scope into whole-scene separation');
 assert.equal(viewer.getExplorationState().exploded, .6);
 assert(syncCalls.lastIndexOf('setCutaway')<syncCalls.lastIndexOf('setExplodeScope'),'Production synchronization validates separation before applying the restored cutaway');
-assert(Math.abs(activeRoot().getObjectByName('rtu-cabinet-cover').position.z - .6) < 1e-8,
+assert(activeRoot().getObjectByName('rtu-cabinet-cover').position.distanceTo(savedCoverPosition) < 1e-8,
   'The restored BAS cover did not receive its saved physical displacement');
 const hiddenCover = synchronize({ ...savedController, cutaway: true });
 assert.equal(hiddenCover.explodeScope,'selected','Opening a cover discarded valid internal separation');
 assert.equal(viewer.getExplorationState().exploded,.6,'Opening the BAS cover erased the requested internal separation');
+assert.equal(viewer.getCutaway(),true,'Staged-bookmark camera setup overrode the requested cutaway');
+assert(!exploration.nodeVisible(activeRoot().getObjectByName('rtu-cabinet-cover')),'The requested hidden BAS cover is still visible');
 assert.equal(activeRoot().getObjectByName('rtu-cabinet-cover').position.length(),0,'The hidden cover retained an invisible separation offset');
-assert(Math.abs(activeRoot().getObjectByName('rtu-processor-module').position.x-(-.99-.7*.6))<1e-8,'The restored open BAS panel failed to separate its processor');
+assert(activeRoot().getObjectByName('rtu-processor-module').position.distanceTo(savedProcessorPosition)<1e-8,'The restored open BAS panel failed to retain its processor stage');
 const leaf=synchronize({...savedController,component:'scada-output-module',cutaway:true},true);
 assert.equal(leaf.explodeScope,'all','A context-only leaf falsely offered internal separation');
 assert.equal(viewer.getExplorationState().exploded,0,'Rejecting a selected separator promoted its amount to whole-scene separation');
@@ -210,3 +267,4 @@ viewer.setView('system');
 assert.equal(backdrop.position.y,-.27,'The infrastructure backdrop offset leaked into another scene');
 viewer.dispose();
 console.log('PASS exploration: actual selected-assembly geometry, isolation/technology visibility, production restore order, phase composition, stale-state resets, visible bounds, duplicate-instance tags, 12 perspective fits and below-datum backdrop clearance');
+

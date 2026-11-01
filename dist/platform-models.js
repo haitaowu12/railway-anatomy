@@ -1,3 +1,4 @@
+import {createEquipmentDetails} from './equipment-details.js';
 /* Generic teaching geometry. Dimensions and timing are authored for legibility.
  * The physical edge, sensing example and mechanism in focus are independent. */
 import { normalizePlatformState, platformDoorPose, platformDetectionPose, platformGatePose } from './platform-config.js';
@@ -21,7 +22,7 @@ export const PLATFORM_GEOMETRY = Object.freeze({
 // propulsion, train-control or electrification equipment and no train cutaway.
 export function createPlatformAssemblies(api) {
   const { THREE, M, mat, group, part, box, cylinder, shell, explode } = api;
-  const D = PLATFORM_GEOMETRY;
+  const D = PLATFORM_GEOMETRY, E=createEquipmentDetails(api);
   const P = {
     pale: mat(0xd5ddd5, .72, .08), dark: mat(0x253c44, .72, .16),
     floor: mat(0x9aa9a5, .88, .03), trim: mat(0x66858a, .60, .28),
@@ -30,7 +31,7 @@ export function createPlatformAssemblies(api) {
     glass: new THREE.MeshStandardMaterial({color:0xa6c8c8,roughness:.24,metalness:.08,transparent:true,opacity:.28,side:THREE.DoubleSide}),
   };
   const anchor = (node, at) => { node.userData.labelAnchor = new THREE.Vector3(...at); return node; };
-  const separate=(node,delta,label)=>{node.userData.explorationLabel=label;explode(node,delta);};
+  const separate=(node,delta,label)=>E.separate(node,label,delta,{sources:['N04','N05'],stage:/cover/i.test(label)?'Open drive enclosure':/controller|contact|bolt/i.test(label)?'Control and feedback':'Transmission and leaf',range:/cover/i.test(label)?[0,.3]:/controller|contact|bolt/i.test(label)?[.3,.65]:[.6,1]});
   function indicator(parent, name, at, material = P.cyan, radius=.055) {
     const g = group(parent, name, at);
     const off = cylinder(g, radius, .022, P.muted, [0,0,0], [Math.PI/2,0,0], 10);
@@ -109,6 +110,7 @@ export function createPlatformAssemblies(api) {
     g.userData.explorationAssembly='platform-door-drive';
     const pulleys=[], racks=[];
     if(full){
+      const guide=E.inspect(group(g,'door-fixed-hanger-track',[0,-.10,-side*.13]),'Fixed hanger track',{sources:['N04'],description:'The fixed guide supports the moving carriages; it does not travel with the leaf.'});box(guide,[2.65,.055,.08],M.steel);
       box(g,[2.5,.16,.18],P.dark);
       const transmission=group(g,'door-belt-and-pulleys');
       for(const x of [-1.02,1.02]){
@@ -149,6 +151,8 @@ export function createPlatformAssemblies(api) {
         if(detailed){shell(cover);separate(cover,[direction*.55,.5,side*.7],'Side-post cover');}
       }
     }
+    const terminalBank=E.terminalStrip(g,{name:'door-controller-terminals',at:[full?.57:-1.23,full?.14:.25,-side*.19],labels:['Supply','Request','Position return','Lock return'],kind:'information',sources:['N04','N05']});if(!full)terminalBank.scale.setScalar(.32);
+    E.paths(g,[{id:'door-actuation',label:'Request to leaf motion',description:full?'The controller drives the motor, belt and pulley transmission; fixed guides support the moving leaves.':'The selected half-height facade uses side-post drives, with no header across the opening.',steps:[{label:'Interface terminals',nodeName:'door-controller-terminals'},{label:'Drive',nodeName:full?'door-drive-motor':'half-height-side-post-drive'},{label:'Transmission',nodeName:full?'door-belt-and-pulleys':'half-height-leaf-rack'}],sources:['N04','N05']}]);
     const request=indicator(g,'door-open-request',[full?.88:-1.23,full?.11:.2,side*.29],P.amber);
     return {node:g,pulleys,racks,request,set(pose){
       for(const p of pulleys)p.rotation.z=-pose.opening*D.travel/(full?.105:.085);
@@ -168,6 +172,8 @@ export function createPlatformAssemblies(api) {
     const closed=indicator(g,'door-closed-indication',[-.25,.02,side*.13]);
     const locked=indicator(g,'door-locked-indication',[.30,.02,side*.13],P.amber);
     if(detailed){separate(contact,[-.35,.25,side*.4],'Closed-position contact');separate(bolt,[.2,.45,side*.35],'Lock bolt');}
+    E.inspect(magnet,'Leaf-mounted position target',{sources:['N05'],description:'The target travels with leaf position; the contact is mounted to the fixed frame.'});E.inspect(keeper,'Lock keeper',{sources:['N05']});
+    E.paths(g,[{id:'door-evidence',label:'Position and lock evidence',description:'The target/contact pair describes closed position; the bolt and locking indication are separate.',steps:[{label:'Moving target',nodeName:'door-leaf-contact-target'},{label:'Closed contact',nodeName:'door-closed-contact'},{label:'Lock bolt',nodeName:'door-lock-bolt'},{label:'Keeper',nodeName:'door-lock-keeper'},{label:'Returned indication',nodeName:'door-locked-indication'}],sources:['N05']}]);
     return {node:g,bolt,magnet,closed,locked,set(pose){
       bolt.position.y=.03+(1-pose.lock)*.23;
       keeper.position.x=.12+keeperDirection*pose.opening*D.travel;
@@ -189,7 +195,9 @@ export function createPlatformAssemblies(api) {
       box(facade,[b-a,height-.12,.045],P.glass,[(a+b)/2,D.floor+height/2,side*D.facade]);
       for(const y of [D.floor+.08,D.floor+height])box(facade,[b-a,.07,.11],M.steel,[(a+b)/2,y,side*D.facade]);
       const pieces=Math.max(1,Math.ceil((b-a)/2));
-      for(let j=0;j<=pieces;j++)box(facade,[.07,height,.12],M.steel,[a+(b-a)*j/pieces,D.floor+height/2,side*D.facade]);
+      for(let j=0;j<=pieces;j++){const x=a+(b-a)*j/pieces;box(facade,[.07,height,.12],M.steel,[x,D.floor+height/2,side*D.facade]);
+        const mount=E.inspect(group(facade,'facade-post-base',[Math.max(a+.08,Math.min(b-.08,x)),D.floor+.025,side*D.facade]),'Fixed post base and anchors',{sources:['N03'],description:'Mounting stays within the fixed panel span; no anchor pattern or structural design is prescribed.'});box(mount,[.16,.045,.20],M.steel);for(const dx of [-.05,.05])for(const dz of [-.06,.06])cylinder(mount,.013,.05,M.core,[dx,.025,dz],null,8);
+      }
     }
     for(const cx of doorCenters){
       if(height>2){
@@ -203,6 +211,8 @@ export function createPlatformAssemblies(api) {
         for(const dx of [-.44,.44])box(leaf,[.035,leafHeight+.035,.075],M.steel,[dx,0,0]);
         for(const y of [-leafHeight/2,leafHeight/2])box(leaf,[.9,.045,.075],M.steel,[0,y,0]);
         box(leaf,[.035,leafHeight,.08],P.dark,[-direction*.44,0,0]);
+        if(height>2){const hanger=E.inspect(group(leaf,'door-leaf-hanger',[0,leafHeight/2+.07,-side*.09]),'Moving leaf hanger and rollers',{sources:['N04'],description:'The carriage follows the leaf along the fixed guide.'});box(hanger,[.36,.08,.10],M.steel);for(const dx of [-.12,.12])cylinder(hanger,.045,.05,P.trim,[dx,.045,0],[Math.PI/2,0,0],12);}
+        E.inspect(leaf,'Sliding door leaf',{stage:'Transmission and leaf',range:[.6,1],sources:['N03','N04']});
         if(detailed)separate(leaf,[direction*.2,.15,side*.45],'Sliding leaf');
         leaves.push({node:leaf,x,direction,cx});
       }
@@ -367,4 +377,5 @@ export function buildPlatformView(id,api) {
   registerAnimator(update);update({variant:'open-platform',phase:0,platformEdge:'open',platformSensor:'lidar',signals:true});
   return root;
 }
+
 

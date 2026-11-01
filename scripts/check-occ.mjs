@@ -1,9 +1,13 @@
 #!/usr/bin/env node
+import {createMechanicalDetails} from '../dist/mechanical-details.js';
+import {createEquipmentDetails} from '../dist/equipment-details.js';
+const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import * as electrificationHelpers from '../dist/electrification.js';
 // Exercise actual OCC builders with the viewer's primitives, without a DOM.
 // These checks verify teaching distinctions and geometry, not rendering quality
 // or the correctness of an operational control system.
 import assert from 'node:assert/strict';
+import {explorationCapabilities,separationEntries} from '../dist/exploration.js';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
@@ -17,7 +21,8 @@ const sources=catalog.SOURCES.map(s=>({...s})),concepts=catalog.CONCEPTS.map(c=>
 data.applyOccCatalog(sources,concepts);
 const source=await readFile(path.join(dist,'viewer.js'),'utf8');
 const between=(a,b)=>{const x=source.indexOf(a),y=source.indexOf(b,x+a.length);assert(x>=0&&y>x,`Viewer helper marker changed: ${a}`);return source.slice(x,y);};
-const harness=new Function('THREE','electrificationHelpers',`
+const harness=new Function('THREE','electrificationHelpers','detailFactories',`
+ const {createMechanicalDetails,createEquipmentDetails}=detailFactories;
  const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
  ${between('const C = {','\nconst VIEW')}
  const compatibility=true,scene=new THREE.Scene(),models=new Map();let building;
@@ -26,7 +31,7 @@ const harness=new Function('THREE','electrificationHelpers',`
  function registerAnimator(fn){building.animators.push(fn);}
  return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator}};
 `);
-const {models,api}=harness(THREE,electrificationHelpers);
+const {models,api}=harness(THREE,electrificationHelpers,detailFactories);
 for(const id of Object.keys(occ.OCC_VIEWS))occ.buildOccView(id,api);
 const visible=node=>{for(let p=node;p;p=p.parent)if(!p.visible)return false;return true;};
 function set(view,variant,{phase=0,playing=false,signals=true,cutaway=true}={}){
@@ -136,4 +141,18 @@ check('Monitor, computing, network and UPS assemblies have independently movable
   for(const name of names){const n=nodes(r,name)[0];assert(n,view+': '+name);const registration=r.exploded.find(e=>e.node===n);assert(registration&&registration.delta.length()>.1,name+': no authored separation');}
  }
 });
+check('OCC inspection names removable hardware and distinguishes local and remote computing',()=>{
+ for(const [view,config]of Object.entries(data.OCC_VIEW_DATA))for(const variant of config.variants){
+  const r=set(view,variant.id,{cutaway:false});
+  for(const {node}of separationEntries(r))assert(node.userData.explorationLabel?.trim(),`${view}/${variant.id}: unnamed removable piece ${node.name}`);
+ }
+ const local=set('occ-workplace','task',{cutaway:false});
+ assert.deepEqual(explorationCapabilities(local,'occ-client-computer').pieceNames,['Client computer cover','Client computer board']);
+ const monitor=explorationCapabilities(local,'occ-task-display').pieceNames;
+ for(const name of ['Monitor rear enclosure','Monitor controller board','Monitor power board','LCD panel'])assert(monitor.includes(name));
+ const remote=set('occ-workplace','shared',{cutaway:false});
+ assert.deepEqual(explorationCapabilities(remote,'occ-kvm-interface').pieceNames,['KVM receiver cover','KVM interface board']);
+ assert(!explorationCapabilities(remote,'occ-console').pieceNames.includes('Client computer board'),'Remote console exposes hidden local-computer contents');
+});
 console.log('\n'+passed+' passed; '+failures.length+' failed.');if(failures.length)process.exitCode=1;
+

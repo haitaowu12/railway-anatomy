@@ -79,7 +79,14 @@ export function componentBounds(record) {
   return result;
 }
 
-export function assemblyRoots(record, componentId) {
+export function assemblyRoots(record, componentId, { instanceId = null, selectedInstanceId = instanceId, allInstances = false } = {}) {
+  const instance = selectedInstanceId && record?.instances?.get(selectedInstanceId);
+  if (instance && (!componentId || instance.userData.conceptId === componentId)) {
+    if(!allInstances)return hasVisibleGeometry(instance) ? [instance] : [];
+    const kind=instance.userData.inspectionKind||instance.userData.explorationLabel||instance.name;
+    const matching=[...record.instances.values()].filter(node=>node.userData.conceptId===instance.userData.conceptId&&(node.userData.inspectionKind||node.userData.explorationLabel||node.name)===kind&&hasVisibleGeometry(node));
+    return matching.filter(root=>!matching.some(other=>other!==root&&within(root,other)));
+  }
   const roots = [];
   for (const part of record?.parts.get(componentId) || []) {
     if (!hasVisibleGeometry(part)) continue;
@@ -97,10 +104,10 @@ export function restoreIsolation(record) {
   if (record) record.explorationMask = null;
 }
 
-export function applyIsolation(record, componentId) {
+export function applyIsolation(record, componentId, options = {}) {
   restoreIsolation(record);
   if (!componentId) return true;
-  const roots = assemblyRoots(record, componentId);
+  const roots = assemblyRoots(record, componentId, options);
   if (!roots.length) return false;
   const mask = new Map();
   function visit(node) {
@@ -117,10 +124,10 @@ export function applyIsolation(record, componentId) {
   return true;
 }
 
-export function separationEntries(record, { componentId = null, isolation = null } = {}) {
+export function separationEntries(record, { componentId = null, isolation = null, selectedInstanceId = null, allInstances = false, isolationInstanceId = null } = {}) {
   if (!record) return [];
-  const roots = componentId ? assemblyRoots(record, componentId) : [record.root];
-  const isolatedRoots = isolation ? assemblyRoots(record, isolation) : [];
+  const roots = componentId ? assemblyRoots(record, componentId, { selectedInstanceId, allInstances }) : [record.root];
+  const isolatedRoots = isolation ? assemblyRoots(record, isolation, { instanceId: isolationInstanceId, allInstances }) : [];
   return record.exploded.filter(entry => entry.delta.lengthSq() > 0 &&
     roots.some(root => within(entry.node, root)) &&
     !isolatedRoots.includes(entry.node) &&
@@ -142,15 +149,23 @@ export function viewSeparationCapabilities(record, options = {}) {
   return {explode:internal.length>0,internalParts:internal.length,contextParts:entries.length-internal.length};
 }
 
-export function explorationCapabilities(record, componentId, { isolation = null } = {}) {
-  const roots = assemblyRoots(record, componentId);
-  const entries = roots.length ? separationEntries(record, { componentId, isolation }) : [];
+export function explorationCapabilities(record, componentId, options = {}) {
+  const { isolation = null } = options;
+  const roots = assemblyRoots(record, componentId, options);
+  const entries = roots.length ? separationEntries(record, { ...options, componentId, isolation }) : [];
   const visible = roots.length > 0;
   let outside = false;
   if (visible) record.root.traverseVisible(node => {
     if (renderable(node) && !roots.some(root => within(node, root))) outside = true;
   });
   const internal = entries.filter(entry => !roots.includes(entry.node));
+  const stages = new Map();
+  for (const { node } of internal) {
+    const range = node.userData.inspectionRange, label = node.userData.inspectionStage;
+    if (label && validInspectionRange(range)) stages.set(`${range[0]}:${range[1]}:${label}`, { label, start: range[0], end: range[1] });
+  }
+  const authored=roots.flatMap(root=>root.userData.inspectionRecipe||[]).filter(stage=>stage.label&&validInspectionRange([stage.start,stage.end]));
+  if(authored.length){stages.clear();for(const stage of authored)stages.set(`${stage.start}:${stage.end}:${stage.label}`,{...stage});}
   return {
     componentId: componentId || null,
     anchorId: componentId || null,
@@ -163,7 +178,24 @@ export function explorationCapabilities(record, componentId, { isolation = null 
     contextSeparationCount: entries.length - internal.length,
     instanceCount: roots.length,
     pieceNames: [...new Set(internal.map(entry => entry.node.userData.explorationLabel).filter(Boolean))],
+    inspectionStages: [...stages.values()].sort((a, b) => a.start - b.start || a.end - b.end),
   };
+}
+
+function validInspectionRange(range) {
+  return Array.isArray(range) && range.length === 2 && range.every(Number.isFinite) &&
+    range[0] >= 0 && range[1] <= 1 && range[1] > range[0];
+}
+
+// A selected-assembly recipe is an authored teaching layout, not a maintenance
+// removal procedure. Unauthored parts and whole-view separation retain their
+// existing linear movement. Each range interpolates from the assembled state.
+export function separationProgress(entry, amount, staged = true, overrideRange = null) {
+  const fraction = MathUtils.clamp(Number(amount) || 0, 0, 1);
+  const range = overrideRange || entry.node.userData.inspectionRange;
+  if (!staged || !validInspectionRange(range)) return fraction;
+  const local = MathUtils.clamp((fraction - range[0]) / (range[1] - range[0]), 0, 1);
+  return local * local * (3 - 2 * local);
 }
 
 // Remove only the displacement we applied. Animators and builder-authored
@@ -177,15 +209,18 @@ export function restoreSeparation(record) {
   }
 }
 
-export function applySeparation(record, { amount = 0, scope = 'all', componentId = null, isolation = null } = {}) {
+export function applySeparation(record, { amount = 0, scope = 'all', componentId = null, isolation = null, selectedInstanceId = null, allInstances = false, isolationInstanceId = null } = {}) {
   restoreSeparation(record);
   const fraction = MathUtils.clamp(Number(amount) || 0, 0, 1);
   if (!fraction) return;
-  const fixedRoots=scope==='selected'?assemblyRoots(record,componentId):[];
-  for (const entry of separationEntries(record, { componentId: scope === 'selected' ? componentId : null, isolation })) {
+  const options = { selectedInstanceId, allInstances, isolationInstanceId };
+  const fixedRoots=scope==='selected'?assemblyRoots(record,componentId,options):[];
+  for (const entry of separationEntries(record, { ...options, componentId: scope === 'selected' ? componentId : null, isolation })) {
     if(fixedRoots.includes(entry.node))continue;
     if (!entry.explorationOffset) entry.explorationOffset = new Vector3();
-    entry.explorationOffset.copy(entry.delta).multiplyScalar(fraction);
+    const owner=fixedRoots.find(root=>within(entry.node,root));
+    const recipeRange=owner&&entry.inspectionOwnerRanges?.get(owner);
+    entry.explorationOffset.copy(entry.delta).multiplyScalar(separationProgress(entry, fraction, scope === 'selected',recipeRange));
     entry.node.position.add(entry.explorationOffset);
   }
 }
@@ -242,9 +277,10 @@ export function screenPositions(boundsByComponent, camera, anchorInstances = nul
       if(!chosen)continue;
       anchorInstances?.set(id,chosen.node);
       const { area, node, ...position } = chosen;
-      position.instanceId=node?.uuid;
+      position.instanceId=node?.userData?.instanceId || node?.uuid;
       result.push(position);
     }
   }
   return result;
 }
+

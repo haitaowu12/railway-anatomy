@@ -133,7 +133,9 @@ for(const [view,id,pieces]of [
   const cap=viewer.getExplorationCapabilities();assert(cap.canExplodeSelected&&cap.internalSeparationCount>=pieces.length,`${view}: no real internal assembly`);
   const assembly=find(id)[0],origin=assembly.getWorldPosition(new THREE.Vector3());
   const before=new Map(pieces.map(piece=>[piece,find(piece)[0].getWorldPosition(new THREE.Vector3())]));
-  viewer.setExplodeScope('selected');viewer.setExploded(.7);
+  // At full inspection every authored stage has completed. Intermediate
+  // amounts deliberately retain later winding/device groups in place.
+  viewer.setExplodeScope('selected');viewer.setExploded(1);
   assert(assembly.getWorldPosition(new THREE.Vector3()).distanceTo(origin)<1e-8,`${view}: selected assembly root translated`);
   for(const piece of pieces)assert(find(piece)[0].getWorldPosition(new THREE.Vector3()).distanceTo(before.get(piece))>.15,`${view}: ${piece} did not separate`);
   viewer.setIsolation(id);assert(viewer.getViewCapabilities().internalParts>=pieces.length,`${view}: isolated internals vanished`);
@@ -182,3 +184,4 @@ map=new Map([['repeated',[{node:a,bounds:box(-1,.25)},{node:b,bounds:box(1,.6)}]
 assert.equal(exploration.screenPositions(map,camera,anchors)[0].instanceId,first.instanceId,'Label anchor jumped to a different physical instance');
 viewer.dispose();
 console.log(`PASS electrification: ${cases} profile/propulsion/view cases; contact alignment; separate AC circuits; braking destination; real internal separation; profile resets; stable anchors.`);
+

@@ -1,3 +1,4 @@
+import {createEquipmentDetails} from './equipment-details.js';
 import { normalizeElectrification } from './electrification.js';
 // Public-source architecture, original qualitative geometry. Supply ratings,
 // clearances, protection coordination and operating procedures are not modeled.
@@ -10,13 +11,13 @@ export const POWER_CAMERAS={
 export function buildPowerView(id,api){
   if(!POWER_CAMERAS[id])return null;
   const {M,startModel,group,box,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,registerAnimator}=api;
-  const root=startModel(id);box(root,[6.2,.18,5.0],M.deck,[0,-.12,0]);
-  if(id==='power-transformer')makePowerTransformer(root,'transformer',[0,0,0],1.35);
-  if(id==='power-rectifier')makePowerRectifier(root,'rectifier',[0,0,0],1.45);
+  const root=startModel(id),E=createEquipmentDetails(api);box(root,[6.2,.18,5.0],M.deck,[0,-.12,0]);
+  if(id==='power-transformer')E.powerInterfaces(makePowerTransformer(root,'transformer',[0,0,0],1.35),{kind:'transformer'});
+  if(id==='power-rectifier')E.powerInterfaces(makePowerRectifier(root,'rectifier',[0,0,0],1.45),{kind:'rectifier'});
   if(id==='power-switchgear'){
     const ac=group(root,'ac-switchgear-detail'),dc=group(root,'dc-switchgear-detail');
-    makePowerSwitchgear(ac,'ac-switchgear',[0,0,0],{scale:1.5});
-    makePowerSwitchgear(dc,'dc-switchgear',[0,0,0],{dc:true,scale:1.5});
+    E.powerInterfaces(makePowerSwitchgear(ac,'ac-switchgear',[0,0,0],{scale:1.5}),{kind:'switchgear'});
+    E.powerInterfaces(makePowerSwitchgear(dc,'dc-switchgear',[0,0,0],{dc:true,scale:1.5}),{kind:'switchgear',dc:true});
     registerAnimator(s=>{ac.visible=s.variant==='ac';dc.visible=s.variant!=='ac';});ac.visible=false;
   }
   return root;
@@ -50,3 +51,4 @@ export function buildElectrificationView(api){
   }
   return root;
 }
+
