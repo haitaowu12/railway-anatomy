@@ -1266,8 +1266,13 @@ export function createViewer(container, callbacks = {}) {
   }
   function setExplodeScope(scope) {
     const selected = scope === 'selected' && explorationCapabilities(models.get(state.view), state.selected, state).canExplodeSelected;
-    state.explodeScope = selected ? 'selected' : 'all';
-    animateModel(); fitToView(); controls.update(); requestRender(); return state.explodeScope;
+    const next = selected ? 'selected' : 'all', changed = state.explodeScope !== next;
+    state.explodeScope = next;
+    animateModel();
+    // App synchronization repeats this setter during selection and scenarios.
+    // Only a change of effective scope needs new framing.
+    if (changed) { fitToView(); controls.update(); }
+    requestRender(); return state.explodeScope;
   }
   function setCameraPreset(id = 'isometric') {
     if (id === 'isometric') return resetCamera();
