@@ -31,7 +31,7 @@ In a model, select equipment to inspect it, frame it or isolate its visible asse
 
 Use the six **Connected studies** workspaces to follow vehicle, energy, track, station, information or maintenance questions. The **Assembly anatomy** panel keeps an individual part, its parent assembly, inspection recipe, physical path and sources together. Expand a branch or search for a covered bearing, terminal or casing; technology alternatives stay outside the current configuration. **Study & check** pairs anatomy questions with applied calculations and evidence cases.
 
-Use **Find a view** to search places and systems, or **Browse by system** for the original area navigation. On a phone, **Browse railway** opens that same hierarchy. The inspection dock keeps a numbered part selector, equipment search and the selected explanation together; **Show parts list** opens the complete key.
+Use **Find anything** (or `/` / `Ctrl+K`) to jump directly to a view, component, process, interface or tour. The sidebar groups the current study into visible sections, and **Jump to view** plus previous/next controls make adjacent topics reachable. **Find a railway view** filters the local hierarchy; **Browse by system** retains the original area navigation. On a phone, **Browse railway** opens that same hierarchy. The inspection dock keeps a numbered part selector, equipment search and the selected explanation together; **Show parts list** opens the complete key.
 
 The railway also has systems that cross physical boundaries. Power supply reaches trains and stations; communications connect endpoints in several locations; train control combines onboard, trackside and control-centre functions. The navigation and cross-links preserve these relationships instead of giving each component only one place in a rigid tree.
 
@@ -62,7 +62,17 @@ At a platform, choose the **physical edge** independently of the mechanism being
 
 The OCC equipment views cover the **room, console and technical room**. An information diagram follows requests, interface receipt and returned observations between their actual locations. Roles, incident coordination and duty handover remain in People & processes. This helps distinguish equipment that carries or presents information from the operational decisions made with it.
 
+### Control, supervision and optional integration
+
+The **Interfaces** workspace separates 14 responsibilities, including power SCADA, BAS/BMS, tunnel ventilation, station smoke control, fire detection, drainage, platform doors, signalling and communications. A local controller, its native supervisory application, the transport path and an optional common station view have distinct roles. Sharing a software platform does not make them one control function.
+
+Compare separate supervision, shared status summaries and selected supervisory requests. Change each function’s common-view connection independently: **not connected**, **monitoring only**, or **selected requests plus monitoring** where the declared function allows it. Follow an indication or a request through normal, lost-link, local-control and missing-feedback conditions. The outcome keeps a command request, its receipt, its acceptance and the observed equipment state separate.
+
+Public project examples show why these allocations vary. Crossrail’s published BMS narrative, MTR’s environmental-control scope and Melbourne’s TVCS/BMS interim-design scope describe different boundaries. The explorer’s patterns are original teaching examples; they do not claim to reproduce these installations.
+
 ### People and responsibilities
+
+Eight process studies cover configuration, acceptance, worksite handback, maintenance release, duty handover, event coordination, infrastructure inspection and work-protection interfaces. These use 2D maps; structural assets remain in a separate physical inspection view. Accessible journeys, shared dependencies and test evidence use diagrams that show missing paths or evidence explicitly.
 
 Representative roles connect control-centre, station, onboard, depot, engineering and maintenance work. Process maps show inputs, contributions, outputs, review questions and possible rework. They distinguish, for example, a completed maintenance activity from a decision about returning a vehicle to operation.
 
@@ -106,21 +116,23 @@ After changing catalog explanations, guides or sources, regenerate the static re
 npm run reading
 ```
 
-Automated checks cover content references, routes, model construction and selected behavioural invariants. Changes to presentation or interaction also need inspection in a browser. Record the viewport, renderer and journeys actually checked; a passing script does not establish visual quality on every device. The [revision 8 release record](docs/REVISION-8.md) maps the assembly, rendering, consolidation and applied-study work to its verification scope. The [revision 7 review](docs/REVISION-7.md) retains its earlier layout comparison and screenshots. The [revision 6 review](docs/REVISION-6.md) remains available for its earlier baseline. Historical review records in `docs/` describe their own revisions and scope.
+Automated checks cover content references, routes, model construction and selected behavioural invariants. Changes to presentation or interaction also need inspection in a browser. Record the viewport, renderer and journeys actually checked; a passing script does not establish visual quality on every device. The [revision 9 correction record](docs/REVISION-9.md), [complete representation inventory](docs/REPRESENTATION-AUDIT.md) and [control-interface review](docs/CONTROL-INTERFACES.md) describe the current changes and their evidence. The [revision 8 release record](docs/REVISION-8.md) maps the assembly, rendering, consolidation and applied-study work to its verification scope. The [revision 7 review](docs/REVISION-7.md) retains its earlier layout comparison and screenshots. The [revision 6 review](docs/REVISION-6.md) remains available for its earlier baseline. Historical review records in `docs/` describe their own revisions and scope.
 
 ## Where the code lives
 
 | Area | Files |
 |---|---|
-| Application and navigation | `dist/index.html`, `style.css`, `depth.css`, `app.js`, `navigation.js`, `learning-workspaces.js` |
+| Application and navigation | `dist/index.html`, `style.css`, `depth.css`, `app.js`, `navigation.js`, `navigation-search.js`, `navigation.css`, `learning-workspaces.js` |
 | Physical identity and connected study UI | `dist/assembly-contract.js`, `depth-ui.js`, `labs-ui.js` |
 | Detailed shared construction and applied cases | `dist/mechanical-details.js`, `equipment-details.js`, `depth-content.js`, `physical-labs.js`, `evidence-labs.js` |
 | Concepts, sources and view configuration | `dist/catalog.js`, `atlas-config.js`, domain-specific `*-data.js` modules |
 | Equipment models and interaction | `dist/viewer.js`, `model.js`, `*-models.js`, `network-model.js`, `exploration.js` |
 | Technology comparisons | `dist/technology.js`, `electrification.js`, `platform-config.js`, `comparisons.js` |
+| Control responsibilities and optional connections | `dist/control-interfaces-data.js`, `control-interfaces-ui.js`, `control-interfaces.css` |
+| Representation choices and dependency diagrams | `dist/representation-guidance.js`, `system-diagrams.js`, `topology-status.css` |
 | Information and electrical diagrams | `dist/communications-data.js`, `topology-ui.js`, `electrical-explainers.js` |
 | Playback and pins | `dist/interaction-state.js`, `motion-guides.js` |
-| People and process diagrams | `dist/process-data.js`, `process-ui.js` |
+| People and process diagrams | `dist/process-data.js`, `process-extensions.js`, `process-ui.js` |
 | Learning and reading | `dist/tours.js`, `reading-guides.js`, `reading.html`, `scripts/generate-reading.mjs` |
 | Checks | `scripts/check-site.mjs` and the focused `scripts/check-*.mjs` suites |
 

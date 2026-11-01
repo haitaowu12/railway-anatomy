@@ -14,7 +14,7 @@ export const VIEW_GROUPS = {
 };
 
 export const VIEW_PARENTS = {
-  electrification:'system',adhesion:'bogie','infrastructure-care':'track-support',dependencies:'occ-equipment','accessible-journey':'station','change-evidence':'depot-testing',
+  'infrastructure-assets':'track-support',electrification:'system',adhesion:'bogie','infrastructure-care':'track-support',dependencies:'occ-equipment','accessible-journey':'station','change-evidence':'depot-testing',
   'platform-interface':'station','station-plant':'station','tunnel-ventilation':'station',
   'ventilation-unit':'station-plant','station-networks':'station','fire-systems':'station',
   bogie:'vehicle',lim:'bogie',services:'vehicle',
@@ -39,7 +39,7 @@ export function viewTrail(view, views) {
 }
 
 export function routeState(state) {
-  return {page:state.page,domain:state.domain,view:state.view,component:state.component,variant:state.variant,
+  return {controlInterface:state.controlInterface?structuredClone(state.controlInterface):null,page:state.page,domain:state.domain,view:state.view,component:state.component,variant:state.variant,
     technology:{...state.technology},electrification:state.electrification,platformEdge:state.platformEdge||'open',platformSensor:state.platformSensor||'lidar',presentation:state.presentation,processId:state.processId,processStep:state.processStep,roleId:state.roleId,mode:state.mode,scenario:state.scenario,sink:state.sink,
     cutaway:state.cutaway,exploded:state.exploded,explodeScope:state.explodeScope||'all',playing:false,labels:state.labels,labelMode:state.labelMode||(state.labels===false?'off':'nearby'),lesson:state.lesson,
     instanceId:state.instanceId||null,functionalPath:state.functionalPath||null,allInstances:Boolean(state.allInstances),workspace:state.workspace||null,studyId:state.studyId||null};

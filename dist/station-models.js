@@ -288,13 +288,15 @@ export function buildStationView(id, api) {
     const g = part(parent, 'fire-pump', at); g.scale.setScalar(scale);
     box(g, [2.8, .17, 1.45], M.steel, [0, .15, 0]);
     for (const x of [-1.1, .95]) for (const z of [-.5, .5]) box(g, [.25, .26, .22], M.core, [x, .25, z]);
-    const motor = group(g, 'pump-motor', [-.72, .69, 0]);
+    const motor = E.inspect(group(g, 'pump-motor', [-.72, .69, 0]),'Fixed pump motor housing',{sources:['DP04'],description:'The stationary motor enclosure supports the rotating shaft; a motor supply is distinct from a pump duty or start condition.'});
     cylinder(motor, .36, .95, M.teal, [0, 0, 0], [0, 0, Math.PI / 2], 16);
     for (let i = 0; i < 10; i++) {
       const theta = i * Math.PI / 5;
       box(motor, [.85, .045, .14], M.steel, [0, Math.cos(theta) * .34, Math.sin(theta) * .34], [theta, 0, 0]);
     }
-    cylinder(g, .08, .65, M.steel, [.08, .69, 0], [0, 0, Math.PI / 2], 10);
+    const shaft=E.inspect(group(g,'pump-drive-shaft',[.185,.69,0]),'Continuous drive shaft and coupling',{sources:['DP04'],description:'One straight shaft joins the motor output, sealing region and impeller hub.'});
+    cylinder(shaft,.08,.97,M.steel,[0,0,0],[0,0,Math.PI/2],12);
+    for(const x of [-.225,-.135]){cylinder(shaft,.15,.07,M.steel,[x,0,0],[0,0,Math.PI/2],16);box(shaft,[.075,.022,.065],M.copper,[x,.15,0]);}
     const hydraulic = group(g, 'pump-hydraulic-section', [.65, .69, 0]);
     E.inspect(hydraulic,'Pump casing and fluid collection passage',{sources:['DP04'],description:'An open annular working section keeps the impeller visible; a separate outlet carries the collected flow.'});
     const casingShape=new THREE.Shape();
@@ -315,9 +317,9 @@ export function buildStationView(id, api) {
     E.separate(impeller,'Impeller and open vane passages',[.7,.2,.3],{stage:'Working section',range:[.4,1],sources:['DP04']});
     E.port(g,{name:'pump-inlet-interface',label:'Axial fluid inlet',at:[1.18,.69,0],kind:'fluid',sources:['DP04']});
     E.port(g,{name:'pump-discharge-interface',label:'Collected-flow outlet',at:[.65,1.65,0],kind:'fluid',sources:['DP04']});
-    E.paths(g,[{id:'pump-fluid',label:'Fluid through the pump',description:'Axial inlet → impeller eye and vanes → collecting casing → outlet. This is a directional anatomy, not a calculated flow field.',steps:[{label:'Inlet',nodeName:'pump-inlet-interface'},{label:'Impeller',nodeName:'pump-impeller'},{label:'Casing',nodeName:'pump-hydraulic-section'},{label:'Outlet',nodeName:'pump-discharge-interface'}],sources:['DP04']},{id:'pump-drive',label:'Drive and sealing',description:'Motor and shaft deliver work through the sealing region to the impeller.',steps:[{label:'Motor',nodeName:'pump-motor'},{label:'Seal',nodeName:'pump-shaft-seal'},{label:'Impeller',nodeName:'pump-impeller'}],sources:['DP04']}]);
+    E.paths(g,[{id:'pump-fluid',label:'Fluid through the pump',description:'Axial inlet → impeller eye and vanes → collecting casing → outlet. This is a directional anatomy, not a calculated flow field.',steps:[{label:'Inlet',nodeName:'pump-inlet-interface'},{label:'Impeller',nodeName:'pump-impeller'},{label:'Casing',nodeName:'pump-hydraulic-section'},{label:'Outlet',nodeName:'pump-discharge-interface'}],sources:['DP04']},{id:'pump-drive',label:'Drive and sealing',description:'Motor and shaft deliver work through the sealing region to the impeller.',steps:[{label:'Motor',nodeName:'pump-motor'},{label:'Shaft and coupling',nodeName:'pump-drive-shaft'},{label:'Seal',nodeName:'pump-shaft-seal'},{label:'Impeller',nodeName:'pump-impeller'}],sources:['DP04']}]);
     // Mechanical motion is a cutaway demonstration, never an alarm-driven start.
-    animations.push(state => { impeller.rotation.x = id === 'station-plant' && variant(state) !== 'water' ? 0 : state.phase * .7; });
+    animations.push(state => { const angle=['station-plant','fire-systems'].includes(id)&&variant(state)==='water'?Math.PI*4*Math.max(0,Math.min(1,state.phase/5)):0;impeller.rotation.x=shaft.rotation.x=angle; });
     pipes(g, [[1.18, .69, 0], [1.7, .69, 0], [1.9, .7, .8]], .11);
     pipes(g, [[.65, 1.05, 0], [.65, 1.65, 0], [1.5, 1.68, 0]], .11);
     cylinder(g, .17, .07, paint.pale, [.98, 1.83, .05], [Math.PI / 2, 0, 0], 12);
@@ -466,7 +468,7 @@ export function buildStationView(id, api) {
     cylinder(rotor, .13, .86, paint.air, [0, 0, 0], [0, 0, Math.PI / 2], 12);
     explode(rotor, [.65, .3, 1.1]);
     const fanDrive=E.inspect(group(g,'air-handler-fan-drive',[2.58,1.18,0]),'Supply fan drive and support',{sources:['DP02']});cylinder(fanDrive,.22,.35,M.teal,[0,0,0],[0,0,Math.PI/2],16);cylinder(fanDrive,.07,.22,M.steel,[-.23,0,0],[0,0,Math.PI/2],12);box(fanDrive,[.4,.64,.4],M.core,[0,-.54,0]);
-    animations.push(state => { rotor.rotation.x = id==='ventilation-unit' ? Math.PI*4*Math.max(0,Math.min(1,state.phase/5)) : state.phase*.7; });
+    animations.push(state => { rotor.rotation.x = id==='ventilation-unit'||id==='station-plant'&&variant(state)==='air' ? Math.PI*4*Math.max(0,Math.min(1,state.phase/5)) : 0; });
     sensor(g, [.56, 2.31, 0], true);
     const pan=E.inspect(group(g,'air-handler-condensate-pan',[.49,.32,0]),'Condensate pan',{sources:['DP02'],description:'A dedicated liquid collection and drainage path sits below the coil.'});box(pan,[.9,.035,1.6],paint.water);for(const z of [-.78,.78])box(pan,[.9,.12,.025],M.steel,[0,.06,z]);
     E.route(g,{name:'air-handler-condensate-drain',label:'Condensate drain',points:[[.49,.32,.8],[.49,.12,.95],[1.1,.12,1.2]],kind:'fluid',from:'Condensate pan',to:'Drain connection',sources:['DP02'],radius:.035});
@@ -558,16 +560,21 @@ export function buildStationView(id, api) {
     const drive=part(g,'station-lift-drive',[0,rise+2.48,0]);
     drive.userData.explorationAssembly='station-lift-drive';
     drive.userData.labelAnchor=new THREE.Vector3(.32,0,0);
-    const machine=group(drive,'lift-traction-machine',[-.46,0,-.20]);
-    cylinder(machine,.25,.55,M.teal,[0,0,0],[Math.PI/2,0,0],16);machine.userData.explorationLabel='Traction machine';explode(machine,[-.5,.45,-.35]);
-    const sheave=group(drive,'lift-traction-sheave',[0,0,-.20]);
-    cylinder(sheave,.29,.10,M.steel,[0,0,0],[Math.PI/2,0,0],18);
-    box(sheave,[.43,.03,.02],paint.pale,[0,0,.065]);sheave.userData.explorationLabel='Traction sheave';explode(sheave,[0,.45,.5]);
+    const machine=group(drive,'lift-traction-machine',[-.46,0,-.64]);
+    cylinder(machine,.25,.55,M.teal,[0,0,0],[0,0,Math.PI/2],16);machine.userData.explorationLabel='Traction machine';explode(machine,[-.5,.45,-.35]);
+    cylinder(drive,.065,.22,M.steel,[-.12,0,-.64],[0,0,Math.PI/2],12);
+    const sheave=group(drive,'lift-traction-sheave',[0,0,-.64]);
+    cylinder(sheave,.36,.26,M.steel,[0,0,0],[0,0,Math.PI/2],24);
+    box(sheave,[.02,.55,.03],paint.pale,[.145,0,0]);sheave.userData.explorationLabel='Traction sheave';explode(sheave,[0,.45,.5]);
     const counterweight=E.inspect(group(g,'lift-counterweight',[0,rise+.5,-1.0]),'Guided counterweight',{sources:['SP01'],description:'The selected traction arrangement moves the counterweight oppositely to the cabin.'});
     for(let i=0;i<7;i++)box(counterweight,[1.25,.12,.16],M.core,[0,i*.13,0]);
-    const ropes=[];
-    for(const x of [-.22,.22]){
-      const rope=cylinder(g,.013,1,M.steel,[x,0,-.20],null,6);ropes.push(rope);
+    const ropes=[],counterRopes=[],top=rise+2.48;
+    for(const x of [-.7,.7]){const rail=E.inspect(box(g,[.045,rise+1.8,.045],M.steel,[x,(rise+1.8)/2,-1]),'Fixed counterweight guide',{sources:['SP01']});rail.name='lift-counterweight-guide';}
+    for(const x of [-.09,.09]){
+      const rope=E.inspect(cylinder(g,.013,1,M.steel,[x,0,-.28],null,6),'Car-side suspension rope',{sources:['SP01'],description:'This vertical branch shortens as the car rises.'});rope.name='lift-car-suspension-rope';ropes.push(rope);
+      const counterRope=E.inspect(cylinder(g,.013,1,M.steel,[x,0,-1],null,6),'Counterweight-side suspension rope',{sources:['SP01'],description:'This branch lengthens as the car-side branch shortens.'});counterRope.name='lift-counterweight-suspension-rope';counterRopes.push(counterRope);
+      const wrap=Array.from({length:19},(_,i)=>{const a=i*Math.PI/18;return[x,top+.36*Math.sin(a),-.64+.36*Math.cos(a)];});
+      const crown=tube(g,wrap,.013,M.steel,{segments:24});crown.m.name='lift-sheave-rope-wrap';E.inspect(crown.m,'Suspension wrap over the sheave',{sources:['SP01'],description:'The wrap joins the tangent car and counterweight branches. Total geometric suspension length is retained through travel.'});
     }
     animations.push(state=>{
       const pose=stationLiftPose(variant(state)==='passenger'?state:{phase:0});
@@ -576,9 +583,11 @@ export function buildStationView(id, api) {
       for(const leaf of landingLeaves){const opening=leaf.index?pose.upperOpening:pose.lowerOpening;leaf.node.position.x=leaf.direction*(.25+.50*opening);}
       contacts[1].position.x=.65+.50*pose.lowerOpening;contacts[3].position.x=.65+.50*pose.upperOpening;
       counterweight.position.y=rise+.5-pose.height*rise;
-      sheave.rotation.z=-pose.height*rise/.29;
-      const roof=car.position.y+2.2,top=rise+2.48;
+      sheave.rotation.x=-pose.height*rise/.36;
+      const roof=car.position.y+2.2,counterTop=counterweight.position.y+.84;
       for(const rope of ropes){rope.scale.y=top-roof;rope.position.y=(top+roof)/2;}
+      for(const rope of counterRopes){rope.scale.y=top-counterTop;rope.position.y=(top+counterTop)/2;}
+      g.userData.suspensionLengths={car:top-roof,counterweight:top-counterTop,wrap:Math.PI*.36};
       g.userData.liftPose=pose;
     });
     E.paths(g,[{id:'lift-mechanical',label:'Traction and guidance',description:'Drive, sheave, suspended car, counterweight and guide interfaces retain distinct motion.',steps:[{label:'Machine',nodeName:'lift-traction-machine'},{label:'Sheave',nodeName:'lift-traction-sheave'},{label:'Car',nodeName:'lift-carriage'},{label:'Guide shoe',nodeName:'lift-car-guide-shoe'},{label:'Counterweight',nodeName:'lift-counterweight'}],sources:['SP01']},{id:'lift-landing-evidence',label:'Car and landing doors',description:'The moving car doors are separate from each fixed landing and its contact target.',steps:[{label:'Car operator',nodeName:'lift-car-door-operator'},{label:'Car door',nodeName:'lift-car-door'},{label:'Landing door',nodeName:'lift-landing-door-0'},{label:'Contact',nodeName:'lift-landing-contact-0'},{label:'Target',nodeName:'lift-landing-contact-target-0'}],sources:['SP01']}]);

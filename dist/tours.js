@@ -644,16 +644,17 @@ export const TOURS = [
     "domain": "station",
     "view": "station-networks",
     "component": "bas-controller",
-    "explanation": "Compare electrical supervision, station supervision and building automation. A local protection device, plant controller and supervisory workstation have different responsibilities. The coloured lines show logical interfaces without claiming a mandatory physical network or a universal command priority.",
-    "actionText": "Compare Power SCADA, Station supervision and Building automation. In Building automation, identify the sensor, local controller and actuator separately from the supervisory display.",
-    "actionLabel": "Show this arrangement",
+    "explanation": "Compare power supervision, BAS/BMS, tunnel ventilation and station smoke control as different responsibilities. The interface map separates field equipment, local logic, native supervision, shared displays and communications. A railway can integrate selected information or permitted requests without combining those functions into one controller.",
+    "actionText": "Start with Building services and Shared status summaries. Compare Separate supervision and Selected supervisory requests, then inspect Tunnel ventilation. Trace a measured indication and a permitted request separately; compare the returned feedback with the request acknowledgement.",
+    "actionLabel": "Return to the BAS interface example",
     "action": {
       "view": "station-networks",
       "component": "bas-controller",
       "variant": "building",
       "exploded": 0,
       "mode": "coasting",
-      "scenario": "nominal"
+      "scenario": "nominal",
+      "interfaces": {"domain":"building","architecture":"summaries","trace":"indication"}
     },
     "question": "In the illustrated building-control loop, which element uses a measured value to determine an actuator command?",
     "choices": [
@@ -911,19 +912,20 @@ export const TOURS = [
     "domain": "depot",
     "view": "depot-protection",
     "component": "depot-personnel-protection",
-    "explanation": "Inspect the movement-protection device and the energy-control context. They address different hazards. This is not an isolation procedure.",
-    "actionText": "Keep Trainway sensing in focus. Change Platform edge from Open edge to Half-height doors or Full-height doors, then compare the same location.",
-    "actionLabel": "Show this arrangement",
+    "explanation": "The work-protection map separates movement protection, hazardous-energy controls, returned indications and responsibility. Select each question to examine its inputs and evidence; the map is not the sequence for establishing a protected worksite.",
+    "actionText": "Compare Examine the movement-protection interface with Examine the energy and access interfaces. Then select Relate displayed state to its evidence and identify what a displayed indication does not establish.",
+    "actionLabel": "Examine the movement-protection interface",
     "action": {
       "view": "depot-protection",
       "component": "depot-personnel-protection",
       "variant": "work-zone",
+      "processStep": "movement",
       "mode": "coasting",
       "scenario": "nominal",
       "cutaway": true,
       "exploded": 0
     },
-    "question": "The model shows movement inhibition on a protected work road. Which boundary remains separate from that indication?",
+    "question": "An indication reports movement inhibition on a work road. Which boundary still requires its own evidence?",
     "choices": [
       "The verified energy-isolation state relevant to the work",
       "The location of the train within the depot",

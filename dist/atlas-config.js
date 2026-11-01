@@ -1,3 +1,4 @@
+import {CONTROL_INTERFACE_CONCEPTS} from './control-interfaces-data.js';
 import {applyDepotConfig} from './depot-data.js';
 import {applyOccConfig} from './occ-data.js';
 import {applyStudyConfig} from './studies-data.js';
@@ -4106,3 +4107,19 @@ applyCommsConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_
 
 applyElectrificationConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS});
 applyStationPlatformConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS});
+
+// Functional interfaces are discovered alongside the relevant systems; their
+// explanations open in the separate responsibility explorer.
+for(const item of CONTROL_INTERFACE_CONCEPTS){
+ PART_VIEWS[item.id]='station-networks'; PART_VARIANTS[item.id]='station';
+ PART_CONTEXTS[item.id]=['station-networks'];PART_VIEW_VARIANTS[item.id]={'station-networks':['station']};
+ PART_RELATIONS[item.id]=item.related||[];
+ const domain=SYSTEMS.find(d=>d.id==='communications');if(!domain.parts.includes(item.id))domain.parts.push(item.id);
+}
+NEW_VIEWS['station-networks'].label='Plant control interfaces';
+NEW_VIEWS['station-networks'].title='Separate local control from supervisory interfaces';
+NEW_VIEWS['station-networks'].note='Open the interface explorer to compare power SCADA, station building automation and tunnel-ventilation responsibilities. Connections and command rights are explicit choices.';
+
+NEW_VIEWS['infrastructure-assets']={label:'Structures & drainage',title:'Follow structural support and the drainage opening',component:'route-formation',domain:'track',parent:'track-support',motion:false,note:'Original physical section. Bridge deck, girders, bearings and abutments show a load path; the open culvert shows a water passage. No capacity, inspection result or release is inferred.',variants:[{id:'assets',label:'Physical section',title:'Structures and drainage',description:'Inspect the support and passage interfaces, then open the separate maintenance process for observations and decisions.',component:'route-formation',nodes:['Rail and sleeper','Formation / bridge deck','Bearings and abutments','Culvert and outfall'],sources:['I01','I02','I03']}]};
+const trackDomain=SYSTEMS.find(d=>d.id==='track');trackDomain.views.splice(trackDomain.views.indexOf('infrastructure-care'),0,'infrastructure-assets');
+for(const id of ['route-formation','route-drainage','route-bridge']){PART_VIEWS[id]='infrastructure-assets';PART_VARIANTS[id]='assets';PART_CONTEXTS[id]=['infrastructure-assets'];PART_VIEW_VARIANTS[id]={'infrastructure-assets':['assets']};}

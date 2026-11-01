@@ -146,6 +146,12 @@ export function buildOperationsView(id, api) {
     }
     return g;
   }
+  function moveVehicle(g,x,origin){
+    g.position.x=x;
+    const angle=-(x-origin)/(.3*g.scale.y);
+    g.traverse(node=>{if(node.name==='depot-mounted-axle')node.rotation.z=angle;});
+    g.userData.rollingDisplacement=x-origin;
+  }
   function shed(parent,component,at,width,depth,height=4.8,{floor=true}={}) {
     const g=part(parent,component,at);
     if(floor)foundation(g,[width,.16,depth],[0,0,0]);
@@ -419,7 +425,7 @@ export function buildOperationsView(id, api) {
     infoBoard(roll,'depot-diagnostics',[5,.1,3.6]);
     studyTrace(roll,'depot-condition-monitoring',[[0,1.2,2.2],[1.6,1.2,3.6],[5,1.6,3.6]],'condition-measurement-record');
     animations.push(state=>{
-      moving.position.x=-11.5+23*studyPhase(state);
+      moveVehicle(moving,-11.5+23*studyPhase(state),-11.5);
       scan.visible=Math.abs(moving.position.x)<4.35;
       data.userData.measurementActive=scan.visible;
     });
@@ -483,16 +489,25 @@ export function buildOperationsView(id, api) {
       const leaf=part(door,'doors',[sign*.6,1.77,.18]);leaf.name='bench-door-leaf';leaf.userData.side=sign;
       box(leaf,[1.18,2.95,.12],P.blue);box(leaf,[.8,.9,.025],M.glass,[0,.55,.075]);
       box(leaf,[.035,2.6,.03],P.dark,[-sign*.54,0,.08]);
-      const carriage=box(leaf,[.35,.15,.2],M.steel,[0,1.65,-.17]);carriage.name='door-operator-carriage';leaves.push(leaf);
+      const carriage=box(leaf,[.35,.15,.2],M.steel,[0,1.65,-.17]);carriage.name='door-operator-carriage';
+      box(leaf,[.08,.36,.08],M.steel,[0,1.65,-.17]);
+      const hanger=group(leaf,'bench-door-guide-roller',[0,1.85,-.17]);cylinder(hanger,.08,.08,M.steel,[0,0,0],[Math.PI/2,0,0],12);box(hanger,[.10,.015,.012],P.yellow,[0,0,.05]);
+      leaves.push(leaf);
     }
-    box(door,[5.7,.06,.08],P.dark,[0,3.7,-.05]);cylinder(door,.16,.3,P.blue,[-2.75,3.7,-.05],[Math.PI/2,0,0],12);
+    const guide=E.inspect(group(door,'bench-door-fixed-guide'),'Fixed suspension guide',{sources:['MD07'],description:'The stationary rail supports the rollers carried by each moving leaf.'});box(guide,[5.7,.06,.12],M.steel,[0,3.51,.01]);
+    const driveMotor=E.inspect(group(door,'bench-door-drive-motor',[-2.75,3.70,-.28]),'Motor and pulley shaft',{sources:['MD07']});cylinder(driveMotor,.12,.35,P.blue,[0,0,0],[Math.PI/2,0,0],16);cylinder(driveMotor,.045,.18,M.steel,[0,0,.20],[Math.PI/2,0,0],12);
+    const pulleys=[];for(const x of [-2.75,2.75]){const pulley=E.inspect(group(door,'bench-door-belt-pulley',[x,3.70,-.05]),x<0?'Driven belt pulley':'Belt return pulley',{sources:['MD07'],description:'The pulley pitch and leaf travel retain the same ratio through opening and closing.'});cylinder(pulley,.135,.09,P.blue,[0,0,0],[Math.PI/2,0,0],18);box(pulley,[.24,.022,.014],P.yellow,[0,0,.06]);pulleys.push(pulley);}
+    for(const y of [3.54,3.86])box(door,[5.5,.05,.05],P.dark,[0,y,-.05]);
+    for(const side of [-1,1])api.mesh(door,new THREE.TorusGeometry(.16,.025,6,18,Math.PI),P.dark,[side*2.75,3.70,-.05],[0,0,-side*Math.PI/2]);
+    const clamps=leaves.map(leaf=>{const y=leaf.userData.side>0?3.54:3.86,clamp=E.inspect(group(door,'bench-door-belt-clamp',[leaf.position.x,y,-.05]),'Belt clamp and leaf hanger link',{sources:['MD07'],description:'Opposite belt runs connect to the two supported leaves.'});box(clamp,[.10,.045,.06],M.copper);box(clamp,[.04,y-3.42,.10],M.steel,[0,-(y-3.42)/2,.03]);return clamp;});
     const operatorCover=group(door,'door-operator-cover');box(operatorCover,[6.2,.45,.5],P.blue,[0,3.65,-.1]);shell(operatorCover);explode(operatorCover,[0,.8,.3]);
     const feedback=box(door,[.16,.18,.08],P.yellow,[1.3,3.35,.2]);feedback.name='door-closed-position-indicator';
     infoBoard(door,'depot-door-service',[4.4,.1,2.1]);
     pipe(door,[[2.9,3.6,0],[3.5,3.6,0],[3.5,.4,1.5],[4.4,.4,2.1]],P.blue,.035);
     animations.push(state=>{
       const opening=1-Math.abs(2*studyPhase(state)-1);
-      leaves.forEach(leaf=>leaf.position.x=leaf.userData.side*(.6+1.25*opening));
+      leaves.forEach((leaf,i)=>{leaf.position.x=leaf.userData.side*(.6+1.25*opening);clamps[i].position.x=leaf.position.x;leaf.getObjectByName('bench-door-guide-roller').rotation.z=-leaf.userData.side*1.25*opening/.08;});
+      pulleys.forEach(pulley=>{pulley.rotation.z=1.25*opening/.16;});
       feedback.material=opening<.005?P.yellow:P.dark;door.userData.closedPosition=opening<.005;
     });
     const hvacView=alt('hvac');
@@ -544,7 +559,7 @@ export function buildOperationsView(id, api) {
     const moving=vehicle(road,[-7,.1,0],.75);moving.name='separate-test-road-vehicle';
     infoBoard(movement,'depot-functional-checks',[7,.1,4.2]);
     infoBoard(movement,'depot-maintenance-release',[11,.1,4.2]);
-    animations.push(state=>{moving.position.x=-7*Math.cos(studyPhase(state)*Math.PI*2);});
+    animations.push(state=>{moveVehicle(moving,-7*Math.cos(studyPhase(state)*Math.PI*2),-7);});
   }
 
   if(id==='depot-overview') {
@@ -767,9 +782,10 @@ export function buildOperationsView(id, api) {
     const movingTrain=vehicle(drive,[-1.4,.12,0],.86);movingTrain.name='drive-through-moving-train';
     const still=vehicle(mobile,[0,.12,0],.86);still.name='gantry-stationary-train';
     const gantry=part(mobile,'depot-wash-gantry');gantry.name='travelling-wash-gantry';
+    const gantryWheels=[];
     for(const z of [-1.85,1.85]) {
-      box(gantry,[1.1,.2,.5],M.core,[0,.3,z]);box(gantry,[.18,3.4,.16],P.blue,[0,1.9,z]);
-      for(const x of [-.35,.35])cylinder(gantry,.14,.1,M.steel,[x,.15,z],[Math.PI/2,0,0],10);
+      box(gantry,[1.1,.2,.5],M.core,[0,.57,z]);box(gantry,[.18,2.93,.16],P.blue,[0,2.135,z]);
+      for(const x of [-.35,.35]){const wheel=group(gantry,'gantry-running-wheel',[x,.355,z]);cylinder(wheel,.14,.1,M.steel,[0,0,0],[Math.PI/2,0,0],14);box(wheel,[.20,.018,.012],M.copper,[0,0,Math.sign(z)*.06]);gantryWheels.push(wheel);}
       box(mobile,[14,.09,.075],M.steel,[0,.17,z]);
     }
     box(gantry,[.2,.2,3.8],P.blue,[0,3.6,0]);
@@ -793,8 +809,9 @@ export function buildOperationsView(id, api) {
     const residual=part(root,'depot-drainage',[7,.25,4.4]);pipe(residual,[[0,.3,0],[3,.3,0],[3,-.25,1.9]],P.red,.06);
     animations.push(state=>{
       const phase=studyPhase(state),travel=(1-Math.cos(phase*Math.PI*2))/2;
-      movingTrain.position.x=-3.4+travel*4;
+      moveVehicle(movingTrain,-3.4+travel*4,-3.4);
       gantry.position.x=-4.5+travel*9;
+      for(const wheel of gantryWheels)wheel.rotation.z=-travel*9/.14;
       for(const brush of [...fixedBrushes,...mobileBrushes])brush.rotation.y=phase*Math.PI*8;
       for(const {lid}of tanks)lid.visible=chosen(state)!=='recovery';
     });

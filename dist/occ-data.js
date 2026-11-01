@@ -508,9 +508,9 @@ export const OCC_CONCEPTS = [
     "label": "Station application display",
     "summary": "A station application presents information from local facility systems.",
     "details": [
-      "Public station-management products integrate information from building services, communications and security systems.",
+      "Public station-management products can integrate selected information from building services, communications and security systems; each interface can also be omitted or monitoring-only.",
       "The example returns a reported running indication for fan F1 through the local-system boundary, application and display.",
-      "The sequence does not start a fan, select a smoke-control mode or combine every station function into one controller."
+      "The sequence does not start a fan or select a smoke-control mode. BAS, tunnel ventilation control, station smoke controls and fire systems retain their allocated duties. Use Interfaces to compare their owners and optional connections."
     ],
     "sources": [
       "O02"

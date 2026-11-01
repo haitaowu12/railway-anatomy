@@ -4,6 +4,8 @@ import {createEquipmentDetails} from '../dist/equipment-details.js';
 const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import {normalizePlatformState,platformForComponent} from '../dist/platform-config.js';
 import * as electrificationHelpers from '../dist/electrification.js';
+import {CONTROL_INTERFACE_CONCEPTS,CONTROL_DOMAINS,getInterfaceContext} from '../dist/control-interfaces-data.js';
+import {representationFor} from '../dist/representation-guidance.js';
 /**
  * Headless scene/content contract check using Three.js and the actual shared
  * primitive functions from viewer.js. No DOM, renderer, browser or package
@@ -25,6 +27,7 @@ const [THREE, track, signalling, station, operations, platform, network, network
   load('network-model.js'), load('network-data.js'), load('occ-models.js'), load('catalog.js'), load('model.js'), load('tours.js'),
 ]);
 const source = await readFile(path.join(dist, 'viewer.js'), 'utf8');
+const appSource = await readFile(path.join(dist, 'app.js'), 'utf8');
 const studies = await load('studies-models.js');
 const power=await load('electrification-models.js'),comms=await load('communications-models.js');
 function between(start, end) {
@@ -137,8 +140,31 @@ function available(view, variant, component, target = model.targetFor(component)
 function preferredVariant(view, component) {
   return variantsFor(view).includes(model.variantFor(component)) ? model.variantFor(component) : model.defaultVariant(view);
 }
-check('Every concept has a reachable primary model anchor', () => {
-  const missing = catalog.CONCEPTS.filter(c => !available(model.viewFor(c.id), preferredVariant(model.viewFor(c.id), c.id), c.id));
+check('Every concept has a reachable physical anchor or an explicit functional interface route', () => {
+  const interfaceIds=new Set(CONTROL_INTERFACE_CONCEPTS.map(c=>c.id));
+  const start=appSource.indexOf('function selectComponent('),end=appSource.indexOf('function applyLesson(',start);
+  assert(start>=0&&end>start,'The actual component-routing implementation must be exercised');
+  // Run the real early routing branch. A function gets a functional destination,
+  // not a fabricated selectable mesh solely to satisfy a geometry contract.
+  const route=new Function('parts','interfaceConceptIds','getInterfaceContext',`
+    let state={page:'explore'};const events=[];
+    function openInterfaces(context){events.push({kind:'interfaces',context});}
+    function showInterfaceConcept(id){events.push({kind:'concept',id});}
+    ${appSource.slice(start,end)}
+    return id=>{events.length=0;selectComponent(id);return events.slice();};
+  `)(new Map(catalog.CONCEPTS.map(c=>[c.id,c])),interfaceIds,getInterfaceContext);
+  for(const concept of CONTROL_INTERFACE_CONCEPTS){
+    assert(known.has(concept.id),`Unknown interface function ${concept.id}`);
+    assert.equal(model.viewFor(concept.id),'station-networks',`${concept.id} lacks its legacy interface destination`);
+    assert.equal(representationFor(model.viewFor(concept.id)).equipmentContext,false,`${concept.id} is falsely described as physical equipment`);
+    const events=route(concept.id),context=getInterfaceContext(concept.id);
+    assert.deepEqual(events,[{kind:'interfaces',context},{kind:'concept',id:concept.id}],`${concept.id} is not rendered and explained on its actual interface route`);
+    const domain=CONTROL_DOMAINS.find(d=>d.id===context.domain);
+    assert(domain,`${concept.id} points to an unknown functional owner`);
+    const specific=CONTROL_DOMAINS.filter(d=>d.components.includes(concept.id));
+    if(specific.length)assert(specific.includes(domain),`${concept.id} opens another function's controls`);
+  }
+  const missing = catalog.CONCEPTS.filter(c => !interfaceIds.has(c.id)&&!available(model.viewFor(c.id), preferredVariant(model.viewFor(c.id), c.id), c.id));
   assert.equal(missing.length, 0, missing.map(c => `${c.id} → ${model.viewFor(c.id)}/${preferredVariant(model.viewFor(c.id), c.id)} (${model.targetFor(c.id)})`).join('; '));
 });
 check('Every view opens with a reachable default selection', () => {

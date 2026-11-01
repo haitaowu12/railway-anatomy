@@ -31,19 +31,36 @@ export function createMechanicalDetails(api) {
       const inner=piece(g,'bearing-inner-race','Schematic inner bearing ring',undefined,{sources});ring(inner,.077,.095,.14,M.steel);
       const outer=piece(g,'bearing-outer-race','Schematic outer bearing ring',undefined,{sources});ring(outer,.126,.145,.14,M.core);
       const seal=piece(g,'bearing-end-seal','Bearing seal',[0,0,.083],{sources});ring(seal,.078,.142,.018,rubber);
-      return {node:g,inner,outer,rollers:null,seal};
+      return {node:g,inner,outer,rollers:null,seal,animate(angle){inner.rotation.z=Number(angle)||0;}};
     }
     const inner=piece(g,'bearing-inner-race','Inner race',undefined,{sources,function:'The inner race seats on the axle journal.'});ring(inner,.077,.095,.14,M.steel);
     const outer=piece(g,'bearing-outer-race','Outer race',undefined,{sources,function:'The outer race transfers bearing load into the housing.'});
     ring(outer,.126,.145,.14,M.steel,undefined,Math.PI*1.45); // authored open sector for inspection
     const outerSector=piece(g,'bearing-race-section','Outer-race section',undefined,{sources});
     const sector=ring(outerSector,.126,.145,.14,M.steel,undefined,Math.PI*.55);sector.rotation.y=Math.PI*1.45;shell(outerSector);move(outerSector,[.18,.13,0],'Expose bearing races',[.35,.65]);
-    const rollers=piece(g,'bearing-roller-and-cage-set','Rollers and cage',undefined,{sources,function:'The cage spaces the rollers; it is not a load-bearing substitute for the raceways.'});
-    for(let i=0;i<(detailed?12:8);i++){const a=i*Math.PI*2/(detailed?12:8);cylinder(rollers,.015,.108,M.aluminum,[Math.cos(a)*.111,Math.sin(a)*.111,0],[Math.PI/2,0,0],10);}
+    const rollers=piece(g,'bearing-roller-and-cage-set','Rollers and cage',undefined,{sources:[...sources,'MD06'],function:'The rollers spin while the cage carries them around the shaft more slowly than the inner ring. The outer ring remains fixed. Radial contact and no slip are assumed.'});
+    const innerRadius=.095,outerRadius=.126,orbitRadius=(innerRadius+outerRadius)/2,rollerRadius=(outerRadius-innerRadius)/2;
+    const rollingElements=[],axis=new THREE.Vector3(0,0,1),axial=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),Math.PI/2);
+    for(let i=0;i<12;i++){
+      const a=i*Math.PI/6,roller=cylinder(rollers,rollerRadius,.108,M.aluminum,[Math.cos(a)*orbitRadius,Math.sin(a)*orbitRadius,0],[Math.PI/2,0,0],12);
+      roller.name='bearing-rolling-element';rollingElements.push(roller);
+      // The small stripe makes self-spin visible on a circular roller without
+      // changing its cylindrical contact surface or its physical identity.
+      box(roller,[rollerRadius*1.45,.0015,rollerRadius*.22],M.core,[0,.0548,0]);
+      const cageAngle=a+Math.PI/12;
+      box(rollers,[.009,.009,.115],M.copper,[Math.cos(cageAngle)*orbitRadius,Math.sin(cageAngle)*orbitRadius,0]);
+    }
     for(const z of [-.06,.06])ring(rollers,.101,.121,.009,M.copper,[0,0,z]);
     move(rollers,[.18,-.22,.24],'Expose rolling elements',[.65,1]);
     const seal=piece(g,'bearing-end-seal','Bearing seal', [0,0,.083],{sources,function:'Keeps lubricant within and contamination outside the bearing enclosure.',interfaces:['Shaft seal track','Housing seat']});ring(seal,.078,.142,.018,rubber);move(seal,[0,0,.35],'Expose bearing races',[.35,.65]);
-    return { node:g, inner, outer, rollers, seal };
+    const cageRatio=innerRadius/(innerRadius+outerRadius),spinRatio=-innerRadius/(outerRadius-innerRadius);
+    g.userData.bearingKinematics={innerRadius,outerRadius,orbitRadius,rollerRadius,cageRatio,spinRatio,assumption:'Radial cylindrical rollers; stationary outer ring; no slip'};
+    const animate=angle=>{
+      angle=Number(angle)||0;inner.rotation.z=angle;rollers.rotation.z=angle*cageRatio;
+      for(const roller of rollingElements)roller.quaternion.setFromAxisAngle(axis,angle*(spinRatio-cageRatio)).multiply(axial);
+    };
+    animate(0);
+    return { node:g, inner, outer, rollers, seal, animate };
   }
   function axlebox(parent,{at=[0,0,0],side=1,detailed=true}={}) {
     const g=piece(parent,'axlebox-'+(side>0?'near':'far'),'Axlebox housing and bearing',at,{function:'Holds the bearing outer ring and transfers wheelset load to the primary suspension.'});

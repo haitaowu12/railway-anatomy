@@ -5,6 +5,10 @@ import * as exploration from '../dist/exploration.js';
 import { VIEWS, targetFor } from '../dist/model.js';
 import { platformAnimationFor } from '../dist/station-platform-data.js';
 import { canAnimate, animationFor } from '../dist/comparisons.js';
+import {systemDiagram} from '../dist/system-diagrams.js';
+import {electricalStudy} from '../dist/electrical-explainers.js';
+import {representationFor} from '../dist/representation-guidance.js';
+import {processFor} from '../dist/process-ui.js';
 
 // The renderer and DOM are the only substitutes. All scene construction,
 // animation, selection, masking and camera code below is the shipping viewer.
@@ -194,11 +198,14 @@ const syncStart = appSource.indexOf('function syncViewer('), syncEnd = appSource
 assert(syncStart >= 0 && syncEnd > syncStart, 'Viewer synchronization markers changed');
 const syncCalls=[];
 const synchronizationViewer=new Proxy(viewer,{get(target,key){const value=target[key];if(typeof value!=='function')return value;return (...args)=>{syncCalls.push(key);return value(...args);};}});
-const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', 'animationFor', 'platformAnimationFor', `
+const motionStart=appSource.indexOf('const isProcessPage='),motionEnd=appSource.indexOf('const preferredPresentation=',motionStart);
+const interfaceStart=appSource.indexOf('function isInterfaceTour()'),interfaceEnd=appSource.indexOf('function routeLabel(',interfaceStart);
+assert(motionStart>=0&&motionEnd>motionStart&&interfaceStart>=0&&interfaceEnd>interfaceStart,'Production motion/route helpers changed');
+const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', 'animationFor', 'platformAnimationFor','systemDiagram','electricalStudy','representationFor','processFor', `
   let state, lastExplorationContext = '', lastSequenceKey = '', lastTopologyStep = '';
-  const guideForState=()=>state.view==='platform-interface'?platformAnimationFor(state):animationFor(VIEWS[state.view],state.variant);
+  ${appSource.slice(motionStart,motionEnd)}
+  ${appSource.slice(interfaceStart,interfaceEnd)}
   function syncControls() {}
-  function isProcessPage(){return false;}
   ${appSource.slice(syncStart, syncEnd)}
   return (value, restoring = false) => {
     state = structuredClone(value);
@@ -206,7 +213,7 @@ const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', '
     syncViewer(true);
     return structuredClone(state);
   };
-`)(synchronizationViewer, VIEWS, targetFor, canAnimate, animationFor, platformAnimationFor);
+`)(synchronizationViewer, VIEWS, targetFor, canAnimate, animationFor, platformAnimationFor,systemDiagram,electricalStudy,representationFor,processFor);
 const savedController = { view: 'station-networks', domain: 'station', component: 'bas-controller', variant: 'building',
   technology: { propulsion: 'lim', control: 'loop' }, mode: 'coasting', scenario: 'nominal', sink: 'train',
   cutaway: false, exploded: .6, explodeScope: 'selected', playing: false };
@@ -233,6 +240,22 @@ assert(activeRoot().getObjectByName('rtu-processor-module').position.distanceTo(
 const leaf=synchronize({...savedController,component:'scada-output-module',cutaway:true},true);
 assert.equal(leaf.explodeScope,'all','A context-only leaf falsely offered internal separation');
 assert.equal(viewer.getExplorationState().exploded,0,'Rejecting a selected separator promoted its amount to whole-scene separation');
+
+const movingDoor={...laterScene,page:'explore',view:'services',component:'doors',variant:'default',presentation:'equipment',playing:false};
+synchronize(movingDoor);viewer.setPhase(2.5);viewer.setPlaying(true);
+const selectedCompressor=synchronize({...movingDoor,component:'compressor',playing:true});
+assert.equal(viewer.getPhase(),0,'Selecting another component retained the previous mechanism phase');
+assert.equal(viewer.getPlaying(),false,'Selecting another mechanism retained autoplay');
+assert.equal(selectedCompressor.loop,true,'The selected compressor did not receive its own component guide');
+synchronize({...movingDoor,scenario:'door-open',playing:true});
+assert.equal(viewer.getPlaying(),false,'A held-open fault comparison offered the normal closing sequence');
+for(const [view,variant,component]of [['occ-equipment','normal','occ-application-service'],['depot-condition','stationary','depot-diagnostics'],['depot-components','traction','depot-traction-service'],['depot-testing','stationary','depot-functional-checks']]){
+  synchronize({...laterScene,page:'explore',view,variant,component,presentation:'equipment'});
+  synchronize({...laterScene,page:'explore',view,variant,component,presentation:'equipment',playing:true});
+  assert.equal(viewer.getPlaying(),false,`${view}/${variant} offered information pulses as physical motion`);
+}
+synchronize({...laterScene,page:'learn',view:'station-networks',component:'bas-controller',variant:'building',playing:true});
+assert.equal(viewer.getPlaying(),false,'The functional interface tour started a physical proxy animation');
 
 // Hidden descendants and duplicate instances must not distort the frame or
 // anchor a tag in empty space between two occurrences of a component.

@@ -1,3 +1,4 @@
+import {PROCESS_EXTENSIONS,PROCESS_EXTENSION_SOURCES} from './process-extensions.js';
 // Public learning material. These diagrams organize questions, responsibilities
 // and evidence; they are not operational instructions or an approval workflow.
 // Role names are representative functions, not a staffing plan or delegation.
@@ -216,3 +217,6 @@ export const PROCESS_READING_GUIDES = [
     {heading:'A device can belong in several explanations',text:'A track circuit or axle counter answers a detection question. A balise or other reference device supplies information with a defined meaning in its system. A radio transports messages. Those equipment questions cut across the navigation tree, so links to shared devices should preserve the same component identity. Start with the family overview, inspect the relevant device, then return to the functional relationship. That route helps a newcomer understand why similar-looking hardware does not make two architectures equivalent.',sources:['S13','S14','S16','S18','PR10']},
   ]},
 ];
+
+PUBLIC_PROCESS_SOURCES.push(...PROCESS_EXTENSION_SOURCES);
+Object.assign(PROCESS_VIEWS,PROCESS_EXTENSIONS);
