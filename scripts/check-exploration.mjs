@@ -14,7 +14,7 @@ for (const [, exports, file] of source.matchAll(/^import\s+\{([^}]+)\}\s+from\s+
   const module = await import(new URL(`../dist/${file.replace('./', '')}`, import.meta.url));
   for (const name of exports.split(',').map(s => s.trim())) dependencies[name] = module[name];
 }
-let renderer, nextFrame;
+let renderer, nextFrame, cameraControls;
 class GeometryRenderer {
   constructor() {
     renderer = this; this.shadowMap = {};
@@ -25,7 +25,7 @@ class GeometryRenderer {
   render(scene, camera) { this.scene = scene; this.camera = camera; }
 }
 class CameraControls {
-  constructor(camera) { this.camera = camera; this.target = new THREE.Vector3(); }
+  constructor(camera) { cameraControls = this; this.camera = camera; this.target = new THREE.Vector3(); }
   update() { this.camera.lookAt(this.target); this.camera.updateMatrixWorld(true); }
   addEventListener() {} dispose() {}
 }
@@ -124,10 +124,10 @@ const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', `
   let state, lastExplorationContext = '';
   function syncControls() {}
   ${appSource.slice(syncStart, syncEnd)}
-  return (value, restoring = false) => {
+  return (value, restoring = false, changedView = true) => {
     state = structuredClone(value);
     if (restoring) lastExplorationContext = '';
-    syncViewer(true);
+    syncViewer(changedView);
     return structuredClone(state);
   };
 `)(viewer, VIEWS, targetFor, canAnimate);
@@ -145,6 +145,65 @@ assert(Math.abs(activeRoot().getObjectByName('automation-panel-cover').position.
 const hiddenCover = synchronize({ ...savedController, cutaway: true });
 assert.equal(hiddenCover.explodeScope, 'all');
 assert.equal(viewer.getExplorationState().exploded, 0, 'Removing the only selected separator promoted its amount to whole-scene separation');
+
+// Ordinary application renders do not change the view. Give the camera a
+// distinct orbit, distance and panned target, then execute that production path.
+const cameraFrame = () => ({ position: renderer.camera.position.toArray(), quaternion: renderer.camera.quaternion.toArray(),
+  target: cameraControls.target.toArray(), near: renderer.camera.near, far: renderer.camera.far,
+  minDistance: cameraControls.minDistance, maxDistance: cameraControls.maxDistance });
+function inspectFromCustomFrame() {
+  cameraControls.target.set(.8, 1.1, -.6);
+  renderer.camera.position.set(3.2, 3.8, 5.4);
+  cameraControls.update();
+  return cameraFrame();
+}
+const bogieState = { ...laterScene, view: 'bogie', component: 'bogie' };
+synchronize(bogieState);
+const inspectedFrame = inspectFromCustomFrame();
+for (const component of ['bogie', 'brakes', 'collector', 'bogie', 'bogie']) {
+  for (const scenario of ['nominal', 'wheel-slip', 'door-open', 'radio-loss', 'nominal']) {
+    synchronize({ ...bogieState, component, scenario }, false, false);
+    assert.deepEqual(cameraFrame(), inspectedFrame, `Synchronization reset the camera for ${component}/${scenario}`);
+  }
+}
+viewer.setExplodeScope('selected');
+assert.notDeepEqual(cameraFrame(), inspectedFrame, 'An actual scope change no longer frames the model');
+viewer.setExploded(.6);
+const separatedFrame = inspectFromCustomFrame();
+for (const scenario of ['nominal', 'wheel-slip', 'nominal']) {
+  synchronize({ ...bogieState, explodeScope: 'selected', exploded: .6, scenario }, false, false);
+  assert.deepEqual(cameraFrame(), separatedFrame, 'An unchanged selected scope refitted the separated assembly');
+}
+viewer.setSelected('brakes'); viewer.setExplodeScope('selected'); viewer.setExploded(.6);
+const selectedPosition = position('bogie-frame-and-suspension'), brakeFrame = inspectFromCustomFrame();
+viewer.setExplodeScope('all');
+assert.notDeepEqual(cameraFrame(), brakeFrame, 'Changing to whole-scene separation did not refit');
+assert(position('bogie-frame-and-suspension').distanceTo(selectedPosition) > .1, 'Scope change did not update separation geometry');
+const wholeFrame = inspectFromCustomFrame();
+viewer.setExplodeScope('all');
+assert.deepEqual(cameraFrame(), wholeFrame, 'An unchanged whole-scene scope refitted separated geometry');
+viewer.setExploded(0); viewer.setSelected(null);
+const noSelectionFrame = inspectFromCustomFrame();
+assert.equal(viewer.setExplodeScope('selected'), 'all');
+assert.deepEqual(cameraFrame(), noSelectionFrame, 'An unavailable selected scope refitted unchanged geometry');
+
+viewer.resetCamera();
+const resetFrame = cameraFrame();
+assert.notDeepEqual(resetFrame, noSelectionFrame, 'Reset no longer restores framing');
+inspectFromCustomFrame(); viewer.setCameraPreset('isometric');
+assert.deepEqual(cameraFrame(), resetFrame, 'Isometric preset no longer matches reset');
+viewer.setCameraPreset('side'); const sideFrame = cameraFrame();
+assert.notDeepEqual(sideFrame, resetFrame);
+viewer.setCameraPreset('top'); assert.notDeepEqual(cameraFrame(), sideFrame);
+viewer.resetCamera(); viewer.setSelected('brakes');
+assert(viewer.frameSelection()); assert.notDeepEqual(cameraFrame(), resetFrame);
+assert(viewer.restoreFrame()); assert.deepEqual(cameraFrame(), resetFrame);
+inspectFromCustomFrame();
+synchronize(laterScene);
+assert.notDeepEqual(cameraFrame(), inspectedFrame, 'Scene navigation retained an unrelated camera frame');
+synchronize(bogieState);
+assert.deepEqual(cameraFrame(), resetFrame, 'Returning to the view did not restore its intended initial framing');
+console.log('PASS camera synchronization: repeated selection/scenarios preserve orbit, zoom, pan and camera limits; selected/whole/invalid scopes, separation geometry, presets, reset, focus/restore and scene navigation retain their contracts');
 
 // Hidden descendants and duplicate instances must not distort the frame or
 // anchor a tag in empty space between two occurrences of a component.
