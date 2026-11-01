@@ -166,7 +166,7 @@ function renderNavigation(){
   $$('.main-nav [data-page]').forEach(b=>{if(b.dataset.page===(state.page==='people'?'processes':state.page))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
   $('#explorer-page').hidden=state.page==='reference'||isProcessPage();$('#reference-page').hidden=state.page!=='reference';$('#processes-page').hidden=!isProcessPage();
   const d=activeDomain(),network=DOMAINS.find(x=>x.id==='network');
-  $('#intro-copy').textContent=state.page==='learn'?'Inspect the model, then check your understanding.':state.domain==='network'?'Select an area to see its equipment and connections.':'Select equipment in the model or browse the components below.';
+  $('#intro-copy').textContent=state.page==='learn'?'Inspect the model, then check your understanding.':state.domain==='network'?'Select a place in this schematic railway to explore its systems.':'Select equipment in the model or browse the components below.';
   $('#intro-copy').hidden=state.page!=='learn'&&state.domain!=='network';
   const viewButtons=ids=>ids.filter(id=>VIEWS[id]&&!PROCESS_REDIRECTS[id]).map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
   const domainViews=item=>{const groups=VIEW_GROUPS[item.id];if(!groups)return viewButtons(item.views);const grouped=new Set(groups.flatMap(g=>g.views));return groups.map(g=>`<div class="view-subgroup"><h3>${safe(g.label)}</h3>${viewButtons(g.views)}</div>`).join('')+(item.id==='communications'?'':viewButtons(item.views.filter(id=>!grouped.has(id))));};
