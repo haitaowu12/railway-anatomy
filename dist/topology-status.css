@@ -1,0 +1,22 @@
+/* Case comparisons must change the drawing as well as its explanatory text. */
+.topology-status-legend{display:flex;gap:10px 20px;flex-wrap:wrap;font-size:11px;line-height:1.5;margin:8px 0 18px;color:var(--muted)}
+.topology-status-legend span{padding:3px 7px;border:1px solid var(--line);border-radius:3px;background:var(--surface)}
+.topology-status-legend .is-available{color:#275d42}.topology-status-legend .is-unavailable{color:#9b3d30}.topology-status-legend .is-unknown{color:var(--muted)}
+.topology-node.is-available .node-state,.topology-compact-node.is-available .node-state{fill:#275d42;color:#275d42}
+.topology-node.is-unavailable rect{fill:#fff2ef;stroke:#b24f3e;stroke-dasharray:7 4}
+.topology-node.is-unavailable .node-state,.topology-compact-node.is-unavailable .node-state{fill:#963c2e;color:#963c2e;font-weight:600}
+.topology-node.is-unknown rect{fill:#f4f5f8;stroke:#7e8a9f;stroke-dasharray:3 4}
+.topology-node.is-unknown .node-state,.topology-compact-node.is-unknown .node-state{fill:#53627d;color:#53627d}
+.topology-node.is-unavailable.selected rect,.topology-node.is-unknown.selected rect{stroke-width:3}
+.topology-compact-node.is-unavailable{background:#fff2ef;border-color:#b24f3e!important;border-style:dashed!important}
+.topology-compact-node.is-unknown{background:#f4f5f8;border-style:dashed!important}
+.topology-diagram g.is-unavailable .topology-path{stroke:#b24f3e;stroke-dasharray:7 5}
+.topology-diagram g.is-unknown .topology-path{stroke:#7e8a9f;stroke-dasharray:3 5}
+.topology-diagram g.is-unavailable .path-number{stroke:#b24f3e;fill:#fff2ef}
+.topology-diagram g.is-unknown .path-number{stroke:#7e8a9f;fill:#f4f5f8}
+.path-state-symbol{font:600 13px 'IBM Plex Sans',sans-serif;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.is-unavailable>.path-state-symbol{fill:#963c2e}.is-unknown>.path-state-symbol{fill:#53627d}
+.topology-status-text{font-size:11px!important;color:var(--muted);font-weight:600;margin:3px 0!important}
+.is-unavailable>.topology-status-text{color:#963c2e}.is-available>.topology-status-text{color:#275d42}
+.compact-topology-paths>.is-unavailable,.connection-list>.is-unavailable{border-left:3px dashed #b24f3e;padding-left:12px}
+.compact-topology-paths>.is-unknown,.connection-list>.is-unknown{border-left:3px dashed #7e8a9f;padding-left:12px}

@@ -78,7 +78,7 @@ check('Coordination retains parallel responsibilities instead of a false seriali
  assert(p.edges.some(e=>e.kind==='rework'&&sharedReturn.has(e.from)),'Review loses the continuing assessment loop');
 });
 
-check('Process outputs distinguish the six boundaries and grant no operational authority',()=>{
+check(`Process outputs distinguish ${Object.keys(PROCESS_VIEWS).length} boundaries and grant no operational authority`,()=>{
  const outcomes=Object.values(PROCESS_VIEWS).map(p=>p.outcome);
  assert.equal(new Set(outcomes.map(o=>o.kind)).size,outcomes.length,'Different processes collapse to one outcome');
  const forbidden=new Set(['movement-authority','electrical-isolation','incident-resolution','automatic-control-transfer']);
@@ -115,5 +115,5 @@ check('Reading guides and new source records preserve public provenance and decl
  for(const g of PROCESS_READING_GUIDES){refs(g.sources,sources,g.id);assert(g.sections.length);for(const s of g.sections){nonempty(s.heading,g.id);nonempty(s.text,g.id);refs(s.sources,sources,`${g.id}/${s.heading}`);}}
 });
 
-const failed=checks.filter(x=>!x).length;console.log(`\n${checks.length-failed} process/people checks passed; ${failed} failed.`);
+const failed=checks.filter(x=>!x).length;console.log(`\n${checks.length-failed} process/people checks passed; ${failed} failed. Reviewed ${Object.keys(PROCESS_VIEWS).length} processes and ${Object.values(PROCESS_VIEWS).reduce((total,p)=>total+p.steps.length,0)} steps.`);
 if(failed)process.exitCode=1;

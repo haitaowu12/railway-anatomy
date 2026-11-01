@@ -1,3 +1,4 @@
+import {applyControlInterfacesCatalog} from './control-interfaces-data.js';
 import {applyDepotCatalog} from './depot-data.js';
 import {applyOccCatalog} from './occ-data.js';
 import {applyStudyCatalog} from './studies-data.js';
@@ -3043,3 +3044,5 @@ applyStationPlatformCatalog(SOURCES,CONCEPTS);
 // the catalog gate instead of silently retaining an unrelated older record.
 SOURCES.push(...DEPTH_SOURCES,...MECHANICAL_SOURCES,...PHYSICAL_LAB_SOURCES,...EVIDENCE_LAB_SOURCES);
 
+
+applyControlInterfacesCatalog(SOURCES,CONCEPTS);

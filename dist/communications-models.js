@@ -261,7 +261,7 @@ export function buildCommunicationsView(id,api){
   function bay(parent,name,at,w,d){const g=group(parent,name,at);foundation(g,w,d);box(g,[w,.08,.08],P.blue,[0,.1,-d/2]);return g;}
   function vehicleSection(parent,at,w=5){const g=group(parent,'illustrative-vehicle-section',at);box(g,[w,.18,2.4],P.metal,[0,.2,0]);for(const x of [-w/2,w/2]){box(g,[.1,2.7,2.4],P.pale,[x,1.55,0]);}const side=group(g,'vehicle-cutaway-enclosure');box(side,[w,1.45,.1],P.pale,[0,1.05,-1.2]);shell(side);separate(side,[0,.4,-.65],'Vehicle side enclosure');return g;}
   function fieldDamper(parent,at=[0,0,0],scale=1){
-    const g=A.assembly(parent,'tunnel-damper',at,scale);for(const x of [-1.1,1.1])box(g,[.14,2.3,.75],P.metal,[x,1.35,0]);for(const y of [.2,2.5])box(g,[2.35,.14,.75],P.metal,[0,y,0]);
+    const g=A.assembly(parent,'bas-actuator',at,scale);for(const x of [-1.1,1.1])box(g,[.14,2.3,.75],P.metal,[x,1.35,0]);for(const y of [.2,2.5])box(g,[2.35,.14,.75],P.metal,[0,y,0]);
     const blades=[];for(let i=0;i<4;i++){const blade=group(g,`scada-damper-blade-${i}`,[0,.54+i*.52,0]);box(blade,[2.05,.47,.055],P.blue);cylinder(blade,.035,2.24,M.steel,[0,0,0],[0,0,Math.PI/2],10);blades.push(blade);}
     const actuator=group(g,'scada-local-actuator',[1.4,1.36,0]);box(actuator,[.44,.74,.46],P.dark);const shaft=group(actuator,'scada-actuator-shaft');cylinder(shaft,.075,.3,M.steel,[-.22,0,0],[0,0,Math.PI/2],10);box(shaft,[.04,.34,.04],P.copper,[-.22,.15,0]);separate(actuator,[.65,0,0],'Damper actuator and shaft');
     const sensor=A.assembly(g,'bas-sensor',[1.4,2.15,.17]);box(sensor,[.3,.26,.18],P.pale);const arm=group(sensor,'scada-position-contact-arm',[0,0,.12]);box(arm,[.23,.035,.025],P.copper,[.05,0,0]);

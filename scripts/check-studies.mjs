@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import {studyHarness,THREE,visible} from './study-harness.mjs';
 import {STUDY_VIEWS,STUDY_CONCEPTS} from '../dist/studies-data.js';
 import {PART_VIEW_VARIANTS} from '../dist/atlas-config.js';
-import {describeFlow,VIEWS} from '../dist/model.js';
+import {describeFlow,VIEWS,viewFor} from '../dist/model.js';
 import {ELECTRIFICATION_CHOICES,electrificationFlow} from '../dist/electrification.js';
 import {componentBounds} from '../dist/exploration.js';
 import {technologyFlow} from '../dist/technology.js';
 const {set}=await studyHarness();let passed=0;
-const studyViews=Object.fromEntries(Object.keys(STUDY_VIEWS).map(id=>[id,VIEWS[id]]));
+const studyViews=Object.fromEntries([...Object.keys(STUDY_VIEWS),'infrastructure-assets'].map(id=>[id,VIEWS[id]]));
 const has=(record,id)=>componentBounds(record).has(id);
 const check=(name,fn)=>{fn();passed++;console.log(`PASS ${name}`);};
 const node=(r,name)=>{const n=r.root.getObjectByName(name);assert(n,`Missing geometry ${name}`);return n;};
@@ -21,7 +21,10 @@ check('Every study arrangement has finite geometry and all advertised component 
     for(const electrification of profiles){
       const r=set(view,variant.id,2.5,{electrification});assert(r.picks.length);
       r.root.traverse(n=>{if(n.isMesh)for(const x of n.geometry.attributes.position.array)assert(Number.isFinite(x),`${view}/${variant.id}: invalid vertex`);assert([...n.position.toArray(),...n.rotation.toArray().slice(0,3),...n.scale.toArray()].every(Number.isFinite));});
-      for(const c of STUDY_CONCEPTS.filter(c=>c.primary[0]===view))if(PART_VIEW_VARIANTS[c.id][view].includes(variant.id)){
+      // Use the shipping route after deliberate representation migrations. The
+      // structures/drainage asset is now a physical section, while its former
+      // infrastructure-care route opens the maintenance evidence process.
+      for(const c of STUDY_CONCEPTS.filter(c=>viewFor(c.id)===view))if(PART_VIEW_VARIANTS[c.id][view].includes(variant.id)){
         const expected=c.id!=='study-onboard-transformer'||electrification==='overhead-ac';
         assert.equal(has(r,c.id),expected,`${view}/${variant.id}/${electrification}: geometry for ${c.id}`);
       }

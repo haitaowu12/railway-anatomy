@@ -1,6 +1,49 @@
 // Enable playback only where motion explains an authored mechanism. These
 // captions describe the illustration, not a real railway operating sequence.
 export function applyMotionGuides(views){
+  const mechanism=(label,steps,{loop=false,duration=14}={})=>({label,duration,loop,steps:steps.map(([at,label,description])=>({at,label,description}))});
+  const rolling=mechanism('Wheelset, bearing and drive relationships',[
+    [0,'Retained frame','The bogie remains in place as a mechanism study. Select an axlebox and open its inspection stages to see the rings, rollers and cage.'],
+    [.25,'Inner ring and rollers','The axle-side inner ring turns with the wheel. The outer ring and housing remain stationary; the rollers spin while their cage orbits more slowly.'],
+    [.5,'Separate torque and support','With rotary propulsion selected, the 12-tooth pinion turns twice for each 24-tooth axle-gear turn. With LIM selected, no geared wheel drive is implied.'],
+    [.75,'Follow the rolling set','The cylindrical-roller illustration assumes radial contact with no slip. Cage motion, roller spin and shaft rotation are different; no bearing life or running speed is calculated.'],
+    [1,'One wheel revolution','The wheel returns to its original orientation while the slower cage has completed only part of a turn. Replay resets the illustrative phase; it is not a physical restart.'],
+  ]);
+  const door=mechanism('Installed door: unlock, drive, close and observe',[
+    [0,'Closed and locked','Inspect the installed leaves, fixed guide, belt drive and local controller. This is one coupled sliding-door architecture, not a universal vehicle design.'],
+    [.16,'Unlock first','The illustrative lock withdraws before leaf travel. A returned lock indication is distinct from a command.'],
+    [.40,'Open leaves','Opposite belt runs move the two supported leaves in opposite directions. The vehicle and wheelsets stay still.'],
+    [.55,'Return movement','The pulleys reverse as the leaves return. The position targets move with the leaves; contacts remain fixed.'],
+    [.80,'Closed is not yet locked','The targets have returned to the closed position. The lock has not yet reached its illustrated engaged end.'],
+    [.96,'Separate returned evidence','Lock engagement and returned closed-and-locked evidence are now shown separately. This is not a departure permission or a complete obstruction-detection algorithm.'],
+    [1,'Inspect the endpoint','Use the physical paths to compare the motor-to-leaf transmission with the request, position and lock interfaces.'],
+  ]);
+  const air=mechanism('Installed air-treatment module: fan and stationary sections',[
+    [0,'Locate the air path','Open one roof module. The inlet, filter, heat-exchanger coil, fan and condensate route are separate.'],
+    [.25,'Half revolution','The impeller turns on its shaft while the motor casing, filter and coil remain stationary.'],
+    [.50,'One revolution','Arrows identify the selected air path. They do not measure airflow, pressure, cooling or filtration performance.'],
+    [.75,'Separate fluid routes','Coil supply and return are separate from the air path and the condensate drain.'],
+    [1,'Two revolutions','The rotor returns to its starting orientation. No thermal control sequence or rated speed is specified.'],
+  ],{loop:true,duration:12});
+  const compressor=mechanism('Piston-compressor section: crank and constant-length rod',[
+    [0,'Selected piston example','Open the crankcase and cylinder section. The original single-cylinder illustration is not a product model; multi-cylinder and screw air-supply arrangements also exist.'],
+    [.125,'Piston travel','The crankpin moves around the shaft. A constant-length connecting rod drives the piston along its bore.'],
+    [.25,'Opposite dead centre','The piston reaches the other end of its geometric stroke. The casing, cylinder and head remain fixed.'],
+    [.5,'One crank revolution','The piston returns to its starting position. Compression pressure, valve response and delivered flow are not calculated.'],
+    [.75,'Treatment and storage','Drying and storage are separate equipment on the illustrated downstream path; this motion does not establish their performance.'],
+    [1,'Two crank revolutions','The crank and piston return to their original positions. Use the mechanical and air-supply traces to compare different interfaces.'],
+  ],{loop:true,duration:16});
+  const brake=mechanism('Stationary brake: apply, hold and release',[
+    [0,'Released pads','The wheel and disc stay still. Each pad has a visible running clearance to its own friction face.'],
+    [.25,'Contact reached','The pneumatic actuator and linkage approach both pad carriers to the disc. The pads stop at contact.'],
+    [.5,'Hold geometry','Contact is retained. The model does not calculate pressure, force, friction coefficient or braking distance.'],
+    [.8,'Release movement','The pads move away from the friction faces while the caliper carrier remains fixed to the frame.'],
+    [1,'Clearance restored','Compare the rotating-disc interface with the stationary reaction path. The sequence is a mechanism illustration, not a brake test or an isolation procedure.'],
+  ]);
+  const componentAnimations={doors:door,'door-control':door,hvac:air,compressor,brakes:brake,'parking-brake':brake,'brake-control':brake,bogie:rolling,tachometer:rolling,'rotary-traction-motor':rolling,'traction-gearbox':rolling};
+  for(const id of ['vehicle','services','bogie'])views[id].componentAnimations={...componentAnimations};
+  views.bogie.motion=true;views.bogie.animation=rolling;
+  views.services.motion=true;views.services.animation=door;
   views.lim.motion=true;
   views.lim.animation={label:'Travelling field and the passive reaction rail',duration:12,loop:true,steps:[
     {at:0,label:'Primary & secondary',description:'The windings belong to the train-mounted primary. The reaction rail is the passive secondary across the air gap.'},
@@ -118,4 +161,15 @@ export function applyMotionGuides(views){
     step(.98,'Open indication','The separate open-position contact changes after the mechanism reaches its open end.'),
     step(1,'Inspect the endpoint','Compare actuator motion, blade position and indication. No smoke-control mode or emergency operating procedure is simulated.')
   ],12);
+  const pump=mechanism('Pump working section: shaft, impeller and fixed casing',[
+    [0,'Open the hydraulic cover','The impeller, shaft sealing region, coupling and casing have separate physical roles.'],
+    [.25,'Half revolution','The shaft, coupling and impeller rotate together. The motor housing, seal support and collecting casing remain fixed.'],
+    [.50,'One revolution','Trace the axial inlet to the impeller eye and collecting casing. The flow route shows anatomy, without a calculated pressure or flow rate.'],
+    [.75,'Separate the control question','This is a component motion study. A fire alarm has not started this pump, and no sprinkler head is commanded open.'],
+    [1,'Two revolutions','The rotor returns to its starting orientation. Actual duties, start logic and supervision belong to the selected pump system.'],
+  ],{loop:true,duration:12});
+  for(const view of ['station-plant','fire-systems']){
+    const option=views[view].variants.find(v=>v.id==='water');option.motion=true;option.animation=pump;
+  }
+  const plantAir=views['station-plant'].variants.find(v=>v.id==='air');plantAir.motion=true;plantAir.animation={...air,label:'Plant air-handler: fan and stationary sections',steps:air.steps.map((step,index)=>index?step:{...step,description:'Open the air-handler enclosure. The inlet, filter, heat-exchanger coil, fan and condensate route are separate.'})};
 }

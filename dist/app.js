@@ -1,3 +1,8 @@
+import {representationFor} from './representation-guidance.js';
+import {systemDiagram,DIAGRAM_VIEWS} from './system-diagrams.js';
+import {createControlInterfaceExplorer} from './control-interfaces-ui.js';
+import {CONTROL_DOMAINS,CONTROL_INTERFACE_CONCEPTS,getInterfaceContext,normalizeControlState} from './control-interfaces-data.js';
+import {buildNavigationIndex,createNavigationSearch} from './navigation-search.js';
 import {SHORT_LABELS as shortLabels} from './labels.js';
 import {DEFAULT_TECHNOLOGY,PROPULSION_CHOICES,CONTROL_CHOICES,normalizeTechnology,technologyFromUrl,technologyForView,technologyForComponent,controlRoute,technologyNote,technologyFlow} from './technology.js';
 import {NAVIGATION_GROUPS,VIEW_GROUPS,VIEW_PARENTS,domainForView,viewTrail,routeState,PROPULSION_EFFECTS,CONTROL_EFFECTS} from './navigation.js';
@@ -10,7 +15,7 @@ import {platformAnimationFor} from './station-platform-data.js';
 import {electricalStudy,electricalMarkup,updateElectricalDiagram} from './electrical-explainers.js';
 import {DEFAULT_ELECTRIFICATION,ELECTRIFICATION_CHOICES,normalizeElectrification,electrificationForComponent,electrificationProfile,electrificationNote,electrificationFlow} from './electrification.js';
 import {PROCESS_VIEWS,PEOPLE_ROLES,TRAIN_CONTROL_TAXONOMY} from './process-data.js';
-import {PROCESS_REDIRECTS,PROCESS_COMPONENTS,processFor,renderProcessPage,renderPeoplePage} from './process-ui.js';
+import {PROCESS_REDIRECTS,PROCESS_COMPONENTS,processFor,processStepFor,renderProcessPage,renderPeoplePage} from './process-ui.js';
 import {topologyMarkup} from './topology-ui.js';
 import {ABOUT_HTML} from './project-about.js';
 import {READING_GUIDES} from './reading-guides.js';
@@ -32,7 +37,9 @@ let state={technology:technologyFromUrl(location.search,savedTechnology),electri
 let historyMode='replace',returnContext=null,lastReadUrl='',allComponents=false,configurationEffect='',lastDetailKey='';
 let viewer=null, rendererStatus='', loadingViewer=false, labelFrame=0,lastLabelTime=0,lastExplorationContext='';
 let lessonAnswers={}, lessonAttempts={}, quizSelections={};
-let depthPanel=null,depthFrame=0;
+let depthPanel=null,depthFrame=0,interfaceExplorer=null;
+const interfaceConceptIds=new Set(CONTROL_INTERFACE_CONCEPTS.map(c=>c.id));
+const hasInterfaceContext=id=>interfaceConceptIds.has(id)||CONTROL_DOMAINS.some(d=>d.components.includes(id));
 const progressKey='railway-anatomy-learning-v2';
 try{const saved=JSON.parse(localStorage.getItem(progressKey)||'{}');for(const t of TOURS){if(saved.completed?.[t.id]===true)lessonAnswers[t.id]=true;if(Number.isInteger(saved.choices?.[t.id])&&saved.choices[t.id]>=0&&saved.choices[t.id]<t.choices.length)quizSelections[t.id]=saved.choices[t.id];if(Number.isFinite(saved.attempts?.[t.id]))lessonAttempts[t.id]=Math.max(0,saved.attempts[t.id]);}}catch{}
 function saveProgress(){try{localStorage.setItem(progressKey,JSON.stringify({completed:lessonAnswers,choices:quizSelections,attempts:lessonAttempts}));}catch{}}
@@ -41,11 +48,14 @@ const wideSearch=matchMedia('(min-width:741px)');
 const searchPanel=$('#equipment-search-panel');if(searchPanel){searchPanel.open=wideSearch.matches;wideSearch.addEventListener('change',e=>{searchPanel.open=e.matches;});}
 const labelElements=new Map();
 let labelLayoutKey='',lastSequenceKey='',lastTopologyStep='';
-const isProcessPage=()=>state.page==='processes'||state.page==='people'||state.page==='learn'&&Boolean(processFor(state.view,state.component));
-const currentTopology=()=>VIEWS[state.view]?.variants?.find(v=>v.id===state.variant)?.topology||null;
+const isProcessPage=()=>state.page==='processes'||state.page==='people'||state.page==='learn'&&Boolean(processFor(state.view,state.component,state.variant));
+const currentTopology=()=>VIEWS[state.view]?.variants?.find(v=>v.id===state.variant)?.topology||systemDiagram(state,VIEWS[state.view])||null;
 const isConnections=()=>state.presentation==='connections'&&Boolean(currentTopology()||electricalStudy(state.view));
-const guideForState=()=>state.view==='platform-interface'?platformAnimationFor(state):animationFor(VIEWS[state.view],state.variant);
-const preferredPresentation=(view,variant)=>VIEWS[view]?.variants?.find(v=>v.id===variant)?.defaultPresentation||VIEWS[view]?.defaultPresentation||(view==='communications-overview'?'connections':'equipment');
+const guideForState=()=>state.view==='platform-interface'?platformAnimationFor(state):animationFor(VIEWS[state.view],state.variant,state.component);
+const doorClosureComparison=()=>state.scenario==='door-open'&&['vehicle','services'].includes(state.view)&&guideForState()===VIEWS[state.view]?.componentAnimations?.doors;
+const equipmentInformationOnly=()=>!isConnections()&&(representationFor(state.view,state.variant).motionKind==='information'||state.view==='depot-testing'&&state.variant==='stationary');
+const canAnimateState=()=>!isInterfacePage()&&!isProcessPage()&&!doorClosureComparison()&&!equipmentInformationOnly()&&!(isConnections()&&systemDiagram(state,VIEWS[state.view]))&&canAnimate(VIEWS[state.view],state.variant,state.component);
+const preferredPresentation=(view,variant)=>VIEWS[view]?.variants?.find(v=>v.id===variant)?.defaultPresentation||VIEWS[view]?.defaultPresentation||(['connections','journey','dependencies','evidence'].includes(representationFor(view,variant).kind)&&!PROCESS_REDIRECTS[view]?'connections':'equipment');
 function syncPlatform({fromComponent=false,legacy=false}={}){
   if(state.view!=='platform-interface')return;
   const input={...state,platformEdge:legacy?new URLSearchParams(location.search).get('platformEdge'):state.platformEdge};
@@ -68,11 +78,21 @@ function announce(text){$('#announce').textContent=text;}
 function focusVisible(selector){const node=$$(selector).find(el=>!el.closest('[hidden]')&&el.getClientRects().length);if(node){node.focus({preventScroll:true});return;}const heading=$$('h1').find(el=>!el.closest('[hidden]')&&el.getClientRects().length);if(heading){heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});}}
 function rememberCurrentEntry(){history.replaceState({railway:routeState(state),returnContext},'',location.href);}
 function writeHash(){
-  const value=state.page==='people'?`people/${state.roleId||'traffic-coordinator'}`:state.page==='processes'?`processes/${state.processId}/${state.processStep||''}`:state.page==='reference'?'reference':state.page==='learn'?`learn/${TOURS[state.lesson].id}`:`explore/${state.domain}/${state.view}/${state.component}${state.variant!=='default'?'/'+state.variant:''}`;
+  const value=state.page==='interfaces'?`interfaces/${state.controlInterface?.domain||'traction'}/${state.controlInterface?.architecture||'summaries'}`:state.page==='people'?`people/${state.roleId||'traffic-coordinator'}`:state.page==='processes'?`processes/${state.processId}/${state.processStep||''}`:state.page==='reference'?'reference':state.page==='learn'?`learn/${TOURS[state.lesson].id}`:`explore/${state.domain}/${state.view}/${state.component}${state.variant!=='default'?'/'+state.variant:''}`;
   const url=new URL(location.href);url.searchParams.set('propulsion',state.technology.propulsion);url.searchParams.set('control',state.technology.control);if(state.electrification&&state.electrification!==DEFAULT_ELECTRIFICATION)url.searchParams.set('electrification',state.electrification);else url.searchParams.delete('electrification');
   if(state.presentation!==preferredPresentation(state.view,state.variant))url.searchParams.set('presentation',state.presentation);else url.searchParams.delete('presentation');
   for(const key of ['platformEdge','platformSensor']){if(state.view==='platform-interface'||state[key]!==({platformEdge:'open',platformSensor:'lidar'})[key])url.searchParams.set(key,state[key]);else url.searchParams.delete(key);}
   url.hash=value;writeAnatomyQuery(url,state,cutawayFor(state.view));
+  for(const key of ['ciDomain','ciArchitecture','ciScenario','ciTrace','ciStep','ciLinks'])url.searchParams.delete(key);
+  if(isInterfacePage()){
+    const ci=normalizeControlState(state.controlInterface);
+    if(isInterfaceTour()){url.searchParams.set('ciDomain',ci.domain);url.searchParams.set('ciArchitecture',ci.architecture);}
+    if(ci.scenario!=='normal')url.searchParams.set('ciScenario',ci.scenario);
+    if(ci.trace!=='indication')url.searchParams.set('ciTrace',ci.trace);
+    if(ci.step)url.searchParams.set('ciStep',String(ci.step));
+    if(Object.keys(ci.connections).length)url.searchParams.set('ciLinks',Object.entries(ci.connections).sort(([a],[b])=>a.localeCompare(b)).map(([id,mode])=>id+':'+mode).join(','));
+    for(const key of ['instance','trace','study','workspace','inspect','instances','exposure','presentation'])url.searchParams.delete(key);
+  }
   for(const [key,value,initial] of [['mode',state.mode,['power','vehicle'].includes(state.domain)?'motoring':'coasting'],['scenario',state.scenario,'nominal'],['sink',state.sink,'train']]){
     if(value!==initial)url.searchParams.set(key,value);else url.searchParams.delete(key);
   }
@@ -87,11 +107,19 @@ function readHash(){
   state.electrification=normalizeElectrification(new URLSearchParams(location.search).get('electrification'));
   const query=new URLSearchParams(location.search);
   state.platformSensor=query.get('platformSensor')||'lidar';state.platformEdge=query.get('platformEdge')||'open';
-  if(page==='people'){state.page='people';state.roleId=PEOPLE_ROLES.some(r=>r.id===a)?a:PEOPLE_ROLES[0].id;}
+  if(page==='interfaces'){
+    state.page='interfaces';
+    const connections=Object.fromEntries((query.get('ciLinks')||'').split(',').filter(x=>x.includes(':')).map(x=>x.split(':')));
+    state.controlInterface=normalizeControlState({domain:a,architecture:b,scenario:query.get('ciScenario'),trace:query.get('ciTrace'),step:query.get('ciStep'),connections});
+  }else if(page==='people'){state.page='people';state.roleId=PEOPLE_ROLES.some(r=>r.id===a)?a:PEOPLE_ROLES[0].id;}
   else if(page==='processes'){state.page='processes';state.processId=PROCESS_VIEWS[a]?a:'configuration-change';state.processStep=PROCESS_VIEWS[state.processId].steps.some(s=>s.id===b)?b:PROCESS_VIEWS[state.processId].steps[0].id;}
   else if(page==='reference'){state.page='reference';}
   else if(page==='learn'){
     state.page='learn';state.lesson=Math.max(0,TOURS.findIndex(t=>t.id===a));applyLesson(false);
+    if(isInterfaceTour()){
+      const connections=Object.fromEntries((query.get('ciLinks')||'').split(',').filter(x=>x.includes(':')).map(x=>x.split(':')));
+      state.controlInterface=normalizeControlState({domain:query.get('ciDomain')||state.controlInterface.domain,architecture:query.get('ciArchitecture')||state.controlInterface.architecture,scenario:query.get('ciScenario'),trace:query.get('ciTrace'),step:query.get('ciStep'),connections});
+    }
   }else{
     state.page='explore';
     const domain=DOMAINS.find(d=>d.id===a)||DOMAINS.find(d=>d.id==='network');
@@ -109,18 +137,54 @@ function readHash(){
   }
   state.technology=technologyForView(technologyForComponent(state.technology,state.component),state.view,state.variant);
   if(!state.view?.startsWith('power-'))state.electrification=electrificationForComponent(state.electrification,state.component);
-  const redirected=(state.view==='depot-support'&&state.variant==='planning'?'maintenance-release':null)||(['operations-centre','occ-workplace'].includes(state.view)&&state.variant==='handover'?'duty-handover':state.view==='operations-centre'&&state.variant==='incident'?'incident-coordination':null)||processFor(state.view,state.component);if(state.page==='explore'&&redirected){state.page='processes';state.processId=redirected;state.processStep=PROCESS_VIEWS[redirected].steps[0].id;}
+  const redirected=processFor(state.view,state.component,state.variant);
+  if(state.page==='explore'&&state.view==='station-networks'){state.page='interfaces';state.controlInterface=normalizeControlState(getInterfaceContext(state.component,state.view,state.variant));}
+  if(state.page==='explore'&&redirected){state.page='processes';state.processId=redirected;state.processStep=processStepFor(state.view,state.variant)||PROCESS_VIEWS[redirected].steps[0].id;}
   configurationEffect='';allComponents=false;state.playing=false;state.loop=false;
   syncPlatform({legacy:true});
   state.presentation=['connections','equipment'].includes(query.get('presentation'))?query.get('presentation'):preferredPresentation(state.view,state.variant);
+  if(!representationFor(state.view,state.variant).equipmentContext)state.presentation='connections';
   applyAnatomyQuery(state,query);
+}
+
+function isInterfaceTour(){return state.page==='learn'&&state.view==='station-networks';}
+function isInterfacePage(){return state.page==='interfaces'||isInterfaceTour();}
+function routeLabel(route){if(route?.page==='learn')return TOURS[route.lesson]?.label||'Guided tour';return route?.page==='interfaces'?'Control interfaces':route?.page==='processes'?PROCESS_VIEWS[route.processId]?.title||'processes':route?.page==='people'?'People and responsibilities':route?.page==='reference'?'Field guide':VIEWS[route?.view]?.label||'previous context';}
+function learningViewSequence(){
+  const workspace=workspaceFor(state.view,state.domain,state.workspace);
+  return [...new Set([...(workspace?workspace.groups.flatMap(g=>g.views):activeDomain().views),state.view])].filter(id=>VIEWS[id]);
+}
+function renderRepresentationSummary(){
+  const rep=representationFor(state.view,state.variant),guide=guideForState();
+  const mechanical=canAnimateState()&&!isConnections();
+  let title=isConnections()?rep.label:'Equipment anatomy';
+  let message=isConnections()?'Select an endpoint for its explanation. Compare the cases to see which relationship or evidence changes.':mechanical?`Use Play or the steps below to examine ${guide?.label||'the mechanism'}.`:'This view locates physical equipment. Use sections, individual parts and interface links where a mechanism is not animated.';
+  if(mechanical&&guide?.steps?.length)message+=` ${guide.steps.length} stages can also be inspected without autoplay.`;
+  if(equipmentInformationOnly())message=currentTopology()?'The hardware remains stationary. Open the diagram to examine the information path and its evidence.':'This view locates physical equipment. Data, diagnosis and acceptance are explained separately; the hardware has no invented mechanical cycle.';
+  if(!isConnections()&&rep.motionKind==='electrical')message='The core, windings and semiconductor hardware remain stationary. Play opens the electrical principle diagram to examine the time-varying relationship.';
+  if(doorClosureComparison())message='This comparison holds the door open to show unconfirmed closure. Select Supporting loads to study the normal unlock, movement and returned-proof sequence.';
+  const diagnosticContext=state.view==='depot-condition'&&state.variant==='stationary'||state.view==='depot-components'&&state.variant==='traction';
+  $('#representation-summary').innerHTML=`<p><strong>${safe(title)}.</strong> ${safe(message)}</p>`+(diagnosticContext?'<button data-inspect-view="depot-testing">Evidence & diagnostic interpretation →</button>':'')+(hasInterfaceContext(state.component)?`<button data-open-interfaces="${getInterfaceContext(state.component,state.view,state.variant).domain}">Control interfaces →</button>`:'');
+}
+function openInterfaces(context={}){
+  if(state.page!=='interfaces')returnContext=routeState(state);
+  state.page='interfaces';state.playing=false;state.controlInterface=normalizeControlState({...state.controlInterface,...context});
+  $('#interface-concept-detail').replaceChildren();render();$('#workspace').scrollIntoView({block:'start',behavior:'instant'});announce('Control responsibilities and optional interfaces');
+}
+function showInterfaceConcept(id){
+  const c=parts.get(id);if(!c)return;
+  const host=$('#interface-concept-detail');host.innerHTML=`<p class="eyebrow">Connected component or function</p><h2 tabindex="-1">${safe(c.label)}</h2><p><strong>${safe(c.summary)}</strong></p>${c.details.map(p=>`<p>${safe(p)}</p>`).join('')}${c.caveat?`<p>${safe(c.caveat)}</p>`:''}${sourceChips(c.sources)}<div class="context-jump"><button data-reference="${c.id}">Read in the field guide →</button>${!interfaceConceptIds.has(c.id)&&!PROCESS_COMPONENTS[c.id]&&viewFor(c.id)!=='station-networks'?`<button data-explore-component="${c.id}">Locate the equipment or system →</button>`:''}</div>`;host.querySelector('h2').focus({preventScroll:true});host.scrollIntoView({block:'start',behavior:'instant'});
+}
+function returnToContext(){
+  if(!returnContext){setDomain('network');return;}
+  const destination=returnContext;returnContext=null;state={...state,...destination,playing:false};configurationEffect='';lastExplorationContext='';render(true);if(state.page==='explore')orientToView();else $('#workspace').scrollIntoView({block:'start',behavior:'instant'});announce(`Returned to ${routeLabel(state)}`);
 }
 
 function activeDomain(){return DOMAINS.find(d=>d.id===state.domain);}
 function syncViewer(changedView=false){
   if(!viewer)return;
-  if(isProcessPage()||state.page==='reference'){viewer.setPlaying(false);return;}
-  if(!canAnimate(VIEWS[state.view],state.variant))state.playing=false;
+  if(isProcessPage()||isInterfacePage()||state.page==='reference'){viewer.setPlaying(false);return;}
+  if(!canAnimateState())state.playing=false;
   const context=[state.view,state.variant,state.component,state.technology.propulsion,state.technology.control,state.electrification,state.platformEdge,state.platformSensor].join('/');
   if(lastExplorationContext&&context!==lastExplorationContext&&state.explodeScope==='selected'){state.exploded=0;state.explodeScope='all';}
   lastExplorationContext=context;
@@ -136,7 +200,7 @@ function syncViewer(changedView=false){
   state.explodeScope=viewer.setExplodeScope?.(requestedScope)||'all';
   if(requestedScope==='selected'&&state.explodeScope!=='selected')state.exploded=0;
   viewer.setExploded(state.explodeScope==='selected'?requestedExposure:state.exploded);viewer.setSignals(['track','control','communications','station','operations','depot'].includes(state.domain));
-  const sequenceKey=[state.view,state.variant,state.platformEdge,state.platformSensor].join('/');
+  const sequenceKey=[state.view,state.variant,state.component,state.platformEdge,state.platformSensor].join('/');
   if(sequenceKey!==lastSequenceKey){state.playing=false;state.loop=Boolean(guideForState()?.loop);viewer.setPhase(0);lastSequenceKey=sequenceKey;lastTopologyStep='';}
   viewer.setPlayback({duration:guideForState()?.duration||12,loop:state.loop});
   state.playing=viewer.setPlaying(state.playing);if(state.functionalPath)state.functionalPath=viewer.setFunctionalPath?.(state.functionalPath)||null;syncControls();
@@ -148,12 +212,12 @@ function syncControls(){
   state.playing=viewer?.getPlaying?.()||false;
   $('#play').textContent=state.playing?'Ⅱ Pause':viewer?.getPhase?.()>=5?'↻ Replay':'▶ Play sequence';$('#play').setAttribute('aria-pressed',String(state.playing));
   $('#play').disabled=reducedMotion.matches;
-  $('.animation').hidden=!canAnimate(VIEWS[state.view],state.variant);
-  if($('.sequence-panel'))$('.sequence-panel').hidden=!canAnimate(VIEWS[state.view],state.variant);
+  $('.animation').hidden=!canAnimateState();
+  if($('.sequence-panel'))$('.sequence-panel').hidden=!canAnimateState();
   if($('#motion-loop'))$('#motion-loop').checked=Boolean(state.loop);
   $('#play').title=reducedMotion.matches?'Reduced motion is enabled. Use the steps or slider to inspect each state.':'Play the illustrated sequence';
-  if($('#quick-play')){const quick=$('#quick-play');quick.hidden=!canAnimate(VIEWS[state.view],state.variant)||isConnections();quick.textContent=$('#play').textContent;quick.disabled=reducedMotion.matches;quick.setAttribute('aria-pressed',String(state.playing));}
-  if($('#diagram-quick-play')){const quick=$('#diagram-quick-play');quick.hidden=!canAnimate(VIEWS[state.view],state.variant);quick.textContent=$('#play').textContent;quick.disabled=reducedMotion.matches;quick.setAttribute('aria-pressed',String(state.playing));}
+  if($('#quick-play')){const quick=$('#quick-play');quick.hidden=!canAnimateState()||isConnections();quick.textContent=$('#play').textContent;quick.disabled=reducedMotion.matches;quick.setAttribute('aria-pressed',String(state.playing));}
+  if($('#diagram-quick-play')){const quick=$('#diagram-quick-play');quick.hidden=!canAnimateState();quick.textContent=$('#play').textContent;quick.disabled=reducedMotion.matches;quick.setAttribute('aria-pressed',String(state.playing));}
   const capabilities=viewer?.getViewCapabilities();
   $('#cutaway').closest('label').hidden=state.view==='railway'||capabilities?.cutaway===false;$('#separation-controls').hidden=state.view==='railway'||capabilities?.explode===false;
   const selected=targetFor(state.component),overview=['network-overview','depot-layout','operations-centre'].includes(selected);
@@ -215,7 +279,7 @@ function selectStudyStep(study,step){
   depthPanel?.setTab('learn');refreshDepthState();
 }
 function renderDepth(){
-  const host=$('#anatomy-panel');if(!host)return;
+  const host=$('#anatomy-panel');if(!host)return;if(isConnections()||isProcessPage()||isInterfacePage()){host.hidden=true;return;}host.hidden=false;
   if(!depthPanel)depthPanel=createDepthPanel(host,{
     instance:id=>{historyMode='push';if(viewer?.selectInstance?.(id))refreshDepthState();},
     mode:mode=>{historyMode='replace';if(viewer?.setInspectionMode?.(mode)){refreshDepthState();if(mode==='inspection')$('#viewer').scrollIntoView({block:'center',behavior:'instant'});}},
@@ -231,13 +295,16 @@ function renderDepth(){
   });
   depthPanel.render({inspection:viewer?.getInspectionState?.(),exploration:viewer?.getExplorationState?.(),state,parts,sourceChips,hasConnections:Boolean(currentTopology()||electricalStudy(state.view))});
 }
+function tourNavigationMarkup(id='tour-select'){
+  return `<label for="${id}">Guided tour</label><select id="${id}" data-tour-select>${TOURS.map((t,i)=>`<option value="${i}" ${state.lesson===i?'selected':''}>${lessonAnswers[t.id]?'✓ ':''}${safe(t.label)}</option>`).join('')}</select><span>${Object.keys(lessonAnswers).length} of ${TOURS.length} checked</span>`;
+}
 function renderNavigation(){
   $$('.main-nav [data-page]').forEach(b=>{if(b.dataset.page===(state.page==='people'?'processes':state.page))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
-  $('#explorer-page').hidden=state.page==='reference'||isProcessPage();$('#reference-page').hidden=state.page!=='reference';$('#processes-page').hidden=!isProcessPage();
+  $('#explorer-page').hidden=state.page==='reference'||isInterfacePage()||isProcessPage();$('#reference-page').hidden=state.page!=='reference';$('#processes-page').hidden=!isProcessPage();$('#interfaces-page').hidden=!isInterfacePage();
   const d=activeDomain(),network=DOMAINS.find(x=>x.id==='network');
   $('#intro-copy').textContent=state.page==='learn'?'Inspect the model, then check your understanding.':state.domain==='network'?'Select a place in this schematic railway to explore its systems.':'Select equipment in the model or browse the components below.';
   $('#intro-copy').hidden=state.page!=='learn';
-  const viewButtons=ids=>ids.filter(id=>VIEWS[id]&&!PROCESS_REDIRECTS[id]).map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
+  const viewButtons=ids=>ids.filter(id=>VIEWS[id]).map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
   const domainViews=item=>{const groups=VIEW_GROUPS[item.id];if(!groups)return viewButtons(item.views);const grouped=new Set(groups.flatMap(g=>g.views));return groups.map(g=>`<div class="view-subgroup"><h3>${safe(g.label)}</h3>${viewButtons(g.views)}</div>`).join('')+(item.id==='communications'?'':viewButtons(item.views.filter(id=>!grouped.has(id))));};
   const domainButton=item=>`<button data-domain="${item.id}" class="domain-button ${item.id===state.domain?'active':''}" aria-pressed="${item.id===state.domain}">${domainIcon(item.id)}<strong>${safe(item.label)}</strong></button>${item.id===state.domain&&item.views.length>1?`<div class="area-views">${domainViews(item)}</div>`:''}`;
   $('#domains').innerHTML=`<button class="network-home ${state.domain==='network'?'active':''}" data-domain="network" aria-pressed="${state.domain==='network'}">${domainIcon(network.id)}<strong>Whole railway</strong></button>`+NAVIGATION_GROUPS.map(g=>`<div class="navigation-group"><h2>${safe(g.label)}</h2>${g.ids.map(id=>DOMAINS.find(x=>x.id===id)).filter(Boolean).map(domainButton).join('')}</div>`).join('');
@@ -246,11 +313,15 @@ function renderNavigation(){
   const trail=viewTrail(state.view,VIEWS).filter(id=>id!==network.view);
   $('#location-trail').innerHTML=`<button data-domain="network" ${state.domain==='network'?'aria-current="location"':''}>Whole railway</button>`+(state.domain==='network'?'':`<span aria-hidden="true">/</span><button data-domain="${d.id}">${safe(d.label)}</button>`)+trail.filter(id=>id!==d.view).map(id=>`<span aria-hidden="true">/</span><button data-view="${id}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
   $('#return-context').hidden=!returnContext;
-  if(returnContext)$('#return-context').textContent=`← Return to ${VIEWS[returnContext.view]?.label||'previous view'}`;
-  const viewIds=[...new Set([...d.views,state.view])].filter(id=>!PROCESS_REDIRECTS[id]);
+  if(returnContext)$('#return-context').textContent=`← Return to ${routeLabel(returnContext)}`;
+  const viewIds=learningViewSequence();
   $('.scene-toolbar').hidden=viewIds.length<=1;
   $('#view-choice').innerHTML=viewIds.map(id=>`<option value="${id}">${safe(VIEWS[id].label)}</option>`).join('');
   $('#view-choice').value=state.view;
+  const sequence=viewIds;const index=sequence.indexOf(state.view);
+  $('#previous-view').disabled=index<=0;$('#next-view').disabled=index<0||index>=sequence.length-1;
+  $('#previous-view').title=index>0?VIEWS[sequence[index-1]].label:'First view in this area';$('#next-view').title=index>=0&&index<sequence.length-1?VIEWS[sequence[index+1]].label:'Last view in this area';
+  renderRepresentationSummary();
   $('#scene-index').textContent=`${d.label} / ${VIEWS[state.view].level||'System & equipment'}`;
   $('#scene-title').textContent=VIEWS[state.view].label;
   const controls=technologyControlsFor(state.view);
@@ -268,7 +339,11 @@ function renderNavigation(){
   $('#configuration-effect').hidden=!configurationEffect;$('#configuration-effect').textContent=configurationEffect;
   $('#model-key').textContent=modelNote()+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');
   $('#tour-bar').hidden=state.page!=='learn';
-  $('#tour-bar').innerHTML=`<label for="tour-select">Guided tour</label><select id="tour-select">${TOURS.map((t,i)=>`<option value="${i}" ${state.lesson===i?'selected':''}>${lessonAnswers[t.id]?'✓ ':''}${safe(t.label)}</option>`).join('')}</select><span>${Object.keys(lessonAnswers).length} of ${TOURS.length} checked</span>`;
+  $('#tour-bar').innerHTML=tourNavigationMarkup();
+  $('#interface-tour-bar').hidden=!isInterfaceTour();$('#interface-tour-bar').innerHTML=isInterfaceTour()?tourNavigationMarkup('interface-tour-select'):'';
+  $('#interface-tour-intro').hidden=!isInterfaceTour();$('#interface-tour-intro').innerHTML=isInterfaceTour()?`<p><strong>${safe(TOURS[state.lesson].title)}</strong> Compare the selected responsibilities and interfaces, then check your understanding.</p><button data-tour-lesson>Tour task & self-check ↓</button>`:'';
+  $('#interface-lesson').hidden=!isInterfaceTour();
+  if($('#process-tour-bar'))$('#process-tour-bar').innerHTML=state.page==='learn'?tourNavigationMarkup('process-tour-select'):'';
 }
 
 function renderDetail(){
@@ -281,7 +356,7 @@ function renderDetail(){
   $('#selection-summary').innerHTML=`<div><strong>${safe(shortLabels[c.id]||c.label)}</strong><p>${safe(c.summary)}</p></div><div class="selection-actions">${destination?`<button class="open-area" data-destination="${c.id}">Explore ${safe(shortLabels[c.id]||'area')} →</button>`:''}${state.page==='learn'?`<button data-explore-component="${c.id}">Explore this equipment</button>`:'<button id="read-selection">Read explanation</button>'}</div>`;
   const drilldown=destination?`<button class="open-area" data-destination="${c.id}">Explore ${safe(VIEWS[destination.view]?.label||c.label)} →</button>`:'';
   const anchor=!isConnections()&&targetFor(c.id)!==c.id?`<p class="practice-note">Model anchor: ${safe(parts.get(targetFor(c.id))?.label||targetFor(c.id))}. This concept is shown in its equipment context.</p>`:'';
-  $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / ${level}</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${drilldown}${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<details class="part-scope"><summary>Scope of this example</summary><p class="part-note">${safe(c.caveat)}</p></details>`:''}<h3 class="detail-heading">Interfaces & connected equipment</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links"><button data-focus="${targetFor(c.id)}">Locate in model</button><button data-reference="${c.id}">Read in field guide →</button></div>`;
+  $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / ${level}</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${drilldown}${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<details class="part-scope"><summary>Scope of this example</summary><p class="part-note">${safe(c.caveat)}</p></details>`:''}<h3 class="detail-heading">Interfaces & connected equipment</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links">${!isConnections()?`<button data-focus="${targetFor(c.id)}">Locate in model</button>`:''}${hasInterfaceContext(c.id)?`<button data-open-interfaces="${getInterfaceContext(c.id,state.view,state.variant).domain}">Control & supervision interfaces →</button>`:''}<button data-reference="${c.id}">Read in field guide →</button></div>`;
   const guides=READING_GUIDES.filter(g=>g.domain===state.domain&&(!g.view||g.view===state.view));
   if(guides.length)$('#component-detail').insertAdjacentHTML('beforeend',`<div class="system-reading">${guides.map(g=>`<button data-reading-guide="${g.id}">${safe(g.title)} →</button>`).join('')}</div>`);
   $('#component-detail').hidden=state.page==='learn';$('#lesson-detail').hidden=state.page!=='learn';
@@ -309,7 +384,7 @@ function renderScenario(){
   $('#sensor-lab').hidden=!(state.domain==='control'&&(state.scenario==='wheel-slip'||['tachometer','accelerometer','balise'].includes(state.component)));
 }
 function updateMotionGuide(){
-  const guide=guideForState(),phase=viewer?.getPhase?.()||0;
+  const guide=canAnimateState()?guideForState():null,phase=viewer?.getPhase?.()||0;
   const fraction=phaseFraction(phase);
   const playing=viewer?.getPlaying?.()||false;
   if(state.playing!==playing){state.playing=playing;$('#play').textContent=playing?'Ⅱ Pause':phase>=5?'↻ Replay':'▶ Play sequence';$('#play').setAttribute('aria-pressed',String(playing));for(const quick of $$('#quick-play,#diagram-quick-play')){quick.textContent=$('#play').textContent;quick.setAttribute('aria-pressed',String(playing));}}
@@ -332,7 +407,7 @@ function updateMotionGuide(){
   if(isConnections()&&currentTopology())updateTopologyStep(steps[index],`${key}/${index}`);
   if(electricalStudy(state.view))updateElectricalDiagram($('#connections-view'),state.view,fraction);
 }
-function seekSequence(fraction){if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Math.max(0,Math.min(1,fraction))*5);syncControls();updateLabels();}
+function seekSequence(fraction){if(!canAnimateState())return;if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Math.max(0,Math.min(1,fraction))*5);syncControls();updateLabels();}
 function stepSequence(direction){const guide=guideForState(),fraction=phaseFraction(viewer?.getPhase?.()||0),steps=guide?.steps||[];
   const next=direction>0?steps.find(s=>s.at>fraction+.001):[...steps].reverse().find(s=>s.at<fraction-.001);seekSequence(next?.at??(direction>0?1:0));}
 function updateTopologyStep(step,key){
@@ -345,7 +420,10 @@ function updateTopologyStep(step,key){
 function renderLesson(){
   if(state.page!=='learn')return;
   const t=TOURS[state.lesson];
-  const lessonHost=isProcessPage()?$('#process-lesson'):$('#lesson-detail');if(!lessonHost)return;lessonHost.innerHTML=`<div class="lesson-body"><button class="back-guide" data-explore-component="${state.component}">← Explore freely</button><p class="part-kicker">Guided tour ${state.lesson+1} / ${TOURS.length}</p><h3>${safe(t.title)}</h3><p>${safe(t.explanation)}</p>${state.component!==t.component?`<div class="selected-in-tour"><strong>${safe(parts.get(state.component).label)}</strong><p>${safe(parts.get(state.component).summary)}</p><button data-explore-component="${state.component}">Open component explanation →</button></div>`:''}<div class="try-action"><strong>${isProcessPage()?'Explore the process':'Try it in the model'}</strong>${safe(t.actionText)}<button id="lesson-action">${safe(t.actionLabel)} ↗</button></div><div class="question"><h4 id="quiz-title">${safe(t.question)}</h4><fieldset aria-labelledby="quiz-title">${t.choices.map((v,i)=>`<label class="answer-choice"><input type="radio" name="quiz-answer" value="${i}" ${quizSelections[t.id]===i?'checked':''}><span>${safe(v)}</span></label>`).join('')}</fieldset><button class="check-answer" id="check-answer">Check understanding</button><div id="quiz-feedback" role="status" tabindex="-1" hidden></div><p class="practice-note">Optional self-check. Retry or move on at any time. Progress stays on this device.</p></div>${sourceChips([...new Set(t.sourceConcepts.flatMap(id=>parts.get(id).sources))])}<div class="lesson-nav"><button id="previous-lesson" ${state.lesson===0?'disabled':''}>← Previous</button><button id="next-lesson">${state.lesson===TOURS.length-1?'Finish & explore':'Next tour →'}</button></div></div>`;
+  const lessonHost=isInterfaceTour()?$('#interface-lesson'):isProcessPage()?$('#process-lesson'):$('#lesson-detail');if(!lessonHost)return;
+  for(const host of $$('#lesson-detail,#process-lesson,#interface-lesson'))if(host!==lessonHost)host.replaceChildren();
+  const actionContext=isInterfaceTour()?'Explore the interfaces':isProcessPage()?'Explore the process':isConnections()?'Explore the diagram':'Try it in the model';
+  lessonHost.innerHTML=`<div class="lesson-body"><button class="back-guide" data-explore-component="${state.component}">← Explore freely</button><p class="part-kicker">Guided tour ${state.lesson+1} / ${TOURS.length}</p><h3 tabindex="-1">${safe(t.title)}</h3><p>${safe(t.explanation)}</p>${state.component!==t.component?`<div class="selected-in-tour"><strong>${safe(parts.get(state.component).label)}</strong><p>${safe(parts.get(state.component).summary)}</p><button data-explore-component="${state.component}">Open component explanation →</button></div>`:''}<div class="try-action"><strong>${actionContext}</strong>${safe(t.actionText)}<button id="lesson-action">${safe(t.actionLabel)} ↗</button></div><div class="question"><h4 id="quiz-title">${safe(t.question)}</h4><fieldset aria-labelledby="quiz-title">${t.choices.map((v,i)=>`<label class="answer-choice"><input type="radio" name="quiz-answer" value="${i}" ${quizSelections[t.id]===i?'checked':''}><span>${safe(v)}</span></label>`).join('')}</fieldset><button class="check-answer" id="check-answer">Check understanding</button><div id="quiz-feedback" role="status" tabindex="-1" hidden></div><p class="practice-note">Optional self-check. Retry or move on at any time. Progress stays on this device.</p></div>${sourceChips([...new Set(t.sourceConcepts.flatMap(id=>parts.get(id).sources))])}<div class="lesson-nav"><button id="previous-lesson" ${state.lesson===0?'disabled':''}>← Previous</button><button id="next-lesson">${state.lesson===TOURS.length-1?'Finish & explore':'Next tour →'}</button></div></div>`;
   if(quizSelections[t.id]!==undefined)showFeedback(quizSelections[t.id]===t.answer);
 }
 function showFeedback(correct,choice=quizSelections[TOURS[state.lesson].id]){
@@ -362,13 +440,14 @@ function renderReference(){
   const found=CONCEPTS.filter(match);$('#reference-count').textContent=`${found.length} concepts`;
   $('#reference-results').innerHTML=DOMAINS.filter(d=>filter==='all'||d.id===filter).map(d=>{
     const items=found.filter(c=>d.parts.includes(c.id));if(!items.length)return '';
-    return `<section class="reference-group"><h3>${d.label}</h3>${items.map(c=>`<details class="reference-card" id="reference-${c.id}"><summary>${safe(c.label)}</summary><div><p><strong>${safe(c.summary)}</strong></p>${c.details.map(p=>`<p>${safe(p)}</p>`).join('')}${c.caveat?`<p class="part-note">${safe(c.caveat)}</p>`:''}${sourceChips(c.sources)}<button class="open-in-model" data-explore-component="${c.id}">${processFor(viewFor(c.id),c.id)?'Open the process':'Explore this equipment'} ↗</button></div></details>`).join('')}</section>`;
+    return `<section class="reference-group"><h3>${d.label}</h3>${items.map(c=>`<details class="reference-card" id="reference-${c.id}"><summary>${safe(c.label)}</summary><div><p><strong>${safe(c.summary)}</strong></p>${c.details.map(p=>`<p>${safe(p)}</p>`).join('')}${c.caveat?`<p class="part-note">${safe(c.caveat)}</p>`:''}${sourceChips(c.sources)}<button class="open-in-model" data-explore-component="${c.id}">${processFor(viewFor(c.id),c.id)?'Open the process':interfaceConceptIds.has(c.id)?'Explore control interfaces':representationFor(viewFor(c.id),variantFor(c.id)).kind==='connections'?'Explore the system':'Explore this equipment'} ↗</button></div></details>`).join('')}</section>`;
   }).join('')||'<p>No components match. Try a shorter term or another system.</p>';
 }
 function openProcess(id,step=''){
   if(!PROCESS_VIEWS[id])return;
+  if(!isProcessPage())returnContext=routeState(state);
   state.page='processes';state.processId=id;state.processStep=step||PROCESS_VIEWS[id].steps[0].id;state.playing=false;
-  render();announce(PROCESS_VIEWS[id].title);
+  render();announce(PROCESS_VIEWS[id].title);requestAnimationFrame(()=>{$('#processes-page h1')?.setAttribute('tabindex','-1');$('#processes-page h1')?.focus({preventScroll:true});$('#workspace').scrollIntoView({block:'start',behavior:'instant'});});
 }
 function renderSystemContext(){
   const orientation=$('#control-orientation'),taxonomy=TRAIN_CONTROL_TAXONOMY;
@@ -378,18 +457,38 @@ function renderSystemContext(){
   const context=$('#people-context');context.hidden=true;context.replaceChildren();
 }
 function renderConnections(){
-  const topology=currentTopology(),electrical=electricalStudy(state.view),show=isConnections();
-  $('#presentation-switch').hidden=!topology&&!electrical;
-  $('#presentation-switch [data-presentation="connections"]').textContent=electrical?'Electrical principle':state.domain==='operations'?'Information behaviour':'Connections';
+  const topology=currentTopology(),electrical=electricalStudy(state.view),show=isConnections(),rep=representationFor(state.view,state.variant);
+  $('#presentation-switch').hidden=(!topology&&!electrical)||!rep.equipmentContext;
+  $('#presentation-switch [data-presentation="equipment"]').textContent=['journey','dependencies','evidence'].includes(rep.kind)?'Physical context':'Equipment anatomy';
+  $('#presentation-switch [data-presentation="connections"]').textContent=electrical?'Electrical principle':rep.kind==='journey'?'Journey & assistance':rep.kind==='dependencies'?'Dependencies':rep.kind==='evidence'?'Evidence & conditions':'Responsibilities & connections';
   $$('#presentation-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.presentation===(show?'connections':'equipment'))));
   $('.workspace-grid').classList.toggle('connections-mode',show);$('#connections-view').hidden=!show;
-  if(show){$('#connections-view').innerHTML='<button id="diagram-quick-play" class="diagram-quick-play" aria-pressed="false" hidden>Play sequence</button>'+(electrical?electricalMarkup(state.view):topologyMarkup(topology,state.component));lastTopologyStep='';}
+  if(show){
+    const chosen=VIEWS[state.view].variants?.find(v=>v.id===state.variant);
+    const rows=topology?.rows;
+    $('#connections-view').innerHTML='<button id="diagram-quick-play" class="diagram-quick-play" aria-pressed="false" hidden>Play sequence</button>'+(electrical?electricalMarkup(state.view):topologyMarkup(topology,state.component))+(topology?.result?`<p class="diagram-result">${safe(topology.result)}</p>`:'')+(rows?`<section class="diagram-outcomes"><h3>What the selected case establishes</h3><table><thead><tr><th>Interface or claim</th><th>Selected condition</th><th>Meaning and limit</th></tr></thead><tbody>${rows.map(row=>`<tr><th>${safe(row[0])}</th><td>${safe(row[1])}</td><td>${safe(row[2])}</td></tr>`).join('')}</tbody></table></section>`:'')+sourceChips(topology?.sources||chosen?.sources||flowFor().sources||[])+(hasInterfaceContext(state.component)||topology?.interfaceDomain?`<div class="context-jump"><button data-open-interfaces="${safe(topology?.interfaceDomain||getInterfaceContext(state.component,state.view,state.variant).domain)}">Compare control responsibilities & optional interfaces →</button></div>`:'');
+    lastTopologyStep='';
+  }
   for(const selector of ['.stage','.selection-tools','.model-tools','.model-notes','#exploration-note','.model-parts-key']){
     const element=$(selector);if(!element)continue;if(show){if(element.dataset.beforeConnections===undefined)element.dataset.beforeConnections=String(element.hidden);element.hidden=true;}else if(element.dataset.beforeConnections!==undefined){element.hidden=element.dataset.beforeConnections==='true';delete element.dataset.beforeConnections;}
   }
   syncControls();
 }
 function render(changedView=false){
+  if(state.page==='explore'){
+    if(state.view==='station-networks'){state.page='interfaces';state.controlInterface=normalizeControlState({...state.controlInterface,...getInterfaceContext(state.component,state.view,state.variant)});}
+    else{const process=processFor(state.view,state.component,state.variant);if(process){state.page='processes';state.processId=process;state.processStep=processStepFor(state.view,state.variant)||PROCESS_VIEWS[process].steps[0].id;}}
+  }
+  if(isInterfacePage()){
+    state.playing=false;viewer?.setPlaying(false);renderNavigation();
+    if(interfaceExplorer)interfaceExplorer.destroy();
+    interfaceExplorer=createControlInterfaceExplorer($('#control-interface-explorer'),{initialState:state.controlInterface,onInspect:showInterfaceConcept,onStateChange:next=>{state.controlInterface=next;historyMode='replace';writeHash();}});
+    state.controlInterface=interfaceExplorer.getState();$('#interface-context-return').hidden=!returnContext;$('#interface-context-return').textContent='← Return to '+routeLabel(returnContext);
+    if(isInterfaceTour())renderLesson();else $('#interface-lesson').replaceChildren();
+    writeHash();return;
+  }
+  if(interfaceExplorer){interfaceExplorer.destroy();interfaceExplorer=null;}
+  if(currentTopology()&&!representationFor(state.view,state.variant).equipmentContext)state.presentation='connections';
   if(!isProcessPage()&&state.page!=='reference'&&!currentTopology()&&!electricalStudy(state.view))state.presentation='equipment';
   const focused=document.activeElement;
   const focusScope=focused?.closest('#model-key-list')?'#model-key-list ':focused?.closest('#component-grid')?'#component-grid ':'';
@@ -399,17 +498,19 @@ function render(changedView=false){
   if(isProcessPage()){
     state.playing=false;viewer?.setPlaying(false);renderNavigation();$('#lesson-detail').innerHTML='';
     if(state.page==='people')renderPeoplePage($('#processes-page'),state,{sourceChips});
-    else{if(state.page==='learn'){state.processId=processFor(state.view,state.component);state.processStep=state.processStep||PROCESS_VIEWS[state.processId].steps[0].id;}renderProcessPage($('#processes-page'),state,{sourceChips,parts});if(state.page==='learn'){$('#processes-page .process-content').insertAdjacentHTML('beforeend','<section id="process-lesson" class="process-lesson"></section>');renderLesson();}}
+    else{if(state.page==='learn'){state.processId=processFor(state.view,state.component,state.variant);state.processStep=state.processStep||PROCESS_VIEWS[state.processId].steps[0].id;}renderProcessPage($('#processes-page'),state,{sourceChips,parts});if(state.page==='learn'){$('#processes-page .process-content').insertAdjacentHTML('afterbegin',`<div id="process-tour-bar" class="tour-bar">${tourNavigationMarkup('process-tour-select')}</div>`);$('#processes-page .process-content').insertAdjacentHTML('beforeend','<section id="process-lesson" class="process-lesson"></section>');renderLesson();}}
+    const content=$('#processes-page .process-content');if(content)content.insertAdjacentHTML('afterbegin',`<button class="process-return" data-return-explore>← ${returnContext?'Return to '+safe(routeLabel(returnContext)):'Explore the railway'}</button>`);
     writeHash();restoreFocus();return;
   }
-  $('#processes-page').innerHTML='';syncViewer(changedView);chooseVisibleRepresentative();renderNavigation();renderDetail();renderScenario();renderLesson();renderSystemContext();if(state.page==='reference')renderReference();syncControls();renderConnections();rebuildLabels();writeHash();
+  $('#processes-page').innerHTML='';if(!viewer&&!loadingViewer&&state.page!=='reference')queueMicrotask(startViewer);syncViewer(changedView);chooseVisibleRepresentative();renderNavigation();renderDetail();renderScenario();renderLesson();renderSystemContext();if(state.page==='reference')renderReference();syncControls();renderConnections();rebuildLabels();writeHash();
   restoreFocus();
 }
 function setPage(page){
-  if(page==='explore'&&processFor(state.view,state.component)){setDomain('network');return;}
+  if(page==='interfaces'){openInterfaces();return;}
+  if(page==='explore'&&processFor(state.view,state.component,state.variant)){setDomain('network');return;}
   state.page=page;if(page==='processes'){openProcess(state.processId);return;}
   if(page==='learn')applyLesson(true);
-  else {render();if(page!=='reference')requestAnimationFrame(()=>viewer?.resize());}
+  else {render();if(page!=='reference')requestAnimationFrame(()=>viewer?.resize());$('#workspace').scrollIntoView({block:'start',behavior:'instant'});}
 }
 function setDomain(id){
   const d=DOMAINS.find(d=>d.id===id);if(!d)return;
@@ -420,7 +521,7 @@ function setDomain(id){
 }
 function setView(id){
   if(id!==state.view){state.instanceId=null;state.functionalPath=null;state.allInstances=false;}
-  if(!VIEWS[id])return;if(PROCESS_REDIRECTS[id]){openProcess(PROCESS_REDIRECTS[id]);return;}state.page=state.page==='learn'?'learn':'explore';
+  if(!VIEWS[id])return;if(id==='station-networks'){openInterfaces({domain:'building'});return;}if(PROCESS_REDIRECTS[id]){openProcess(PROCESS_REDIRECTS[id]);return;}state.page=state.page==='learn'?'learn':'explore';
   state.domain=domainForView(id,DOMAINS,state.domain)?.id||state.domain;allComponents=false;configurationEffect='';
   state.view=id;state.variant=defaultVariant(id);state.scenario='nominal';state.mode=['power','vehicle'].includes(state.domain)?'motoring':'coasting';state.exploded=0;state.cutaway=cutawayFor(id);
   state.presentation=preferredPresentation(id,state.variant);state.component=VIEWS[id].component;syncPlatform();
@@ -438,7 +539,7 @@ function chooseVisibleRepresentative(){
   const candidate=candidates.find(id=>parts.has(id)&&equipmentInView(id)&&visible.includes(targetFor(id)));if(candidate){state.component=candidate;viewer.setSelected(targetFor(candidate));}
 }
 function selectComponent(id,{explore=state.page!=='learn',focus=false,primary=false,instanceId=null}={}){
-  if(!parts.has(id))return;const process=processFor(primary?viewFor(id):null,id);if(process){openProcess(process);return;}
+  if(!parts.has(id))return;if(interfaceConceptIds.has(id)){openInterfaces(getInterfaceContext(id));showInterfaceConcept(id);return;}const process=processFor(primary?viewFor(id):null,id);if(process){openProcess(process);return;}
   if(instanceId)state.instanceId=instanceId;else if(id!==state.component){state.instanceId=null;state.allInstances=false;}
   const origin=routeState(state),oldView=state.view,oldDomain=state.domain;
   const staysInDiagram=!primary&&isConnections()&&Boolean(currentTopology()?.nodes.some(n=>n.component===id)||electricalStudy(state.view)&&viewer?.getComponentIds(state.view).includes(targetFor(id)));
@@ -467,10 +568,16 @@ function applyLesson(doRender=true){
   state.technology=technologyForView(technologyForComponent(normalizeTechnology(a.technology||{},state.technology),state.component),state.view,state.variant);
   if(state.scenario==='radio-loss'&&!['loop','radio'].includes(state.technology.control))state.technology={...state.technology,control:'radio'};
   if(state.scenario==='regen-limited')state.sink='resistor';
+  const lessonProcess=processFor(state.view,state.component,state.variant);
+  if(lessonProcess){state.processId=lessonProcess;state.processStep=a.processStep||processStepFor(state.view,state.variant)||PROCESS_VIEWS[lessonProcess].steps[0].id;}
+  if(isInterfaceTour()){
+    state.controlInterface=normalizeControlState({...getInterfaceContext(state.component,state.view,state.variant),...a.interfaces});
+    state.instanceId=null;state.functionalPath=null;state.allInstances=false;state.studyId=null;state.workspace=null;state.exploded=0;
+  }
   if(t.id==='configuration-evidence'){state.processId='configuration-change';state.processStep='verify';}
   if(a.electrification)state.electrification=normalizeElectrification(a.electrification);
   if(t.id==='odometry-error'){$('#sensor-error').value=10;updateSensor();}
-  if(doRender){render(true);requestAnimationFrame(()=>viewer?.resize());}
+  if(doRender){render(true);requestAnimationFrame(()=>{if(!isProcessPage()&&!isInterfacePage())viewer?.resize();const heading=$(isInterfaceTour()?'#interfaces-page h2':isProcessPage()?'#processes-page h1':'#scene-title');heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});$('#workspace').scrollIntoView({block:'start',behavior:'instant'});});}
 }
 function updateSensor(){const error=Number($('#sensor-error').value);$('#sensor-error-value').textContent=`${error>0?'+':''}${error}%`;$('#wheel-estimate').textContent=`${wheelEstimate(error).toFixed(0)} m`;}
 function searchViews(){
@@ -515,7 +622,7 @@ function rebuildLabels(){
   updateLabels();
 }
 function updateLabels(){
-  if(!viewer||state.page==='reference'||isProcessPage()||isConnections())return;
+  if(!viewer||state.page==='reference'||isProcessPage()||isInterfacePage()||isConnections())return;
   const width=$('#viewer').clientWidth,height=$('#viewer').clientHeight;
   const selected=targetFor(state.component),preferred=new Set(activeDomain().parts.map(targetFor));
   const priorities=state.view==='railway'?new Set(['network-station','network-depot','network-control-centre','network-substation','network-train','network-turnback']):state.view==='operations-centre'?new Set(['operations-equipment-room','occ-shared-display','occ-console','occ-communications','occ-cable-route']):preferred;
@@ -534,9 +641,9 @@ function updateLabels(){
     $('#model-key-note').textContent=!state.labels?'Pins are off. Select equipment in the key or model.':selectedVisible?'Numbers stay attached to visible equipment. Select any name for its explanation.':'Some pins are hidden by equipment or overlap. Use the key to select a part, then Frame selection to locate it.';
   }
 }
-function labelLoop(time){labelFrame=requestAnimationFrame(labelLoop);if(!document.hidden&&time-lastLabelTime>150){updateLabels();updateMotionGuide();lastLabelTime=time;}}
+function labelLoop(time){labelFrame=requestAnimationFrame(labelLoop);if(!document.hidden&&state.page!=='reference'&&!isInterfacePage()&&!isProcessPage()&&time-lastLabelTime>150){updateLabels();updateMotionGuide();lastLabelTime=time;}}
 async function startViewer(){
-  if(loadingViewer||viewer)return;loadingViewer=true;$('#model-error').hidden=true;
+  if(loadingViewer||viewer||isInterfacePage()||isProcessPage()||state.page==='reference')return;loadingViewer=true;$('#model-error').hidden=true;
   try{
     const {createViewer}=await import('./viewer.js?v=anatomy-depth-8');
     viewer=createViewer($('#viewer'),{onSelect:(id,metadata={})=>{rememberCurrentEntry();historyMode='push';selectComponent(id,{instanceId:metadata.instanceId});},onReady:info=>{rendererStatus=info.renderer;$('#loading')?.remove();},onError:()=>{$('#model-error').hidden=false;}});
@@ -549,9 +656,14 @@ document.addEventListener('click',event=>{
   const diagramNode=event.target.closest('[data-topology-component]');if(diagramNode){const nodeId=diagramNode.dataset.topologyNode;rememberCurrentEntry();historyMode='push';selectComponent(diagramNode.dataset.topologyComponent);focusVisible(`[data-topology-node="${nodeId}"]`);return;}
   const b=event.target.closest('button');if(!b)return;
   rememberCurrentEntry();
-  historyMode=b.matches('[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-workspace],[data-workspace-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
+  historyMode=b.matches('[data-open-interfaces],[data-return-explore],#interface-context-return,#previous-view,#next-view,[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-workspace],[data-workspace-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
   if(b.matches('[data-domain],[data-view],[data-workspace],[data-workspace-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');$('#view-search').value='';searchViews();}
-  if(b.dataset.workspace){const route=workspaceRoute(b.dataset.workspace);if(route){state.workspace=b.dataset.workspace;state.studyId=null;setView(route);}}
+  if(b.id==='open-navigator'||b.id==='sidebar-find'){navigationSearch.open();}
+  else if(b.hasAttribute('data-tour-lesson')){const heading=$('#interface-lesson h3');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});}
+  else if(b.dataset.openInterfaces){openInterfaces({domain:b.dataset.openInterfaces});}
+  else if(b.id==='interface-context-return'||b.hasAttribute('data-return-explore')){returnToContext();}
+  else if(b.id==='previous-view'||b.id==='next-view'){const sequence=learningViewSequence(),i=sequence.indexOf(state.view),next=sequence[i+(b.id==='next-view'?1:-1)];if(next)setView(next);}
+  else if(b.dataset.workspace){const route=workspaceRoute(b.dataset.workspace);if(route){state.workspace=b.dataset.workspace;state.studyId=null;setView(route);}}
   else if(b.dataset.workspaceView){const origin=routeState(state),selected=state.component;state.workspace=b.dataset.workspaceOwner;setView(b.dataset.workspaceView);returnContext=origin;if(viewer?.getComponentIds(state.view).includes(targetFor(selected)))selectComponent(selected);else render();}
   else if(b.id==='navigator-toggle'){const open=$('.railway-navigation').classList.toggle('is-open');b.setAttribute('aria-expanded',String(open));}
   else if(b.id==='read-selection'){if($('#component-explanation'))$('#component-explanation').open=true;const heading=$('#component-detail h2');heading?.setAttribute('tabindex','-1');heading?.focus();heading?.scrollIntoView({block:'start',behavior:'instant'});}
@@ -562,7 +674,7 @@ document.addEventListener('click',event=>{
   else if(b.dataset.inspectionProgress){viewer?.setExploded(Number(b.dataset.inspectionProgress));syncControls();updateLabels();rememberCurrentEntry();}
   else if(b.id==='restore-context'){viewer?.restoreExploration?.();state.cutaway=viewer?.getCutaway?.()||false;renderDetail();syncControls();rebuildLabels();rememberCurrentEntry();}
   else if(b.id==='larger-model'){const expanded=$('.explorer-shell').classList.toggle('model-expanded');b.setAttribute('aria-pressed',String(expanded));b.textContent=expanded?'Standard model size':'Larger model';requestAnimationFrame(()=>{viewer?.resize();viewer?.frameModel?.();syncControls();updateLabels();});}
-  else if(b.id==='return-context'){if(returnContext){const destination=returnContext;returnContext=null;state={...state,...destination};configurationEffect='';lastExplorationContext='';render(true);announce(`Returned to ${VIEWS[state.view].label}`);}}
+  else if(b.id==='return-context'){returnToContext();}
   else if(b.dataset.process)openProcess(b.dataset.process);
   else if(b.dataset.processStep){state.processStep=b.dataset.processStep;render();}
   else if(b.dataset.role){state.page='people';state.roleId=b.dataset.role;render();}
@@ -574,7 +686,7 @@ document.addEventListener('click',event=>{
   else if(b.dataset.domain)setDomain(b.dataset.domain);
   else if(b.dataset.view)setView(b.dataset.view);
   else if(b.dataset.inspectView){const origin=routeState(state),selected=state.component;setView(b.dataset.inspectView);returnContext=origin;if(viewer?.getComponentIds(state.view).includes(targetFor(selected)))selectComponent(selected,{explore:state.page!=='learn'});else render();}
-  else if(b.dataset.variant){if((state.view==='operations-centre'||state.view==='occ-workplace')&&b.dataset.variant==='handover'){openProcess('duty-handover');return;}if(state.view==='operations-centre'&&b.dataset.variant==='incident'){openProcess('incident-coordination');return;}configurationEffect='';state.variant=b.dataset.variant;syncPlatform();const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();viewer?.frameVariant?.();}
+  else if(b.dataset.variant){const process=processFor(state.view,null,b.dataset.variant);if(process){openProcess(process,processStepFor(state.view,b.dataset.variant));return;}if((state.view==='operations-centre'||state.view==='occ-workplace')&&b.dataset.variant==='handover'){openProcess('duty-handover');return;}if(state.view==='operations-centre'&&b.dataset.variant==='incident'){openProcess('incident-coordination');return;}configurationEffect='';state.variant=b.dataset.variant;syncPlatform();const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();viewer?.frameVariant?.();}
   else if(b.dataset.component){const nodeId=b.dataset.connectionNode;selectComponent(b.dataset.component,{primary:Boolean(b.closest('#search-results'))});if(nodeId)focusVisible(`[data-connection-node="${nodeId}"]`);}
   else if(b.dataset.source)openSources(b.dataset.source);
   else if(b.dataset.camera){labelLayoutKey='';viewer?.setCameraPreset(b.dataset.camera);syncControls();updateLabels();}
@@ -598,7 +710,7 @@ document.addEventListener('click',event=>{
     if(correct)lessonAnswers[t.id]=true;saveProgress();showFeedback(correct,choice);$('#quiz-feedback').focus();renderNavigation();
   }else if(b.id==='previous-lesson'){state.lesson=Math.max(0,state.lesson-1);applyLesson();}
   else if(b.id==='next-lesson'){if(state.lesson<TOURS.length-1){state.lesson++;applyLesson();}else setPage('explore');}
-  else if(b.id==='play'||b.id==='quick-play'||b.id==='diagram-quick-play'){if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();}
+  else if(b.id==='play'||b.id==='quick-play'||b.id==='diagram-quick-play'){if(!canAnimateState())return;if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();}
   else if(b.id==='reset-scene'){labelLayoutKey='';viewer?.resetCamera();syncControls();}
   else if(b.id==='about-button')openSources();
   else if(b.id==='close-dialog')$('#about-dialog').close();
@@ -671,8 +783,14 @@ window.addEventListener('resize',()=>{const menu=$('.process-menu');if(menu)menu
 window.addEventListener('hashchange',restoreNavigation);window.addEventListener('popstate',restoreNavigation);
 window.addEventListener('pagehide',()=>{cancelAnimationFrame(labelFrame);labelFrame=0;state.playing=false;viewer?.setPlaying(false);});
 window.addEventListener('pageshow',event=>{if(event.persisted){syncControls();viewer?.resize();if(!labelFrame)labelFrame=requestAnimationFrame(labelLoop);}});
-document.addEventListener('change',e=>{if(e.target.id==='tour-select'){rememberCurrentEntry();historyMode='push';state.lesson=Number(e.target.value);applyLesson();}});
+document.addEventListener('change',e=>{if(e.target.hasAttribute('data-tour-select')){rememberCurrentEntry();historyMode='push';state.lesson=Number(e.target.value);applyLesson();}});
 document.addEventListener('keydown',e=>{const n=e.target.closest?.('[data-topology-component]');if(n&&['Enter',' '].includes(e.key)){e.preventDefault();n.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+const navigationSearch=createNavigationSearch($('#navigator-dialog'),{index:buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS}),onNavigate:item=>{
+  rememberCurrentEntry();historyMode='push';returnContext=routeState(state);
+  if(item.kind==='view')setView(item.id);else if(item.kind==='component')selectComponent(item.id,{explore:true,primary:true});else if(item.kind==='process')openProcess(item.id);else if(item.kind==='interface')openInterfaces({domain:item.id});else if(item.kind==='tour'){state.lesson=Number(item.id);applyLesson();}
+}});
+document.addEventListener('keydown',event=>{if((event.key==='/'||event.key.toLowerCase()==='k'&&(event.ctrlKey||event.metaKey))&&!event.target.closest('input,textarea,select,[contenteditable="true"]')){event.preventDefault();if(!$('#navigator-dialog').open)navigationSearch.open();}});
+
 $('.main-nav [data-page="learn"] span').textContent=TOURS.length;
 $('#reference-domain').insertAdjacentHTML('beforeend','<option value="processes">Processes & evidence</option><option value="people">People & automation</option>');
 $('#reference-domain').insertAdjacentHTML('beforeend',DOMAINS.map(d=>`<option value="${d.id}">${d.label}</option>`).join(''));

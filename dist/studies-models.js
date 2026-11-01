@@ -4,6 +4,7 @@ export const STUDY_CAMERAS = {
   electrification:{camera:[24,20,29],target:[0,1.7,0],distance:44},
   adhesion:{camera:[11,9,14],target:[0,1.5,0],distance:25},
   'infrastructure-care':{camera:[20,17,23],target:[0,.5,0],distance:37,groundY:-1.8},
+  'infrastructure-assets':{camera:[16,11,20],target:[0,-.35,.3],distance:31,groundY:-1.8},
   dependencies:{camera:[21,21,27],target:[0,1,0],distance:43},
   'accessible-journey':{camera:[20,20,26],target:[0,2,0],distance:43},
   'change-evidence':{camera:[18,19,25],target:[0,1,0],distance:39},
@@ -78,6 +79,47 @@ export function buildStudyView(id,api){
       sander.position.x=x;
       grains.children.forEach((g,n)=>{const q=(t*3+n/12)%1;g.position.set(.7-q*.25,.34-.15*q,1.4);});
     });
+  }
+
+  if(id==='infrastructure-assets'){
+    const identify=(node,label,sources,description)=>{Object.assign(node.userData,{inspectionPart:true,explorationLabel:label,inspectionSources:sources,inspectionFunction:description,fidelity:'Original physical section; dimensions and load capacity are not specified'});return node;};
+    const piece=(parent,name,label,at,sources,description)=>identify(group(parent,name,at),label,sources,description);
+    deck(19,10,[0,-1.6,0]);
+    const formation=identify(part(root,'route-formation'),'Track and earthwork section',['I01'],'Rail, sleepers, support layers and embankment are separate load interfaces. The drawing makes no stability assessment.');formation.userData.explorationAssembly='route-formation';
+    const section=new THREE.Shape();section.moveTo(-3,-1.5);section.lineTo(-1.8,-.2);section.lineTo(1.8,-.2);section.lineTo(3,-1.5);section.closePath();
+    const embankment=new THREE.ExtrudeGeometry(section,{depth:4.2,bevelEnabled:false});embankment.translate(0,0,-2.1);
+    for(const [i,x]of [-5.9,-.1].entries()){const block=piece(formation,'formation-earthwork-'+i,'Earthwork beside the culvert',[x,0,0],['I01'],'The formation leaves an actual opening for the culvert barrel.');mesh(block,embankment,P.earth,[0,0,0],[0,Math.PI/2,0]);}
+    const ballast=piece(formation,'formation-support-layer','Granular support layer',[-3,0,0],['I01'],'The support layer spreads track load above the earthwork and culvert crown.');box(ballast,[10,.35,3.5],P.ballast,[0,-.025,0]);
+    for(const [x,length]of [[2.5,1],[7.75,1.5]]){const approach=piece(formation,'bridge-approach-support','Bridge approach formation',[x,0,0],['I01','I03'],'The approach supports the track up to the deck boundary.');const geo=new THREE.ExtrudeGeometry(section,{depth:length,bevelEnabled:false});geo.translate(0,0,-length/2);mesh(approach,geo,P.earth,[0,0,0],[0,Math.PI/2,0]);box(approach,[length,.35,3.5],P.ballast,[0,-.025,0]);}
+    const sleepers=piece(formation,'formation-sleepers','Sleepers across the section',[0,0,0],['I01'],'Sleeper support is continuous across the chosen earthwork and bridge arrangement.');
+    for(let x=-8;x<8;x+=.65)box(sleepers,[.2,.16,3],M.aluminum,[x,.2,0]);
+    const profile=[[-.09,0],[.09,0],[.09,.035],[.025,.045],[.025,.12],[.055,.13],[.055,.18],[-.055,.18],[-.055,.13],[-.025,.12],[-.025,.045],[-.09,.035]],shape=new THREE.Shape(profile.map(p=>new THREE.Vector2(...p)));
+    const railGeometry=new THREE.ExtrudeGeometry(shape,{depth:17,bevelEnabled:false});railGeometry.translate(0,0,-8.5);railGeometry.rotateY(Math.PI/2);
+    for(const z of [-1.1,1.1]){const running=piece(formation,'structure-running-rail','Rail head, web and foot',[0,.28,z],['I01'],'An illustrative rail profile retains the foot-to-sleeper contact.');mesh(running,railGeometry,M.steel);}
+    const bridge=identify(part(root,'route-bridge',[5,0,0]),'Bridge deck and supports',['I03','MD09'],'A selected short-span deck and girder arrangement transfers load through bearings into two abutments. Other structural systems and bearing types exist.');bridge.userData.explorationAssembly='route-bridge';
+    const deckPlate=piece(bridge,'bridge-deck','Bridge deck',[0,-.01,0],['I03'],'The deck transfers the track load into two longitudinal girders.');box(deckPlate,[4,.22,3.4],P.blue);
+    const surface=piece(bridge,'bridge-track-support','Deck track-support layer',[0,.11,0],['I03'],'This shallow support course meets the sleeper underside; its material and design are illustrative.');box(surface,[4,.02,3.0],P.ballast);
+    for(const z of [-1.1,1.1]){
+      const girder=piece(bridge,'bridge-longitudinal-girder','Longitudinal girder',[0,0,z],['I03'],'Flanges and web transfer deck load toward the bearing seats.');
+      for(const y of [-.145,-.435])box(girder,[4,.05,.28],M.steel,[0,y,0]);box(girder,[4,.24,.065],M.steel,[0,-.29,0]);
+    }
+    for(const [end,x]of [-1.65,1.65].entries()){
+      const abutment=piece(bridge,'bridge-abutment-'+end,'Abutment and bearing seat',[x,-1.08,0],['I03'],'A fixed substructure supports the bearing underside.');box(abutment,[.65,.84,3.7],P.earth);
+      for(const [side,z]of [-1.1,1.1].entries()){
+        const bearing=piece(bridge,`bridge-bearing-${end}-${side}`,'Laminated elastomeric bearing',[x,-.56,z],['MD09'],'A selected elastomeric bearing separates deck rotation/movement accommodation from the vertical load-transfer interfaces. No allowable movement or force is assigned.');
+        box(bearing,[.45,.035,.45],M.steel,[0,-.0825,0]);
+        const block=piece(bearing,'bridge-bearing-elastomer','Elastomer with embedded reinforcement',[0,.005,0],['MD09'],'The selected layered construction is shown in a section, not as freely separating operational layers.');for(const [lo,hi]of [[-.07,-.048],[-.042,-.003],[.003,.042],[.048,.07]])box(block,[.38,hi-lo,.38],M.dark,[0,(lo+hi)/2,0]);for(const y of [-.045,0,.045])box(block,[.36,.006,.36],M.steel,[0,y,0]);
+        const topPlate=piece(bearing,'bridge-bearing-upper-plate','Upper bearing load plate',[0,.0875,0],['MD09'],'The upper plate meets the girder underside in the assembled view.');box(topPlate,[.45,.025,.45],M.steel);explode(topPlate,[0,.35,side? .35:-.35]);Object.assign(topPlate.userData,{inspectionStage:'Separate the load interfaces',inspectionRange:[.35,1]});
+      }
+    }
+    bridge.userData.functionalPaths=[{id:'bridge-load',label:'Track to structural supports',description:'The deck and girder transfer load through the bearing into the abutment. This traces interfaces without computing force or deflection.',steps:[{label:'Deck',nodeName:'bridge-deck'},{label:'Girder',nodeName:'bridge-longitudinal-girder'},{label:'Bearing',nodeName:'bridge-bearing-0-0'},{label:'Abutment',nodeName:'bridge-abutment-0'}],sources:['I03','MD09']}];
+    const drain=identify(part(root,'route-drainage',[-3,-.8,0]),'Open culvert and drainage passage',['I01','I02'],'An open barrel crosses beneath the formation. A visible passage is not proof of hydraulic capacity or asset condition.');drain.userData.explorationAssembly='route-drainage';
+    for(const side of [-1,1]){const wall=piece(drain,'culvert-sidewall','Culvert sidewall',[side*.7,0,0],['I02'],'The sidewall retains a real clear opening, rather than filling the culvert with a solid primitive.');box(wall,[.15,1,7],P.paper);}
+    const invert=piece(drain,'culvert-invert','Culvert invert',[0,-.55,0],['I02'],'The invert supports the open water passage.');box(invert,[1.55,.15,7],P.paper);
+    const crown=piece(drain,'culvert-crown','Culvert crown',[0,.55,0],['I02'],'The crown carries the material above the open barrel.');box(crown,[1.55,.15,7],P.paper);shell(crown);explode(crown,[0,.7,0]);Object.assign(crown.userData,{inspectionStage:'Open the culvert section',inspectionRange:[0,.4]});
+    for(const z of [-3.5,3.5]){const apron=piece(drain,'culvert-apron','Inlet / outlet apron',[0,-.55,z],['I02'],'The opening connects to the surrounding drainage path. Direction and hydraulic performance require site-specific conditions.');box(apron,[2.2,.15,.8],P.paper);}
+    const path=piece(drain,'culvert-open-passage','Open drainage passage',[0,-.35,0],['I01','I02'],'A stationary blue centreline identifies passage continuity, without implying discharge or flood capacity.');link(path,'drainage-continuity',[[0,0,-4],[0,0,4]],P.cyan,.035);
+    drain.userData.functionalPaths=[{id:'culvert-passage',label:'Opening beneath the formation',description:'The apron, invert, sidewalls and crown preserve a clear physical passage. Inspection evidence and work decisions remain in the separate process view.',steps:[{label:'Apron',nodeName:'culvert-apron'},{label:'Invert',nodeName:'culvert-invert'},{label:'Sidewall',nodeName:'culvert-sidewall'},{label:'Crown',nodeName:'culvert-crown'},{label:'Passage',nodeName:'culvert-open-passage'}],sources:['I01','I02']}];
   }
 
   if(id==='infrastructure-care'){

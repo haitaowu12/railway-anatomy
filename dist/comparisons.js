@@ -51,9 +51,10 @@ export function comparisonLabel(view, hasVariants, electrical) {
   return COMPARISON_LABELS[view] || (hasVariants?'Arrangement in focus':electrical?'Energy condition':'System behaviour');
 }
 
-export function animationFor(view, variant) {
-  return view?.variants?.find(v=>v.id===variant)?.animation || view?.animation || null;
+export function animationFor(view, variant, component) {
+  return view?.componentAnimations?.[component] || view?.variants?.find(v=>v.id===variant)?.animation || view?.animation || null;
 }
-export function canAnimate(view, variant) {
-  return view?.variants?.find(v=>v.id===variant)?.motion ?? view?.motion ?? Boolean(animationFor(view,variant));
+export function canAnimate(view, variant, component) {
+  if(view?.componentAnimations?.[component])return true;
+  return view?.variants?.find(v=>v.id===variant)?.motion ?? view?.motion ?? Boolean(animationFor(view,variant,component));
 }

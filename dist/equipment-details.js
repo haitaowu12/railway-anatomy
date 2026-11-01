@@ -84,6 +84,50 @@ export function createEquipmentDetails(api){
     paths(g,[{id:'supply-air',label:'Supply-air path',description:'Inlet damper → filter → coil → fan → supply duct.',steps:[{label:'Inlet',nodeName:'hvac-inlet-damper'},{label:'Filter',nodeName:'hvac-removable-filter'},{label:'Coil',nodeName:'hvac-heat-exchanger'},{label:'Fan',nodeName:'hvac-supply-fan'},{label:'Supply air',nodeName:'hvac-supply-air'}],sources},{id:'coil-fluid',label:'Thermal and condensate interfaces',description:'The fluid circuit exchanges heat with air. Condensate drainage is a third path.',steps:[{label:'Supply',nodeName:'hvac-coil-supply'},{label:'Coil',nodeName:'hvac-heat-exchanger'},{label:'Return',nodeName:'hvac-coil-return'},{label:'Drain pan',nodeName:'hvac-condensate-tray'}],sources}]);
     return {node:g,fan,filter,coil,cover,animate(phase){fan.rotation.x=(Number(phase)||0)*Math.PI*2;}};
   }
+  function reciprocatingCompressor(parent,{at=[0,0,0],scale=1}={}){
+    const sources=['P07'],g=assembly(parent,'compressor',at,scale,'Air-supply module — piston example',sources);
+    g.userData.inspectionFunction='An original single-cylinder teaching section separates the motor, crank, rod, piston, air treatment and receiver. Rail air-supply units also use multi-cylinder or screw arrangements.';
+    box(g,[1.65,.10,.85],P.metal,[0,.05,0]);
+    for(const x of [-.65,.65])for(const z of [-.3,.3])cylinder(g,.055,.09,P.rubber,[x,-.045,z],null,10);
+    const motor=inspect(group(g,'compressor-drive-motor',[0,.30,-.36]),'Compressor motor',{sources,description:'The motor drives the crankshaft; its enclosure is stationary.'});
+    cylinder(motor,.20,.38,P.blue,[0,0,0],[Math.PI/2,0,0],18);
+    cylinder(g,.055,.35,P.metal,[0,.30,-.15],[Math.PI/2,0,0],12);
+    const crank=inspect(group(g,'compressor-crankshaft',[0,.30,.10]),'Crankshaft and offset crankpin',{sources,description:'The offset crankpin drives the connecting rod through one revolution.'});
+    cylinder(crank,.185,.055,P.metal,[0,0,0],[Math.PI/2,0,0],20);
+    cylinder(crank,.035,.09,P.copper,[0,.12,.055],[Math.PI/2,0,0],12);
+    const crankCover=group(g,'compressor-crankcase-cover',[0,.30,.10]);
+    box(crankCover,[.46,.46,.045],P.blue,[0,0,.15]);shell(crankCover);separate(crankCover,'Crankcase access cover',[0,0,.45],{stage:'Open enclosure',range:[0,.3],sources});
+    const barrel=inspect(group(g,'compressor-cylinder-wall',[0,.83,.16]),'Cylinder bore section',{sources,description:'The piston translates within the fixed bore; the section exposes its travel.'});
+    mesh(barrel,new THREE.CylinderGeometry(.18,.18,.50,20,1,true,Math.PI*.20,Math.PI*1.4),P.metal);
+    const barrelSection=group(barrel,'compressor-cylinder-section');mesh(barrelSection,new THREE.CylinderGeometry(.18,.18,.50,12,1,true,Math.PI*1.6,Math.PI*.6),P.blue);shell(barrelSection);separate(barrelSection,'Removable cylinder section',[.38,.1,.35],{stage:'Expose the working chamber',range:[.3,.6],sources});
+    const head=inspect(group(g,'compressor-cylinder-head',[0,1.10,.16]),'Head with inlet and delivery interfaces',{sources,description:'Inlet and delivery valves are distinct interfaces. Valve response and pressure are not calculated by this kinematic model.'});
+    cylinder(head,.22,.08,P.metal,[0,0,0],null,20);for(const x of [-.12,.12])cylinder(head,.035,.04,P.dark,[x,.06,0],null,10);
+    separate(head,'Cylinder head',[0,.4,0],{stage:'Expose the working chamber',range:[.45,.8],sources});
+    const piston=inspect(group(g,'compressor-piston',[0,.76,.16]),'Piston and wrist pin',{sources,description:'The wrist pin follows the slider-crank relation, retaining a constant rod length throughout the cycle.'});
+    cylinder(piston,.167,.12,P.metal,[0,0,0],null,20);for(const y of [-.03,.03])mesh(piston,new THREE.TorusGeometry(.167,.006,4,20),P.dark,[0,y,0],[Math.PI/2,0,0]);
+    cylinder(piston,.035,.15,P.copper,[0,0,0],[Math.PI/2,0,0],10);
+    const rod=inspect(cylinder(g,.027,.46,P.metal,[0,.53,.16]),'Connecting rod',{sources,description:'A constant-length rod joins the crankpin to the piston pin.'});rod.name='compressor-connecting-rod';
+    const filter=inspect(group(g,'compressor-inlet-filter',[-.47,1.10,.16]),'Air inlet filter',{sources});cylinder(filter,.13,.24,P.pale,[0,0,0],[0,0,Math.PI/2],14);
+    route(g,{name:'compressor-inlet-passage',label:'Ambient-air inlet',points:[[-.35,1.10,.16],[-.12,1.10,.16]],kind:'fluid',from:'Inlet filter',to:'Cylinder head inlet',sources,radius:.035});
+    const dryer=inspect(group(g,'compressor-dryer',[.59,.77,.16]),'Separate air-drying section',{sources,description:'Air treatment and condensate management are separate from mechanical compression.'});cylinder(dryer,.13,.43,P.blue,[0,0,0],null,16);
+    const receiver=inspect(group(g,'compressor-receiver',[.55,.31,.10]),'Compressed-air receiver',{sources});cylinder(receiver,.19,.72,P.metal,[0,0,0],[Math.PI/2,0,0],18);
+    route(g,{name:'compressor-delivery-passage',label:'Compression to treatment and storage',points:[[.12,1.10,.16],[.59,1.10,.16],[.59,.97,.16]],kind:'fluid',from:'Cylinder head delivery',to:'Air treatment',sources,radius:.035});
+    route(g,{name:'compressor-receiver-passage',label:'Treatment to receiver',points:[[.59,.55,.16],[.59,.40,.16]],kind:'fluid',from:'Air treatment',to:'Receiver',sources,radius:.035});
+    port(g,{name:'compressor-supply-outlet',label:'Downstream pneumatic supply',at:[.55,.31,.50],kind:'fluid',sources});
+    port(g,{name:'compressor-motor-supply',label:'Motor electrical supply',at:[0,.30,-.61],kind:'power',sources});
+    paths(g,[{id:'compressor-mechanical',label:'Motor to piston motion',description:'The motor turns the crank; the rod drives a translating piston. The geometric cycle does not calculate pressure or delivered flow.',steps:[{label:'Motor',nodeName:'compressor-drive-motor'},{label:'Crank',nodeName:'compressor-crankshaft'},{label:'Rod',nodeName:'compressor-connecting-rod'},{label:'Piston',nodeName:'compressor-piston'}],sources},{id:'compressed-air',label:'Air supply and treatment',description:'Compression, drying and storage perform different jobs. The route is a simplified functional arrangement.',steps:[{label:'Filter',nodeName:'compressor-inlet-filter'},{label:'Head',nodeName:'compressor-cylinder-head'},{label:'Dryer',nodeName:'compressor-dryer'},{label:'Receiver',nodeName:'compressor-receiver'},{label:'Supply',nodeName:'compressor-supply-outlet'}],sources}]);
+    const radius=.12,length=.46,axis=new THREE.Vector3(0,1,0);
+    g.userData.sliderCrank={radius,rodLength:length,boreRadius:.18,pistonRadius:.167};
+    const animate=angle=>{
+      angle=Number(angle)||0;crank.rotation.z=angle;
+      const crankPin=new THREE.Vector3(-radius*Math.sin(angle),.30+radius*Math.cos(angle),.16);
+      const height=.30+radius*Math.cos(angle)+Math.sqrt(length*length-radius*radius*Math.sin(angle)**2);
+      piston.position.y=height;const pistonPin=new THREE.Vector3(0,height,.16),vector=pistonPin.clone().sub(crankPin);
+      rod.position.copy(crankPin).add(pistonPin).multiplyScalar(.5);rod.quaternion.setFromUnitVectors(axis,vector.clone().normalize());
+      g.userData.crankAngle=angle;g.userData.rodEndpoints=[crankPin.toArray(),pistonPin.toArray()];
+    };animate(0);
+    return {node:g,crank,piston,rod,animate};
+  }
   function powerInterfaces(g,{kind='transformer',dc=false}={}){
     if(g.userData.powerInterfaces)return g;g.userData.powerInterfaces=true;
     const find=name=>g.getObjectByName(name);
@@ -120,5 +164,5 @@ export function createEquipmentDetails(api){
     }
     return g;
   }
-  return {P,inspect,separate,assembly,annulus,port,route,paths,annotate,terminalStrip,rackServices,discBrake,hvac,powerInterfaces};
+  return {P,inspect,separate,assembly,annulus,port,route,paths,annotate,terminalStrip,rackServices,discBrake,hvac,reciprocatingCompressor,powerInterfaces};
 }

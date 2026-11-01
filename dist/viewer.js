@@ -583,6 +583,25 @@ export function createViewer(container, callbacks = {}) {
     return g;
   }
 
+  function selectedMechanism(s) {
+    if(!['vehicle','services','bogie'].includes(s.view))return null;
+    if(['doors','door-control'].includes(s.selected))return 'doors';
+    if(s.selected==='compressor')return 'compressor';
+    if(s.selected==='hvac')return 'air';
+    if(['brakes','parking-brake','brake-control'].includes(s.selected))return 'brakes';
+    if(s.view==='bogie'||['bogie','tachometer','rotary-traction-motor','traction-gearbox'].includes(s.selected))return 'wheelset';
+    return s.view==='services'?'doors':null;
+  }
+  function mechanismProgress(s) { return Math.max(0,Math.min(1,Number(s.phase||0)/5)); }
+  function wheelsetAngle(s) { return selectedMechanism(s)==='wheelset'?mechanismProgress(s)*Math.PI*2:0; }
+  function vehicleDoorPose(s) {
+    const p=selectedMechanism(s)==='doors'?mechanismProgress(s):0,ramp=(a,b)=>Math.max(0,Math.min(1,(p-a)/(b-a))),smooth=x=>x*x*(3-2*x);
+    let opening=p<.52?smooth(ramp(.2,.40)):1-smooth(ramp(.55,.78));
+    let lock=p<.2?1-ramp(.08,.16):ramp(.82,.90);
+    if(s.scenario==='door-open'){opening=1;lock=0;}
+    const closed=opening<1e-6,locked=closed&&lock>=.999;
+    return {opening,lock,closed,locked,reported:locked&&(p<.08||p>=.96),phase:p};
+  }
   function makeBogie(parent, position = [0, 0, 0], detailed = true) {
     const frame = group(parent, 'bogie-assembly', position);
     frame.userData.explorationAssembly = 'bogie';
@@ -595,6 +614,7 @@ export function createViewer(container, callbacks = {}) {
       const wheelset = D.piece(g, `wheelset-${x < 0 ? 'rear' : 'front'}`, x < 0 ? 'Rear wheelset' : 'Front wheelset'); wheelsets.push(wheelset);
       const axle = D.piece(wheelset, 'wheelset-axle', 'Axle', [x, .56, 0], { function: 'Carries both wheels and bearing journals on one axis.', interfaces: ['Wheel hubs', 'Bearing inner races', 'Axle gear when rotary propulsion is selected'] });
       cylinder(axle, .075, 2.12, M.steel, [0, 0, 0], [Math.PI / 2, 0, 0]);
+      registerAnimator(s=>{axle.rotation.z=wheelsetAngle(s);});
       for (const z of [-.72, .72]) {
         const wheel = D.piece(wheelset, 'wheel-'+(z>0?'near':'far'), 'Wheel tread, flange and hub', [x,.56,z], { function: 'The tread supports the vehicle on the rail; the flange provides a guidance interface. This is not a contact-profile specification.' });
         cylinder(wheel, .365, .19, M.steel, [0,0,0], [Math.PI / 2, 0, 0], 32);
@@ -602,7 +622,7 @@ export function createViewer(container, callbacks = {}) {
         cylinder(wheel, .14, .215, M.core, [0,0,0], [Math.PI / 2, 0, 0]);
         for(let i=0;i<6;i++){const angle=i*Math.PI/3;cylinder(wheel,.018,.014,M.aluminum,[Math.cos(angle)*.2,Math.sin(angle)*.2,Math.sign(z)*.103],[Math.PI/2,0,0],6);}
         const axlebox = D.axlebox(wheelset,{at:[x,.56,Math.sign(z)*.99],side:Math.sign(z),detailed});
-        registerAnimator(s=>{const angle=Number(s.phase||0)*.35;wheel.rotation.z=angle;axlebox.bearing.inner.rotation.z=angle;});
+        registerAnimator(s=>{const angle=wheelsetAngle(s);wheel.rotation.z=angle;axlebox.bearing.animate(angle*Math.sign(z));});
         if (detailed) {
           const brake = E.discBrake(frame, { component:'brakes', at:[x,.56,Math.sign(z)*.47], discRadius:.245, discThickness:.055, axleRadius:.075, context:'vehicle' });
           // Orient the actuator toward the bogie end: an upright actuator at
@@ -611,7 +631,7 @@ export function createViewer(container, callbacks = {}) {
           const bracket=D.piece(brake.node,'brake-frame-reaction-bracket','Caliper-to-frame reaction bracket',undefined,{sources:['DP01','MD01'],function:'The stationary caliper reacts into the frame through a separate bracket; the rotating disc remains coaxial with the wheelset.'});
           box(bracket,[.4,.05,.06],M.core,[-Math.sign(x)*.2,.27,Math.sign(z)*.13]);
           D.move(brake.node,[0,0,Math.sign(z)*.55],'Locate brake interfaces',[.2,.5]);
-          registerAnimator(s=>{brake.rotate(Number(s.phase||0)*.35);brake.apply(0);});
+          registerAnimator(s=>{const p=mechanismProgress(s),application=selectedMechanism(s)==='brakes'?p<.5?Math.min(1,p/.25):Math.max(0,1-(p-.65)/.3):0;brake.rotate(wheelsetAngle(s));brake.apply(application);});
         }
       }
       explode(wheelset, [Math.sign(x) * .38, -.08, 0]);
@@ -664,11 +684,11 @@ export function createViewer(container, callbacks = {}) {
         mesh(wheel,tooth,M.aluminum,[0,0,0],[0,0,a]);
       }
       const phaseOffset=r>.15?contactAngle:contactAngle+Math.PI-Math.PI/teeth;
-      registerAnimator(s=>{wheel.rotation.z=phaseOffset+Number(s.phase||0)*(r>.15?.35:-.7);});
+      registerAnimator(s=>{wheel.rotation.z=phaseOffset+wheelsetAngle(s)*(r>.15?1:-2);});
     }
     D.mark(rotary,'Selected rotary drive',{sources:['MD02','MD04']});
     rotary.userData.functionalPaths=[{id:'torque-path',label:'Rotor to wheelset torque path',description:'The rotating drive is separate from stationary stator, bearing and casing support. The illustrated ratio follows the authored 12:24 tooth counts.',steps:[{label:'Stator input',nodeName:'motor-terminal-box'},{label:'Rotor',nodeName:'motor-rotor'},{label:'Coupling',nodeName:'straight-motor-pinion-shaft'},{label:'Pinion and axle gear',conceptId:'traction-gearbox'},{label:'Driven wheelset',conceptId:'bogie'}],sources:['MD02','MD03','MD04']}];
-    registerAnimator(s=>{rotary.visible=s.technology?.propulsion==='rotary';shaft.rotation.z=motorDetails.rotor.rotation.z=-Number(s.phase||0)*.7;});rotary.visible=false;
+    registerAnimator(s=>{rotary.visible=s.technology?.propulsion==='rotary';shaft.rotation.z=motorDetails.rotor.rotation.z=-wheelsetAngle(s)*2;});rotary.visible=false;
     explode(motor, [0, .3, -.65]); explode(gear, [0, .1, .65]);
     const pickup=part(frame,'loop-pickup',[.38,.65,-.43]);
     box(pickup,[.45,.12,.24],M.dark);
@@ -736,35 +756,19 @@ export function createViewer(container, callbacks = {}) {
     return g;
   }
   function makeHVAC(parent,position,detailed=true) {
-    const g=part(parent,'hvac',position);
-    box(g,[2.35,.13,1.65],M.core,[0,.03,0]);
-    for(const z of [-.8,.8])box(g,[2.35,.42,.055],M.white,[0,.26,z]);
-    for(const x of [-1.14,1.14])box(g,[.055,.42,1.6],M.steel,[x,.26,0]);
-    for(const x of [-.65,.65]) {
-      cylinder(g,.31,.055,M.dark,[x,.36,0],null,16);
-      const rotor=group(g,'ventilation-fan',[x,.4,0]);
-      cylinder(rotor,.07,.06,M.aluminum,[0,0,0],null,12);
-      for(let i=0;i<5;i++) {
-        const blade=box(rotor,[.25,.028,.08],M.service,[Math.cos(i*Math.PI*2/5)*.15,0,Math.sin(i*Math.PI*2/5)*.15]);
-        blade.rotation.y=-i*Math.PI*2/5;
-      }
-      building.fans.push(rotor);
-    }
-    if(detailed) {
-      for(let i=0;i<10;i++)box(g,[.025,.22,1.4],M.copper,[-.25+i*.05,.2,0]);
-      tube(g,[[-.9,.18,.55],[-.9,.15,-.55],[.9,.15,-.55],[.9,.18,.55]],.035,M.copper);
-      const lid=group(g,'hvac-grille');
-      for(let x=-1;x<=1;x+=.15)box(lid,[.035,.025,1.55],M.aluminum,[x,.5,0]);
-      shell(lid);explode(lid,[0,.5,0]);
-    }
-    explode(g,[0,.6,0]);return g;
+    const detail=equipmentDetails().hvac(parent,{component:'hvac',at:position,scale:.36,context:'vehicle'});
+    detail.node.userData.explorationLabel='Installed roof air-treatment module';
+    registerAnimator(s=>detail.animate(selectedMechanism(s)==='air'?mechanismProgress(s)*2:0));
+    explode(detail.node,[0,.6,0]);return detail.node;
   }
   function makeWheelSensor(parent) {
     const g=part(parent,'tachometer',[1.02,.56,.88]);
-    cylinder(g,.17,.035,M.signal,[0,0,0],[Math.PI/2,0,0],16);
-    cylinder(g,.1,.065,M.dark,[0,0,.04],[Math.PI/2,0,0],12);
-    for(let i=0;i<12;i++)box(g,[.035,.04,.025],M.aluminum,[Math.cos(i*Math.PI/6)*.15,Math.sin(i*Math.PI/6)*.15,.025]);
-    box(g,[.13,.13,.15],M.signal,[.19,.13,.04]);
+    const E=equipmentDetails(),encoder=E.inspect(group(g,'axle-speed-target-wheel'),'Rotating speed target',{sources:['T06','MD01'],description:'The target rotates with the axle while the sensing head stays with the support. Twelve visual marks are illustrative, not a specified encoder count.'});
+    cylinder(encoder,.17,.035,M.signal,[0,0,0],[Math.PI/2,0,0],16);
+    cylinder(encoder,.1,.065,M.dark,[0,0,.04],[Math.PI/2,0,0],12);
+    for(let i=0;i<12;i++)box(encoder,[.035,.04,.025],M.aluminum,[Math.cos(i*Math.PI/6)*.15,Math.sin(i*Math.PI/6)*.15,.025]);
+    const sensor=E.inspect(group(g,'fixed-axle-speed-sensor',[.19,.13,.04]),'Fixed axle-speed sensing head',{sources:['T06','MD01'],description:'A stationary sensing head observes the passing target; wheel rotation is not the same as vehicle ground speed.'});box(sensor,[.13,.13,.15],M.signal);
+    registerAnimator(s=>{encoder.rotation.z=wheelsetAngle(s);});
     tube(g,[[.19,.16,.04],[.25,.3,.03],[.1,.42,-.12]],.018,M.dark);
     const cue=mesh(g,torus(.23,.015,5,24),new THREE.MeshBasicMaterial({color:C.warning,transparent:true,opacity:.75}),[0,0,.08]);
     cue.visible=false;building.sensorCues.push(cue);
@@ -810,14 +814,6 @@ export function createViewer(container, callbacks = {}) {
     const imu=part(body,'accelerometer',[2.2,1.68,-.86]);
     box(imu,[.38,.2,.35],M.signal);
     for(const [end,col] of [[[.33,.13,0],0xfa9679],[[0,.46,0],0x8dd4b2],[[0,.13,.33],0x8fc5e4]])tube(imu,[[0,.13,0],end],.014,new THREE.MeshBasicMaterial({color:col}));
-    for(const x of [-3.15,3.15])for(const z of [-1.21,1.21]){
-      const doorControl=part(body,'door-control',[x,3.22,z]);
-      box(doorControl,[1.52,.15,.18],M.core);
-      box(doorControl,[.32,.19,.22],M.signal,[-.5,0,0]);
-      cylinder(doorControl,.06,1.18,M.steel,[.1,0,0],[0,0,Math.PI/2],8);
-      for(const dx of [-.4,.4])box(doorControl,[.12,.17,.16],M.aluminum,[dx,-.08,0]);
-      indicator(doorControl,[.53,0,.12],'doors');
-    }
     const display=part(body,'passenger-info',[.8,2.97,-.35]);
     roundedPanel(display,1.35,.39,.1,M.dark,[0,0,0],.04);
     box(display,[1.17,.25,.025],M.glass,[0,0,.07]);
@@ -837,12 +833,9 @@ export function createViewer(container, callbacks = {}) {
       const dome=mesh(cctv,new THREE.SphereGeometry(.1,compatibility?8:12,compatibility?6:8),M.glass,[0,-.07,0]);dome.scale.y=.7;
       cylinder(cctv,.04,.035,M.dark,[0,-.1,.07],[Math.PI/2,0,0],8);
     }
-    const compressor=part(train,'compressor',[-.1,.84,0]);
-    box(compressor,[.65,.12,1.1],M.core,[0,-.08,0]);
-    cylinder(compressor,.17,.8,M.steel,[0,.1,0],[Math.PI/2,0,0],16);
-    box(compressor,[.28,.25,.35],M.service,[-.17,.16,.35]);
-    tube(compressor,[[.2,.15,.35],[.3,.32,.35],[.3,.32,-.4]],.025,M.copper);
-    explode(compressor,[0,.15,-1.6]);
+    const compressor=equipmentDetails().reciprocatingCompressor(train,{at:[-.15,.62,1.0],scale:.42});
+    registerAnimator(s=>compressor.animate(selectedMechanism(s)==='compressor'?mechanismProgress(s)*Math.PI*4:0));
+    explode(compressor.node,[0,.15,1.25]);
     const duct=part(body,'hvac');
     for(const z of [-.73,.73])box(duct,[11,.12,.3],M.service,[0,3.16,z]);
     for(let x=-5;x<=5;x+=1)for(const z of [-.73,.73])box(duct,[.3,.035,.2],M.aluminum,[x,3.07,z]);
@@ -905,6 +898,64 @@ export function createViewer(container, callbacks = {}) {
     return p;
   }
 
+  function makeVehicleDoor(parent,x,side,{detailed=true}={}) {
+    const E=equipmentDetails(),sources=['MD07','MD08'],g=part(parent,'doors',[x,2.45,side*1.36]);
+    E.inspect(g,'Installed two-leaf sliding doorway',{sources,description:'A coupled external-sliding belt-drive example. Pocket, spindle, independent-leaf and plug-door arrangements differ.'});
+    g.userData.explorationAssembly='doors';g.userData.inspectionDirection=[.35,.2,side];
+    for(const direction of [-1,1])box(g,[.065,1.78,.12],M.edge,[direction*.735,0,0]);
+    for(const y of [-.88,.88])box(g,[1.54,.065,.12],M.edge,[0,y,0]);
+    const leaves=[];
+    for(const direction of [-1,1]){
+      const leaf=E.inspect(group(g,'sliding-door-leaf',[direction*.35,0,side*.045]),direction>0?'Right sliding leaf':'Left sliding leaf',{sources,description:'The leaf translates along its guides. Its target travels with it; the fixed contact does not.'});
+      roundedPanel(leaf,.65,1.65,.06,M.white,[0,0,0],.04);
+      roundedPanel(leaf,.48,.78,.025,M.glass,[0,.33,side*.04],.03);
+      box(leaf,[.025,1.62,.075],M.dark,[-direction*.31,0,0]);
+      const target=E.inspect(group(leaf,'vehicle-door-closed-target',[0,.80,side*.12]),'Moving closed-position target',{sources});box(target,[.07,.06,.06],M.copper);
+      const keeper=E.inspect(group(leaf,'vehicle-door-lock-keeper',[direction*.08,.82,side*.015]),'Leaf lock keeper',{sources});box(keeper,[.09,.06,.08],M.steel);
+      leaves.push({node:leaf,direction});
+      if(detailed)E.separate(leaf,leaf.userData.explorationLabel,[direction*.2,0,side*.55],{stage:'Expose leaves and guides',range:[.6,1],sources});
+    }
+    const control=part(g,'door-control',[0,.95,0]);
+    E.inspect(control,'Door operator, controller and evidence interfaces',{sources,description:'A belt transmits motor motion to the leaves. Local position and lock observations remain separate from a supervisory request.'});
+    control.userData.explorationAssembly='door-control';
+    const rail=E.inspect(group(control,'vehicle-door-guide-rail'),'Fixed hanger rail',{sources});box(rail,[2.78,.065,.14],M.steel,[0,.095,0]);
+    const motor=E.inspect(group(control,'vehicle-door-drive-motor',[-1.12,0,-side*.12]),'Door drive motor and reduction',{sources});cylinder(motor,.095,.23,M.teal,[0,0,0],[Math.PI/2,0,0],14);
+    const pulleys=[];
+    for(const direction of [-1,1]){
+      const pulley=E.inspect(group(control,'vehicle-door-drive-pulley',[direction*1.10,0,side*.12]),direction<0?'Driven belt pulley':'Return belt pulley',{sources});
+      cylinder(pulley,.063,.055,M.steel,[0,0,0],[Math.PI/2,0,0],16);box(pulley,[.10,.012,.012],M.copper,[0,0,side*.034]);pulley.userData.pitchRadius=.075;pulleys.push(pulley);
+    }
+    const belt=E.inspect(group(control,'vehicle-door-drive-belt'),'Opposed runs of the endless belt',{sources,description:'The two leaves attach to opposite belt runs and travel in opposite directions. Belt geometry and speed are illustrative.'});
+    for(const y of [-.075,.075])box(belt,[2.2,.024,.024],M.dark,[0,y,side*.12]);
+    for(const direction of [-1,1])mesh(belt,new THREE.TorusGeometry(.075,.012,6,18,Math.PI),M.dark,[direction*1.1,0,side*.12],[0,0,-direction*Math.PI/2]);
+    const carriers=[],bolts=[],contacts=[];
+    for(const direction of [-1,1]){
+      const carrier=E.inspect(group(control,'vehicle-door-hanger',[direction*.35,0,0]),direction>0?'Right leaf hanger and belt clamp':'Left leaf hanger and belt clamp',{sources,description:'The hanger translates with the leaf while the rail stays fixed.'});
+      box(carrier,[.11,.09,.11],M.aluminum,[0,.06,0]);box(carrier,[.055,.16,.055],M.steel,[0,-.08,0]);
+      box(carrier,[.07,.035,.04],M.copper,[0,-direction*.075,side*.12]);
+      box(carrier,[.025,.16,.12],M.steel,[0,-direction*.02,side*.06]);carriers.push({node:carrier,direction});
+      const contact=E.inspect(group(control,'vehicle-door-closed-contact',[direction*.35,-.15,side*.19]),direction>0?'Right closed-position contact':'Left closed-position contact',{sources});box(contact,[.11,.08,.055],M.dark);
+      const led=cylinder(contact,.023,.015,new THREE.MeshBasicMaterial({color:C.service}),[0,0,side*.035],[Math.PI/2,0,0],8);contacts.push(led);
+      const lock=E.inspect(group(control,'vehicle-door-lock-bolt',[direction*.43,-.09,side*.015]),direction>0?'Right leaf lock bolt':'Left leaf lock bolt',{sources,description:'The lock engages after closure in this authored example. Its position is independent of the closed-position target.'});box(lock,[.035,.11,.04],M.steel);bolts.push(lock);
+    }
+    const controller=E.inspect(group(control,'vehicle-door-controller-board',[.48,.21,-side*.05]),'Local door controller',{sources});box(controller,[.49,.045,.20],M.service);box(controller,[.13,.035,.13],M.core,[0,.04,0]);
+    const terminal=E.terminalStrip(control,{name:'vehicle-door-interface-terminals',at:[-.24,.20,-side*.05],labels:['Supply','Request','Closed return','Locked return'],kind:'information',sources});terminal.scale.setScalar(.43);
+    const lockIndication=E.inspect(group(control,'vehicle-door-locked-proof',[.90,.20,side*.12]),'Separate returned locked indication',{sources,description:'Returned closed-and-locked evidence follows the mechanism; a request alone is not evidence.'});
+    const proofLight=cylinder(lockIndication,.03,.02,new THREE.MeshBasicMaterial({color:C.service}),[0,0,0],[Math.PI/2,0,0],10);
+    const cover=group(control,'vehicle-door-header-cover');box(cover,[2.85,.32,.045],M.white,[0,.075,side*.245]);box(cover,[2.85,.035,.38],M.white,[0,.25,0]);shell(cover);
+    if(detailed){E.separate(cover,'Door header cover',[0,.55,side*.55],{stage:'Open enclosure',range:[0,.3],sources});E.separate(controller,'Local controller',[0,.35,-side*.3],{stage:'Locate command and evidence interfaces',range:[.3,.6],sources});}
+    E.paths(g,[{id:'vehicle-door-drive',label:'Drive to leaf travel',description:'The local drive turns a pulley. Opposite belt runs move two supported leaves in opposite directions.',steps:[{label:'Motor',nodeName:'vehicle-door-drive-motor'},{label:'Pulley',nodeName:'vehicle-door-drive-pulley'},{label:'Belt',nodeName:'vehicle-door-drive-belt'},{label:'Hanger',nodeName:'vehicle-door-hanger'},{label:'Leaf',nodeName:'sliding-door-leaf'}],sources},{id:'vehicle-door-evidence',label:'Request, position and lock evidence',description:'Input terminals, controller, moving position target, lock and returned indication are separate interfaces.',steps:[{label:'Terminals',nodeName:'vehicle-door-interface-terminals'},{label:'Controller',nodeName:'vehicle-door-controller-board'},{label:'Target',nodeName:'vehicle-door-closed-target'},{label:'Contact',nodeName:'vehicle-door-closed-contact'},{label:'Lock',nodeName:'vehicle-door-lock-bolt'},{label:'Return',nodeName:'vehicle-door-locked-proof'}],sources}]);
+    registerAnimator(s=>{
+      const pose=vehicleDoorPose(s),travel=.66*pose.opening;g.userData.doorPose=pose;
+      for(const leaf of leaves)leaf.node.position.x=leaf.direction*(.35+travel);
+      for(const carrier of carriers)carrier.node.position.x=carrier.direction*(.35+travel);
+      for(const pulley of pulleys)pulley.rotation.z=travel/.075;
+      for(const bolt of bolts)bolt.position.y=-.09+(1-pose.lock)*.11;
+      for(const led of contacts)led.material.color.set(pose.closed?C.service:C.warning);
+      proofLight.material.color.set(pose.reported?C.service:C.warning);
+    });
+    return g;
+  }
   function makeTrain(parent, { scale = 1, at = [0, 0, 0], full = true, energyRole = 'subject' } = {}) {
     const train = group(parent, 'train', at); train.scale.setScalar(scale);
     const body = part(train, 'carbody');
@@ -913,26 +964,26 @@ export function createViewer(container, callbacks = {}) {
     box(body, [L - .4, .055, W - .12], M.white, [0, 1.51, 0]);
     for (const side of [-1, 1]) {
       const sideGroup = group(body, `body-side-${side}`);
-      roundedPanel(sideGroup, L, .72, .09, M.white, [0, 1.94, side * W / 2], .12);
-      box(sideGroup, [L - .25, .17, .055], M.teal, [0, 1.74, side * (W / 2 + .05)]);
-      box(sideGroup, [L - .3, .04, .06], M.yellow, [0, 1.84, side * (W / 2 + .055)]);
-      roundedPanel(sideGroup, L - .13, .72, .075, M.white, [0, 3.17, side * W / 2], .15);
+      const skin=group(sideGroup,'carbody-side-skin');
+      for(const [left,right]of [[-8,-3.92],[-2.38,2.38],[3.92,8]]){
+        const width=right-left,cx=(right+left)/2;
+        roundedPanel(skin,width,.72,.09,M.white,[cx,1.94,side*W/2],.05);
+        box(skin,[width,.17,.055],M.teal,[cx,1.74,side*(W/2+.05)]);
+        box(skin,[width,.04,.06],M.yellow,[cx,1.84,side*(W/2+.055)]);
+        roundedPanel(skin,width,.72,.075,M.white,[cx,3.17,side*W/2],.05);
+      }
+      box(skin,[L,.14,.08],M.white,[0,3.48,side*W/2]);
       for (const x of [-6.4, -4.75, -1.65, 0, 1.65, 4.75, 6.4]) {
-        roundedPanel(sideGroup, 1.33, .84, .052, M.glass, [x, 2.68, side * (W / 2 + .05)], .07);
-        box(sideGroup, [1.18, .025, .015], M.steel, [x, 2.85, side * (W / 2 + .084)]);
+        roundedPanel(skin, 1.33, .84, .052, M.glass, [x, 2.68, side * (W / 2 + .05)], .07);
+        box(skin, [1.18, .025, .015], M.steel, [x, 2.85, side * (W / 2 + .084)]);
       }
       for (const x of [-3.15, 3.15]) {
-        const doorway = part(sideGroup, 'doors', [x, 2.45, side * (W / 2 + .06)]);
-        roundedPanel(doorway, 1.4, 1.74, .055, M.edge, [0, 0, 0], .06);
-        for (const dx of [-.35, .35]) {
-          const leaf = group(doorway, 'sliding-door-leaf', [dx, 0, .04 * side]);
-          roundedPanel(leaf, .65, 1.65, .06, M.white, [0, 0, 0], .04);
-          roundedPanel(leaf, .48, .78, .025, M.glass, [0, .33, .04 * side], .03);
-          building.doorLeaves.push({node:leaf,base:leaf.position.clone(),direction:Math.sign(dx)});
-        }
+        makeVehicleDoor(sideGroup,x,side,{detailed:full});
         box(sideGroup, [1.4, .08, .15], M.steel, [x, 1.57, side * (W / 2 + .04)]);
       }
-      if (side === 1) shell(sideGroup);
+      // A body section removes skin; it must retain the door machinery being
+      // taught. Hiding the complete side used to hide the near-side doors too.
+      if (side === 1) shell(skin);
       explode(sideGroup, [0, 0, side * .8]);
     }
     const roof = group(body, 'roof');
