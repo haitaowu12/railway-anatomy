@@ -2,9 +2,13 @@ import assert from 'node:assert/strict';
 import {studyHarness,THREE,visible} from './study-harness.mjs';
 import {STUDY_VIEWS,STUDY_CONCEPTS} from '../dist/studies-data.js';
 import {PART_VIEW_VARIANTS} from '../dist/atlas-config.js';
-import {describeFlow} from '../dist/model.js';
+import {describeFlow,VIEWS} from '../dist/model.js';
+import {ELECTRIFICATION_CHOICES,electrificationFlow} from '../dist/electrification.js';
+import {componentBounds} from '../dist/exploration.js';
 import {technologyFlow} from '../dist/technology.js';
 const {set}=await studyHarness();let passed=0;
+const studyViews=Object.fromEntries(Object.keys(STUDY_VIEWS).map(id=>[id,VIEWS[id]]));
+const has=(record,id)=>componentBounds(record).has(id);
 const check=(name,fn)=>{fn();passed++;console.log(`PASS ${name}`);};
 const node=(r,name)=>{const n=r.root.getObjectByName(name);assert(n,`Missing geometry ${name}`);return n;};
 const on=(r,name)=>visible(node(r,name));
@@ -12,22 +16,41 @@ const pos=(r,name)=>node(r,name).getWorldPosition(new THREE.Vector3());
 const bounds=(r,name)=>new THREE.Box3().setFromObject(node(r,name));
 
 check('Every study arrangement has finite geometry and all advertised component contexts',()=>{
-  for(const [view,v]of Object.entries(STUDY_VIEWS))for(const variant of v.variants){
-    const r=set(view,variant.id,2.5);assert(r.picks.length);
-    r.root.traverse(n=>{if(n.isMesh)for(const x of n.geometry.attributes.position.array)assert(Number.isFinite(x),`${view}/${variant.id}: invalid vertex`);assert([...n.position.toArray(),...n.rotation.toArray().slice(0,3),...n.scale.toArray()].every(Number.isFinite));});
-    for(const c of STUDY_CONCEPTS.filter(c=>c.primary[0]===view))if(PART_VIEW_VARIANTS[c.id][view].includes(variant.id))assert(r.parts.get(c.id)?.some(visible),`${view}/${variant.id} hides promised ${c.id}`);
+  for(const [view,v]of Object.entries(studyViews))for(const variant of v.variants){
+    const profiles=view==='electrification'?ELECTRIFICATION_CHOICES.map(choice=>choice.id):['fourth-rail-dc'];
+    for(const electrification of profiles){
+      const r=set(view,variant.id,2.5,{electrification});assert(r.picks.length);
+      r.root.traverse(n=>{if(n.isMesh)for(const x of n.geometry.attributes.position.array)assert(Number.isFinite(x),`${view}/${variant.id}: invalid vertex`);assert([...n.position.toArray(),...n.rotation.toArray().slice(0,3),...n.scale.toArray()].every(Number.isFinite));});
+      for(const c of STUDY_CONCEPTS.filter(c=>c.primary[0]===view))if(PART_VIEW_VARIANTS[c.id][view].includes(variant.id)){
+        const expected=c.id!=='study-onboard-transformer'||electrification==='overhead-ac';
+        assert.equal(has(r,c.id),expected,`${view}/${variant.id}/${electrification}: geometry for ${c.id}`);
+      }
+    }
   }
 });
-check('DC and AC replace collection, conversion and primary return together',()=>{
-  let r=set('electrification','dc');
-  for(const name of ['dc-collector-shoes','wayside-dc-rectifier','dc-return'])assert(on(r,name));
-  for(const name of ['ac-pantograph','study-onboard-transformer','ac-line-converter','ac-primary-return','overhead-contact-wire'])assert(!on(r,name));
-  r=set('electrification','ac');
-  for(const name of ['ac-pantograph','study-onboard-transformer','ac-line-converter','ac-primary-return','overhead-contact-wire','transformer-secondary','transformer-secondary-return'])assert(on(r,name));
-  for(const name of ['dc-collector-shoes','wayside-dc-rectifier','dc-return'])assert(!on(r,name));
-  assert(on(r,'study-drive'));
-  const primary=bounds(r,'pantograph-primary'),secondary=bounds(r,'transformer-secondary');
-  assert(primary.max.y>secondary.max.y+3,'The primary and secondary were flattened into one electrical path');
+check('Four independent profiles replace collection, conversion and return without replacing propulsion',()=>{
+  assert.deepEqual(studyViews.electrification.variants.map(variant=>variant.id),['chain'],'Electrification exposes a second conflicting supply selector');
+  const expectations={
+    'fourth-rail-dc':{rail:true,separateReturn:true,overhead:false,ac:false},
+    'third-rail-dc':{rail:true,separateReturn:false,overhead:false,ac:false},
+    'overhead-dc':{rail:false,separateReturn:false,overhead:true,ac:false},
+    'overhead-ac':{rail:false,separateReturn:false,overhead:true,ac:true},
+  };
+  for(const [electrification,expected]of Object.entries(expectations))for(const propulsion of ['lim','rotary']){
+    const r=set('electrification','chain',2.5,{electrification,technology:{propulsion,control:'loop'}});
+    for(const [id,present]of Object.entries({'collector-positive-shoe':expected.rail,'positive-rail':expected.rail,'collector-return-shoe':expected.separateReturn,'negative-rail':expected.separateReturn,'running-rail-return':!expected.separateReturn,'wheel-return':!expected.separateReturn,pantograph:expected.overhead,'overhead-contact-wire':expected.overhead,rectifier:!expected.ac,'ac-feeder-switchgear':expected.ac,'onboard-transformer':expected.ac,'line-converter':expected.ac})){
+      assert.equal(has(r,id),present,`${electrification}/${propulsion}: incorrect ${id}`);
+    }
+    assert.equal(has(r,'lim-primary'),propulsion==='lim');assert.equal(has(r,'reaction-rail'),propulsion==='lim');
+    assert.equal(has(r,'rotary-traction-motor'),propulsion==='rotary');assert(has(r,'study-drive')&&has(r,'dc-link'));
+    assert(on(r,`${electrification}-study-supply`)&&on(r,`${electrification}-study-return`),'Selected topology is not connected to the supply');
+    for(const other of Object.keys(expectations).filter(value=>value!==electrification))assert(!on(r,`${other}-study-supply`)&&!on(r,`${other}-study-return`),'An obsolete profile retained ghost supply traces');
+  }
+  const r=set('electrification','chain',0,{electrification:'overhead-ac'});
+  for(const name of ['pantograph-to-transformer-primary','ac-primary-wheel-return','transformer-secondary-to-line-converter','transformer-secondary-return'])assert(on(r,name));
+  const primary=node(r,'pantograph-to-transformer-primary'),secondary=node(r,'transformer-secondary-to-line-converter');
+  assert.notEqual(primary,secondary,'Transformer circuits share one path object');
+  assert(bounds(r,'pantograph-to-transformer-primary').max.y>bounds(r,'transformer-secondary-to-line-converter').max.y+2,'Primary collection and transformed secondary were flattened into one path');
 });
 check('Rolling, spin and slide differ at the wheel while the travel reference is preserved',()=>{
   const rate={};let travel;
@@ -94,10 +117,19 @@ check('Configuration matching, test subject and issue disposition change separat
   r=set('change-evidence','tested');assert(on(r,'test-subject-B'));assert(on(r,'two-channel-test-evidence'));assert(!on(r,'issue-disposition-record'));assert(!on(r,'reviewed-decision'));
   r=set('change-evidence','reviewed');assert(on(r,'reviewed-decision'));assert(on(r,'issue-disposition-record'));assert(pos(r,'installed-version-B').distanceTo(equipment)<1e-9);
 });
-check('Stored propulsion and control choices cannot replace any study narrative',()=>{
-  for(const [view,v]of Object.entries(STUDY_VIEWS))for(const variant of v.variants)for(const propulsion of ['lim','rotary'])for(const control of ['loop','radio','fixed','etcs1','etcs2']){
-    const state={view,domain:v.domain,variant:variant.id,technology:{propulsion,control},scenario:'nominal',mode:'coasting'};
+check('Narrative wrappers preserve specialist boundaries and explain the selected electrification profile',()=>{
+  for(const [view,v]of Object.entries(studyViews))for(const variant of v.variants)for(const propulsion of ['lim','rotary'])for(const control of ['loop','radio','fixed','etcs1','etcs2']){
+    const state={view,domain:v.domain,variant:variant.id,technology:{propulsion,control},scenario:'nominal',mode:'motoring'};
     const base=describeFlow(state);assert.deepEqual(technologyFlow(state,base),base,`${view}/${variant.id}: unrelated technology overwrote the explanation`);
+    for(const choice of ELECTRIFICATION_CHOICES){
+      const contextual=electrificationFlow({...state,electrification:choice.id},base);
+      if(view!=='electrification')assert.deepEqual(contextual,base,`${view}: electrification overwrote an unrelated study`);
+      else {
+        assert(contextual.nodes.includes(choice.collection)&&contextual.nodes.includes(choice.returnPath),'The narrative retained a collection or return from another profile');
+        assert(contextual.nodes.some(text=>text.includes(propulsion==='rotary'?'rotary motor':'LIM primary')),'The narrative contradicts the selected propulsion');
+        assert.equal(contextual.nodes.some(text=>text.includes('Onboard transformer')),choice.supply==='AC','The narrative confuses overhead collection with AC conversion');
+      }
+    }
   }
 });
 console.log(`${passed} study checks passed.`);

@@ -155,14 +155,16 @@ export const TOURS = [
     "domain": "power",
     "view": "system",
     "component": "utility",
-    "explanation": "Follow the illustrated circuit: AC supply, transformer, rectifier, DC conductors, onboard converter and motor. Energy changes form along the way; the return conductor completes the electrical path.",
-    "actionText": "Trace the energized path from the substation to the train.",
+    "explanation": "This lesson selects the fourth-rail DC example. Follow AC supply, wayside transformer and rectifier, separate supply and return conductors, then the onboard inverter and selected motor. The collection, conversion and return arrangement is one teaching example; it does not define every railway.",
+    "actionText": "Follow the selected fourth-rail DC path from the substation to the vehicle and back through the separate return conductor.",
     "actionLabel": "Follow power",
     "action": {
       "view": "system",
       "component": "utility",
       "mode": "motoring",
-      "scenario": "nominal"
+      "scenario": "nominal",
+      "electrification": "fourth-rail-dc",
+      "cutaway": true
     },
     "question": "Which conversion belongs to the rectifier in this DC traction example?",
     "choices": [
@@ -191,14 +193,18 @@ export const TOURS = [
     "domain": "track",
     "view": "guideway",
     "component": "reaction-rail",
-    "explanation": "This example separates the outgoing conductor, return conductor, wheel-supporting rails and LIM reaction rail. Identify each by function. The reaction rail is the motor's secondary; it is not the illustrated normal traction-current return.",
-    "actionText": "Compare the four labelled guideway functions.",
+    "explanation": "This lesson selects LIM propulsion with fourth-rail DC supply. The outgoing conductor, separate return conductor, wheel-running rails and LIM reaction rail have different jobs. The reaction rail is the motor secondary, while the separate return conductor completes the normal traction circuit in this arrangement.",
+    "actionText": "Inspect the four labelled functions in the selected fourth-rail DC and LIM arrangement.",
     "actionLabel": "Inspect the rails",
     "action": {
       "view": "guideway",
       "component": "reaction-rail",
       "mode": "motoring",
-      "scenario": "nominal"
+      "scenario": "nominal",
+      "electrification": "fourth-rail-dc",
+      "technology": {
+        "propulsion": "lim"
+      }
     },
     "question": "In this separated-conductor LIM example, which guideway element is the motor secondary?",
     "choices": [
@@ -262,17 +268,18 @@ export const TOURS = [
     "domain": "power",
     "view": "system",
     "component": "wayside-resistor",
-    "explanation": "During regenerative braking, mechanical energy becomes electrical energy. Acceptance by the supply network is conditional. Explore the limited-receptivity example and its alternative energy paths. Electrical braking and friction braking are coordinated; their actual arrangements vary.",
-    "actionText": "Limit regeneration and inspect the alternative braking paths.",
+    "explanation": "This lesson selects the fourth-rail DC example with limited network receptivity. During electrical braking the converter can return energy to the DC network; the selected wayside resistor provides a surplus-energy destination. Friction braking remains a separate mechanism. The illustration does not calculate how braking effort is blended.",
+    "actionText": "Inspect the selected wayside resistor and the separate friction-brake mechanism in this limited-receptivity DC example.",
     "actionLabel": "Limit energy acceptance",
     "action": {
       "view": "system",
       "component": "wayside-resistor",
       "cutaway": true,
       "mode": "regeneration",
-      "scenario": "regen-limited"
+      "scenario": "regen-limited",
+      "electrification": "fourth-rail-dc"
     },
-    "question": "If the illustrated DC network cannot accept all regenerated energy, which other braking paths are shown?",
+    "question": "In the selected fourth-rail DC example, which other braking paths are shown when the network cannot accept all regenerated energy?",
     "choices": [
       "Resistive energy dissipation and friction braking, according to the selected arrangement",
       "Automatic export of all surplus energy through the diode rectifier to the AC utility",
@@ -519,36 +526,39 @@ export const TOURS = [
     "label": "15 · Follow the messages",
     "title": "One train, several information services",
     "domain": "communications",
-    "view": "communications",
-    "component": "train-radio",
-    "explanation": "Compare control data, operational voice, announcements, intercom and video. They serve different purposes even where infrastructure is shared. In this authored radio-loss example, passenger-service activity cannot demonstrate current movement permission; real timeout and degraded-operation rules vary.",
-    "actionText": "Hold control updates and compare the labelled information paths.",
+    "view": "communications-overview",
+    "component": "communications-system",
+    "explanation": "Follow passenger information, operational voice and supervision between their endpoints. These services have different functions even when they share infrastructure or locations. The connection diagram labels those relationships; a working passenger service does not by itself establish current train-control information or movement permission.",
+    "actionText": "Select Connections and follow the passenger-content path from source to display. Compare it with Operational voice and Supervision, noting their different endpoints and messages.",
     "actionLabel": "Compare communication roles",
     "action": {
-      "view": "communications",
-      "component": "train-radio",
+      "view": "communications-overview",
+      "component": "communications-system",
+      "variant": "passenger",
       "cutaway": true,
+      "exploded": 0,
       "mode": "coasting",
-      "scenario": "radio-loss"
+      "scenario": "nominal"
     },
-    "question": "The passenger display still updates while the illustrated control-data path is interrupted. Which evidence is relevant to train-control permission?",
+    "question": "Suppose a passenger display receives new content. What does that observation establish about train-control permission?",
     "choices": [
-      "The freshness of the passenger timetable display",
-      "Successful passenger audio playback",
-      "The validity of the applicable control information and protection conditions"
+      "The display update establishes that the current movement authority remains valid",
+      "The successful passenger service does not establish the validity of control information or protection conditions",
+      "The display controller can issue movement permission while other information is unavailable"
     ],
-    "answer": 2,
+    "answer": 1,
     "feedback": [
-      "A passenger-information update establishes something about that service, not the control-data path.",
-      "Audio playback does not establish movement-authority data or protection conditions.",
-      "Follow the control path and its governing functions separately from passenger services."
+      "The observed update concerns passenger information. Movement authority needs evidence from the relevant control functions.",
+      "The diagram separates service roles. A working display is not evidence that every other information path or protection condition is valid.",
+      "Passenger-information delivery does not give the display controller the protection or authority-generating role."
     ],
     "sourceConcepts": [
-      "train-radio",
-      "train-network",
+      "communications-system",
+      "pis-controller",
       "passenger-info",
-      "pa-intercom",
-      "cctv"
+      "operational-cab-radio",
+      "station-scada",
+      "train-radio"
     ]
   },
   {
@@ -593,17 +603,18 @@ export const TOURS = [
     "id": "station-announcements",
     "label": "17 · Follow a station announcement",
     "title": "Audio needs more than a message",
-    "domain": "station",
-    "view": "station",
-    "component": "station-pa",
-    "explanation": "Follow audio from its source through routing, amplification and loudspeakers. Compare this with a passenger-information display and an emergency intercom. These devices may be coordinated, but they have distinct output, power and communication requirements.",
-    "actionText": "Inspect the public devices, then jump to their equipment context.",
+    "domain": "communications",
+    "view": "communications-passenger",
+    "component": "pa-amplifier",
+    "explanation": "Follow the call station and PA controller into the amplifier and loudspeaker circuit. The connection diagram distinguishes network audio and control from the powered output to the speaker. The equipment view exposes the amplifier and speaker parts; its exaggerated cone motion illustrates a mechanism without predicting audibility or speech quality.",
+    "actionText": "Open Announcement. Inspect the amplifier and loudspeaker, then use Connections to identify the amplified-audio output and separate electrical supply.",
     "actionLabel": "Show this arrangement",
     "action": {
-      "view": "station",
-      "component": "station-pa",
-      "variant": "passenger",
+      "view": "communications-passenger",
+      "component": "pa-amplifier",
+      "variant": "announcement",
       "exploded": 0,
+      "cutaway": true,
       "mode": "coasting",
       "scenario": "nominal"
     },
@@ -620,9 +631,10 @@ export const TOURS = [
       "Storage supplies recorded content; amplification supplies the speaker-driving output."
     ],
     "sourceConcepts": [
+      "pa-amplifier",
+      "pa-controller",
       "station-pa",
-      "station-pis",
-      "emergency-intercom"
+      "communications-power"
     ]
   },
   {
@@ -631,9 +643,9 @@ export const TOURS = [
     "title": "A dashboard is not the local control loop",
     "domain": "station",
     "view": "station-networks",
-    "component": "station-scada",
+    "component": "bas-controller",
     "explanation": "Compare electrical supervision, station supervision and building automation. A local protection device, plant controller and supervisory workstation have different responsibilities. The coloured lines show logical interfaces without claiming a mandatory physical network or a universal command priority.",
-    "actionText": "Switch between power, station and building views.",
+    "actionText": "Compare Power SCADA, Station supervision and Building automation. In Building automation, identify the sensor, local controller and actuator separately from the supervisory display.",
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "station-networks",
@@ -669,14 +681,14 @@ export const TOURS = [
     "title": "Related systems are not one automatic chain",
     "domain": "station",
     "view": "fire-systems",
-    "component": "flss",
+    "component": "sprinkler-system",
     "explanation": "Compare detection, notification, emergency communication, lighting, egress and water-based protection. The view shows their interfaces without creating a generic cause-and-effect sequence. In a conventional thermal sprinkler, heat operates the individual sprinkler element.",
-    "actionText": "Compare detect, communicate and water-protection emphases.",
+    "actionText": "Inspect Water-based protection and its individual sprinkler head, then compare the separate detection and communication functions.",
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "fire-systems",
-      "component": "flss",
-      "variant": "detect",
+      "component": "sprinkler-system",
+      "variant": "water",
       "exploded": 0,
       "mode": "coasting",
       "scenario": "nominal"
@@ -728,7 +740,7 @@ export const TOURS = [
     "answer": 1,
     "feedback": [
       "The complete air path, resistance and equipment state affect airflow.",
-      "The view separates the driving mechanism from the adjustable path; the animation does not calculate airflow performance.",
+      "The view separates the driving mechanism from the adjustable path; it does not calculate airflow performance.",
       "Those roles are reversed in the illustrated arrangement."
     ],
     "sourceConcepts": [
@@ -783,7 +795,7 @@ export const TOURS = [
     "view": "platform-interface",
     "component": "platform-door-proof",
     "explanation": "Follow a door command to the drive, then inspect closed and locked feedback. These are separate facts at the train–platform interface.",
-    "actionText": "Compare the arrangements and inspect the highlighted equipment.",
+    "actionText": "Inspect the door drive and closed-and-locked feedback. Compare the separate interspace-sensing arrangement without treating a clear sensing area as door-state proof.",
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "platform-interface",
@@ -814,13 +826,13 @@ export const TOURS = [
   },
   {
     "id": "operations-roles",
-    "label": "23 · Follow an event across the OCC",
+    "label": "23 · Trace an OCC request",
     "title": "Follow request, indication and coordination",
     "domain": "operations",
     "view": "occ-supervision",
     "component": "operations-signalling-workstation",
-    "explanation": "An operator task can involve a control request, acknowledgement, returned equipment indication and communication with other roles. These are different pieces of information. Follow the supervisory path and compare it with the operational event record; acknowledging a request or alarm does not establish the resulting field state or resolve the event.",
-    "actionText": "Open the supervision view, follow the request and returned-indication stages, then compare event coordination.",
+    "explanation": "A workstation request, receipt at a field interface and a returned indication carry different evidence. Follow the separate outgoing and returning paths; the animation shows information exchange without making the field equipment move. Event coordination and responsibilities are examined separately in People & processes.",
+    "actionText": "Use Request, Received at interface and Returned indication in the phase guide. Then open People & processes to compare Operational event & incident coordination.",
     "actionLabel": "Trace supervision",
     "action": {
       "view": "occ-supervision",
@@ -831,15 +843,15 @@ export const TOURS = [
       "cutaway": true,
       "exploded": 0
     },
-    "question": "A control request is acknowledged, but the returned field indication is still absent. What is known at this point?",
+    "question": "A control request has reached the field interface, but no returned field indication is available. What is known at this point?",
     "choices": [
-      "The request was received; the resulting field state has not been confirmed",
+      "The request reached the interface; the resulting field state has not been confirmed",
       "The field equipment has completed the requested change",
       "The associated operational event has been resolved"
     ],
     "answer": 0,
     "feedback": [
-      "Acknowledgement, returned indication and event resolution are different evidence.",
+      "Receipt, returned indication and event resolution answer different questions.",
       "A received request does not establish the field equipment’s completed state.",
       "An event can remain open after a request or alarm has been acknowledged."
     ],
@@ -857,7 +869,7 @@ export const TOURS = [
     "view": "depot-overview",
     "component": "depot-layout",
     "explanation": "In this example, a train crosses the network boundary, reaches reception, and is assigned to the work it needs. Inspection may lead to the maintenance hall or wheel and bogie shop; cleaning and stabling are other destinations. The work record then connects maintenance release with the fleet plan for departure.",
-    "actionText": "Start at the whole depot. Open Arrival & yard, inspect a maintenance area, then open Stores & work planning to follow the handover.",
+    "actionText": "Start at the whole depot. Open Arrival & yard and a maintenance area, then use People & processes to examine Maintenance release & return.",
     "actionLabel": "Explore the connected depot",
     "action": {
       "view": "depot-overview",
@@ -927,18 +939,18 @@ export const TOURS = [
   },
   {
     "id": "depot-water",
-    "label": "26 · Follow wash water",
-    "title": "26 · Follow wash water",
+    "label": "26 · Follow washing and water",
+    "title": "Movement and water supply have different roles",
     "domain": "depot",
     "view": "depot-wash",
-    "component": "depot-water-recovery",
-    "explanation": "Select Water circuit to open the tanks and trace collection, treatment and reuse. The fresh-water supply and residual discharge have separate connections. Then compare Drive-through with Travelling gantry to see which object moves during washing.",
-    "actionText": "Trace the coloured water paths, then compare the two washing arrangements.",
+    "component": "depot-wash-gantry",
+    "explanation": "Begin with the travelling gantry around a stationary train, then compare the drive-through arrangement, where the train moves past fixed equipment. The phase control makes the difference visible. Water circuit shows the separate collection, treatment, reuse, make-up and residual-water paths.",
+    "actionText": "Animate Travelling gantry and Drive-through to compare relative movement. Then select Water circuit to inspect the supporting water paths.",
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "depot-wash",
-      "component": "depot-water-recovery",
-      "variant": "recovery",
+      "component": "depot-wash-gantry",
+      "variant": "mobile",
       "mode": "coasting",
       "scenario": "nominal",
       "cutaway": true,

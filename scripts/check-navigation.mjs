@@ -7,6 +7,9 @@ import {DOMAINS,VIEWS,MODES,variantFor,defaultVariant,cutawayFor} from '../dist/
 import {CONCEPTS} from '../dist/catalog.js';
 import {TOURS} from '../dist/tours.js';
 import {domainForView,routeState,viewTrail} from '../dist/navigation.js';
+import {DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent} from '../dist/electrification.js';
+import {PROCESS_VIEWS,PEOPLE_ROLES} from '../dist/process-data.js';
+import {processFor} from '../dist/process-ui.js';
 import {technologyFromUrl,technologyForView,technologyForComponent} from '../dist/technology.js';
 
 const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
@@ -16,8 +19,27 @@ const restoreBegin=source.indexOf('function restoreNavigation()'),restoreEnd=sou
 assert(restoreBegin>=0&&restoreEnd>restoreBegin,'History restoration markers changed');
 const returnBegin=source.indexOf("else if(b.id==='return-context')"),returnEnd=source.indexOf('\n  else if(b.dataset.destination)',returnBegin);
 assert(returnBegin>=0&&returnEnd>returnBegin,'Context restoration handler markers changed');
-const dependencies={DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent};
+function createBrowserEnvironment(){
+  // The captured history block also registers the process-menu resize handler.
+  // Provide real event dispatch and width queries, without emulating layout.
+  const window=new EventTarget();window.innerWidth=1280;
+  const processMenu={open:true};
+  const matchMedia=query=>{
+    const constraint=/^\(\s*(min|max)-width:\s*(\d+)px\s*\)$/.exec(query);
+    assert.ok(constraint,`The bounded navigation harness does not model ${query}`);
+    const result=new EventTarget(),limit=Number(constraint[2]);
+    Object.defineProperties(result,{media:{value:query},matches:{get:()=>constraint[1]==='min'?window.innerWidth>=limit:window.innerWidth<=limit}});
+    return result;
+  };
+  window.matchMedia=matchMedia;
+  return {window,matchMedia,processMenu,querySelector:selector=>{
+    assert.equal(selector,'.process-menu','Unexpected DOM dependency in the navigation harness');
+    return processMenu;
+  }};
+}
+const dependencies={createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent};
 const harness=new Function(...Object.keys(dependencies),`
+  const {window,matchMedia,processMenu,querySelector:$}=createBrowserEnvironment();
   const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
   const savedTechnology={};
   let state={},historyMode='replace',returnContext=null,lastReadUrl='',configurationEffect='',allComponents=false,lastExplorationContext='';
@@ -33,6 +55,7 @@ const harness=new Function(...Object.keys(dependencies),`
     roundTrip(value){state=structuredClone(value);writeHash();const url=location.href;state={};readHash();return {url,state:structuredClone(state)};},
     parse(url){location=new URL(url);state={};readHash();return structuredClone(state);},
     restore(url,saved,current){location=new URL(url);history.state={railway:structuredClone(saved),returnContext:null};state=structuredClone(current);lastReadUrl='';restoreNavigation();return structuredClone(state);},
+    resize(width){const before=structuredClone(state);window.innerWidth=width;window.dispatchEvent(new Event('resize'));return {menuOpen:processMenu.open,before,state:structuredClone(state)};},
     returnTo(saved,current){returnContext=structuredClone(saved);state=structuredClone(current);lastExplorationContext='departing-view';const b={id:'return-context'};
       ${source.slice(returnBegin+5,returnEnd)}
       return {state:structuredClone(state),context:lastExplorationContext};
@@ -65,6 +88,14 @@ for(const component of ['train-radio','wayside-radio']){
   const parsed=harness.parse(`https://example.test/railway-anatomy/?propulsion=rotary&control=etcs2#explore/control/control/${component}`);
   assert.equal(parsed.technology.control,'etcs2','An ETCS radio bookmark must remain ETCS');
 }
+for(const electrification of ['third-rail-dc','fourth-rail-dc','overhead-dc','overhead-ac'])for(const propulsion of ['lim','rotary']){
+ const saved={...base,electrification,technology:{propulsion,control:'etcs2'}};const actual=harness.roundTrip(saved).state;
+ assert.equal(actual.electrification,electrification,'A supply profile changed on reopening its URL');assert.equal(actual.technology.propulsion,propulsion,'A supply profile changed propulsion');
+}
+for(const [id,p]of Object.entries(PROCESS_VIEWS))for(const step of p.steps){const actual=harness.parse(`https://example.test/railway-anatomy/#processes/${id}/${step.id}`);assert.equal(actual.page,'processes');assert.equal(actual.processId,id);assert.equal(actual.processStep,step.id);}
+for(const [hash,process]of [['explore/depot/change-evidence/change-baseline/installed','configuration-change'],['explore/operations/occ-incident/occ-alarm-queue/reported','incident-coordination'],['explore/operations/operations-centre/operations-centre/handover','duty-handover']]){const actual=harness.parse(`https://example.test/railway-anatomy/#${hash}`);assert.equal(actual.page,'processes','A legacy process route returned to a physical model');assert.equal(actual.processId,process);}
+for(const [legacy,profile]of [['ac','overhead-ac'],['dc','fourth-rail-dc']]){const actual=harness.parse(`https://example.test/railway-anatomy/#explore/power/electrification/supply-conversion/${legacy}`);assert.equal(actual.electrification,profile);assert.equal(actual.variant,'chain');}
+const map=harness.roundTrip({...base,domain:'communications',view:'communications-overview',component:'communications-system',variant:'supervision',presentation:'connections'}).state;assert.equal(map.presentation,'connections');
 const invalid=harness.parse('https://example.test/railway-anatomy/?propulsion=invalid&control=invalid&mode=invalid#explore/invalid/invalid/invalid');
 assert.equal(invalid.view,'railway');assert.equal(invalid.component,'network-overview');
 assert.deepEqual(invalid.technology,{propulsion:'lim',control:'loop'});
@@ -87,4 +118,9 @@ for(const view of Object.keys(VIEWS)){
   assert.equal(trail.at(-1),view,`${view} disappeared from its own trail`);
   assert.equal(new Set(trail).size,trail.length,`${view} contains a navigation cycle`);
 }
-console.log(`PASS production route round trips: ${routes} view/variant/mode routes, 40 independent vehicle configurations, ETCS radio bookmarks, 6 history/context presentation combinations, malformed-route fallback and parent trails`);
+for(const [width,open]of [[390,false],[740,false],[741,true],[1280,true]]){
+  const result=harness.resize(width);
+  assert.equal(result.menuOpen,open,`Process navigation has the wrong disclosure state at ${width}px`);
+  assert.deepEqual(result.state,result.before,'Resizing process navigation changed the active route');
+}
+console.log(`PASS production route round trips: ${routes} view/variant/mode routes, 40 independent vehicle configurations, 8 electrical/propulsion bookmarks, 31 process-step routes, legacy process/electrification redirects, connection-mode bookmarks, ETCS radio bookmarks, 6 history/context presentation combinations, malformed-route fallback, parent trails and process-menu resize events`);

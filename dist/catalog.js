@@ -1,6 +1,9 @@
 import {applyDepotCatalog} from './depot-data.js';
 import {applyOccCatalog} from './occ-data.js';
 import {applyStudyCatalog} from './studies-data.js';
+import {PUBLIC_PROCESS_SOURCES} from './process-data.js';
+import {applyElectrificationCatalog} from './electrification-data.js';
+import {applyCommsCatalog} from './communications-data.js';
 import {NETWORK_SOURCES,NETWORK_CONCEPTS} from './network-data.js';
 import {EXTRA_SOURCES, EXTRA_CONCEPTS} from './expansion-data.js';
 // Public-source educational content. Geometry and selected arrangements are illustrative.
@@ -3024,3 +3027,7 @@ CONCEPTS.push(...NETWORK_CONCEPTS);
 applyDepotCatalog(SOURCES,CONCEPTS);
 applyOccCatalog(SOURCES,CONCEPTS);
 applyStudyCatalog(SOURCES,CONCEPTS);
+SOURCES.push(...PUBLIC_PROCESS_SOURCES.filter(s=>!SOURCES.some(existing=>existing.id===s.id)));
+applyCommsCatalog(SOURCES,CONCEPTS);
+
+applyElectrificationCatalog(SOURCES,CONCEPTS);

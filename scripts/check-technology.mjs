@@ -1,3 +1,4 @@
+import * as electrificationHelpers from '../dist/electrification.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -35,14 +36,15 @@ function section(start,end){
   const a=source.indexOf(start),b=source.indexOf(end,a+start.length);
   assert(a>=0&&b>a,`Shared scene marker changed: ${start}`);return source.slice(a,b);
 }
-const harness=new Function('THREE',`
+const harness=new Function('THREE','electrificationHelpers',`
+ const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
   ${section('const C = {','\nconst VIEW')}
   const compatibility=true,scene=new THREE.Scene(),models=new Map();let building;
   ${section('  const materials = new Map();','  const ground = ')}
   ${section('  function startModel(','  function registerAnimator(')}
   function registerAnimator(fn){building.animators.push(fn);}
-  return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,cabinet,registerAnimator}};
-`)(THREE);
+  return {models,api:{THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator}};
+`)(THREE,electrificationHelpers);
 for(const [registry,build]of [[TRACK_VIEWS,buildTrackView],[SIGNALLING_VIEWS,buildSignallingView],[PLATFORM_VIEWS,buildPlatformView]])for(const view of Object.keys(registry))build(view,harness.api);
 const visible=node=>{for(let n=node;n;n=n.parent)if(!n.visible)return false;return true;};
 function scene(view,variant,technology,cutaway=true){

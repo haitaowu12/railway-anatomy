@@ -1,8 +1,13 @@
 import {SHORT_LABELS as shortLabels} from './labels.js';
 import {DEFAULT_TECHNOLOGY,PROPULSION_CHOICES,CONTROL_CHOICES,normalizeTechnology,technologyFromUrl,technologyForView,technologyForComponent,controlRoute,technologyNote,technologyFlow} from './technology.js';
-import {NAVIGATION_GROUPS,VIEW_PARENTS,domainForView,viewTrail,routeState,PROPULSION_EFFECTS,CONTROL_EFFECTS} from './navigation.js';
+import {NAVIGATION_GROUPS,VIEW_GROUPS,VIEW_PARENTS,domainForView,viewTrail,routeState,PROPULSION_EFFECTS,CONTROL_EFFECTS} from './navigation.js';
 import {NETWORK_DESTINATIONS} from './network-data.js';
 import {technologyControlsFor,comparisonLabel,animationFor,canAnimate,placeModelLabels} from './comparisons.js';
+import {DEFAULT_ELECTRIFICATION,ELECTRIFICATION_CHOICES,normalizeElectrification,electrificationForComponent,electrificationProfile,electrificationNote,electrificationFlow} from './electrification.js';
+import {PROCESS_VIEWS,PEOPLE_ROLES,TRAIN_CONTROL_TAXONOMY} from './process-data.js';
+import {PROCESS_REDIRECTS,PROCESS_COMPONENTS,processFor,renderProcessPage,renderPeoplePage} from './process-ui.js';
+import {topologyMarkup} from './topology-ui.js';
+import {ABOUT_HTML} from './project-about.js';
 import {READING_GUIDES} from './reading-guides.js';
 import {SOURCES,CONCEPTS,ARCHITECTURES} from './catalog.js';
 import {TOURS} from './tours.js';
@@ -14,7 +19,7 @@ const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
 const sources=new Map(SOURCES.map(s=>[s.id,s]));
 let savedTechnology={};try{savedTechnology=JSON.parse(localStorage.getItem('railway-anatomy-technology-v1')||'{}');}catch{}
-let state={technology:technologyFromUrl(location.search,savedTechnology),page:'explore',domain:'network',view:'railway',component:'network-overview',mode:'coasting',scenario:'nominal',variant:'movement',sink:'train',cutaway:true,exploded:0,explodeScope:'all',playing:false,labels:true,labelMode:'nearby',lesson:0};
+let state={technology:technologyFromUrl(location.search,savedTechnology),electrification:normalizeElectrification(new URLSearchParams(location.search).get('electrification')),presentation:'equipment',processId:'configuration-change',processStep:'',roleId:'traffic-coordinator',page:'explore',domain:'network',view:'railway',component:'network-overview',mode:'coasting',scenario:'nominal',variant:'movement',sink:'train',cutaway:true,exploded:0,explodeScope:'all',playing:false,labels:true,labelMode:'nearby',lesson:0};
 let historyMode='replace',returnContext=null,lastReadUrl='',allComponents=false,configurationEffect='',lastDetailKey='';
 let viewer=null, rendererStatus='', loadingViewer=false, labelFrame=0,lastLabelTime=0,lastExplorationContext='';
 let lessonAnswers={}, lessonAttempts={}, quizSelections={};
@@ -23,14 +28,20 @@ try{const saved=JSON.parse(localStorage.getItem(progressKey)||'{}');for(const t 
 function saveProgress(){try{localStorage.setItem(progressKey,JSON.stringify({completed:lessonAnswers,choices:quizSelections,attempts:lessonAttempts}));}catch{}}
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const labelElements=new Map();
+let labelLayoutKey='',stableLabelPositions=[];
+const isProcessPage=()=>state.page==='processes'||state.page==='people'||state.page==='learn'&&Boolean(processFor(state.view,state.component));
+const currentTopology=()=>VIEWS[state.view]?.variants?.find(v=>v.id===state.variant)?.topology||null;
+const flowFor=()=>electrificationFlow(state,technologyFlow(state,describeFlow(state)));
+const modelNote=()=>electrificationNote(state)||technologyNote(state,VIEWS[state.view].note);
 
 
 function sourceChips(ids){return `<div class="source-chips">${[...new Set(ids)].filter(id=>sources.has(id)).map(id=>`<button data-source="${id}" title="${safe(sources.get(id).title)}">${safe(sources.get(id).publisher)} ↗</button>`).join('')}</div>`;}
 function announce(text){$('#announce').textContent=text;}
+function focusVisible(selector){const node=$$(selector).find(el=>!el.closest('[hidden]')&&el.getClientRects().length);if(node){node.focus({preventScroll:true});return;}const heading=$$('h1').find(el=>!el.closest('[hidden]')&&el.getClientRects().length);if(heading){heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});}}
 function rememberCurrentEntry(){history.replaceState({railway:routeState(state),returnContext},'',location.href);}
 function writeHash(){
-  const value=state.page==='reference'?'reference':state.page==='learn'?`learn/${TOURS[state.lesson].id}`:`explore/${state.domain}/${state.view}/${state.component}${state.variant!=='default'?'/'+state.variant:''}`;
-  const url=new URL(location.href);url.searchParams.set('propulsion',state.technology.propulsion);url.searchParams.set('control',state.technology.control);url.hash=value;
+  const value=state.page==='people'?`people/${state.roleId||'traffic-coordinator'}`:state.page==='processes'?`processes/${state.processId}/${state.processStep||''}`:state.page==='reference'?'reference':state.page==='learn'?`learn/${TOURS[state.lesson].id}`:`explore/${state.domain}/${state.view}/${state.component}${state.variant!=='default'?'/'+state.variant:''}`;
+  const url=new URL(location.href);url.searchParams.set('propulsion',state.technology.propulsion);url.searchParams.set('control',state.technology.control);if(state.electrification&&state.electrification!==DEFAULT_ELECTRIFICATION)url.searchParams.set('electrification',state.electrification);else url.searchParams.delete('electrification');if(state.presentation==='connections')url.searchParams.set('presentation','connections');else url.searchParams.delete('presentation');url.hash=value;
   for(const [key,value,initial] of [['mode',state.mode,['power','vehicle'].includes(state.domain)?'motoring':'coasting'],['scenario',state.scenario,'nominal'],['sink',state.sink,'train']]){
     if(value!==initial)url.searchParams.set(key,value);else url.searchParams.delete(key);
   }
@@ -42,14 +53,18 @@ function writeHash(){
 function readHash(){
   const [page,a,b,c,v]=location.hash.slice(1).split('/');
   state.technology=technologyFromUrl(location.search,savedTechnology);
-  if(page==='reference'){state.page='reference';}
+  state.electrification=normalizeElectrification(new URLSearchParams(location.search).get('electrification'));
+  state.presentation=new URLSearchParams(location.search).get('presentation')==='connections'?'connections':'equipment';
+  if(page==='people'){state.page='people';state.roleId=PEOPLE_ROLES.some(r=>r.id===a)?a:PEOPLE_ROLES[0].id;}
+  else if(page==='processes'){state.page='processes';state.processId=PROCESS_VIEWS[a]?a:'configuration-change';state.processStep=PROCESS_VIEWS[state.processId].steps.some(s=>s.id===b)?b:PROCESS_VIEWS[state.processId].steps[0].id;}
+  else if(page==='reference'){state.page='reference';}
   else if(page==='learn'){
     state.page='learn';state.lesson=Math.max(0,TOURS.findIndex(t=>t.id===a));applyLesson(false);
   }else{
     state.page='explore';
     const domain=DOMAINS.find(d=>d.id===a)||DOMAINS.find(d=>d.id==='network');
     Object.assign(state,{domain:domain.id,view:domain.view,component:domain.component});
-    if(VIEWS[b])state.view=b;
+    if(VIEWS[b])state.view=b;if(state.view==='electrification'&&['dc','ac'].includes(v))state.electrification=normalizeElectrification(v);
     state.domain=domainForView(state.view,DOMAINS,domain.id)?.id||domain.id;
     if(parts.has(c))state.component=c;else state.component=VIEWS[state.view].component;
     state.variant=VIEWS[state.view].variants?.some(x=>x.id===v)?v:variantFor(state.component,state.view);
@@ -61,18 +76,21 @@ function readHash(){
     state.sink=q.get('sink')==='resistor'?'resistor':'train';
   }
   state.technology=technologyForView(technologyForComponent(state.technology,state.component),state.view,state.variant);
+  if(!state.view?.startsWith('power-'))state.electrification=electrificationForComponent(state.electrification,state.component);
+  const redirected=(state.view==='depot-support'&&state.variant==='planning'?'maintenance-release':null)||(['operations-centre','occ-workplace'].includes(state.view)&&state.variant==='handover'?'duty-handover':state.view==='operations-centre'&&state.variant==='incident'?'incident-coordination':null)||processFor(state.view,state.component);if(state.page==='explore'&&redirected){state.page='processes';state.processId=redirected;state.processStep=PROCESS_VIEWS[redirected].steps[0].id;}
   configurationEffect='';allComponents=false;
 }
 
 function activeDomain(){return DOMAINS.find(d=>d.id===state.domain);}
 function syncViewer(changedView=false){
   if(!viewer)return;
+  if(isProcessPage()||state.page==='reference'){viewer.setPlaying(false);return;}
   if(!canAnimate(VIEWS[state.view],state.variant))state.playing=false;
-  const context=[state.view,state.variant,state.component,state.technology.propulsion,state.technology.control].join('/');
+  const context=[state.view,state.variant,state.component,state.technology.propulsion,state.technology.control,state.electrification].join('/');
   if(lastExplorationContext&&context!==lastExplorationContext&&state.explodeScope==='selected'){state.exploded=0;state.explodeScope='all';}
   lastExplorationContext=context;
-  viewer.setTechnology(state.technology);
-  if(changedView)viewer.setView(state.view);
+  viewer.setTechnology(state.technology);viewer.setElectrification?.(state.electrification);
+  if(changedView||viewer.getView?.()!==state.view)viewer.setView(state.view);
   viewer.setVariant(state.variant);viewer.setMode(state.mode);viewer.setScenario(state.scenario);viewer.setReceptivity(state.sink);
   viewer.setSelected(['network-overview','depot-layout','operations-centre'].includes(state.component)?null:targetFor(state.component));
   viewer.setCutaway(state.cutaway);
@@ -103,24 +121,26 @@ function syncControls(){
   $('#explode-scope').value=current?.explodeScope||'all';
   $('#explode-scope option[value="selected"]').disabled=!exploration?.canExplodeSelected;
   $('#exploration-note').hidden=!(current?.isolation||current?.explodeScope==='selected');
-  $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.separatedPartCount||0} separable parts in this assembly. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
+  $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.internalSeparationCount||exploration?.separatedPartCount||0} separable internal parts in this assembly. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
   updateMotionGuide();
   $('#render-badge').textContent=rendererStatus==='svg'?'Schematic · SVG':'Schematic · 3D';
 }
 function renderNavigation(){
-  $$('.main-nav [data-page]').forEach(b=>{if(b.dataset.page===state.page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
-  $('#explorer-page').hidden=state.page==='reference';$('#reference-page').hidden=state.page!=='reference';
+  $$('.main-nav [data-page]').forEach(b=>{if(b.dataset.page===(state.page==='people'?'processes':state.page))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  $('#explorer-page').hidden=state.page==='reference'||isProcessPage();$('#reference-page').hidden=state.page!=='reference';$('#processes-page').hidden=!isProcessPage();
   const d=activeDomain(),network=DOMAINS.find(x=>x.id==='network');
   $('#intro-copy').textContent=state.page==='learn'?'Inspect the model, then check your understanding.':state.domain==='network'?'Select an area to see its equipment and connections.':'Select equipment in the model or browse the components below.';
   $('#intro-copy').hidden=state.page!=='learn'&&state.domain!=='network';
-  const domainButton=item=>`<button data-domain="${item.id}" class="domain-button ${item.id===state.domain?'active':''}" aria-pressed="${item.id===state.domain}"><span class="domain-number">${item.number}</span><strong>${safe(item.label)}</strong></button>${item.id===state.domain&&item.views.length>1?`<div class="area-views">${item.views.map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}`;
+  const viewButtons=ids=>ids.filter(id=>VIEWS[id]&&!PROCESS_REDIRECTS[id]).map(id=>`<button data-view="${id}" class="${id===state.view?'active':''}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
+  const domainViews=item=>{const groups=VIEW_GROUPS[item.id];if(!groups)return viewButtons(item.views);const grouped=new Set(groups.flatMap(g=>g.views));return groups.map(g=>`<div class="view-subgroup"><h3>${safe(g.label)}</h3>${viewButtons(g.views)}</div>`).join('')+(item.id==='communications'?'':viewButtons(item.views.filter(id=>!grouped.has(id))));};
+  const domainButton=item=>`<button data-domain="${item.id}" class="domain-button ${item.id===state.domain?'active':''}" aria-pressed="${item.id===state.domain}"><strong>${safe(item.label)}</strong></button>${item.id===state.domain&&item.views.length>1?`<div class="area-views">${domainViews(item)}</div>`:''}`;
   $('#domains').innerHTML=`<button class="network-home ${state.domain==='network'?'active':''}" data-domain="network" aria-pressed="${state.domain==='network'}"><span class="network-mark" aria-hidden="true">00</span><strong>Whole railway</strong><small>Network & connections</small></button>`+NAVIGATION_GROUPS.map(g=>`<div class="navigation-group"><h2>${safe(g.label)}</h2>${g.ids.map(id=>DOMAINS.find(x=>x.id===id)).filter(Boolean).map(domainButton).join('')}</div>`).join('');
   $('#navigator-current').textContent=d.label;
   const trail=viewTrail(state.view,VIEWS).filter(id=>id!==network.view);
   $('#location-trail').innerHTML=`<button data-domain="network">Railway</button>`+(state.domain==='network'?'':`<span aria-hidden="true">/</span><button data-domain="${d.id}">${safe(d.label)}</button>`)+trail.filter(id=>id!==d.view).map(id=>`<span aria-hidden="true">/</span><button data-view="${id}" ${id===state.view?'aria-current="location"':''}>${safe(VIEWS[id].label)}</button>`).join('');
   $('#return-context').hidden=!returnContext;
   if(returnContext)$('#return-context').textContent=`← Return to ${VIEWS[returnContext.view]?.label||'previous view'}`;
-  const viewIds=[...new Set([...d.views,state.view])];
+  const viewIds=[...new Set([...d.views,state.view])].filter(id=>!PROCESS_REDIRECTS[id]);
   $('.scene-toolbar').hidden=viewIds.length<=1;
   $('#view-choice').innerHTML=viewIds.map(id=>`<option value="${id}">${safe(VIEWS[id].label)}</option>`).join('');
   $('#view-choice').value=state.view;
@@ -128,12 +148,13 @@ function renderNavigation(){
   $('#scene-title').textContent=VIEWS[state.view].label;
   const controls=technologyControlsFor(state.view);
   $('#technology-panel').hidden=!controls.propulsion&&!controls.control;
+  $('#electrification-context').hidden=!controls.electrification;$('#electrification-choice').value=state.electrification;
   $('#propulsion-context').hidden=!controls.propulsion;$('#control-context').hidden=!controls.control;
   $('#propulsion-choice').disabled=!controls.propulsion;$('#control-choice').disabled=!controls.control;
   $('#propulsion-choice').value=state.technology.propulsion;$('#control-choice').value=state.technology.control;
   $('#propulsion-context label').textContent=state.view==='guideway'?'Guideway propulsion interface':'Drive arrangement';
   $('#configuration-effect').hidden=!configurationEffect;$('#configuration-effect').textContent=configurationEffect;
-  $('#model-key').textContent=technologyNote(state,VIEWS[state.view].note)+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');
+  $('#model-key').textContent=modelNote()+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');
   $('#tour-bar').hidden=state.page!=='learn';
   $('#tour-bar').innerHTML=`<label for="tour-select">Guided tour</label><select id="tour-select">${TOURS.map((t,i)=>`<option value="${i}" ${state.lesson===i?'selected':''}>${lessonAnswers[t.id]?'✓ ':''}${safe(t.label)}</option>`).join('')}</select><span>${Object.keys(lessonAnswers).length} of ${TOURS.length} checked</span>`;
 }
@@ -142,7 +163,7 @@ function renderDetail(){
   const c=parts.get(state.component);
   if(lastDetailKey!==state.component){$('.inspector').scrollTop=0;lastDetailKey=state.component;}
   const related=(RELATED[c.id]||activeDomain().parts.filter(id=>id!==c.id).slice(0,3)).filter(id=>parts.has(id));
-  const contexts=[...new Set([viewFor(c.id),...(PART_CONTEXTS[c.id]||[])])].filter(id=>VIEWS[id]&&id!==state.view);
+  const contexts=[...new Set([viewFor(c.id),...(PART_CONTEXTS[c.id]||[])])].filter(id=>VIEWS[id]&&id!==state.view&&!PROCESS_REDIRECTS[id]);
   const level=({'network-overview':'Railway','network-route':'Route','network-station':'Place','network-turnback':'Track connection','network-train':'Vehicle','network-depot':'Facility','network-maintenance':'Facility','network-stabling':'Area','network-control-centre':'Facility','network-substation':'Subsystem','network-telecommunications':'System','depot-layout':'Facility','operations-centre':'Facility'})[c.id]||'Equipment';
   const destination=NETWORK_DESTINATIONS[c.id];
   $('#selection-summary').innerHTML=`<strong>${safe(shortLabels[c.id]||c.label)}</strong><button id="read-selection">Read explanation</button>${destination?`<button data-destination="${c.id}">Explore area →</button>`:''}`;
@@ -154,17 +175,19 @@ function renderDetail(){
   $('#component-detail').hidden=state.page==='learn';$('#lesson-detail').hidden=state.page!=='learn';
   const visible=new Set(viewer?.getVisibleComponentIds()||[]);
   const candidates=allComponents?activeDomain().parts:[...new Set([...activeDomain().parts,...CONCEPTS.map(c=>c.id)])];
-  const current=candidates.filter(id=>allComponents||!viewer||visible.has(targetFor(id)));
+  const current=candidates.filter(id=>!PROCESS_COMPONENTS[id]&&(allComponents||!viewer||visible.has(targetFor(id))));
   $('#component-eyebrow').textContent=`${activeDomain().label} / ${current.length} ${allComponents?'components':'in this view'}`;
   $('#component-heading').textContent=allComponents?'Equipment in this area':'Equipment in this view';
   $('#component-scope').textContent=allComponents?'Show this view only':'Browse the whole area';$('#component-scope').setAttribute('aria-pressed',String(allComponents));
   $('#component-grid').innerHTML=current.map((id,i)=>{const p=parts.get(id);return `<button data-component="${id}" class="${id===c.id?'active':''}" aria-pressed="${id===c.id}"><span class="component-number">${String(i+1).padStart(2,'0')}</span><span><strong>${safe(p.label)}</strong><small>${safe(p.summary)}</small></span><span class="row-arrow" aria-hidden="true">↗</span></button>`;}).join('');
 }
 function renderScenario(){
-  const flow=technologyFlow(state,describeFlow(state)),variants=VIEWS[state.view].variants,electrical=!variants&&(['power','vehicle'].includes(state.domain)&&state.view!=='services'||state.view==='guideway');
+  const flow=flowFor(),variants=VIEWS[state.view].variants?.filter(v=>v.presentation!=='process'),electrical=!variants&&(['power','vehicle'].includes(state.domain)&&state.view!=='services'||state.view==='guideway');
+  $('.arrangement-bar').hidden=variants?.length===1;
   $('#arrangement-label').textContent=comparisonLabel(state.view,Boolean(variants),electrical);
   $('#scenario-heading').textContent=variants?'How this arrangement works':electrical?'Follow the energy':state.domain==='control'?'Trace the decisions':state.domain==='communications'?'Follow the messages':'Explore the supporting systems';
   $('#scenario-buttons').innerHTML=variants?variants.map(x=>`<button data-variant="${x.id}" class="${x.id===state.variant?'active':''}" aria-pressed="${x.id===state.variant}">${x.label}</button>`).join(''):(electrical?MODES:EXPERIMENTS[state.view==='services'?'services':state.domain]||MODES).filter(x=>x.id!=='radio-loss'||['loop','radio','etcs2'].includes(state.technology.control)).map(x=>`<button data-experiment="${x.id}" class="${x.id===(electrical?state.mode:state.scenario)?'active':''}" aria-pressed="${x.id===(electrical?state.mode:state.scenario)}">${x.id==='radio-loss'&&state.technology.control==='loop'?'Hold loop update':x.label}</button>`).join('');
+  $('#receptivity [data-sink="resistor"]').textContent=electrificationProfile(state.electrification).resistorLocation==='onboard'?'Onboard resistor':'Wayside resistor';
   $('#receptivity').hidden=!(electrical&&state.mode==='regeneration');
   $$('[data-sink]').forEach(b=>{b.classList.toggle('active',b.dataset.sink===state.sink);b.setAttribute('aria-pressed',String(b.dataset.sink===state.sink));});
   $('#flow-path').innerHTML=flow.nodes.map((n,i)=>`${i?`<span class="flow-arrow" aria-hidden="true">${flow.parallel?'·':'→'}</span>`:''}<span class="flow-node ${flow.kind||''}">${safe(n)}</span>`).join('');
@@ -191,7 +214,7 @@ function updateMotionGuide(){
 function renderLesson(){
   if(state.page!=='learn')return;
   const t=TOURS[state.lesson];
-  $('#lesson-detail').innerHTML=`<div class="lesson-body"><button class="back-guide" data-explore-component="${state.component}">← Explore freely</button><p class="part-kicker">Guided tour ${state.lesson+1} / ${TOURS.length}</p><h3>${safe(t.title)}</h3><p>${safe(t.explanation)}</p>${state.component!==t.component?`<div class="selected-in-tour"><strong>${safe(parts.get(state.component).label)}</strong><p>${safe(parts.get(state.component).summary)}</p><button data-explore-component="${state.component}">Open component explanation →</button></div>`:''}<div class="try-action"><strong>Try it in the model</strong>${safe(t.actionText)}<button id="lesson-action">${safe(t.actionLabel)} ↗</button></div><div class="question"><h4 id="quiz-title">${safe(t.question)}</h4><fieldset aria-labelledby="quiz-title">${t.choices.map((v,i)=>`<label class="answer-choice"><input type="radio" name="quiz-answer" value="${i}" ${quizSelections[t.id]===i?'checked':''}><span>${safe(v)}</span></label>`).join('')}</fieldset><button class="check-answer" id="check-answer">Check understanding</button><div id="quiz-feedback" role="status" tabindex="-1" hidden></div><p class="practice-note">Optional self-check. Retry or move on at any time. Progress stays on this device.</p></div>${sourceChips([...new Set(t.sourceConcepts.flatMap(id=>parts.get(id).sources))])}<div class="lesson-nav"><button id="previous-lesson" ${state.lesson===0?'disabled':''}>← Previous</button><button id="next-lesson">${state.lesson===TOURS.length-1?'Finish & explore':'Next tour →'}</button></div></div>`;
+  const lessonHost=isProcessPage()?$('#process-lesson'):$('#lesson-detail');if(!lessonHost)return;lessonHost.innerHTML=`<div class="lesson-body"><button class="back-guide" data-explore-component="${state.component}">← Explore freely</button><p class="part-kicker">Guided tour ${state.lesson+1} / ${TOURS.length}</p><h3>${safe(t.title)}</h3><p>${safe(t.explanation)}</p>${state.component!==t.component?`<div class="selected-in-tour"><strong>${safe(parts.get(state.component).label)}</strong><p>${safe(parts.get(state.component).summary)}</p><button data-explore-component="${state.component}">Open component explanation →</button></div>`:''}<div class="try-action"><strong>${isProcessPage()?'Explore the process':'Try it in the model'}</strong>${safe(t.actionText)}<button id="lesson-action">${safe(t.actionLabel)} ↗</button></div><div class="question"><h4 id="quiz-title">${safe(t.question)}</h4><fieldset aria-labelledby="quiz-title">${t.choices.map((v,i)=>`<label class="answer-choice"><input type="radio" name="quiz-answer" value="${i}" ${quizSelections[t.id]===i?'checked':''}><span>${safe(v)}</span></label>`).join('')}</fieldset><button class="check-answer" id="check-answer">Check understanding</button><div id="quiz-feedback" role="status" tabindex="-1" hidden></div><p class="practice-note">Optional self-check. Retry or move on at any time. Progress stays on this device.</p></div>${sourceChips([...new Set(t.sourceConcepts.flatMap(id=>parts.get(id).sources))])}<div class="lesson-nav"><button id="previous-lesson" ${state.lesson===0?'disabled':''}>← Previous</button><button id="next-lesson">${state.lesson===TOURS.length-1?'Finish & explore':'Next tour →'}</button></div></div>`;
   if(quizSelections[t.id]!==undefined)showFeedback(quizSelections[t.id]===t.answer);
 }
 function showFeedback(correct,choice=quizSelections[TOURS[state.lesson].id]){
@@ -203,23 +226,57 @@ function renderReference(){
   const q=$('#reference-search').value.trim().toLowerCase(),filter=$('#reference-domain').value;
   const guides=READING_GUIDES.filter(g=>(filter==='all'||g.domain===filter)&&[g.title,g.summary,...g.sections.map(s=>s.text)].join(' ').toLowerCase().includes(q));
   $('#reading-guides').hidden=!guides.length;
-  $('#reading-guides').innerHTML=`<h3>Systems in context</h3>${guides.map(g=>`<details id="reading-${g.id}" class="reading-guide"><summary>${safe(g.title)}</summary><div><p class="reading-summary">${safe(g.summary)}</p>${g.sections.map(s=>`<h4>${safe(s.heading)}</h4><p>${safe(s.text)}</p>${s.sources?sourceChips(s.sources):''}`).join('')}${sourceChips(g.sources)}<button class="open-in-model" ${g.component?`data-explore-component="${g.component}"`:`data-domain="${g.domain}"`}>Explore the model →</button></div></details>`).join('')}`;
+  $('#reading-guides').innerHTML=`<h3>Systems in context</h3>${guides.map(g=>`<details id="reading-${g.id}" class="reading-guide"><summary>${safe(g.title)}</summary><div><p class="reading-summary">${safe(g.summary)}</p>${g.sections.map(s=>`<h4>${safe(s.heading)}</h4><p>${safe(s.text)}</p>${s.sources?sourceChips(s.sources):''}`).join('')}${sourceChips(g.sources)}<button class="open-in-model" ${g.domain==='processes'?`data-process="configuration-change"`:g.domain==='people'?`data-people="all"`:g.component?`data-explore-component="${g.component}"`:`data-domain="${g.domain}"`}>Open the study →</button></div></details>`).join('')}`;
   const match=c=>(filter==='all'||domainFor(c.id).id===filter)&&[c.label,c.summary,...c.details,...c.sources.map(id=>sources.get(id).title)].join(' ').toLowerCase().includes(q);
   const found=CONCEPTS.filter(match);$('#reference-count').textContent=`${found.length} concepts`;
   $('#reference-results').innerHTML=DOMAINS.filter(d=>filter==='all'||d.id===filter).map(d=>{
     const items=found.filter(c=>d.parts.includes(c.id));if(!items.length)return '';
-    return `<section class="reference-group"><h3>${d.label}</h3>${items.map(c=>`<details class="reference-card" id="reference-${c.id}"><summary>${safe(c.label)}</summary><div><p><strong>${safe(c.summary)}</strong></p>${c.details.map(p=>`<p>${safe(p)}</p>`).join('')}${c.caveat?`<p class="part-note">${safe(c.caveat)}</p>`:''}${sourceChips(c.sources)}<button class="open-in-model" data-explore-component="${c.id}">Open this component in 3D ↗</button></div></details>`).join('')}</section>`;
+    return `<section class="reference-group"><h3>${d.label}</h3>${items.map(c=>`<details class="reference-card" id="reference-${c.id}"><summary>${safe(c.label)}</summary><div><p><strong>${safe(c.summary)}</strong></p>${c.details.map(p=>`<p>${safe(p)}</p>`).join('')}${c.caveat?`<p class="part-note">${safe(c.caveat)}</p>`:''}${sourceChips(c.sources)}<button class="open-in-model" data-explore-component="${c.id}">${processFor(viewFor(c.id),c.id)?'Open the process':'Explore this equipment'} ↗</button></div></details>`).join('')}</section>`;
   }).join('')||'<p>No components match. Try a shorter term or another system.</p>';
 }
+function openProcess(id,step=''){
+  if(!PROCESS_VIEWS[id])return;
+  state.page='processes';state.processId=id;state.processStep=step||PROCESS_VIEWS[id].steps[0].id;state.playing=false;
+  render();announce(PROCESS_VIEWS[id].title);
+}
+function renderSystemContext(){
+  const orientation=$('#control-orientation'),taxonomy=TRAIN_CONTROL_TAXONOMY;
+  orientation.hidden=state.domain!=='control'||state.view!=='control';
+  if(!orientation.hidden)orientation.innerHTML=`<h2>Three routes into train control</h2><p>Choose an architecture family, then examine the functions and equipment it uses. Detection and interlocking connect several families.</p><div class="control-families">${taxonomy.families.map(f=>`<section><h3>${safe(f.label)}</h3><p>${safe(f.summary)}</p><button data-view="${f.views[0]}">Explore ${safe(f.label)} →</button></section>`).join('')}</div><details class="control-taxonomy"><summary>Functions, shared equipment & supplier examples</summary><h3>Functions are questions, not necessarily separate computers</h3>${taxonomy.functions.map(f=>`<p><strong>${safe(f.label)}</strong> — ${safe(f.question)} ${safe(f.qualification)}</p>`).join('')}<h3>Equipment shared across arrangements</h3><div class="shared-device-list">${taxonomy.sharedDevices.map(d=>`<section><button data-component="${d.id}">${safe(d.label)} ↗</button><p>${safe(d.use)}</p></section>`).join('')}</div><h3>Public supplier examples</h3>${taxonomy.supplierExamples.map(e=>`<section class="supplier-example"><h4>${safe(e.supplier)} / ${safe(e.label)}</h4><p>${safe(e.scope)} ${safe(e.lineage||'')}</p>${sourceChips(e.sources)}</section>`).join('')}<button data-people="all" class="text-link">Explore automation and people’s responsibilities →</button></details>`;
+  const roleIds={operations:['traffic-coordinator','signalling-controller','power-controller','incident-coordinator'],depot:['depot-coordinator','fleet-maintenance','maintenance-work'],station:['station-team'],vehicle:['onboard-operator'],power:['power-controller'],control:['signalling-controller']}[state.domain]||[];
+  const processIds={operations:['incident-coordination','duty-handover'],depot:['maintenance-release','worksite-handback'],track:['worksite-handback'],station:['incident-coordination'],power:['configuration-change']}[state.domain]||[];
+  const context=$('#people-context');context.hidden=!roleIds.length&&!processIds.length;
+  context.innerHTML=`<h3>People using this equipment</h3><div class="role-links">${roleIds.map(id=>`<button data-role="${id}">${safe(PEOPLE_ROLES.find(r=>r.id===id)?.label||id)} →</button>`).join('')}</div>${processIds.length?`<details><summary>Related processes</summary>${processIds.map(id=>`<button data-process="${id}">${safe(PROCESS_VIEWS[id].title)} →</button>`).join('')}</details>`:''}`;
+}
+function renderConnections(){
+  const topology=currentTopology(),show=Boolean(topology&&state.presentation==='connections');
+  $('#presentation-switch').hidden=!topology;
+  $$('#presentation-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.presentation===(show?'connections':'equipment'))));
+  $('.workspace-grid').classList.toggle('connections-mode',show);$('#connections-view').hidden=!show;
+  if(show)$('#connections-view').innerHTML=topologyMarkup(topology,state.component);
+  for(const selector of ['.stage','.selection-tools','.model-tools','.model-notes','#exploration-note','.animation','#motion-guide']){
+    const element=$(selector);if(show){if(element.dataset.beforeConnections===undefined)element.dataset.beforeConnections=String(element.hidden);element.hidden=true;}else if(element.dataset.beforeConnections!==undefined){element.hidden=element.dataset.beforeConnections==='true';delete element.dataset.beforeConnections;}
+  }
+  if(!show)syncControls();
+}
 function render(changedView=false){
+  if(!isProcessPage()&&state.page!=='reference'&&!currentTopology())state.presentation='equipment';
   const focused=document.activeElement;
-  const focusKey=focused?.matches('#domains button,#scenario-buttons button,#location-trail button')?['domain','view','variant','experiment','sink'].find(key=>focused.dataset[key]):null;
+  const focusKey=focused?.matches('#domains button,#scenario-buttons button,#location-trail button,[data-process-step],[data-process],[data-role],[data-people],[data-presentation]')?['domain','view','variant','experiment','sink','processStep','process','role','people','presentation'].find(key=>focused.dataset[key]):null;
   const focusValue=focusKey?focused.dataset[focusKey]:null;
-  syncViewer(changedView);chooseVisibleRepresentative();renderNavigation();renderDetail();renderScenario();renderLesson();if(state.page==='reference')renderReference();syncControls();rebuildLabels();writeHash();
-  if(focusKey)document.querySelector(`[data-${focusKey}="${focusValue}"]`)?.focus({preventScroll:true});
+  const restoreFocus=()=>{if(focusKey)focusVisible(`[data-${focusKey.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}="${focusValue}"]`);};
+  if(isProcessPage()){
+    state.playing=false;viewer?.setPlaying(false);renderNavigation();$('#lesson-detail').innerHTML='';
+    if(state.page==='people')renderPeoplePage($('#processes-page'),state,{sourceChips});
+    else{if(state.page==='learn'){state.processId=processFor(state.view,state.component);state.processStep=state.processStep||PROCESS_VIEWS[state.processId].steps[0].id;}renderProcessPage($('#processes-page'),state,{sourceChips,parts});if(state.page==='learn'){$('#processes-page .process-content').insertAdjacentHTML('beforeend','<section id="process-lesson" class="process-lesson"></section>');renderLesson();}}
+    writeHash();restoreFocus();return;
+  }
+  $('#processes-page').innerHTML='';syncViewer(changedView);chooseVisibleRepresentative();renderNavigation();renderDetail();renderScenario();renderLesson();renderSystemContext();if(state.page==='reference')renderReference();syncControls();renderConnections();rebuildLabels();writeHash();
+  restoreFocus();
 }
 function setPage(page){
-  state.page=page;
+  if(page==='explore'&&processFor(state.view,state.component)){setDomain('network');return;}
+  state.page=page;if(page==='processes'){openProcess(state.processId);return;}
   if(page==='learn')applyLesson(true);
   else {render();if(page!=='reference')requestAnimationFrame(()=>viewer?.resize());}
 }
@@ -227,11 +284,11 @@ function setDomain(id){
   const d=DOMAINS.find(d=>d.id===id);if(!d)return;
   returnContext=null;configurationEffect='';allComponents=false;
   state={...state,page:'explore',domain:id,view:d.view,component:d.component,scenario:'nominal',mode:['power','vehicle'].includes(id)?'motoring':'coasting',cutaway:cutawayFor(d.view),variant:defaultVariant(d.view),exploded:0};
-  if(id==='control')Object.assign(state,controlRoute(state.technology.control));
+  state.presentation=id==='communications'?'connections':'equipment';
   state.technology=technologyForView(state.technology,state.view,state.variant);render(true);announce(d.label);
 }
 function setView(id){
-  if(!VIEWS[id])return;
+  if(!VIEWS[id])return;if(PROCESS_REDIRECTS[id]){openProcess(PROCESS_REDIRECTS[id]);return;}state.page=state.page==='learn'?'learn':'explore';state.presentation=id==='communications-overview'?'connections':'equipment';
   state.domain=domainForView(id,DOMAINS,state.domain)?.id||state.domain;allComponents=false;configurationEffect='';
   state.view=id;state.variant=defaultVariant(id);state.scenario='nominal';state.mode=['power','vehicle'].includes(state.domain)?'motoring':'coasting';state.exploded=0;state.cutaway=cutawayFor(id);
   state.technology=technologyForView(state.technology,id,state.variant);viewer?.setTechnology(state.technology);
@@ -246,8 +303,10 @@ function chooseVisibleRepresentative(){
   const candidate=candidates.find(id=>parts.has(id)&&visible.includes(targetFor(id)));if(candidate){state.component=candidate;viewer.setSelected(targetFor(candidate));}
 }
 function selectComponent(id,{explore=state.page!=='learn',focus=false,primary=false}={}){
-  if(!parts.has(id))return;
+  if(!parts.has(id))return;const process=processFor(primary?viewFor(id):null,id);if(process){openProcess(process);return;}
   const origin=routeState(state),oldView=state.view,oldDomain=state.domain;
+  const destinationView=primary||!viewer?.getComponentIds(state.view).includes(targetFor(id))?viewFor(id):state.view;
+  if(!destinationView.startsWith('power-'))state.electrification=electrificationForComponent(state.electrification,id);viewer?.setElectrification?.(state.electrification);
   state.technology=technologyForComponent(state.technology,id);viewer?.setTechnology(state.technology);
   const wasVisible=viewer?.getVisibleComponentIds().includes(targetFor(id));
   if(explore)state.page='explore';state.component=id;
@@ -264,10 +323,12 @@ function selectComponent(id,{explore=state.page!=='learn',focus=false,primary=fa
 }
 function applyLesson(doRender=true){
   const t=TOURS[state.lesson],a=t.action;
-  state={...state,page:'learn',domain:t.domain,view:a.view||t.view,component:a.component||t.component,mode:a.mode||'motoring',scenario:a.scenario||'nominal',cutaway:a.cutaway??cutawayFor(t.view),variant:a.variant||defaultVariant(a.view||t.view),exploded:typeof a.exploded==='number'?a.exploded:a.exploded ? 0.35 : 0};
+  state={...state,presentation:a.presentation||(a.view==='communications-overview'?'connections':'equipment'),page:'learn',domain:t.domain,view:a.view||t.view,component:a.component||t.component,mode:a.mode||'motoring',scenario:a.scenario||'nominal',cutaway:a.cutaway??cutawayFor(t.view),variant:a.variant||defaultVariant(a.view||t.view),exploded:typeof a.exploded==='number'?a.exploded:a.exploded ? 0.35 : 0};
   state.technology=technologyForView(technologyForComponent(normalizeTechnology(a.technology||{},state.technology),state.component),state.view,state.variant);
   if(state.scenario==='radio-loss'&&!['loop','radio'].includes(state.technology.control))state.technology={...state.technology,control:'radio'};
   if(state.scenario==='regen-limited')state.sink='resistor';
+  if(t.id==='configuration-evidence'){state.processId='configuration-change';state.processStep='verify';}
+  if(a.electrification)state.electrification=normalizeElectrification(a.electrification);
   if(t.id==='odometry-error'){$('#sensor-error').value=10;updateSensor();}
   if(doRender){render(true);requestAnimationFrame(()=>viewer?.resize());}
 }
@@ -282,7 +343,7 @@ function searchComponents(){
 function openSources(sourceId){
   $('#dialog-title').textContent=sourceId?'Public reference':'About this atlas';
   const records=sourceId?[sources.get(sourceId)].filter(Boolean):SOURCES;
-  $('#dialog-body').innerHTML=(sourceId?'':`<p><strong>Railway Anatomy connects the components of an urban railway.</strong> Explore freely, compare selected architectures, follow the guided tours, or search the field guide.</p><p><button id="reset-progress" class="open-in-model">Reset guided-tour progress on this device</button></p><h3>The examples we chose</h3><p>The vehicle example can use LIM propulsion with a passive reaction rail, or rotary motors driving axles, with the same selected DC supply. Track sections compare support and fastening arrangements. Control views distinguish radio CBTC, loop-based SelTrac examples, Hitachi’s published SelTrac G9 description, conventional signalling and ETCS examples. Station models connect passenger devices, platform protection, plant, fire and life safety, ventilation and supervision. Control-centre and depot views add operations, stabling, maintenance and washing.</p><p>Propulsion and train-control technology are independent choices. The selected combinations are educational examples, not assertions that every combination is commissioned. The DC supply example remains unchanged when an ETCS study is opened. Geometry, equipment positions, proportions and behaviour cues are schematic. No fleet ratings, installation drawings, radio configurations, operating procedures or quantitative performance predictions are supplied. Logical function boxes do not prescribe physical computer count.</p><h3>Sources and further reading</h3><p>The explanations use the public references below. Supplier pages illustrate available approaches; the atlas does not imply that their products share one architecture. All 3D geometry is generated in code. No tracking or external content is loaded when using the atlas; reading links open the publisher’s site.</p><p><a href="./reading.html">Open the complete reading directory →</a></p>`)+records.map(s=>`<section class="source-record ${sourceId?'highlight':''}"><span class="source-id">${safe(s.publisher)}</span><h3>${safe(s.title)}</h3><p>${safe(s.description)}</p><p><small>${safe(s.scope)}</small></p><a href="${safe(s.url)}" target="_blank" rel="noopener">Read the public source ↗</a></section>`).join('');
+  $('#dialog-body').innerHTML=(sourceId?'':ABOUT_HTML+`<p><button id="reset-progress" class="open-in-model">Reset guided-tour progress on this device</button></p><h3>Public references</h3><p><a href="./reading.html">Open the complete reading directory →</a></p>`)+records.map(s=>`<section class="source-record ${sourceId?'highlight':''}"><span class="source-id">${safe(s.publisher)}</span><h3>${safe(s.title)}</h3><p>${safe(s.description)}</p><p><small>${safe(s.scope)}</small></p><a href="${safe(s.url)}" target="_blank" rel="noopener">Read the public source ↗</a></section>`).join('');
   $('#about-dialog').showModal();$('#dialog-body').scrollTop=0;
 }
 
@@ -299,7 +360,7 @@ function rebuildLabels(){
   updateLabels();
 }
 function updateLabels(){
-  if(!viewer||state.page==='reference')return;
+  if(!viewer||state.page==='reference'||isProcessPage()||state.presentation==='connections'&&currentTopology())return;
   const stage=$('.stage'),width=$('#viewer').clientWidth,height=$('#viewer').clientHeight;
   for(const {button,line} of labelElements.values()){button.hidden=true;line.style.display='none';}
   if(!state.labels)return;
@@ -308,7 +369,7 @@ function updateLabels(){
   const points=viewer.getComponentScreenPositions()
     .filter(p=>labelElements.has(p.id)&&!['network-overview','depot-layout','operations-centre'].includes(p.id)&&(state.labelMode!=='selected'||p.id===selected))
     .sort((a,b)=>(a.id===selected?-1000:priorities.has(a.id)?-100:0)-(b.id===selected?-1000:priorities.has(b.id)?-100:0));
-  const limit=state.labelMode==='selected'?1:width<450?4:width<850?6:8;
+  const limit=state.labelMode==='selected'?1:width<450?3:width<850?5:6;
   const measured=points.slice(0,Math.max(limit*2,12)).map(point=>{
     const button=labelElements.get(point.id).button;
     button.hidden=false;button.style.visibility='hidden';
@@ -317,7 +378,10 @@ function updateLabels(){
   });
   const top=$('.stage-heading').getBoundingClientRect().bottom-stage.getBoundingClientRect().top+18;
   const bottom=$('.stage-footer').getBoundingClientRect().height+20;
-  const positions=placeModelLabels(measured,{width,height,top,bottom,limit,gap:12});
+  const key=[state.view,state.variant,state.component,state.technology.propulsion,state.technology.control,state.electrification,state.labelMode,width,height,Boolean(viewer.getExplorationState?.().isolation)].join('/');
+  if(key!==labelLayoutKey||!stableLabelPositions.length&&measured.length){stableLabelPositions=placeModelLabels(measured,{width,height,top,bottom,limit,gap:14});labelLayoutKey=key;}
+  const anchors=new Map(points.map(p=>[p.id,p]));
+  const positions=stableLabelPositions.filter(p=>anchors.has(p.id)).map(p=>({...p,anchorX:anchors.get(p.id).x*width,anchorY:anchors.get(p.id).y*height}));
   for(const p of positions){
     const nodes=labelElements.get(p.id);nodes.button.hidden=false;
     nodes.button.style.left=`${p.x}px`;nodes.button.style.top=`${p.y}px`;
@@ -338,34 +402,41 @@ async function startViewer(){
 }
 
 document.addEventListener('click',event=>{
+  const diagramNode=event.target.closest('[data-topology-component]');if(diagramNode){const nodeId=diagramNode.dataset.topologyNode;rememberCurrentEntry();historyMode='push';selectComponent(diagramNode.dataset.topologyComponent);focusVisible(`[data-topology-node="${nodeId}"]`);return;}
   const b=event.target.closest('button');if(!b)return;
   rememberCurrentEntry();
-  historyMode=b.matches('[data-page],[data-domain],[data-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
+  historyMode=b.matches('[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
   if(b.matches('[data-domain],[data-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');}
   if(b.id==='navigator-toggle'){const open=$('.railway-navigation').classList.toggle('is-open');b.setAttribute('aria-expanded',String(open));}
   else if(b.id==='read-selection'){const heading=$('#component-detail h2');heading?.setAttribute('tabindex','-1');heading?.focus();heading?.scrollIntoView({block:'start',behavior:'instant'});}
   else if(b.id==='component-scope'){allComponents=!allComponents;renderDetail();}
-  else if(b.id==='focus-selection'){viewer?.frameSelection?.(targetFor(state.component));syncControls();updateLabels();}
+  else if(b.id==='focus-selection'){labelLayoutKey='';viewer?.frameSelection?.(targetFor(state.component));syncControls();updateLabels();}
   else if(b.id==='isolate-selection'){const current=viewer?.getExplorationState?.();viewer?.setIsolation?.(current?.isolation?null:targetFor(state.component));renderDetail();syncControls();rebuildLabels();}
   else if(b.id==='restore-context'){viewer?.setIsolation?.(null);viewer?.restoreFrame?.();state.exploded=viewer?.getExplorationState?.().exploded||0;renderDetail();syncControls();rebuildLabels();}
   else if(b.id==='larger-model'){const expanded=$('.explorer-shell').classList.toggle('model-expanded');b.setAttribute('aria-pressed',String(expanded));b.textContent=expanded?'Standard model size':'Larger model';requestAnimationFrame(()=>{viewer?.resize();viewer?.frameModel?.();syncControls();updateLabels();});}
   else if(b.id==='return-context'){if(returnContext){const destination=returnContext;returnContext=null;state={...state,...destination};configurationEffect='';lastExplorationContext='';render(true);announce(`Returned to ${VIEWS[state.view].label}`);}}
+  else if(b.dataset.process)openProcess(b.dataset.process);
+  else if(b.dataset.processStep){state.processStep=b.dataset.processStep;render();}
+  else if(b.dataset.role){state.page='people';state.roleId=b.dataset.role;render();}
+  else if(b.dataset.people){state.page='people';render();}
+  else if(b.dataset.presentation){state.presentation=b.dataset.presentation;state.playing=false;viewer?.setPlaying(false);render();if(state.presentation==='equipment')requestAnimationFrame(()=>viewer?.resize());}
+  else if(b.id==='inspect-electrification'){returnContext=routeState(state);setView('electrification');}
   else if(b.dataset.destination)openDestination(b.dataset.destination);
   else if(b.dataset.page)setPage(b.dataset.page);
   else if(b.dataset.domain)setDomain(b.dataset.domain);
   else if(b.dataset.view)setView(b.dataset.view);
   else if(b.dataset.inspectView){const origin=routeState(state),selected=state.component;setView(b.dataset.inspectView);returnContext=origin;if(viewer?.getComponentIds(state.view).includes(targetFor(selected)))selectComponent(selected,{explore:state.page!=='learn'});else render();}
-  else if(b.dataset.variant){configurationEffect='';state.variant=b.dataset.variant;const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();}
-  else if(b.dataset.component)selectComponent(b.dataset.component,{primary:Boolean(b.closest('#search-results'))});
+  else if(b.dataset.variant){if((state.view==='operations-centre'||state.view==='occ-workplace')&&b.dataset.variant==='handover'){openProcess('duty-handover');return;}if(state.view==='operations-centre'&&b.dataset.variant==='incident'){openProcess('incident-coordination');return;}configurationEffect='';state.variant=b.dataset.variant;const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();}
+  else if(b.dataset.component){const nodeId=b.dataset.connectionNode;selectComponent(b.dataset.component,{primary:Boolean(b.closest('#search-results'))});if(nodeId)focusVisible(`[data-connection-node="${nodeId}"]`);}
   else if(b.dataset.source)openSources(b.dataset.source);
-  else if(b.dataset.camera){viewer?.setCameraPreset(b.dataset.camera);syncControls();updateLabels();}
+  else if(b.dataset.camera){labelLayoutKey='';viewer?.setCameraPreset(b.dataset.camera);syncControls();updateLabels();}
   else if(b.dataset.motionPhase!==undefined){state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Number(b.dataset.motionPhase)*5);syncControls();updateLabels();}
-  else if(b.dataset.focus){viewer?.focusComponent(b.dataset.focus);syncControls();updateLabels();}
+  else if(b.dataset.focus){if(state.presentation==='connections'){state.presentation='equipment';render();requestAnimationFrame(()=>{viewer?.resize();viewer?.focusComponent(b.dataset.focus);syncControls();labelLayoutKey='';updateLabels();});}else{viewer?.focusComponent(b.dataset.focus);syncControls();labelLayoutKey='';updateLabels();}}
   else if(b.dataset.exploreComponent){selectComponent(b.dataset.exploreComponent,{explore:true,focus:false,primary:true});$('#workspace').scrollIntoView({block:'start'});}
   else if(b.dataset.reference){state.page='reference';$('#reference-search').value='';$('#reference-domain').value='all';render();const entry=$(`#reference-${b.dataset.reference}`);entry.open=true;entry.scrollIntoView({block:'center'});}
   else if(b.dataset.readingGuide){state.page='reference';$('#reference-search').value='';$('#reference-domain').value='all';render();const entry=$(`#reading-${b.dataset.readingGuide}`);if(entry){entry.open=true;entry.scrollIntoView({block:'start'});}}
   else if(b.dataset.lesson!==undefined){state.lesson=Number(b.dataset.lesson);applyLesson();}
-  else if(b.dataset.experiment){state=applyExperiment(state,b.dataset.experiment);render();announce(technologyFlow(state,describeFlow(state)).title);}
+  else if(b.dataset.experiment){state=applyExperiment(state,b.dataset.experiment);if(b.dataset.experiment==='door-open')state.component='door-control';render();announce(flowFor().title);}
   else if(b.dataset.sink){state.sink=b.dataset.sink;state.scenario=b.dataset.sink==='resistor'?'regen-limited':'nominal';render();}
   else if(b.id==='inspect-propulsion')openTechnologyModel('propulsion');
   else if(b.id==='inspect-control')openTechnologyModel('control');
@@ -378,7 +449,7 @@ document.addEventListener('click',event=>{
   }else if(b.id==='previous-lesson'){state.lesson=Math.max(0,state.lesson-1);applyLesson();}
   else if(b.id==='next-lesson'){if(state.lesson<TOURS.length-1){state.lesson++;applyLesson();}else setPage('explore');}
   else if(b.id==='play'){state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();}
-  else if(b.id==='reset-scene'){viewer?.resetCamera();syncControls();}
+  else if(b.id==='reset-scene'){labelLayoutKey='';viewer?.resetCamera();syncControls();}
   else if(b.id==='about-button')openSources();
   else if(b.id==='close-dialog')$('#about-dialog').close();
   else if(b.id==='reset-progress'){lessonAnswers={};lessonAttempts={};quizSelections={};saveProgress();$('#about-dialog').close();render();announce('Learning progress reset on this device.');}
@@ -407,6 +478,8 @@ function changeTechnology(kind,value){
   chooseVisibleRepresentative();render();announce(configurationEffect);
 }
 
+$('#electrification-choice').innerHTML=ELECTRIFICATION_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
+$('#electrification-choice').addEventListener('change',e=>{rememberCurrentEntry();historyMode='push';state.electrification=normalizeElectrification(e.target.value);state.exploded=0;configurationEffect=electrificationProfile(state.electrification).description;viewer?.setElectrification?.(state.electrification);chooseVisibleRepresentative();render();});
 $('#propulsion-choice').innerHTML=PROPULSION_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
 $('#control-choice').innerHTML=CONTROL_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
 $('#view-choice').addEventListener('change',e=>{rememberCurrentEntry();historyMode='push';setView(e.target.value);announce(VIEWS[state.view].label);});
@@ -417,12 +490,12 @@ $('#component-search').addEventListener('keydown',e=>{if(e.key==='Escape')$('#se
 document.addEventListener('click',e=>{if(!e.target.closest('.inspector-search'))$('#search-results').hidden=true;});
 $('#reference-search').addEventListener('input',renderReference);$('#reference-domain').addEventListener('change',renderReference);
 $('#cutaway').addEventListener('change',e=>{state.cutaway=e.target.checked;syncViewer();rememberCurrentEntry();});
-$('#explode').addEventListener('input',e=>{state.exploded=Number(e.target.value);syncViewer();rememberCurrentEntry();$('#model-key').textContent=technologyNote(state,VIEWS[state.view].note)+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');});
+$('#explode').addEventListener('input',e=>{state.exploded=Number(e.target.value);syncViewer();rememberCurrentEntry();$('#model-key').textContent=modelNote()+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');});
 $('#explode-scope').addEventListener('change',e=>{state.explodeScope=viewer?.setExplodeScope?.(e.target.value)||'all';viewer?.setExploded(state.exploded);syncControls();updateLabels();rememberCurrentEntry();});
 $('#label-density').addEventListener('change',e=>{state.labels=e.target.value!=='off';state.labelMode=e.target.value;updateLabels();rememberCurrentEntry();});
 $('#phase').addEventListener('input',e=>{state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Number(e.target.value)*5);syncControls();});
 $('#sensor-error').addEventListener('input',updateSensor);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){state.playing=false;syncControls();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){state.playing=false;viewer?.setPlaying(false);syncControls();}});
 reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches){state.playing=false;viewer?.setPlaying(false);}syncControls();});
 function restoreNavigation(){
   if(location.href===lastReadUrl)return;
@@ -436,11 +509,14 @@ function restoreNavigation(){
   lastExplorationContext='';
   render(true);
 }
+window.addEventListener('resize',()=>{const menu=$('.process-menu');if(menu)menu.open=matchMedia('(min-width:741px)').matches;});
 window.addEventListener('hashchange',restoreNavigation);window.addEventListener('popstate',restoreNavigation);
 window.addEventListener('pagehide',()=>{cancelAnimationFrame(labelFrame);labelFrame=0;state.playing=false;viewer?.setPlaying(false);});
 window.addEventListener('pageshow',event=>{if(event.persisted){syncControls();viewer?.resize();if(!labelFrame)labelFrame=requestAnimationFrame(labelLoop);}});
 document.addEventListener('change',e=>{if(e.target.id==='tour-select'){rememberCurrentEntry();historyMode='push';state.lesson=Number(e.target.value);applyLesson();}});
+document.addEventListener('keydown',e=>{const n=e.target.closest?.('[data-topology-component]');if(n&&['Enter',' '].includes(e.key)){e.preventDefault();n.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
 $('.main-nav [data-page="learn"] span').textContent=TOURS.length;
+$('#reference-domain').insertAdjacentHTML('beforeend','<option value="processes">Processes & evidence</option><option value="people">People & automation</option>');
 $('#reference-domain').insertAdjacentHTML('beforeend',DOMAINS.map(d=>`<option value="${d.id}">${d.label}</option>`).join(''));
 readHash();render();startViewer();
 

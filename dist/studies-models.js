@@ -1,6 +1,7 @@
+import { buildElectrificationView } from './electrification-models.js';
 // Original geometry: qualitative mechanisms, fictional records and interfaces.
 export const STUDY_CAMERAS = {
-  electrification:{camera:[23,21,28],target:[0,2,0],distance:46},
+  electrification:{camera:[24,20,29],target:[0,1.7,0],distance:44},
   adhesion:{camera:[11,9,14],target:[0,1.5,0],distance:25},
   'infrastructure-care':{camera:[20,17,23],target:[0,.5,0],distance:37,groundY:-1.8},
   dependencies:{camera:[21,21,27],target:[0,1,0],distance:43},
@@ -10,6 +11,7 @@ export const STUDY_CAMERAS = {
 
 export function buildStudyView(id,api){
   if(!STUDY_CAMERAS[id])return null;
+  if(id==='electrification')return buildElectrificationView(api);
   const {THREE,M,mat,startModel,group,part,mesh,box,cylinder,tube,shell,explode,registerAnimator}=api;
   const root=startModel(id),updates=[];
   const P={amber:mat(0xe3b65c),cyan:mat(0x78c9d6),green:mat(0x77bda6),violet:mat(0xb7a7df),red:mat(0xd58d78),paper:mat(0xd8dfd5),earth:mat(0x70654d),ballast:mat(0x69746d),dark:mat(0x263f4a),blue:mat(0x507785),copper:mat(0xbd8759)};
@@ -32,56 +34,6 @@ export function buildStudyView(id,api){
     const g=link(parent,name,points,material),dot=box(g,[.15,.15,.15],material);
     const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)),false,'catmullrom',.01);
     updates.push(s=>{g.visible=active(s);dot.visible=moving;dot.position.copy(curve.getPoint(phase(s)));});return g;
-  }
-
-  if(id==='electrification'){
-    deck(23,9);const dc=group(root,'dc-arrangement'),ac=group(root,'ac-arrangement');
-    const supply=part(root,'supply-conversion',[-8,0,-1]);
-    box(supply,[3,.25,3],M.edge,[0,.05,0]);
-    for(const x of [-.65,.65]){box(supply,[.55,1.3,.9],M.core,[x,1,0]);cylinder(supply,.45,1.1,P.copper,[x,1,0]);}
-    const rectifier=group(supply,'wayside-dc-rectifier',[0,0,2]);cabinet(rectifier,'dc-rectifier-cabinet',[0,0,0]);explode(rectifier,[0,0,1.2]);
-    const acSwitch=cabinet(supply,'ac-line-switchgear',[1.8,0,0]);
-    for(const z of [-1.2,1.2])rail(root,2,z,14);
-    for(let x=-4;x<9;x+=.7)box(root,[.2,.14,3.2],P.ballast,[x,.15,0]);
-    const body=group(root,'study-vehicle');box(body,[8,.35,3.5],P.blue,[3,2.2,0]);
-    for(const x of [0,6])axle(body,'study-wheelset',[x,1.24,0]);
-    // The body outline leaves the conversion equipment exposed from above.
-    for(const z of [-1.65,1.65])box(body,[8,.12,.1],M.aluminum,[3,5.25,z]);
-    for(const x of [-1,7])for(const z of [-1.65,1.65])box(body,[.1,3,.1],M.aluminum,[x,3.75,z]);
-    const collector=part(root,'study-collector');
-    const shoe=group(collector,'dc-collector-shoes');
-    for(const z of [-2.1,2.1]){box(shoe,[1,.16,.22],P.copper,[.3,.65,z]);link(shoe,'shoe-arm',[[.3,1.8,Math.sign(z)*1.5],[.3,.65,z]],M.steel,.07);}
-    const pantograph=group(collector,'ac-pantograph');
-    link(pantograph,'pantograph-arms',[[1.8,5.25,0],[1.1,6.25,0],[1.8,7.15,0],[2.5,6.25,0],[1.8,5.25,0]],M.aluminum,.075);
-    box(pantograph,[1.2,.12,1.7],P.copper,[1.8,7.15,0]);
-    for(const z of [-2.1,2.1])box(dc,[14,.12,.2],z<0?P.amber:P.cyan,[2,.65,z]);
-    for(const x of [-3,8]){box(ac,[.15,7.5,.15],M.steel,[x,3.5,-2.5]);box(ac,[.15,.15,3.2],M.steel,[x,7.4,-1]);}
-    link(ac,'overhead-contact-wire',[[-4,7.25,0],[9,7.25,0]],P.amber,.06);
-    const tx=part(root,'study-onboard-transformer',[1.4,2.5,0]);
-    box(tx,[2,.4,1.8],M.core,[0,.25,0]);for(const z of [-.5,.5])cylinder(tx,.48,1.2,P.copper,[0,.8,z]);
-    explode(tx,[0,2,0]);
-    const conversion=part(root,'study-converter',[3.6,2.45,0]);
-    box(conversion,[1.4,.15,1.7],M.edge);for(const z of [-.5,.5])cylinder(conversion,.22,.9,P.cyan,[.3,.55,z]);
-    const lineModule=group(conversion,'ac-line-converter',[-.55,.5,0]);box(lineModule,[.5,.8,1.3],P.blue);explode(lineModule,[0,1.4,0]);
-    const cover=box(conversion,[1.5,.1,1.8],M.aluminum,[0,1.1,0]);shell(cover);
-    const drive=part(root,'study-drive',[5.4,2.4,0]);box(drive,[1.2,.9,1.4],P.blue,[0,.5,0]);
-    const motor=group(drive,'traction-motor-and-coupling',[.6,-.9,0]);cylinder(motor,.4,1.3,M.teal,[0,0,0],[Math.PI/2,0,0]);link(motor,'axle-coupling',[[0,0,.7],[0,-.25,1.2]],M.steel,.09);explode(motor,[0,0,1.4]);
-    const ret=part(root,'study-return');
-    const dcFeed=link(dc,'dc-feed',[[-8,1,1],[-6,.65,-2.1],[.3,.65,-2.1],[.3,2.5,-1.4],[3.6,2.5,-1.4]],P.amber);
-    link(ret,'dc-return',[[3.6,2.5,1.2],[.3,2.5,1.2],[.3,.65,2.1],[-6,.65,2.1],[-8,1,1]],P.cyan);
-    const dcReturn=ret.children[0];
-    const primary=link(ac,'ac-primary-supply',[[-8,2,-1],[-5,7.25,0],[-4,7.25,0]],P.amber);
-    link(ac,'pantograph-primary',[[1.8,7.15,0],[1.8,5.2,.2],[1.4,3.6,.2]],P.amber);
-    const acReturn=link(ret,'ac-primary-return',[[1.4,3.6,-.5],[0,1.24,-1.2],[0,.4,-1.2],[-5,.4,-1.2],[-8,1.5,-1]],P.cyan);
-    const secondary=link(ac,'transformer-secondary',[[1.4,3.6,.7],[2.4,3.6,.7],[3.05,2.95,.7]],P.copper);
-    link(ac,'transformer-secondary-return',[[3.05,2.95,-.7],[2.4,3.6,-.7],[1.4,3.6,-.7]],P.copper);
-    link(conversion,'dc-link-to-inverter',[[.4,.4,0],[1.8,.4,0]],P.amber);
-    for(const [name,parent,points,material]of [
-      ['dc-energy-token',dcFeed,[[-8,1,1],[-6,.65,-2.1],[.3,.65,-2.1],[3.6,2.5,-1.4]],P.amber],
-      ['ac-energy-token',primary,[[-8,2,-1],[-5,7.25,0],[1.8,7.25,0]],P.amber],
-      ['secondary-token',secondary,[[1.4,3.6,.7],[2.4,3.6,.7],[3.05,2.95,.7]],P.copper],
-    ])trace(parent,name,points,material,{moving:true});
-    updates.push(s=>{const isAC=s.variant==='ac';dc.visible=shoe.visible=rectifier.visible=dcReturn.visible=!isAC;ac.visible=pantograph.visible=tx.visible=lineModule.visible=acReturn.visible=acSwitch.visible=isAC;});
   }
 
   if(id==='adhesion'){

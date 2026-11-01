@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import * as electrificationHelpers from '../dist/electrification.js';
 /**
  * Headless scene/content contract check using Three.js and the actual shared
  * primitive functions from viewer.js. No DOM, renderer, browser or package
@@ -27,7 +28,8 @@ const materials = between('  const materials = new Map();', '  const ground = ')
 // Using the implementation itself catches missing helpers and actual geometry
 // failures instead of passing because a mock silently accepts the wrong call.
 const shared = between('  function startModel(', '  function registerAnimator(');
-const createHarness = new Function('THREE', `
+const createHarness = new Function('THREE', 'electrificationHelpers', `
+ const {${Object.keys(electrificationHelpers).join(',')}}=electrificationHelpers;
   ${colors}
   const compatibility = true;
   const scene = new THREE.Scene();
@@ -38,9 +40,9 @@ const createHarness = new Function('THREE', `
   function registerAnimator(fn) { building.animators.push(fn); }
   return { models, api: { THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,
     torus,tube,roundedPanel,explode,shell,foot,makeTrack,makeTrain,makePrimary,
-    makeBogie,cabinet,registerAnimator } };
+    makeBogie,makeSubstation,makePowerTransformer,makePowerRectifier,makePowerSwitchgear,powerTrace,cabinet,registerAnimator } };
 `);
-const { models, api } = createHarness(THREE);
+const { models, api } = createHarness(THREE,electrificationHelpers);
 const failures = [];
 let passed = 0;
 const check = (name, fn) => {

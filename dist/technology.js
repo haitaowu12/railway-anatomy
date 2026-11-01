@@ -42,6 +42,7 @@ export function technologyNote(state,fallback){
   return fallback;
 }
 export function technologyFlow(state,base){
+  if(state.view?.startsWith('communications-')||state.view?.startsWith('power-'))return base;
   if(['electrification','adhesion','infrastructure-care','dependencies','accessible-journey','change-evidence'].includes(state.view))return base;
   const t=state.technology||DEFAULT_TECHNOLOGY,rotary=t.propulsion==='rotary',loop=t.control==='loop';
   if(state.view&&['lim','seltrac','cbtc-network','signalling','etcs','interlocking','train-detection'].includes(state.view))return base;

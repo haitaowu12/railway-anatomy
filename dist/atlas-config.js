@@ -1,6 +1,8 @@
 import {applyDepotConfig} from './depot-data.js';
 import {applyOccConfig} from './occ-data.js';
 import {applyStudyConfig} from './studies-data.js';
+import {applyElectrificationConfig} from './electrification-data.js';
+import {applyCommsConfig} from './communications-data.js';
 import {NETWORK_VIEWS,NETWORK_CONCEPTS,NETWORK_PRIMARY,NETWORK_DOMAIN} from './network-data.js';
 import {EXTRA_VIEWS,EXTRA_PRIMARY,EXTRA_DOMAINS,EXTRA_CONCEPTS} from './expansion-data.js';
 export const SYSTEMS = [
@@ -4099,3 +4101,6 @@ for(const item of NETWORK_CONCEPTS)PART_RELATIONS[item.id]=item.related||[];
 applyDepotConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS});
 applyOccConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS});
 applyStudyConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS});
+applyCommsConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS});
+
+applyElectrificationConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS});

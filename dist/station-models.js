@@ -1,6 +1,7 @@
 /* Original, generic teaching geometry. Positions, proportions and service routes
  * are illustrative. These scenes are neither a station design nor an operating
  * sequence, fire simulation, hydraulic calculation or electrical single-line. */
+import { createCommunicationsAssemblies } from './communications-models.js';
 
 export const STATION_VIEWS = {
   station: { camera: [23, 18, 25], target: [0, 2.8, 0], distance: 48 },
@@ -26,6 +27,7 @@ export function buildStationView(id, api) {
     cylinder, torus, tube, roundedPanel, explode, shell, makeTrack,
     registerAnimator } = api;
   const root = startModel(id);
+  const comms = createCommunicationsAssemblies(api);
   const animations = [], routes = [], alternatives = [];
   const paint = {
     concrete: mat(0x6c7b81, .9, .02), floor: mat(0xb8c2bf, .85, .02),
@@ -105,34 +107,16 @@ export function buildStationView(id, api) {
     return g;
   }
   function speaker(parent, at, scale = 1, component = 'station-pa') {
-    const g = part(parent, component, at); g.scale.setScalar(scale);
-    box(g, [.46, .64, .24], paint.pale);
-    for (let y = -.23; y <= .24; y += .065) box(g, [.34, .018, .025], paint.black, [0, y, .132]);
-    box(g, [.08, .1, .14], M.steel, [0, .37, -.05]);
-    return g;
+    return comms.speaker(parent, at, scale * .57, component).node;
   }
   function display(parent, at, scale = 1) {
-    const g = part(parent, 'station-pis', at); g.scale.setScalar(scale);
-    screen(g, 1.8, .62, [0, 0, 0], 0xf4d594);
-    for (const x of [-.55, .55]) box(g, [.04, .52, .05], M.steel, [x, .55, 0]);
-    return g;
+    return comms.display(parent, at, scale * .69).node;
   }
   function cameraDevice(parent, at) {
-    const g = part(parent, 'station-cctv', at);
-    cylinder(g, .2, .08, paint.pale, [0, .04, 0], null, 14);
-    const dome = mesh(g, new THREE.SphereGeometry(.19, 10, 7), M.glass, [0, -.08, 0]); dome.scale.y = .7;
-    cylinder(g, .07, .07, paint.black, [0, -.1, .12], [Math.PI / 2, 0, 0], 10);
-    box(g, [.08, .2, .12], M.steel, [0, .16, 0]);
-    return g;
+    return comms.cameraDevice(parent, at, .43).node;
   }
   function helpPoint(parent, at) {
-    const g = part(parent, 'emergency-intercom', at);
-    roundedPanel(g, .62, 1.7, .24, paint.pale, [0, .85, 0], .09);
-    screen(g, .42, .3, [0, 1.25, .145], C.service);
-    for (let i = 0; i < 4; i++) box(g, [.25, .015, .02], paint.black, [0, .83 + i * .055, .14]);
-    cylinder(g, .085, .04, paint.fire, [0, .63, .15], [Math.PI / 2, 0, 0], 12);
-    box(g, [.18, .028, .025], M.dark, [0, .43, .14]);
-    return g;
+    return comms.helpPoint(parent, at, .59).node;
   }
   function accessDoor(parent, at) {
     const g = part(parent, 'access-controller', at);
@@ -170,7 +154,10 @@ export function buildStationView(id, api) {
   }
   function firePanel(parent, at = [0, 0, 0], scale = 1) {
     const g = part(parent, 'fire-panel', at); g.scale.setScalar(scale);
-    box(g, [1.1, 1.65, .46], M.core, [0, .9, 0]);
+    g.userData.explorationAssembly = 'fire-panel';
+    // Backplate and sides leave the modules visible after removing the door.
+    box(g, [1.1, 1.65, .045], M.core, [0, .9, -.22]);
+    for (const x of [-.55, .55]) box(g, [.045, 1.65, .46], M.core, [x, .9, 0]);
     const door = group(g, 'fire-panel-cover');
     box(door, [1.05, 1.59, .045], paint.fire, [0, .9, .27]);
     screen(door, .68, .43, [0, 1.25, .31], 0xedd4ab);
@@ -178,40 +165,27 @@ export function buildStationView(id, api) {
     for (const x of [-.3, 0, .3]) box(door, [.12, .1, .025], paint.pale, [x, .61, .3]);
     shell(door); explode(door, [.9, .2, .7]);
     for (const x of [-.32, 0, .32]) {
-      box(g, [.23, .64, .12], M.teal, [x, 1.16, .12]);
-      for (let y = .93; y < 1.43; y += .13) box(g, [.15, .05, .02], M.steel, [x, y, .19]);
+      const module = group(g, x === 0 ? 'fire-panel-processor-module' : x < 0 ? 'fire-panel-input-module' : 'fire-panel-output-module', [x, 1.16, .05]);
+      box(module, [.23, .64, .06], M.teal);
+      for (let y = -.23; y < .28; y += .13) box(module, [.15, .05, .035], M.core, [0, y, .05]);
+      explode(module, [x * .8, .2, .6]);
     }
-    for (const x of [-.25, .25]) box(g, [.37, .29, .25], paint.black, [x, .4, .03]);
+    for (const x of [-.25, .25]) {
+      const battery = group(g, 'fire-panel-battery', [x, .4, .03]);
+      box(battery, [.37, .29, .25], paint.black);
+      for (const bx of [-.11, .11]) box(battery, [.04, .035, .06], M.copper, [bx, .17, .02]);
+      explode(battery, [x * .6, -.14, .65]);
+    }
     tube(g, [[-.25, .59, .05], [0, .67, .12], [.25, .59, .05]], .018, M.copper, { segments: 8 });
     return g;
   }
   function basController(parent, at = [0, 0, 0], scale = 1) {
-    const g = part(parent, 'bas-controller', at); g.scale.setScalar(scale);
-    box(g, [1.6, 1.52, .2], M.core, [0, .86, -.14]);
-    for (const y of [.38, .95, 1.48]) box(g, [1.4, .07, .08], M.steel, [0, y, .02]);
-    box(g, [.43, .62, .2], M.teal, [-.43, 1.08, .12]);
-    screen(g, .29, .2, [-.43, 1.16, .24], C.service);
-    for (let i = 0; i < 4; i++) {
-      const x = -.04 + i * .22;
-      box(g, [.18, .63, .22], paint.pale, [x, 1.07, .12]);
-      for (let j = 0; j < 3; j++) { box(g, [.12, .045, .025], paint.black, [x, .84 + j * .13, .245]); diode(g, [x, 1.29, .255]); }
-    }
-    for (let i = 0; i < 8; i++) box(g, [.13, .15, .17], paint.air, [-.61 + i * .175, .44, .1]);
-    const cover = group(g, 'automation-panel-cover'); box(cover, [1.65, 1.6, .035], paint.pale, [0, .86, .32]);
-    shell(cover); explode(cover, [0, .1, .8]);
+    const g = comms.rtuPanel(parent, at, 1, 'bas-controller').node;
+    g.scale.set(.52 * scale, .44 * scale, .64 * scale);
     return g;
   }
   function networkSwitch(parent, at = [0, 0, 0], width = 1.38) {
-    const g = part(parent, 'network-switch', at);
-    box(g, [width, .24, .72], M.core);
-    for (let i = 0; i < 8; i++) {
-      const x = -width * .38 + i * width * .105;
-      box(g, [.09, .085, .025], paint.black, [x, -.025, .375]);
-      box(g, [.06, .015, .02], M.copper, [x, -.047, .392]);
-      diode(g, [x, .065, .38], i % 3 ? C.service : C.signal);
-    }
-    for (const x of [-width / 2, width / 2]) box(g, [.08, .29, .08], M.steel, [x, 0, .3]);
-    return g;
+    return comms.networkSwitch(parent, at, width).node;
   }
   function telecomRack(parent, at = [0, 0, 0], scale = 1, includeAudio = true) {
     const g = part(parent, 'telecom-rack', at); g.scale.setScalar(scale);
@@ -339,6 +313,7 @@ export function buildStationView(id, api) {
   }
   function axialFan(parent, at = [0, 0, 0], scale = 1, rotation = [0, 0, 0]) {
     const g = part(parent, 'tunnel-fan', at); g.scale.setScalar(scale); g.rotation.set(...rotation);
+    g.userData.explorationAssembly = 'tunnel-fan';
     const radius = .95, depth = 1.2;
     for (const z of [-depth / 2, depth / 2]) mesh(g, torus(radius, .075, 5, 20), M.steel, [0, 0, z]);
     const housing = group(g, 'fan-casing');
@@ -353,6 +328,7 @@ export function buildStationView(id, api) {
     shape.moveTo(.18, -.07); shape.lineTo(.8, -.14); shape.lineTo(.86, .16); shape.lineTo(.27, .14); shape.closePath();
     const bladeGeometry = new THREE.ExtrudeGeometry(shape, { depth: .045, bevelEnabled: false });
     for (let i = 0; i < 7; i++) mesh(rotor, bladeGeometry, paint.air, [0, 0, 0], [.18, 0, i * Math.PI * 2 / 7]);
+    explode(rotor, [0, 0, 1.0]);
     animations.push(state => { rotor.rotation.z = state.phase * .85; });
     const motor = group(g, 'fan-drive-motor', [0, 0, -1.22]);
     cylinder(motor, .37, .8, M.teal, [0, 0, 0], [Math.PI / 2, 0, 0], 16);
@@ -369,6 +345,7 @@ export function buildStationView(id, api) {
   }
   function damper(parent, at = [0, 0, 0], scale = 1, rotation = [0, 0, 0]) {
     const g = part(parent, 'tunnel-damper', at); g.scale.setScalar(scale); g.rotation.set(...rotation);
+    g.userData.explorationAssembly = 'tunnel-damper';
     for (const x of [-1.2, 1.2]) box(g, [.13, 1.8, .53], M.steel, [x, 0, 0]);
     for (const y of [-.85, .85]) box(g, [2.5, .13, .53], M.steel, [0, y, 0]);
     const blades = [];
@@ -378,11 +355,20 @@ export function buildStationView(id, api) {
       box(blade, [2.27, .265, .05], paint.air);
       cylinder(blade, .035, 2.48, M.steel, [0, 0, 0], [0, 0, Math.PI / 2], 8);
       box(blade, [.07, .21, .045], M.core, [1.28, .06, 0]);
+      explode(blade, [0, 0, .55 + i * .13]);
       blades.push(blade);
     }
     box(g, [.055, 1.6, .07], M.copper, [1.35, 0, .12]);
     const actuator = part(g, 'bas-actuator', [1.55, -.1, 0]);
-    box(actuator, [.45, .57, .4], paint.fire);
+    actuator.userData.explorationAssembly = 'bas-actuator';
+    const casework = group(actuator, 'damper-actuator-cover');
+    box(casework, [.45, .57, .4], paint.fire); shell(casework); explode(casework, [.55, .35, 0]);
+    const reduction = group(actuator, 'damper-actuator-reduction');
+    for (const [y, r] of [[-.08, .13], [.12, .075]]) {
+      cylinder(reduction, r, .09, M.copper, [0, y, 0], [0, 0, Math.PI / 2], 14);
+      cylinder(reduction, .025, .2, M.steel, [0, y, 0], [0, 0, Math.PI / 2], 8);
+    }
+    explode(reduction, [.6, 0, .4]);
     cylinder(actuator, .08, .3, M.steel, [-.3, 0, 0], [0, 0, Math.PI / 2], 10);
     box(g, [.28, .22, .2], paint.pale, [1.49, .59, .07]);
     diode(g, [1.49, .61, .185]);
@@ -396,6 +382,7 @@ export function buildStationView(id, api) {
   }
   function airHandler(parent, at = [0, 0, 0], scale = 1) {
     const g = part(parent, 'hvac-air-handler', at); g.scale.setScalar(scale);
+    g.userData.explorationAssembly = 'hvac-air-handler';
     box(g, [5.6, .13, 1.75], M.steel, [0, .2, 0]);
     for (const x of [-2.7, -1.38, -.15, 1.3, 2.7]) {
       for (const z of [-.82, .82]) box(g, [.055, 1.85, .06], M.steel, [x, 1.18, z]);
@@ -415,6 +402,7 @@ export function buildStationView(id, api) {
     const coil = group(g, 'air-handler-coil', [.49, 1.2, 0]);
     for (let x = -.28; x < .29; x += .08) box(coil, [.025, 1.45, 1.4], M.aluminum, [x, 0, 0]);
     for (const y of [-.55, -.18, .18, .55]) cylinder(coil, .045, 1.48, M.copper, [0, y, 0], [Math.PI / 2, 0, 0], 8);
+    explode(coil, [0, .2, -1.55]);
     pipes(g, [[.5, .62, .72], [.5, .62, 1.2], [1.4, .62, 1.2]], .055);
     pipes(g, [[.5, 1.77, .72], [.5, 1.77, 1.2], [1.4, 1.77, 1.2]], .055, M.copper);
     const actuator = part(g, 'bas-actuator', [1.05, 1.77, 1.2]);
@@ -426,6 +414,7 @@ export function buildStationView(id, api) {
       box(rotor, [.78, .1, .12], M.steel, [0, Math.cos(t) * .47, Math.sin(t) * .47], [t, 0, 0]);
     }
     cylinder(rotor, .13, .86, paint.air, [0, 0, 0], [0, 0, Math.PI / 2], 12);
+    explode(rotor, [.65, .3, 1.1]);
     animations.push(state => { rotor.rotation.x = state.phase * .7; });
     sensor(g, [.56, 2.31, 0], true);
     return g;
@@ -726,3 +715,4 @@ export function buildStationView(id, api) {
   });
   return root;
 }
+

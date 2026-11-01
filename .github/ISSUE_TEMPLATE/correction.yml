@@ -1,0 +1,37 @@
+name: Correct an explanation or model
+description: Report an error, a confusing explanation or an interaction problem.
+title: "[Correction]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Learners and practitioners are welcome. Please share only public information; remove personal or confidential details from screenshots and examples.
+  - type: input
+    id: location
+    attributes:
+      label: Where did you find the problem?
+      description: Paste the page link or name the model, component, guide or process step.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or unclear?
+      description: Describe the current explanation or behaviour and why it is misleading or difficult to understand.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Suggested correction
+      description: Optional. A question or a description of the problem is also useful if you do not know the answer.
+  - type: textarea
+    id: sources
+    attributes:
+      label: Public references
+      description: Optional. Link relevant public sources and mention any railway, jurisdiction, date or product generation that matters.
+  - type: textarea
+    id: interaction
+    attributes:
+      label: Interaction details or screenshot
+      description: If relevant, include the selected options, steps, browser and approximate screen size. Remove personal or confidential details.

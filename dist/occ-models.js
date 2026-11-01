@@ -16,6 +16,7 @@ const VARIANTS={
   'occ-workplace':['task','shared','handover'],
 };
 
+import {addRoleFigure} from './people-models.js';
 export function buildOccView(id,api){
   if(!OCC_VIEWS[id])return null;
   const {THREE,C,M,mat,startModel,group,part,mesh,box,cylinder,roundedPanel,tube,shell,explode,registerAnimator}=api;
@@ -176,14 +177,17 @@ export function buildOccView(id,api){
     screen(wall,6.9,1.7,[-5.2,2.3,.1],'track');screen(wall,2.8,1.7,[.15,2.3,.1],'power');screen(wall,2.5,1.7,[3,2.3,.1],'queue');
     const ceiling=group(room,'removable-control-room-ceiling');box(ceiling,[21,.14,15],P.pale,[0,4.8,0]);shell(ceiling);explode(ceiling,[0,2,0]);
     const roles=[['operations-traffic-supervision',[-6,.1,-2.8],'track'],['operations-signalling-workstation',[-2,.1,-2.8],'track'],['operations-power-control',[2,.1,-2.8],'power'],['operations-station-supervision',[-6,.1,1.5],'queue'],['operations-radio-dispatch',[-2,.1,1.5],'rows']];
-    for(const [component,at,mode]of roles){const d=desk(room,component,at,mode);if(component==='operations-radio-dispatch')radio(d,[.95,1.25,.3]);}
+    for(const [component,at,mode]of roles){const d=desk(room,component,at,mode);if(component==='operations-radio-dispatch')radio(d,[.95,1.25,.3]);addRoleFigure(d,api,[0,0,1.6],{seated:true,role:component});}
     const eq=part(room,'operations-equipment-room',[7.1,.1,-.8]);foundation(eq,4.8,8.3);
     box(eq,[.09,2.8,8.3],P.panel,[-2.3,1.4,0]);box(eq,[4.8,2.8,.09],P.panel,[0,1.4,-4.1]);
     rack(eq,'operations-event-recording',[-.85,0,-2.5],2.7,5);
     const service=group(eq,'control-room-application-cabinets');for(const z of [.2,2.8]){box(service,[1.25,2.7,1.0],P.dark,[.55,1.35,z]);for(let y=.45;y<2.6;y+=.4)box(service,[1.07,.18,.03],P.panel,[.55,y,z+.52]);}
-    const incident=alternative(room,'incident-coordination-arrangement',['incident']);recordTable(incident,'occ-incident-coordination',[2,.1,2.1]);
-    const handover=alternative(room,'duty-handover-arrangement',['handover']);const h=recordTable(handover,'occ-duty-handover',[2,.1,2.1],true);
-    const hx=trace(h,'handover-exchange',[[-.8,1.4,0],[0,1.8,0],[.8,1.4,0]],P.feedback);updates.push(s=>hx.token.position.copy(hx.curve.getPoint(phase(s))));
+    // The coordination position is permanent room furniture. Activity changes
+    // must never add or remove a desk. Processes live in the dedicated 2D view.
+    const coordination=part(room,'occ-incident-coordination');coordination.name='persistent-coordination-position';
+    const h=recordTable(coordination,'occ-duty-handover',[2,.1,2.1],true);addRoleFigure(h,api,[0,0,1.6],{seated:true,role:'incident-coordinator'});
+    const coordinationPanel=box(coordination,[.42,.07,.72],P.dark,[2,1.32,2.1]);coordinationPanel.name='permanent-coordination-panel';
+    const incident=alternative(room,'incident-coordination-links',['incident']);
     for(const points of [[[2,1.35,2.1],[-2,1.4,1.6]],[[2,1.35,2.1],[-6,1.4,1.6]],[[2,1.35,2.1],[5,1.7,1.4],[6.25,1.5,-3.3]]]){
       const path=trace(incident,'coordination-link',points,P.feedback,null);updates.push(s=>{path.node.visible=!!s.signals;path.token.position.copy(path.curve.getPoint(phase(s)));});
     }
@@ -289,7 +293,7 @@ export function buildOccView(id,api){
     for(const [x,w,mode]of [[-.9,2.5,'track'],[1.5,1.5,'queue']]){
       const monitor=group(displays,'removable-task-monitor',[x,2.45,-.5]);box(monitor,[.12,.65,.1],M.steel,[0,-.64,0]);screen(monitor,w,1.45,[0,0,0],mode);explode(monitor,[x*.35,.7,-.3]);
     }
-    chair(controls,[-.5,0,2]);
+    chair(controls,[-.5,0,2]);addRoleFigure(controls,api,[-.5,0,2],{seated:true,role:'signalling-controller',scale:1.13});
     // Light and acoustic panels are visible dependencies, not measured design.
     for(const x of [-5.5,5.5]){box(env,[.15,3.8,.15],P.blue,[x,1.9,-1.9]);box(env,[.9,2.1,.18],P.panel,[x,2.05,-2.3]);}
     box(env,[11.2,.12,.35],P.pale,[0,3.85,-1.9]);box(env,[8.7,.025,.16],P.white,[0,3.77,-1.9]);

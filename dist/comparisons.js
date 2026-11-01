@@ -43,6 +43,7 @@ export function technologyControlsFor(view) {
   return {
     propulsion:['vehicle','bogie','guideway'].includes(view),
     control:view==='control',
+    electrification:['system','substation','guideway','vehicle','bogie','electrification'].includes(view),
   };
 }
 
@@ -54,31 +55,31 @@ export function animationFor(view, variant) {
   return view?.variants?.find(v=>v.id===variant)?.animation || view?.animation || null;
 }
 export function canAnimate(view, variant) {
-  return view?.variants?.find(v=>v.id===variant)?.motion ?? view?.motion ?? true;
+  return view?.variants?.find(v=>v.id===variant)?.motion ?? view?.motion ?? Boolean(animationFor(view,variant));
 }
 
 // The label layout uses the measured DOM dimensions, not a character-count
 // estimate. A clear band is reserved for the title and camera controls.
 export function placeModelLabels(points, {width,height,top=100,bottom=60,limit=6,gap=12}) {
-  const placed=[];
+  const placed=[];let leftCount=0,rightCount=0;
   for(const point of points) {
     if(placed.length>=limit)break;
     const w=Math.min(point.width,width-24),h=point.height;
     if(w<=0||h<=0||height-top-bottom<h)continue;
-    const px=point.x*width,py=point.y*height,side=point.x<.5?-1:1;
+    const px=point.x*width,py=point.y*height;
+    let side=point.x<.42?-1:point.x>.58?1:leftCount<=rightCount?-1:1;
+    if(side<0&&leftCount>=Math.ceil(limit/2))side=1;else if(side>0&&rightCount>=Math.ceil(limit/2))side=-1;
     const gutter=side<0?12+w/2:width-12-w/2;
     const candidates=[
-      [px+side*(w/2+28),py-30],[px+side*(w/2+28),py+44],
-      [gutter,py-42],[gutter,py+48],[gutter,py-90],[gutter,py+96],
-      [px,py-76],[px,py+96],
-      [width-gutter,py-42],[width-gutter,py+48],
+      [gutter,py],[gutter,py-48],[gutter,py+48],[gutter,py-96],[gutter,py+96],
+      [gutter,py-144],[gutter,py+144],[width-gutter,py-48],[width-gutter,py+48],
     ];
     for(const [cx,cy] of candidates) {
       const x=Math.max(12+w/2,Math.min(width-12-w/2,cx));
       const y=Math.max(top+h,Math.min(height-bottom,cy));
       const rect={left:x-w/2,top:y-h,right:x+w/2,bottom:y};
       if(placed.some(p=>!(rect.right+gap<p.rect.left||rect.left-gap>p.rect.right||rect.bottom+gap<p.rect.top||rect.top-gap>p.rect.bottom)))continue;
-      placed.push({...point,x,y,width:w,height:h,anchorX:px,anchorY:py,rect});break;
+      placed.push({...point,x,y,width:w,height:h,anchorX:px,anchorY:py,rect});if(x<width/2)leftCount++;else rightCount++;break;
     }
   }
   return placed;

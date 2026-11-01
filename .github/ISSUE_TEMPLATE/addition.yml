@@ -1,0 +1,30 @@
+name: Suggest a learning addition
+description: Propose missing equipment, an interface, a process or a clearer way to explain it.
+title: "[Addition]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A useful addition starts with a learner's question. You do not need to provide code or a complete design. Please use public information only.
+  - type: textarea
+    id: question
+    attributes:
+      label: What should the reader be able to understand?
+      description: Describe the missing subject or relationship and who would benefit from it.
+    validations:
+      required: true
+  - type: textarea
+    id: connections
+    attributes:
+      label: Connections to the current project
+      description: Optional. Link related models, diagrams or guides and explain what the addition would clarify.
+  - type: textarea
+    id: approach
+    attributes:
+      label: Suggested explanation or interaction
+      description: Optional. A physical model, a connection diagram, a process map, a comparison or a short explanation may fit the question.
+  - type: textarea
+    id: sources
+    attributes:
+      label: Public references
+      description: Optional. Suggest useful public sources and identify any particular railway, jurisdiction or supplier example.
