@@ -1,6 +1,6 @@
 # Frontend follow-up after 5.0.0
 
-Status: source changes and rendered Chrome review complete; the release review tracks publication and the remaining native-picker keyboard evidence limit.
+Status: source changes, rendered Chrome review and live GitHub Pages verification complete; the release review records publication and the remaining native-picker keyboard evidence limit.
 
 ## Design scope
 

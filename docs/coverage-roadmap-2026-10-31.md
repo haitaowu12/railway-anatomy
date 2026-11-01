@@ -1,8 +1,8 @@
 # Railway Anatomy: coverage roadmap
 
-**31 October 2026 — six teaching layers implemented in the 5.1.0 candidate. Source checks and Chrome review passed; publication is tracked with the release review.**
+**31 October 2026 — six teaching layers published in 5.1.0. Source checks, Chrome review and live GitHub Pages verification passed.**
 
-The six priorities proposed after 5.0.0 now have connected model views, contextual comparisons, concepts, public references, guided questions and longer explanations. They extend the existing railway → place/system → assembly structure. This is completion of the bounded teaching layers below, rather than a claim that these engineering subjects are exhaustively modeled. See the [candidate review](release-5.1.0.md) for verification and release status.
+The six priorities proposed after 5.0.0 now have connected model views, contextual comparisons, concepts, public references, guided questions and longer explanations. They extend the existing railway → place/system → assembly structure. This is completion of the bounded teaching layers below, rather than a claim that these engineering subjects are exhaustively modeled. See the [release review](release-5.1.0.md) for verification and release status.
 
 | Priority | Implemented teaching layer | Comparisons |
 |---|---|---|

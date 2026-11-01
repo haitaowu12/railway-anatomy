@@ -1,8 +1,8 @@
 # Railway Anatomy 5.1.0 release review
 
-**Status: source checks and rendered Chrome review passed; prepared for publication.**
+**Status: published to GitHub Pages; source checks, rendered Chrome review and live smoke verification passed.**
 
-The candidate adds all six teaching layers from the 5.0.0 coverage roadmap and carries the focused frontend refinement forward. Totals are **261 concepts, 143 public references, 50 model views, 32 guided tours and eight system guides** across the existing nine domains. Publication is recorded on the associated pull request; the verification below concerns the 5.1.0 source and rendered artifact.
+The candidate adds all six teaching layers from the 5.0.0 coverage roadmap and carries the focused frontend refinement forward. Totals are **261 concepts, 143 public references, 50 model views, 32 guided tours and eight system guides** across the existing nine domains. Published through [PR #3](https://github.com/haitaowu12/railway-anatomy/pull/3), merge `2e2fd5366224082692bd0b5d4154632c601d1902`. The [GitHub Pages workflow](https://github.com/haitaowu12/railway-anatomy/actions/runs/41259702114) passed both packaging/checks and deployment. [Open the live atlas](https://haitaowu12.github.io/railway-anatomy/).
 
 ## Six connected studies
 
@@ -59,6 +59,12 @@ GPU review found that the studio backdrop concealed the below-datum earthwork an
 
 **Remaining limits:** physical keyboard selection of the native picker was not established through the connector. Its key sequence also failed on a plain native select, so this is not evidence of an app-specific defect. Option selection, hash updates and Back/Forward restoration passed. Mobile Safari, other GPU/device combinations and quantitative performance are unverified. The diagrams remain schematic explanations rather than qualified physical, operating or accessibility simulations.
 
+## Live verification
+
+A fresh Chrome context checked the published site after deployment. All six new study routes loaded with their intended titles, variants and 3D canvases. The header showed 32 tours, and the static directory showed 261 concepts and 143 references. The corrected infrastructure geometry was visible in hardware-backed WebGL. At 390×844, the picker changed the live OCC view and hash without page-level overflow; the reading page also had no horizontal overflow. The shared-dependencies question returned its refined distractor feedback and then accepted the correct answer. Chrome reported no console errors or warnings. The native-picker physical-keyboard evidence limit above remains.
+
+The publication receipt updates documentation and screenshots only; it does not change the deployed `dist/` artifact.
+
 ## Captures
 
 These are actual browser screenshots. Final study captures use fresh contexts after the backdrop correction.
@@ -74,3 +80,5 @@ These are actual browser screenshots. Final study captures use fresh contexts af
 | [Boarding aid](evidence-r3/passenger-boarding.png) | Platform-to-doorway connection and distinct passenger interfaces |
 | [Reviewed handover](evidence-r3/configuration-handover.png) | Installed item, evidence subjects, RAMS questions and decision record |
 | [Reading desktop](evidence-r3/reading-desktop.png) / [reading narrow](evidence-r3/reading-phone-390.png) | Simplified source/guide presentation and 261-concept, 143-source totals |
+
+[Live infrastructure after deployment](evidence-r3/live-infrastructure.png) records the corrected model on GitHub Pages.
