@@ -121,8 +121,8 @@ if (catalog && model && tours && atlas) {
   };
 
   await check('Expanded concepts and source records have complete, public content', async () => {
-    assert.equal(CONCEPTS.length, 312, 'Update the published content count when the release scope changes');
-    assert.equal(SOURCES.length, 172, 'Update the published source count when the release scope changes');
+    assert.equal(CONCEPTS.length, 322, 'Update the published content count when the release scope changes');
+    assert.equal(SOURCES.length, 177, 'Update the published source count when the release scope changes');
     unique(CONCEPTS.map(item => item.id), 'Concepts');
     unique(SOURCES.map(item => item.id), 'Sources');
     for (const source of SOURCES) {
@@ -182,6 +182,7 @@ if (catalog && model && tours && atlas) {
       unique(config.variants.map(item => item.id), `${id} variants`);
       for (const variant of config.variants) {
         for (const field of ['id', 'label', 'title', 'description']) nonempty(variant[field], `${id}/${variant.id}.${field}`);
+        if(variant.presentation==='process') { referencesResolve(variant.sources,`${id}/${variant.id}`); continue; }
         assert.ok(Array.isArray(variant.nodes) && variant.nodes.length >= 2, `${id}/${variant.id} needs an explanatory path`);
         variant.nodes.forEach(node => nonempty(node, `${id}/${variant.id} path label`));
         referencesResolve(variant.sources, `${id}/${variant.id}`);
@@ -407,3 +408,7 @@ await import('./check-studies.mjs');
 await import('./check-processes.mjs');
 await import('./check-electrification.mjs');
 await import('./check-communications.mjs');
+
+await import('./check-station-platform.mjs');
+await import('./check-interactions.mjs');
+await import('./check-motion.mjs');

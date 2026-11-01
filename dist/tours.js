@@ -758,12 +758,14 @@ export const TOURS = [
     "view": "platform-interface",
     "component": "platform-intrusion",
     "explanation": "Compare an observed track area with a physical platform-door boundary. Then inspect the separate interspace between train and platform facade.",
-    "actionText": "Compare the arrangements and inspect the highlighted equipment.",
+    "actionText": "Keep Trainway sensing in focus. Change Platform edge from Open edge to Half-height doors or Full-height doors, then compare the same location.",
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "platform-interface",
       "component": "platform-intrusion",
       "variant": "open-platform",
+      "platformEdge": "open",
+      "platformSensor": "lidar",
       "mode": "coasting",
       "scenario": "nominal",
       "cutaway": true,
@@ -771,7 +773,7 @@ export const TOURS = [
     },
     "question": "Which change adds a physical barrier at the platform edge in these examples?",
     "choices": [
-      "The platform-door arrangement",
+      "Selecting half-height or full-height doors in Platform edge",
       "A larger intrusion-detection coverage area alone",
       "An additional camera view alone"
     ],
@@ -795,12 +797,13 @@ export const TOURS = [
     "view": "platform-interface",
     "component": "platform-door-proof",
     "explanation": "Follow a door command to the drive, then inspect closed and locked feedback. These are separate facts at the train–platform interface.",
-    "actionText": "Inspect the door drive and closed-and-locked feedback. Compare the separate interspace-sensing arrangement without treating a clear sensing area as door-state proof.",
+    "actionText": "Step through Leaves moving, Closed contact, Bolt engaged and Locking indication. Inspect the drive and contacts to see why a request, a closed leaf and a returned locking state are different.",
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "platform-interface",
       "component": "platform-door-proof",
       "variant": "platform-doors",
+      "platformEdge": "full-height",
       "mode": "coasting",
       "scenario": "nominal",
       "cutaway": true,
@@ -832,7 +835,7 @@ export const TOURS = [
     "view": "occ-supervision",
     "component": "operations-signalling-workstation",
     "explanation": "A workstation request, receipt at a field interface and a returned indication carry different evidence. Follow the separate outgoing and returning paths; the animation shows information exchange without making the field equipment move. Event coordination and responsibilities are examined separately in People & processes.",
-    "actionText": "Use Request, Received at interface and Returned indication in the phase guide. Then open People & processes to compare Operational event & incident coordination.",
+    "actionText": "Step through the request, interface receipt and returned observation in the information diagram. Select a node for its explanation; People & processes covers responsibilities and incident coordination.",
     "actionLabel": "Trace supervision",
     "action": {
       "view": "occ-supervision",
@@ -909,7 +912,7 @@ export const TOURS = [
     "view": "depot-protection",
     "component": "depot-personnel-protection",
     "explanation": "Inspect the movement-protection device and the energy-control context. They address different hazards. This is not an isolation procedure.",
-    "actionText": "Compare the arrangements and inspect the highlighted equipment.",
+    "actionText": "Keep Trainway sensing in focus. Change Platform edge from Open edge to Half-height doors or Full-height doors, then compare the same location.",
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "depot-protection",

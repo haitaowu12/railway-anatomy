@@ -3,7 +3,8 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from '../dist/vendor/three.module.js';
 import * as exploration from '../dist/exploration.js';
 import { VIEWS, targetFor } from '../dist/model.js';
-import { canAnimate } from '../dist/comparisons.js';
+import { platformAnimationFor } from '../dist/station-platform-data.js';
+import { canAnimate, animationFor } from '../dist/comparisons.js';
 
 // The renderer and DOM are the only substitutes. All scene construction,
 // animation, selection, masking and camera code below is the shipping viewer.
@@ -131,8 +132,9 @@ const syncStart = appSource.indexOf('function syncViewer('), syncEnd = appSource
 assert(syncStart >= 0 && syncEnd > syncStart, 'Viewer synchronization markers changed');
 const syncCalls=[];
 const synchronizationViewer=new Proxy(viewer,{get(target,key){const value=target[key];if(typeof value!=='function')return value;return (...args)=>{syncCalls.push(key);return value(...args);};}});
-const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', `
-  let state, lastExplorationContext = '';
+const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', 'animationFor', 'platformAnimationFor', `
+  let state, lastExplorationContext = '', lastSequenceKey = '', lastTopologyStep = '';
+  const guideForState=()=>state.view==='platform-interface'?platformAnimationFor(state):animationFor(VIEWS[state.view],state.variant);
   function syncControls() {}
   function isProcessPage(){return false;}
   ${appSource.slice(syncStart, syncEnd)}
@@ -142,7 +144,7 @@ const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', `
     syncViewer(true);
     return structuredClone(state);
   };
-`)(synchronizationViewer, VIEWS, targetFor, canAnimate);
+`)(synchronizationViewer, VIEWS, targetFor, canAnimate, animationFor, platformAnimationFor);
 const savedController = { view: 'station-networks', domain: 'station', component: 'bas-controller', variant: 'building',
   technology: { propulsion: 'lim', control: 'loop' }, mode: 'coasting', scenario: 'nominal', sink: 'train',
   cutaway: false, exploded: .6, explodeScope: 'selected', playing: false };

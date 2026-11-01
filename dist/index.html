@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102b35">
 <meta name="description" content="Explore how a railway works: equipment models, communication architectures, people, processes and public engineering references for curious readers and new rail professionals.">
 <title>Railway Anatomy · How railway systems work</title>
-<link rel="icon" href="./assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css">
+<link rel="icon" href="./assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./electrical-explainers.css">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
 </head>
 <body>
@@ -24,28 +24,55 @@
 <div id="tour-bar" class="tour-bar" hidden></div>
 <div class="workspace-grid">
 <div class="model-column">
-<div class="scene-toolbar"><label class="view-picker" for="view-choice"><span>Model view</span><select id="view-choice"></select></label></div>
-<section class="comparison-panel" aria-label="Compare the system in focus">
+  <div class="workspace-heading"><div class="stage-heading"><div><span id="scene-index"></span><h1 id="scene-title" tabindex="-1"></h1></div><span id="render-badge">Schematic model</span></div><details id="equipment-search-panel" class="inspector-search" open><summary>Find equipment</summary><div class="equipment-search-fields"><label for="component-search">Find equipment</label><input id="component-search" type="search" autocomplete="off" placeholder="Try radio, brakes, HVAC…" aria-label="Find a component"><div id="search-results" hidden></div></div></details></div>
+  <div class="scene-toolbar"><label class="view-picker" for="view-choice"><span>Model view</span><select id="view-choice"></select></label></div>
+  <section class="comparison-panel" aria-label="Compare the system in focus">
 <div id="technology-panel" class="technology-context" hidden><div class="technology-choice" id="propulsion-context"><label for="propulsion-choice">Drive arrangement</label><select id="propulsion-choice" aria-label="Propulsion technology"></select><button id="inspect-propulsion">Inspect the drive ↗</button></div><div class="technology-choice" id="control-context"><label for="control-choice">Control architecture</label><select id="control-choice" aria-label="Train-control technology"></select><button id="inspect-control">Inspect the architecture ↗</button></div></div>
 <div id="electrification-context" class="technology-choice" hidden><label for="electrification-choice">Collection & supply</label><select id="electrification-choice" aria-label="Electrification arrangement"></select><button id="inspect-electrification">Inspect the supply chain ↗</button></div>
+<div id="platform-context" class="platform-context" hidden>
+  <div class="technology-choice"><label for="platform-edge-choice">Platform edge</label><select id="platform-edge-choice"></select></div>
+  <div id="platform-sensor-context" class="technology-choice"><label for="platform-sensor-choice">Trainway sensor</label><select id="platform-sensor-choice"></select></div>
+</div>
 <div id="configuration-effect" class="configuration-effect" role="status" hidden></div>
 <div class="arrangement-bar"><span id="arrangement-label">Compare arrangements</span><div id="scenario-buttons" class="scenario-buttons"></div></div>
 </section>
-<div id="presentation-switch" class="presentation-switch" hidden><span>Explore this system</span><button data-presentation="equipment" aria-pressed="true">Equipment</button><button data-presentation="connections" aria-pressed="false">Connections</button></div>
-<section class="stage" aria-label="Three-dimensional model"><div class="stage-heading"><div><span id="scene-index"></span><h1 id="scene-title" tabindex="-1"></h1></div><span id="render-badge">Schematic model</span></div><div id="viewer" tabindex="0" aria-label="Interactive 3D model. Drag to orbit; scroll to zoom. Component controls provide a keyboard alternative."><div id="loading" class="loading">Preparing the model…</div></div><div id="model-labels" class="model-labels"></div><div id="model-error" hidden><h3>The model could not start.</h3><p>The component explanations and field guide remain available.</p><button id="retry-model">Try again</button></div><div class="stage-footer"><span>Drag to orbit · select equipment to inspect</span><div><button data-camera="isometric" aria-label="Isometric camera">ISO</button><button data-camera="side" aria-label="Side camera">SIDE</button><button data-camera="top" aria-label="Top camera">TOP</button><button id="reset-scene" title="Reset camera">RESET</button></div></div></section>
-<section id="connections-view" class="connections-view" hidden></section>
-<div id="selection-summary" class="selection-summary" aria-live="polite"></div>
-<div class="selection-tools"><span id="exploration-selection"></span><button id="focus-selection">Frame selection</button><button id="isolate-selection" aria-pressed="false">Isolate assembly</button><button id="restore-context" hidden>Restore scene</button><button id="larger-model" aria-pressed="false">Larger model</button></div>
+  <div id="presentation-switch" class="presentation-switch" hidden><span>Explore this system</span><button data-presentation="equipment" aria-pressed="true">Equipment</button><button data-presentation="connections" aria-pressed="false">Connections</button></div>
+  <div class="model-workspace">
+    <div class="visual-workbench">
+      <section class="stage" aria-label="Three-dimensional model"><button id="quick-play" class="animation-quick-play" aria-pressed="false" hidden>Play sequence</button><div id="viewer" tabindex="0" aria-label="Interactive 3D model. Drag to orbit; scroll to zoom. Component controls provide a keyboard alternative."><div id="loading" class="loading">Preparing the model…</div></div><div id="model-labels" class="model-labels"></div><div id="model-error" hidden><h3>The model could not start.</h3><p>The component explanations and field guide remain available.</p><button id="retry-model">Try again</button></div><div class="stage-footer"><span>Drag to orbit · select equipment to inspect</span><div><button data-camera="isometric" aria-label="Isometric camera">ISO</button><button data-camera="side" aria-label="Side camera">SIDE</button><button data-camera="top" aria-label="Top camera">TOP</button><button id="reset-scene" title="Reset camera">RESET</button></div></div></section>
+      <section id="connections-view" class="connections-view" hidden></section>
+      <div class="selection-tools"><span id="exploration-selection"></span><button id="focus-selection">Frame selection</button><button id="isolate-selection" aria-pressed="false">Isolate assembly</button><button id="restore-context" hidden>Restore scene</button><button id="larger-model" aria-pressed="false">Larger model</button></div>
 <div class="model-tools"><label><input type="checkbox" id="cutaway"> Open enclosure</label><div id="separation-controls" class="separation-controls"><label>Separate parts <input type="range" id="explode" min="0" max="1" step="0.05" value="0" aria-label="Separate parts"></label><label class="scope-choice"><span class="sr-only">Separation scope</span><select id="explode-scope" aria-label="Separation scope"><option value="all">Whole view</option><option value="selected">Selected assembly</option></select></label></div><label for="label-density">Labels <select id="label-density"><option value="nearby">Key parts</option><option value="selected">Selection only</option><option value="off">Off</option></select></label></div>
 <p id="exploration-note" class="exploration-note" hidden></p>
-<div class="animation"><button id="play" aria-pressed="false">▶ Animate</button><label for="phase">Illustration phase</label><input type="range" id="phase" min="0" max="1" step="0.01" value="0" aria-label="Animation phase"><output id="phase-value" for="phase">0%</output></div>
-<section id="motion-guide" class="motion-guide" hidden><h3 id="motion-title"></h3><div id="motion-steps" aria-label="Stages in the illustration"></div><p id="motion-caption"></p></section>
-<details class="model-notes"><summary>What this model represents</summary><p id="model-key" class="model-key"></p></details>
+
+    </div>
+    <section class="sequence-panel" aria-label="Explore the illustrated sequence" hidden>
+  <div class="animation">
+    <div class="sequence-actions"><button id="play" aria-pressed="false">Play sequence</button><button id="motion-previous" aria-label="Previous sequence stage">Previous</button><button id="motion-next" aria-label="Next sequence stage">Next</button><label class="loop-choice"><input id="motion-loop" type="checkbox"> Loop</label></div>
+    <div class="sequence-position"><label for="phase">Sequence position</label><input type="range" id="phase" min="0" max="1" step="0.01" value="0" aria-label="Sequence position"><output id="phase-value" for="phase">Start</output></div>
+  </div>
+  <section id="motion-guide" class="motion-guide" hidden><h3 id="motion-title"></h3><div id="motion-steps" aria-label="Stages in the illustration"></div><p id="motion-caption"></p></section>
+</section>
+    <section class="parts-key" aria-labelledby="parts-key-title">
+      <div id="selection-summary" class="selection-summary" aria-live="polite"></div>
+
+      <div class="model-parts-key">
+      <div class="parts-key-heading"><h2 id="parts-key-title">Parts in this view</h2><span>Choose a number or a name</span></div>
+      <div id="model-key-list" class="model-key-list"></div>
+      <p id="model-key-note" class="model-key-note">Choose a name to inspect a part.</p>
+      </div>
+    </section>
+  </div>
+  <aside class="inspector" aria-label="Selected component explanation">
+    <details id="component-explanation" class="component-explanation"><summary>Component explanation & references</summary><div id="component-detail"></div></details>
+    <div id="lesson-detail" hidden></div>
+  </aside>
+  <section class="scenario-panel" aria-label="Explore system behavior"><div class="scenario-title"><h3 id="scenario-heading">Follow the energy</h3></div><div id="receptivity" class="receptivity" hidden><span>Braking energy destination</span><button data-sink="train">Another train</button><button data-sink="resistor">Wayside resistor</button></div><div id="flow-path" class="flow-path"></div><div class="scenario-copy"><strong id="scenario-title"></strong><p id="scenario-description"></p><div id="scenario-sources"></div></div></section>
+  <section id="sensor-lab" class="sensor-lab" hidden><div><p class="eyebrow">Position measurement</p><h3>Compare wheel distance with a reference.</h3><p>A synthetic example: the vehicle travels 100 m. Change the wheel-distance error and see why a reference point or other measurement can matter.</p></div><label>Wheel-distance error <input type="range" id="sensor-error" min="-20" max="20" step="1" value="0"><output id="sensor-error-value">0%</output></label><div class="sensor-values"><div><small>EXAMPLE DISTANCE</small><strong>100 m</strong></div><div><small>WHEEL ESTIMATE</small><strong id="wheel-estimate">100 m</strong></div><div><small>KNOWN EXAMPLE REFERENCE</small><strong>100 m</strong></div></div><p class="small-note">Arithmetic illustration, not a positioning algorithm. Real systems estimate uncertainty and combine measurements; a reference update is not a universal guarantee of exact position.</p></section>
+  <details class="model-notes"><summary>What this model represents</summary><p id="model-key" class="model-key"></p></details>
 <section id="people-context" class="people-context" hidden></section>
-<section class="scenario-panel" aria-label="Explore system behavior"><div class="scenario-title"><h3 id="scenario-heading">Follow the energy</h3></div><div id="receptivity" class="receptivity" hidden><span>Braking energy destination</span><button data-sink="train">Another train</button><button data-sink="resistor">Wayside resistor</button></div><div id="flow-path" class="flow-path"></div><div class="scenario-copy"><strong id="scenario-title"></strong><p id="scenario-description"></p><div id="scenario-sources"></div></div></section>
-<section id="sensor-lab" class="sensor-lab" hidden><div><p class="eyebrow">Position measurement</p><h3>Compare wheel distance with a reference.</h3><p>A synthetic example: the vehicle travels 100 m. Change the wheel-distance error and see why a reference point or other measurement can matter.</p></div><label>Wheel-distance error <input type="range" id="sensor-error" min="-20" max="20" step="1" value="0"><output id="sensor-error-value">0%</output></label><div class="sensor-values"><div><small>EXAMPLE DISTANCE</small><strong>100 m</strong></div><div><small>WHEEL ESTIMATE</small><strong id="wheel-estimate">100 m</strong></div><div><small>KNOWN EXAMPLE REFERENCE</small><strong>100 m</strong></div></div><p class="small-note">Arithmetic illustration, not a positioning algorithm. Real systems estimate uncertainty and combine measurements; a reference update is not a universal guarantee of exact position.</p></section>
+
 </div>
-<aside class="inspector" aria-label="Component inspector"><div class="inspector-search"><label for="component-search">Find equipment</label><input id="component-search" type="search" autocomplete="off" placeholder="Try radio, brakes, HVAC…" aria-label="Find a component"><div id="search-results" hidden></div></div><div id="component-detail"></div><div id="lesson-detail" hidden></div></aside>
 </div>
 <section class="component-section"><div class="section-heading"><div><p class="eyebrow" id="component-eyebrow"></p><h2 id="component-heading">Explore the components.</h2></div><button id="component-scope" aria-pressed="false">Browse the whole area</button></div><div id="component-grid" class="component-grid"></div></section>
 </div></div></section>

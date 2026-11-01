@@ -3,11 +3,11 @@ export const ABOUT_HTML = `
   <section>
     <h3>Understanding how a railway fits together</h3>
     <p>Railway Anatomy is a growing public learning project about railway places, vehicles, equipment, interfaces and people. It is intended especially for graduates, newcomers and anyone exploring another railway discipline.</p>
-    <p>Start with the connected railway, enter a place or system, then inspect its parts and follow their relationships. The aim is to make those connections easier to understand and to provide useful public reading for further study.</p>
+    <p>Start with the connected railway, enter a place or system, then inspect its parts and follow their relationships. The project grew out of the need to help new graduates entering railway work in Canada build that first picture of the system. It also aims to share railway engineering knowledge with a wider public and provide useful reading for further study.</p>
   </section>
   <section>
     <h3>A representation for each question</h3>
-    <p>Original 3D schematics explain physical equipment, assemblies and selected mechanisms. Two-dimensional diagrams explain communications relationships, stakeholder contributions and processes such as configuration change and handover. Role descriptions connect the equipment with people and responsibilities.</p>
+    <p>Original 3D schematics explain physical equipment, assemblies and selected mechanisms. Two-dimensional diagrams explain information paths, electrical principles, stakeholder contributions and processes such as configuration change and handover. Role descriptions connect the equipment with people and responsibilities.</p>
     <p>These are selected teaching examples. Geometry, proportions and animations do not reproduce an installed railway or establish performance, operating instructions, staffing requirements or approval authority.</p>
   </section>
   <section>

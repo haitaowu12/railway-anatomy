@@ -2,7 +2,12 @@ import {SHORT_LABELS as shortLabels} from './labels.js';
 import {DEFAULT_TECHNOLOGY,PROPULSION_CHOICES,CONTROL_CHOICES,normalizeTechnology,technologyFromUrl,technologyForView,technologyForComponent,controlRoute,technologyNote,technologyFlow} from './technology.js';
 import {NAVIGATION_GROUPS,VIEW_GROUPS,VIEW_PARENTS,domainForView,viewTrail,routeState,PROPULSION_EFFECTS,CONTROL_EFFECTS} from './navigation.js';
 import {NETWORK_DESTINATIONS} from './network-data.js';
-import {technologyControlsFor,comparisonLabel,animationFor,canAnimate,placeModelLabels} from './comparisons.js';
+import {technologyControlsFor,comparisonLabel,animationFor,canAnimate} from './comparisons.js';
+import {phaseFraction,motionStep,placeModelPins} from './interaction-state.js';
+import {PLATFORM_EDGES,PLATFORM_SENSORS,normalizePlatformState,platformForComponent,platformVariantAvailable} from './platform-config.js';
+import {OCC_EQUIPMENT_BY_VIEW,OCC_INFORMATION_BY_VIEW} from './occ-data.js';
+import {platformAnimationFor} from './station-platform-data.js';
+import {electricalStudy,electricalMarkup,updateElectricalDiagram} from './electrical-explainers.js';
 import {DEFAULT_ELECTRIFICATION,ELECTRIFICATION_CHOICES,normalizeElectrification,electrificationForComponent,electrificationProfile,electrificationNote,electrificationFlow} from './electrification.js';
 import {PROCESS_VIEWS,PEOPLE_ROLES,TRAIN_CONTROL_TAXONOMY} from './process-data.js';
 import {PROCESS_REDIRECTS,PROCESS_COMPONENTS,processFor,renderProcessPage,renderPeoplePage} from './process-ui.js';
@@ -19,7 +24,7 @@ const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
 const sources=new Map(SOURCES.map(s=>[s.id,s]));
 let savedTechnology={};try{savedTechnology=JSON.parse(localStorage.getItem('railway-anatomy-technology-v1')||'{}');}catch{}
-let state={technology:technologyFromUrl(location.search,savedTechnology),electrification:normalizeElectrification(new URLSearchParams(location.search).get('electrification')),presentation:'equipment',processId:'configuration-change',processStep:'',roleId:'traffic-coordinator',page:'explore',domain:'network',view:'railway',component:'network-overview',mode:'coasting',scenario:'nominal',variant:'movement',sink:'train',cutaway:true,exploded:0,explodeScope:'all',playing:false,labels:true,labelMode:'nearby',lesson:0};
+let state={technology:technologyFromUrl(location.search,savedTechnology),electrification:normalizeElectrification(new URLSearchParams(location.search).get('electrification')),platformEdge:'open',platformSensor:'lidar',presentation:'equipment',processId:'configuration-change',processStep:'',roleId:'traffic-coordinator',page:'explore',domain:'network',view:'railway',component:'network-overview',mode:'coasting',scenario:'nominal',variant:'movement',sink:'train',cutaway:true,exploded:0,explodeScope:'all',playing:false,loop:false,labels:true,labelMode:'nearby',lesson:0};
 let historyMode='replace',returnContext=null,lastReadUrl='',allComponents=false,configurationEffect='',lastDetailKey='';
 let viewer=null, rendererStatus='', loadingViewer=false, labelFrame=0,lastLabelTime=0,lastExplorationContext='';
 let lessonAnswers={}, lessonAttempts={}, quizSelections={};
@@ -27,11 +32,29 @@ const progressKey='railway-anatomy-learning-v2';
 try{const saved=JSON.parse(localStorage.getItem(progressKey)||'{}');for(const t of TOURS){if(saved.completed?.[t.id]===true)lessonAnswers[t.id]=true;if(Number.isInteger(saved.choices?.[t.id])&&saved.choices[t.id]>=0&&saved.choices[t.id]<t.choices.length)quizSelections[t.id]=saved.choices[t.id];if(Number.isFinite(saved.attempts?.[t.id]))lessonAttempts[t.id]=Math.max(0,saved.attempts[t.id]);}}catch{}
 function saveProgress(){try{localStorage.setItem(progressKey,JSON.stringify({completed:lessonAnswers,choices:quizSelections,attempts:lessonAttempts}));}catch{}}
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+const wideSearch=matchMedia('(min-width:741px)');
+const searchPanel=$('#equipment-search-panel');if(searchPanel){searchPanel.open=wideSearch.matches;wideSearch.addEventListener('change',e=>{searchPanel.open=e.matches;});}
 const labelElements=new Map();
-let labelLayoutKey='',stableLabelPositions=[];
+let labelLayoutKey='',lastSequenceKey='',lastTopologyStep='';
 const isProcessPage=()=>state.page==='processes'||state.page==='people'||state.page==='learn'&&Boolean(processFor(state.view,state.component));
 const currentTopology=()=>VIEWS[state.view]?.variants?.find(v=>v.id===state.variant)?.topology||null;
-const flowFor=()=>electrificationFlow(state,technologyFlow(state,describeFlow(state)));
+const isConnections=()=>state.presentation==='connections'&&Boolean(currentTopology()||electricalStudy(state.view));
+const guideForState=()=>state.view==='platform-interface'?platformAnimationFor(state):animationFor(VIEWS[state.view],state.variant);
+const preferredPresentation=(view,variant)=>VIEWS[view]?.variants?.find(v=>v.id===variant)?.defaultPresentation||VIEWS[view]?.defaultPresentation||(view==='communications-overview'?'connections':'equipment');
+function syncPlatform({fromComponent=false,legacy=false}={}){
+  if(state.view!=='platform-interface')return;
+  const input={...state,platformEdge:legacy?new URLSearchParams(location.search).get('platformEdge'):state.platformEdge};
+  const next=fromComponent?platformForComponent(state.component,input):normalizePlatformState(input);
+  Object.assign(state,{platformEdge:next.platformEdge,platformSensor:next.platformSensor,variant:next.variant});
+  if(next.notice)configurationEffect=next.notice;
+}
+function equipmentInView(id){const allowed=OCC_EQUIPMENT_BY_VIEW[state.view];return !allowed||allowed.includes(id);}
+const flowFor=()=>{
+  const base=electrificationFlow(state,technologyFlow(state,describeFlow(state)));
+  if(state.view==='platform-interface'&&state.variant==='platform-doors'&&state.platformEdge==='open')return {...base,title:'Train doors at an open boarding edge',nodes:['Train-door request','Platform-facing leaves','Boarding opening','Leaves close'],description:'The contextual train shows one-sided leaf movement beside an open edge. No platform-door drive, lock or returned platform locking indication is fitted. Train locking and departure logic are outside this mechanism.',sources:['P09']};
+  if(isConnections()&&electricalStudy(state.view))return {...base,title:electricalStudy(state.view).title,nodes:state.view==='power-transformer'?['Primary voltage','Changing shared flux','Secondary voltage']:['Three AC phases','Highest / lowest pair','Conducting diodes','DC output with ripple'],description:state.view==='power-transformer'?'The electrically separate winding circuits link the same changing magnetic flux. Compare the waveforms, then switch to Equipment to inspect the core and windings.':'The highlighted diode pair connects the highest instantaneous phase to the positive bus and the lowest to the return. The resulting voltage remains positive and contains six pulses per input cycle.',sources:electricalStudy(state.view).sources};
+  return base;
+};
 const modelNote=()=>electrificationNote(state)||technologyNote(state,VIEWS[state.view].note);
 
 
@@ -41,7 +64,10 @@ function focusVisible(selector){const node=$$(selector).find(el=>!el.closest('[h
 function rememberCurrentEntry(){history.replaceState({railway:routeState(state),returnContext},'',location.href);}
 function writeHash(){
   const value=state.page==='people'?`people/${state.roleId||'traffic-coordinator'}`:state.page==='processes'?`processes/${state.processId}/${state.processStep||''}`:state.page==='reference'?'reference':state.page==='learn'?`learn/${TOURS[state.lesson].id}`:`explore/${state.domain}/${state.view}/${state.component}${state.variant!=='default'?'/'+state.variant:''}`;
-  const url=new URL(location.href);url.searchParams.set('propulsion',state.technology.propulsion);url.searchParams.set('control',state.technology.control);if(state.electrification&&state.electrification!==DEFAULT_ELECTRIFICATION)url.searchParams.set('electrification',state.electrification);else url.searchParams.delete('electrification');if(state.presentation==='connections')url.searchParams.set('presentation','connections');else url.searchParams.delete('presentation');url.hash=value;
+  const url=new URL(location.href);url.searchParams.set('propulsion',state.technology.propulsion);url.searchParams.set('control',state.technology.control);if(state.electrification&&state.electrification!==DEFAULT_ELECTRIFICATION)url.searchParams.set('electrification',state.electrification);else url.searchParams.delete('electrification');
+  if(state.presentation!==preferredPresentation(state.view,state.variant))url.searchParams.set('presentation',state.presentation);else url.searchParams.delete('presentation');
+  for(const key of ['platformEdge','platformSensor']){if(state.view==='platform-interface'||state[key]!==({platformEdge:'open',platformSensor:'lidar'})[key])url.searchParams.set(key,state[key]);else url.searchParams.delete(key);}
+  url.hash=value;
   for(const [key,value,initial] of [['mode',state.mode,['power','vehicle'].includes(state.domain)?'motoring':'coasting'],['scenario',state.scenario,'nominal'],['sink',state.sink,'train']]){
     if(value!==initial)url.searchParams.set(key,value);else url.searchParams.delete(key);
   }
@@ -54,7 +80,8 @@ function readHash(){
   const [page,a,b,c,v]=location.hash.slice(1).split('/');
   state.technology=technologyFromUrl(location.search,savedTechnology);
   state.electrification=normalizeElectrification(new URLSearchParams(location.search).get('electrification'));
-  state.presentation=new URLSearchParams(location.search).get('presentation')==='connections'?'connections':'equipment';
+  const query=new URLSearchParams(location.search);
+  state.platformSensor=query.get('platformSensor')||'lidar';state.platformEdge=query.get('platformEdge')||'open';
   if(page==='people'){state.page='people';state.roleId=PEOPLE_ROLES.some(r=>r.id===a)?a:PEOPLE_ROLES[0].id;}
   else if(page==='processes'){state.page='processes';state.processId=PROCESS_VIEWS[a]?a:'configuration-change';state.processStep=PROCESS_VIEWS[state.processId].steps.some(s=>s.id===b)?b:PROCESS_VIEWS[state.processId].steps[0].id;}
   else if(page==='reference'){state.page='reference';}
@@ -78,7 +105,9 @@ function readHash(){
   state.technology=technologyForView(technologyForComponent(state.technology,state.component),state.view,state.variant);
   if(!state.view?.startsWith('power-'))state.electrification=electrificationForComponent(state.electrification,state.component);
   const redirected=(state.view==='depot-support'&&state.variant==='planning'?'maintenance-release':null)||(['operations-centre','occ-workplace'].includes(state.view)&&state.variant==='handover'?'duty-handover':state.view==='operations-centre'&&state.variant==='incident'?'incident-coordination':null)||processFor(state.view,state.component);if(state.page==='explore'&&redirected){state.page='processes';state.processId=redirected;state.processStep=PROCESS_VIEWS[redirected].steps[0].id;}
-  configurationEffect='';allComponents=false;
+  configurationEffect='';allComponents=false;state.playing=false;state.loop=false;
+  syncPlatform({legacy:true});
+  state.presentation=['connections','equipment'].includes(query.get('presentation'))?query.get('presentation'):preferredPresentation(state.view,state.variant);
 }
 
 function activeDomain(){return DOMAINS.find(d=>d.id===state.domain);}
@@ -86,10 +115,10 @@ function syncViewer(changedView=false){
   if(!viewer)return;
   if(isProcessPage()||state.page==='reference'){viewer.setPlaying(false);return;}
   if(!canAnimate(VIEWS[state.view],state.variant))state.playing=false;
-  const context=[state.view,state.variant,state.component,state.technology.propulsion,state.technology.control,state.electrification].join('/');
+  const context=[state.view,state.variant,state.component,state.technology.propulsion,state.technology.control,state.electrification,state.platformEdge,state.platformSensor].join('/');
   if(lastExplorationContext&&context!==lastExplorationContext&&state.explodeScope==='selected'){state.exploded=0;state.explodeScope='all';}
   lastExplorationContext=context;
-  viewer.setTechnology(state.technology);viewer.setElectrification?.(state.electrification);
+  viewer.setTechnology(state.technology);viewer.setElectrification?.(state.electrification);viewer.setPlatform?.(state);
   if(changedView||viewer.getView?.()!==state.view)viewer.setView(state.view);
   viewer.setVariant(state.variant);viewer.setMode(state.mode);viewer.setScenario(state.scenario);viewer.setReceptivity(state.sink);
   viewer.setSelected(['network-overview','depot-layout','operations-centre'].includes(state.component)?null:targetFor(state.component));
@@ -98,16 +127,24 @@ function syncViewer(changedView=false){
   state.explodeScope=viewer.setExplodeScope?.(requestedScope)||'all';
   if(requestedScope==='selected'&&state.explodeScope!=='selected')state.exploded=0;
   viewer.setExploded(state.exploded);viewer.setSignals(['track','control','communications','station','operations','depot'].includes(state.domain));
+  const sequenceKey=[state.view,state.variant,state.platformEdge,state.platformSensor].join('/');
+  if(sequenceKey!==lastSequenceKey){state.playing=false;state.loop=Boolean(guideForState()?.loop);viewer.setPhase(0);lastSequenceKey=sequenceKey;lastTopologyStep='';}
+  viewer.setPlayback({duration:guideForState()?.duration||12,loop:state.loop});
   state.playing=viewer.setPlaying(state.playing);syncControls();
 }
 function syncControls(){
   const presentation=viewer?.getExplorationState?.();
   if(presentation){state.exploded=presentation.exploded;state.explodeScope=presentation.explodeScope;}
   $('#cutaway').checked=state.cutaway;$('#explode').value=state.exploded;$('#label-density').value=state.labels?(state.labelMode||'nearby'):'off';
-  $('#play').textContent=state.playing?'Ⅱ Pause':'▶ Animate';$('#play').setAttribute('aria-pressed',String(state.playing));
+  state.playing=viewer?.getPlaying?.()||false;
+  $('#play').textContent=state.playing?'Ⅱ Pause':viewer?.getPhase?.()>=5?'↻ Replay':'▶ Play sequence';$('#play').setAttribute('aria-pressed',String(state.playing));
   $('#play').disabled=reducedMotion.matches;
   $('.animation').hidden=!canAnimate(VIEWS[state.view],state.variant);
-  $('#play').title=reducedMotion.matches?'Reduced motion is enabled. Use the phase slider to inspect each state.':'Animate the model';
+  if($('.sequence-panel'))$('.sequence-panel').hidden=!canAnimate(VIEWS[state.view],state.variant);
+  if($('#motion-loop'))$('#motion-loop').checked=Boolean(state.loop);
+  $('#play').title=reducedMotion.matches?'Reduced motion is enabled. Use the steps or slider to inspect each state.':'Play the illustrated sequence';
+  if($('#quick-play')){const quick=$('#quick-play');quick.hidden=!canAnimate(VIEWS[state.view],state.variant)||isConnections();quick.textContent=$('#play').textContent;quick.disabled=reducedMotion.matches;quick.setAttribute('aria-pressed',String(state.playing));}
+  if($('#diagram-quick-play')){const quick=$('#diagram-quick-play');quick.hidden=!canAnimate(VIEWS[state.view],state.variant);quick.textContent=$('#play').textContent;quick.disabled=reducedMotion.matches;quick.setAttribute('aria-pressed',String(state.playing));}
   const capabilities=viewer?.getViewCapabilities();
   $('#cutaway').closest('label').hidden=state.view==='railway'||capabilities?.cutaway===false;$('#separation-controls').hidden=state.view==='railway'||capabilities?.explode===false;
   const selected=targetFor(state.component),overview=['network-overview','depot-layout','operations-centre'].includes(selected);
@@ -123,7 +160,7 @@ function syncControls(){
   $('#exploration-note').hidden=!(current?.isolation||current?.explodeScope==='selected');
   $('#exploration-note').textContent=current?.explodeScope==='selected'?`${exploration?.internalSeparationCount||exploration?.separatedPartCount||0} separable internal parts in this assembly. Other equipment stays assembled.`:current?.isolation?'Showing the selected assembly. Restore the scene to see its surrounding equipment.':'';
   updateMotionGuide();
-  $('#render-badge').textContent=rendererStatus==='svg'?'Schematic · SVG':'Schematic · 3D';
+  $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':'Information diagram'):rendererStatus==='svg'?'Schematic · SVG':'Schematic · 3D';
 }
 function renderNavigation(){
   $$('.main-nav [data-page]').forEach(b=>{if(b.dataset.page===(state.page==='people'?'processes':state.page))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
@@ -153,6 +190,11 @@ function renderNavigation(){
   $('#propulsion-choice').disabled=!controls.propulsion;$('#control-choice').disabled=!controls.control;
   $('#propulsion-choice').value=state.technology.propulsion;$('#control-choice').value=state.technology.control;
   $('#propulsion-context label').textContent=state.view==='guideway'?'Guideway propulsion interface':'Drive arrangement';
+  if($('#platform-context')){
+    $('#platform-context').hidden=!['platform-interface','station'].includes(state.view);
+    $('#platform-edge-choice').value=state.platformEdge;$('#platform-sensor-choice').value=state.platformSensor;
+    $('#platform-sensor-context').hidden=state.view!=='platform-interface'||state.variant!=='open-platform';
+  }
   $('#configuration-effect').hidden=!configurationEffect;$('#configuration-effect').textContent=configurationEffect;
   $('#model-key').textContent=modelNote()+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');
   $('#tour-bar').hidden=state.page!=='learn';
@@ -161,28 +203,30 @@ function renderNavigation(){
 
 function renderDetail(){
   const c=parts.get(state.component);
-  if(lastDetailKey!==state.component){$('.inspector').scrollTop=0;lastDetailKey=state.component;}
+  if(lastDetailKey!==state.component)lastDetailKey=state.component;
   const related=(RELATED[c.id]||activeDomain().parts.filter(id=>id!==c.id).slice(0,3)).filter(id=>parts.has(id));
   const contexts=[...new Set([viewFor(c.id),...(PART_CONTEXTS[c.id]||[])])].filter(id=>VIEWS[id]&&id!==state.view&&!PROCESS_REDIRECTS[id]);
   const level=({'network-overview':'Railway','network-route':'Route','network-station':'Place','network-turnback':'Track connection','network-train':'Vehicle','network-depot':'Facility','network-maintenance':'Facility','network-stabling':'Area','network-control-centre':'Facility','network-substation':'Subsystem','network-telecommunications':'System','depot-layout':'Facility','operations-centre':'Facility'})[c.id]||'Equipment';
   const destination=NETWORK_DESTINATIONS[c.id];
-  $('#selection-summary').innerHTML=`<strong>${safe(shortLabels[c.id]||c.label)}</strong><button id="read-selection">Read explanation</button>${destination?`<button data-destination="${c.id}">Explore area →</button>`:''}`;
+  $('#selection-summary').innerHTML=`<div><strong>${safe(shortLabels[c.id]||c.label)}</strong><p>${safe(c.summary)}</p></div><div class="selection-actions">${state.page==='learn'?`<button data-explore-component="${c.id}">Explore this equipment</button>`:'<button id="read-selection">Read explanation</button>'}${destination?`<button data-destination="${c.id}">Explore area →</button>`:''}</div>`;
   const drilldown=destination?`<button class="open-area" data-destination="${c.id}">Explore ${safe(VIEWS[destination.view]?.label||c.label)} →</button>`:'';
-  const anchor=targetFor(c.id)!==c.id?`<p class="practice-note">Model anchor: ${safe(parts.get(targetFor(c.id))?.label||targetFor(c.id))}. This concept is shown in its equipment context.</p>`:'';
+  const anchor=!isConnections()&&targetFor(c.id)!==c.id?`<p class="practice-note">Model anchor: ${safe(parts.get(targetFor(c.id))?.label||targetFor(c.id))}. This concept is shown in its equipment context.</p>`:'';
   $('#component-detail').innerHTML=`<p class="part-kicker">${safe(domainFor(c.id).label)} / ${level}</p><h2 class="part-title">${safe(c.label)}</h2><p class="part-summary">${safe(c.summary)}</p>${drilldown}${anchor}<h3 class="detail-heading">How it works</h3>${c.details.map(p=>`<p class="part-detail">${safe(p)}</p>`).join('')}${c.caveat?`<details class="part-scope"><summary>Scope of this example</summary><p class="part-note">${safe(c.caveat)}</p></details>`:''}<h3 class="detail-heading">Interfaces & connected equipment</h3><div class="related">${related.map(id=>`<button data-component="${id}">${safe(shortLabels[id]||parts.get(id).label)}</button>`).join('')}</div>${contexts.length?`<h3 class="detail-heading">Inspect at another scale</h3><div class="related">${contexts.map(id=>`<button data-inspect-view="${id}">${safe(VIEWS[id].label)}</button>`).join('')}</div>`:''}${sourceChips(c.sources)}${c.sources.length?'':'<p class="practice-note">A declared teaching-model choice; no equipment specification is implied.</p>'}<div class="inspector-links"><button data-focus="${targetFor(c.id)}">Locate in model</button><button data-reference="${c.id}">Read in field guide →</button></div>`;
   const guides=READING_GUIDES.filter(g=>g.domain===state.domain&&(!g.view||g.view===state.view));
   if(guides.length)$('#component-detail').insertAdjacentHTML('beforeend',`<div class="system-reading">${guides.map(g=>`<button data-reading-guide="${g.id}">${safe(g.title)} →</button>`).join('')}</div>`);
   $('#component-detail').hidden=state.page==='learn';$('#lesson-detail').hidden=state.page!=='learn';
+  if($('#component-explanation'))$('#component-explanation').hidden=state.page==='learn';
   const visible=new Set(viewer?.getVisibleComponentIds()||[]);
-  const candidates=allComponents?activeDomain().parts:[...new Set([...activeDomain().parts,...CONCEPTS.map(c=>c.id)])];
-  const current=candidates.filter(id=>!PROCESS_COMPONENTS[id]&&(allComponents||!viewer||visible.has(targetFor(id))));
+  const candidates=allComponents||!viewer?activeDomain().parts:[...new Set([...activeDomain().parts,...CONCEPTS.map(c=>c.id)])];
+  const information=new Set(currentTopology()?.nodes.map(n=>n.component)||(electricalStudy(state.view)?viewer?.getComponentIds(state.view):OCC_INFORMATION_BY_VIEW[state.view])||[]);
+  const current=candidates.filter(id=>!PROCESS_COMPONENTS[id]&&(allComponents||(isConnections()?information.has(id):equipmentInView(id)&&(!viewer||visible.has(targetFor(id))))));
   $('#component-eyebrow').textContent=`${activeDomain().label} / ${current.length} ${allComponents?'components':'in this view'}`;
-  $('#component-heading').textContent=allComponents?'Equipment in this area':'Equipment in this view';
+  $('#component-heading').textContent=allComponents?'Equipment in this area':isConnections()?'Information and connected equipment':'Equipment in this view';
   $('#component-scope').textContent=allComponents?'Show this view only':'Browse the whole area';$('#component-scope').setAttribute('aria-pressed',String(allComponents));
-  $('#component-grid').innerHTML=current.map((id,i)=>{const p=parts.get(id);return `<button data-component="${id}" class="${id===c.id?'active':''}" aria-pressed="${id===c.id}"><span class="component-number">${String(i+1).padStart(2,'0')}</span><span><strong>${safe(p.label)}</strong><small>${safe(p.summary)}</small></span><span class="row-arrow" aria-hidden="true">↗</span></button>`;}).join('');
+  $('#component-grid').innerHTML=current.map((id,i)=>{const p=parts.get(id);return `<button data-component="${id}" class="${id===c.id?'active':''}" aria-pressed="${id===c.id}"><span class="component-number">${modelNumber(id)}</span><span><strong>${safe(p.label)}</strong><small>${safe(p.summary)}</small></span><span class="row-arrow" aria-hidden="true">↗</span></button>`;}).join('');
 }
 function renderScenario(){
-  const flow=flowFor(),variants=VIEWS[state.view].variants?.filter(v=>v.presentation!=='process'),electrical=!variants&&(['power','vehicle'].includes(state.domain)&&state.view!=='services'||state.view==='guideway');
+  const flow=flowFor(),variants=VIEWS[state.view].variants?.filter(v=>v.presentation!=='process'&&(state.view!=='platform-interface'||platformVariantAvailable(v.id,state.platformEdge))),electrical=!variants&&(['power','vehicle'].includes(state.domain)&&state.view!=='services'||state.view==='guideway');
   $('.arrangement-bar').hidden=variants?.length===1;
   $('#arrangement-label').textContent=comparisonLabel(state.view,Boolean(variants),electrical);
   $('#scenario-heading').textContent=variants?'How this arrangement works':electrical?'Follow the energy':state.domain==='control'?'Trace the decisions':state.domain==='communications'?'Follow the messages':'Explore the supporting systems';
@@ -195,21 +239,38 @@ function renderScenario(){
   $('#sensor-lab').hidden=!(state.domain==='control'&&(state.scenario==='wheel-slip'||['tachometer','accelerometer','balise'].includes(state.component)));
 }
 function updateMotionGuide(){
-  const guide=animationFor(VIEWS[state.view],state.variant),phase=viewer?.getPhase?.()||0;
-  const fraction=!state.playing&&phase===5?1:((phase%5)+5)%5/5;
+  const guide=guideForState(),phase=viewer?.getPhase?.()||0;
+  const fraction=phaseFraction(phase);
+  const playing=viewer?.getPlaying?.()||false;
+  if(state.playing!==playing){state.playing=playing;$('#play').textContent=playing?'Ⅱ Pause':phase>=5?'↻ Replay':'▶ Play sequence';$('#play').setAttribute('aria-pressed',String(playing));for(const quick of $$('#quick-play,#diagram-quick-play')){quick.textContent=$('#play').textContent;quick.setAttribute('aria-pressed',String(playing));}}
   if(document.activeElement!==$('#phase'))$('#phase').value=String(fraction);
   $('#phase-value').value=`${Math.round(fraction*100)}%`;
   $('#motion-guide').hidden=!guide;
   if(!guide)return;
   $('#motion-title').textContent=guide.label;
-  const steps=guide.steps||[],index=steps.reduce((best,step,i)=>fraction+.001>=step.at?i:best,0);
-  const key=`${state.view}/${state.variant}`;
+  const steps=guide.steps||[],index=motionStep(steps,fraction);
+  $('#phase-value').value=`${index+1} / ${steps.length}`;$('#phase').setAttribute('aria-valuetext',`${steps[index]?.label||'Sequence'}; ${Math.round(fraction*100)} percent`);
+  const key=[state.view,state.variant,state.platformEdge,state.platformSensor,guide.label].join('/');
   if($('#motion-steps').dataset.guide!==key){
     $('#motion-steps').dataset.guide=key;
     $('#motion-steps').innerHTML=steps.map((step,i)=>`<button data-motion-phase="${step.at}" data-motion-step="${i}">${safe(step.label)}</button>`).join('');
   }
   $$('#motion-steps button').forEach((b,i)=>{b.classList.toggle('active',i===index);b.setAttribute('aria-pressed',String(i===index));});
   $('#motion-caption').textContent=steps[index]?.description||'';
+  if($('#motion-previous'))$('#motion-previous').disabled=fraction<=0;
+  if($('#motion-next'))$('#motion-next').disabled=fraction>=1;
+  if(isConnections()&&currentTopology())updateTopologyStep(steps[index],`${key}/${index}`);
+  if(electricalStudy(state.view))updateElectricalDiagram($('#connections-view'),state.view,fraction);
+}
+function seekSequence(fraction){if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Math.max(0,Math.min(1,fraction))*5);syncControls();updateLabels();}
+function stepSequence(direction){const guide=guideForState(),fraction=phaseFraction(viewer?.getPhase?.()||0),steps=guide?.steps||[];
+  const next=direction>0?steps.find(s=>s.at>fraction+.001):[...steps].reverse().find(s=>s.at<fraction-.001);seekSequence(next?.at??(direction>0?1:0));}
+function updateTopologyStep(step,key){
+  if(!step||key===lastTopologyStep)return;lastTopologyStep=key;
+  const nodes=new Set(step.activeNodes||[]),edges=new Set(step.activeEdges||[]);
+  $$('#connections-view [data-topology-node]').forEach(node=>{const id=node.dataset.topologyNode;node.classList.toggle('active-step',nodes.has(id));const out=node.querySelector('.node-state');if(out)out.textContent=step.states?.[id]||'';});
+  $$('#connections-view [data-topology-edge]').forEach(edge=>edge.classList.toggle('active-step',edges.has(Number(edge.dataset.topologyEdge))));
+  const out=$('#connection-state');if(out){out.textContent=step.description;out.hidden=false;}
 }
 function renderLesson(){
   if(state.page!=='learn')return;
@@ -243,28 +304,28 @@ function renderSystemContext(){
   const orientation=$('#control-orientation'),taxonomy=TRAIN_CONTROL_TAXONOMY;
   orientation.hidden=state.domain!=='control'||state.view!=='control';
   if(!orientation.hidden)orientation.innerHTML=`<h2>Three routes into train control</h2><p>Choose an architecture family, then examine the functions and equipment it uses. Detection and interlocking connect several families.</p><div class="control-families">${taxonomy.families.map(f=>`<section><h3>${safe(f.label)}</h3><p>${safe(f.summary)}</p><button data-view="${f.views[0]}">Explore ${safe(f.label)} →</button></section>`).join('')}</div><details class="control-taxonomy"><summary>Functions, shared equipment & supplier examples</summary><h3>Functions are questions, not necessarily separate computers</h3>${taxonomy.functions.map(f=>`<p><strong>${safe(f.label)}</strong> — ${safe(f.question)} ${safe(f.qualification)}</p>`).join('')}<h3>Equipment shared across arrangements</h3><div class="shared-device-list">${taxonomy.sharedDevices.map(d=>`<section><button data-component="${d.id}">${safe(d.label)} ↗</button><p>${safe(d.use)}</p></section>`).join('')}</div><h3>Public supplier examples</h3>${taxonomy.supplierExamples.map(e=>`<section class="supplier-example"><h4>${safe(e.supplier)} / ${safe(e.label)}</h4><p>${safe(e.scope)} ${safe(e.lineage||'')}</p>${sourceChips(e.sources)}</section>`).join('')}<button data-people="all" class="text-link">Explore automation and people’s responsibilities →</button></details>`;
-  const roleIds={operations:['traffic-coordinator','signalling-controller','power-controller','incident-coordinator'],depot:['depot-coordinator','fleet-maintenance','maintenance-work'],station:['station-team'],vehicle:['onboard-operator'],power:['power-controller'],control:['signalling-controller']}[state.domain]||[];
-  const processIds={operations:['incident-coordination','duty-handover'],depot:['maintenance-release','worksite-handback'],track:['worksite-handback'],station:['incident-coordination'],power:['configuration-change']}[state.domain]||[];
-  const context=$('#people-context');context.hidden=!roleIds.length&&!processIds.length;
-  context.innerHTML=`<h3>People using this equipment</h3><div class="role-links">${roleIds.map(id=>`<button data-role="${id}">${safe(PEOPLE_ROLES.find(r=>r.id===id)?.label||id)} →</button>`).join('')}</div>${processIds.length?`<details><summary>Related processes</summary>${processIds.map(id=>`<button data-process="${id}">${safe(PROCESS_VIEWS[id].title)} →</button>`).join('')}</details>`:''}`;
+  // Roles, responsibilities and work sequences have their own top-level tab.
+  const context=$('#people-context');context.hidden=true;context.replaceChildren();
 }
 function renderConnections(){
-  const topology=currentTopology(),show=Boolean(topology&&state.presentation==='connections');
-  $('#presentation-switch').hidden=!topology;
+  const topology=currentTopology(),electrical=electricalStudy(state.view),show=isConnections();
+  $('#presentation-switch').hidden=!topology&&!electrical;
+  $('#presentation-switch [data-presentation="connections"]').textContent=electrical?'Electrical principle':state.domain==='operations'?'Information behaviour':'Connections';
   $$('#presentation-switch button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.presentation===(show?'connections':'equipment'))));
   $('.workspace-grid').classList.toggle('connections-mode',show);$('#connections-view').hidden=!show;
-  if(show)$('#connections-view').innerHTML=topologyMarkup(topology,state.component);
-  for(const selector of ['.stage','.selection-tools','.model-tools','.model-notes','#exploration-note','.animation','#motion-guide']){
-    const element=$(selector);if(show){if(element.dataset.beforeConnections===undefined)element.dataset.beforeConnections=String(element.hidden);element.hidden=true;}else if(element.dataset.beforeConnections!==undefined){element.hidden=element.dataset.beforeConnections==='true';delete element.dataset.beforeConnections;}
+  if(show){$('#connections-view').innerHTML='<button id="diagram-quick-play" class="diagram-quick-play" aria-pressed="false" hidden>Play sequence</button>'+(electrical?electricalMarkup(state.view):topologyMarkup(topology,state.component));lastTopologyStep='';}
+  for(const selector of ['.stage','.selection-tools','.model-tools','.model-notes','#exploration-note','.model-parts-key']){
+    const element=$(selector);if(!element)continue;if(show){if(element.dataset.beforeConnections===undefined)element.dataset.beforeConnections=String(element.hidden);element.hidden=true;}else if(element.dataset.beforeConnections!==undefined){element.hidden=element.dataset.beforeConnections==='true';delete element.dataset.beforeConnections;}
   }
-  if(!show)syncControls();
+  syncControls();
 }
 function render(changedView=false){
-  if(!isProcessPage()&&state.page!=='reference'&&!currentTopology())state.presentation='equipment';
+  if(!isProcessPage()&&state.page!=='reference'&&!currentTopology()&&!electricalStudy(state.view))state.presentation='equipment';
   const focused=document.activeElement;
-  const focusKey=focused?.matches('#domains button,#scenario-buttons button,#location-trail button,[data-process-step],[data-process],[data-role],[data-people],[data-presentation]')?['domain','view','variant','experiment','sink','processStep','process','role','people','presentation'].find(key=>focused.dataset[key]):null;
+  const focusScope=focused?.closest('#model-key-list')?'#model-key-list ':focused?.closest('#component-grid')?'#component-grid ':'';
+  const focusKey=focused?.matches('#domains button,#scenario-buttons button,#location-trail button,#model-key-list button,#component-grid button,[data-topology-component],[data-process-step],[data-process],[data-role],[data-people],[data-presentation]')?['domain','view','variant','experiment','sink','processStep','process','role','people','presentation','component','topologyComponent'].find(key=>focused.dataset[key]):null;
   const focusValue=focusKey?focused.dataset[focusKey]:null;
-  const restoreFocus=()=>{if(focusKey)focusVisible(`[data-${focusKey.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}="${focusValue}"]`);};
+  const restoreFocus=()=>{if(focusKey)focusVisible(`${focusScope}[data-${focusKey.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}="${focusValue}"]`);};
   if(isProcessPage()){
     state.playing=false;viewer?.setPlaying(false);renderNavigation();$('#lesson-detail').innerHTML='';
     if(state.page==='people')renderPeoplePage($('#processes-page'),state,{sourceChips});
@@ -284,46 +345,53 @@ function setDomain(id){
   const d=DOMAINS.find(d=>d.id===id);if(!d)return;
   returnContext=null;configurationEffect='';allComponents=false;
   state={...state,page:'explore',domain:id,view:d.view,component:d.component,scenario:'nominal',mode:['power','vehicle'].includes(id)?'motoring':'coasting',cutaway:cutawayFor(d.view),variant:defaultVariant(d.view),exploded:0};
-  state.presentation=id==='communications'?'connections':'equipment';
-  state.technology=technologyForView(state.technology,state.view,state.variant);render(true);announce(d.label);
+  state.presentation=preferredPresentation(state.view,state.variant);syncPlatform();
+  state.technology=technologyForView(state.technology,state.view,state.variant);render(true);orientToView();announce(d.label);
 }
 function setView(id){
-  if(!VIEWS[id])return;if(PROCESS_REDIRECTS[id]){openProcess(PROCESS_REDIRECTS[id]);return;}state.page=state.page==='learn'?'learn':'explore';state.presentation=id==='communications-overview'?'connections':'equipment';
+  if(!VIEWS[id])return;if(PROCESS_REDIRECTS[id]){openProcess(PROCESS_REDIRECTS[id]);return;}state.page=state.page==='learn'?'learn':'explore';
   state.domain=domainForView(id,DOMAINS,state.domain)?.id||state.domain;allComponents=false;configurationEffect='';
   state.view=id;state.variant=defaultVariant(id);state.scenario='nominal';state.mode=['power','vehicle'].includes(state.domain)?'motoring':'coasting';state.exploded=0;state.cutaway=cutawayFor(id);
+  state.presentation=preferredPresentation(id,state.variant);state.component=VIEWS[id].component;syncPlatform();
   state.technology=technologyForView(state.technology,id,state.variant);viewer?.setTechnology(state.technology);
   const candidates=viewer?.getComponentIds(id)||[];
   if(!candidates.includes(targetFor(state.component)))state.component=VIEWS[id].component;
-  viewer?.setView(id);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render(!viewer);
+  viewer?.setView(id);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render(!viewer);orientToView();
 }
+function orientToView(){if($('#component-explanation'))$('#component-explanation').open=false;requestAnimationFrame(()=>{const title=$('#scene-title');title?.setAttribute('tabindex','-1');title?.focus({preventScroll:true});$('#workspace')?.scrollIntoView({block:'start',behavior:'instant'});});}
 function chooseVisibleRepresentative(){
-  if(!viewer)return;const visible=viewer.getVisibleComponentIds();if(visible.includes(targetFor(state.component)))return;
+  if(isConnections()&&currentTopology()?.nodes.some(n=>n.component===state.component))return;
+  if(!viewer)return;const visible=viewer.getVisibleComponentIds();if(equipmentInView(state.component)&&visible.includes(targetFor(state.component)))return;
   const config=VIEWS[state.view],variant=config.variants?.find(x=>x.id===state.variant);
   const candidates=[variant?.component,config.component,...activeDomain().parts,...CONCEPTS.map(c=>c.id)];
-  const candidate=candidates.find(id=>parts.has(id)&&visible.includes(targetFor(id)));if(candidate){state.component=candidate;viewer.setSelected(targetFor(candidate));}
+  const candidate=candidates.find(id=>parts.has(id)&&equipmentInView(id)&&visible.includes(targetFor(id)));if(candidate){state.component=candidate;viewer.setSelected(targetFor(candidate));}
 }
 function selectComponent(id,{explore=state.page!=='learn',focus=false,primary=false}={}){
   if(!parts.has(id))return;const process=processFor(primary?viewFor(id):null,id);if(process){openProcess(process);return;}
   const origin=routeState(state),oldView=state.view,oldDomain=state.domain;
-  const destinationView=primary||!viewer?.getComponentIds(state.view).includes(targetFor(id))?viewFor(id):state.view;
+  const staysInDiagram=!primary&&isConnections()&&Boolean(currentTopology()?.nodes.some(n=>n.component===id)||electricalStudy(state.view)&&viewer?.getComponentIds(state.view).includes(targetFor(id)));
+  const destinationView=primary||!staysInDiagram&&!viewer?.getComponentIds(state.view).includes(targetFor(id))?viewFor(id):state.view;
   if(!destinationView.startsWith('power-'))state.electrification=electrificationForComponent(state.electrification,id);viewer?.setElectrification?.(state.electrification);
   state.technology=technologyForComponent(state.technology,id);viewer?.setTechnology(state.technology);
   const wasVisible=viewer?.getVisibleComponentIds().includes(targetFor(id));
   if(explore)state.page='explore';state.component=id;
-  if(primary||!viewer?.getComponentIds(state.view).includes(targetFor(id)))state.view=viewFor(id);
+  state.view=destinationView;
+  if(state.view==='station'&&id==='platform-screen-door'&&state.platformEdge==='open')state.platformEdge='full-height';
   if(state.view!==oldView){state.exploded=0;state.domain=domainForView(state.view,DOMAINS,domainFor(id).id)?.id||domainFor(id).id;returnContext=origin;allComponents=false;}
-  if(oldView!==state.view||!wasVisible){const desired=variantFor(id,state.view);state.variant=VIEWS[state.view].variants?.some(x=>x.id===desired)?desired:defaultVariant(state.view);}
+  if(!staysInDiagram&&(oldView!==state.view||!wasVisible)){const desired=variantFor(id,state.view);state.variant=VIEWS[state.view].variants?.some(x=>x.id===desired)?desired:defaultVariant(state.view);}
+  syncPlatform({fromComponent:true});if(oldView!==state.view)state.presentation=preferredPresentation(state.view,state.variant);
   state.technology=technologyForView(state.technology,state.view,state.variant);
   if(oldDomain!==state.domain&&state.page!=='learn'){state.scenario='nominal';state.mode=['power','vehicle'].includes(state.domain)?'motoring':'coasting';}
-  if(oldView!==state.view||['control','communications','station'].includes(state.domain))state.cutaway=cutawayFor(state.view)||state.view==='vehicle';
+  if(oldView!==state.view||!wasVisible&&!staysInDiagram)state.cutaway=cutawayFor(state.view)||state.view==='vehicle';
   render(oldView!==state.view);
-  if(focus)viewer?.focusComponent(targetFor(id));
+  if(focus)viewer?.focusComponent(targetFor(id));if(oldView!==state.view)orientToView();
   $('#search-results').hidden=true;$('#component-search').value='';
   announce(parts.get(id).label);
 }
 function applyLesson(doRender=true){
   const t=TOURS[state.lesson],a=t.action;
-  state={...state,presentation:a.presentation||(a.view==='communications-overview'?'connections':'equipment'),page:'learn',domain:t.domain,view:a.view||t.view,component:a.component||t.component,mode:a.mode||'motoring',scenario:a.scenario||'nominal',cutaway:a.cutaway??cutawayFor(t.view),variant:a.variant||defaultVariant(a.view||t.view),exploded:typeof a.exploded==='number'?a.exploded:a.exploded ? 0.35 : 0};
+  state={...state,presentation:a.presentation||preferredPresentation(a.view||t.view,a.variant||defaultVariant(a.view||t.view)),page:'learn',domain:t.domain,view:a.view||t.view,component:a.component||t.component,mode:a.mode||'motoring',scenario:a.scenario||'nominal',cutaway:a.cutaway??cutawayFor(t.view),variant:a.variant||defaultVariant(a.view||t.view),exploded:typeof a.exploded==='number'?a.exploded:a.exploded ? 0.35 : 0};
+  if(a.platformEdge)state.platformEdge=a.platformEdge;if(a.platformSensor)state.platformSensor=a.platformSensor;syncPlatform({fromComponent:true});
   state.technology=technologyForView(technologyForComponent(normalizeTechnology(a.technology||{},state.technology),state.component),state.view,state.variant);
   if(state.scenario==='radio-loss'&&!['loop','radio'].includes(state.technology.control))state.technology={...state.technology,control:'radio'};
   if(state.scenario==='regen-limited')state.sink='resistor';
@@ -347,47 +415,41 @@ function openSources(sourceId){
   $('#about-dialog').showModal();$('#dialog-body').scrollTop=0;
 }
 
+function pinIds(){return viewer?.getComponentIds(state.view).filter(id=>parts.has(id)&&equipmentInView(id)&&!['network-overview','depot-layout','operations-centre'].includes(id))||[];}
+function modelNumber(id){const index=pinIds().indexOf(targetFor(id));return index<0?'·':String(index+1).padStart(2,'0');}
+
 // Label nodes remain stable between frames so keyboard focus survives camera motion.
 function rebuildLabels(){
   if(!viewer)return;
-  const layer=$('#model-labels'),ids=viewer.getComponentIds(state.view);
-  for(const [id,nodes] of labelElements){if(!ids.includes(id)){nodes.button.remove();nodes.line.remove();labelElements.delete(id);}}
-  let svg=layer.querySelector('svg');if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('model-leaders');svg.setAttribute('aria-hidden','true');layer.prepend(svg);}
-  for(const id of ids){if(!parts.has(id)||labelElements.has(id))continue;
-    const button=document.createElement('button');button.className='model-label';button.dataset.component=id;button.textContent=shortLabels[id]||parts.get(id).label;button.setAttribute('aria-label',`Inspect ${parts.get(id).label}`);button.title=parts.get(id).label;layer.append(button);
-    const line=document.createElementNS('http://www.w3.org/2000/svg','line');svg.append(line);labelElements.set(id,{button,line});
+  const layer=$('#model-labels'),ids=pinIds();
+  for(const [id,nodes] of labelElements){if(!ids.includes(id)){nodes.button.remove();labelElements.delete(id);}}
+  for(const [index,id] of ids.entries()){
+    let nodes=labelElements.get(id);
+    if(!nodes){const button=document.createElement('button');button.className='model-pin';button.dataset.component=id;button.title=parts.get(id).label;layer.append(button);nodes={button};labelElements.set(id,nodes);}
+    nodes.number=index+1;nodes.button.textContent=String(index+1).padStart(2,'0');nodes.button.setAttribute('aria-label',`${index+1}. Inspect ${parts.get(id).label}`);
   }
+  const visible=new Set(viewer.getVisibleComponentIds()),selected=targetFor(state.component);
+  if($('#model-key-list'))$('#model-key-list').innerHTML=ids.filter(id=>visible.has(id)).map(id=>`<button class="part-key-item" data-component="${id}" aria-pressed="${id===selected}"><span class="part-key-number" aria-hidden="true">${String(labelElements.get(id).number).padStart(2,'0')}</span><span class="part-key-label">${safe(shortLabels[id]||parts.get(id).label)}</span></button>`).join('');
   updateLabels();
 }
 function updateLabels(){
-  if(!viewer||state.page==='reference'||isProcessPage()||state.presentation==='connections'&&currentTopology())return;
-  const stage=$('.stage'),width=$('#viewer').clientWidth,height=$('#viewer').clientHeight;
-  for(const {button,line} of labelElements.values()){button.hidden=true;line.style.display='none';}
-  if(!state.labels)return;
+  if(!viewer||state.page==='reference'||isProcessPage()||isConnections())return;
+  const width=$('#viewer').clientWidth,height=$('#viewer').clientHeight;
   const selected=targetFor(state.component),preferred=new Set(activeDomain().parts.map(targetFor));
-  const priorities=state.view==='railway'?new Set(['network-station','network-depot','network-control-centre','network-substation','network-train','network-turnback']):state.view==='operations-centre'?new Set(['operations-equipment-room','occ-shared-display','operations-traffic-supervision','operations-power-control','operations-station-supervision','occ-duty-handover']):preferred;
+  const priorities=state.view==='railway'?new Set(['network-station','network-depot','network-control-centre','network-substation','network-train','network-turnback']):state.view==='operations-centre'?new Set(['operations-equipment-room','occ-shared-display','occ-console','occ-communications','occ-cable-route']):preferred;
   const points=viewer.getComponentScreenPositions()
-    .filter(p=>labelElements.has(p.id)&&!['network-overview','depot-layout','operations-centre'].includes(p.id)&&(state.labelMode!=='selected'||p.id===selected))
-    .sort((a,b)=>(a.id===selected?-1000:priorities.has(a.id)?-100:0)-(b.id===selected?-1000:priorities.has(b.id)?-100:0));
-  const limit=state.labelMode==='selected'?1:width<450?3:width<850?5:6;
-  const measured=points.slice(0,Math.max(limit*2,12)).map(point=>{
-    const button=labelElements.get(point.id).button;
-    button.hidden=false;button.style.visibility='hidden';
-    const rect=button.getBoundingClientRect();button.hidden=true;button.style.visibility='';
-    return {...point,width:rect.width,height:rect.height};
+    .filter(p=>labelElements.has(p.id)&&(state.labelMode!=='selected'||p.id===selected))
+    .sort((a,b)=>(a.id===selected?-1000:priorities.has(a.id)?-100:0)-(b.id===selected?-1000:priorities.has(b.id)?-100:0)||labelElements.get(a.id).number-labelElements.get(b.id).number);
+  const positions=state.labels?placeModelPins(points,{width,height,top:$('#quick-play')?.getClientRects().length?58:12,bottom:$('.stage-footer').getBoundingClientRect().height+10,radius:matchMedia('(pointer:coarse)').matches?18:15,limit:state.labelMode==='selected'?1:width<500?5:12}):[];
+  const placed=new Set(positions.map(p=>p.id));
+  for(const [id,{button}] of labelElements)button.hidden=!placed.has(id);
+  for(const p of positions){const {button}=labelElements.get(p.id);button.hidden=false;button.style.left=`${p.x}px`;button.style.top=`${p.y}px`;button.classList.toggle('selected',p.id===selected);button.setAttribute('aria-pressed',String(p.id===selected));}
+  $$('#model-key-list button').forEach(button=>{
+    button.setAttribute('aria-pressed',String(button.dataset.component===selected));button.classList.toggle('pin-visible',placed.has(button.dataset.component));
   });
-  const top=$('.stage-heading').getBoundingClientRect().bottom-stage.getBoundingClientRect().top+18;
-  const bottom=$('.stage-footer').getBoundingClientRect().height+20;
-  const key=[state.view,state.variant,state.component,state.technology.propulsion,state.technology.control,state.electrification,state.labelMode,width,height,Boolean(viewer.getExplorationState?.().isolation)].join('/');
-  if(key!==labelLayoutKey||!stableLabelPositions.length&&measured.length){stableLabelPositions=placeModelLabels(measured,{width,height,top,bottom,limit,gap:14});labelLayoutKey=key;}
-  const anchors=new Map(points.map(p=>[p.id,p]));
-  const positions=stableLabelPositions.filter(p=>anchors.has(p.id)).map(p=>({...p,anchorX:anchors.get(p.id).x*width,anchorY:anchors.get(p.id).y*height}));
-  for(const p of positions){
-    const nodes=labelElements.get(p.id);nodes.button.hidden=false;
-    nodes.button.style.left=`${p.x}px`;nodes.button.style.top=`${p.y}px`;
-    nodes.button.classList.toggle('selected',p.id===selected);nodes.button.setAttribute('aria-pressed',String(p.id===selected));
-    nodes.line.style.display='';nodes.line.setAttribute('x1',String(p.anchorX));nodes.line.setAttribute('y1',String(p.anchorY));
-    nodes.line.setAttribute('x2',String(p.x));nodes.line.setAttribute('y2',String(p.y-p.height/2));
+  if($('#model-key-note')){
+    const selectedVisible=placed.has(selected);
+    $('#model-key-note').textContent=!state.labels?'Pins are off. Select equipment in the key or model.':selectedVisible?'Numbers stay attached to visible equipment. Select any name for its explanation.':'Some pins are hidden by equipment or overlap. Use the key to select a part, then Frame selection to locate it.';
   }
 }
 function labelLoop(time){labelFrame=requestAnimationFrame(labelLoop);if(!document.hidden&&time-lastLabelTime>150){updateLabels();updateMotionGuide();lastLabelTime=time;}}
@@ -408,7 +470,7 @@ document.addEventListener('click',event=>{
   historyMode=b.matches('[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
   if(b.matches('[data-domain],[data-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');}
   if(b.id==='navigator-toggle'){const open=$('.railway-navigation').classList.toggle('is-open');b.setAttribute('aria-expanded',String(open));}
-  else if(b.id==='read-selection'){const heading=$('#component-detail h2');heading?.setAttribute('tabindex','-1');heading?.focus();heading?.scrollIntoView({block:'start',behavior:'instant'});}
+  else if(b.id==='read-selection'){if($('#component-explanation'))$('#component-explanation').open=true;const heading=$('#component-detail h2');heading?.setAttribute('tabindex','-1');heading?.focus();heading?.scrollIntoView({block:'start',behavior:'instant'});}
   else if(b.id==='component-scope'){allComponents=!allComponents;renderDetail();}
   else if(b.id==='focus-selection'){labelLayoutKey='';viewer?.frameSelection?.(targetFor(state.component));syncControls();updateLabels();}
   else if(b.id==='isolate-selection'){const current=viewer?.getExplorationState?.();viewer?.setIsolation?.(current?.isolation?null:targetFor(state.component));renderDetail();syncControls();rebuildLabels();}
@@ -426,11 +488,13 @@ document.addEventListener('click',event=>{
   else if(b.dataset.domain)setDomain(b.dataset.domain);
   else if(b.dataset.view)setView(b.dataset.view);
   else if(b.dataset.inspectView){const origin=routeState(state),selected=state.component;setView(b.dataset.inspectView);returnContext=origin;if(viewer?.getComponentIds(state.view).includes(targetFor(selected)))selectComponent(selected,{explore:state.page!=='learn'});else render();}
-  else if(b.dataset.variant){if((state.view==='operations-centre'||state.view==='occ-workplace')&&b.dataset.variant==='handover'){openProcess('duty-handover');return;}if(state.view==='operations-centre'&&b.dataset.variant==='incident'){openProcess('incident-coordination');return;}configurationEffect='';state.variant=b.dataset.variant;const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();}
+  else if(b.dataset.variant){if((state.view==='operations-centre'||state.view==='occ-workplace')&&b.dataset.variant==='handover'){openProcess('duty-handover');return;}if(state.view==='operations-centre'&&b.dataset.variant==='incident'){openProcess('incident-coordination');return;}configurationEffect='';state.variant=b.dataset.variant;syncPlatform();const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();viewer?.frameVariant?.();}
   else if(b.dataset.component){const nodeId=b.dataset.connectionNode;selectComponent(b.dataset.component,{primary:Boolean(b.closest('#search-results'))});if(nodeId)focusVisible(`[data-connection-node="${nodeId}"]`);}
   else if(b.dataset.source)openSources(b.dataset.source);
   else if(b.dataset.camera){labelLayoutKey='';viewer?.setCameraPreset(b.dataset.camera);syncControls();updateLabels();}
-  else if(b.dataset.motionPhase!==undefined){state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Number(b.dataset.motionPhase)*5);syncControls();updateLabels();}
+  else if(b.dataset.motionPhase!==undefined)seekSequence(Number(b.dataset.motionPhase));
+  else if(b.id==='motion-previous')stepSequence(-1);
+  else if(b.id==='motion-next')stepSequence(1);
   else if(b.dataset.focus){if(state.presentation==='connections'){state.presentation='equipment';render();requestAnimationFrame(()=>{viewer?.resize();viewer?.focusComponent(b.dataset.focus);syncControls();labelLayoutKey='';updateLabels();});}else{viewer?.focusComponent(b.dataset.focus);syncControls();labelLayoutKey='';updateLabels();}}
   else if(b.dataset.exploreComponent){selectComponent(b.dataset.exploreComponent,{explore:true,focus:false,primary:true});$('#workspace').scrollIntoView({block:'start'});}
   else if(b.dataset.reference){state.page='reference';$('#reference-search').value='';$('#reference-domain').value='all';render();const entry=$(`#reference-${b.dataset.reference}`);entry.open=true;entry.scrollIntoView({block:'center'});}
@@ -448,7 +512,7 @@ document.addEventListener('click',event=>{
     if(correct)lessonAnswers[t.id]=true;saveProgress();showFeedback(correct,choice);$('#quiz-feedback').focus();renderNavigation();
   }else if(b.id==='previous-lesson'){state.lesson=Math.max(0,state.lesson-1);applyLesson();}
   else if(b.id==='next-lesson'){if(state.lesson<TOURS.length-1){state.lesson++;applyLesson();}else setPage('explore');}
-  else if(b.id==='play'){state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();}
+  else if(b.id==='play'||b.id==='quick-play'||b.id==='diagram-quick-play'){if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();}
   else if(b.id==='reset-scene'){labelLayoutKey='';viewer?.resetCamera();syncControls();}
   else if(b.id==='about-button')openSources();
   else if(b.id==='close-dialog')$('#about-dialog').close();
@@ -459,7 +523,7 @@ function openDestination(id){
   const route=NETWORK_DESTINATIONS[id];if(!route)return;
   returnContext=routeState(state);allComponents=false;configurationEffect='';
   state={...state,...route,page:'explore',scenario:'nominal',mode:'coasting',variant:route.variant||defaultVariant(route.view),exploded:0,cutaway:cutawayFor(route.view)};
-  state.technology=technologyForView(state.technology,state.view,state.variant);render(true);announce(VIEWS[state.view].label);
+  state.presentation=preferredPresentation(state.view,state.variant);syncPlatform();state.technology=technologyForView(state.technology,state.view,state.variant);render(true);orientToView();announce(VIEWS[state.view].label);
 }
 function openTechnologyModel(kind){
   const route=kind==='control'?controlRoute(state.technology.control):{view:'bogie',variant:'default',component:state.technology.propulsion==='rotary'?'rotary-traction-motor':'lim-primary'};
@@ -479,6 +543,9 @@ function changeTechnology(kind,value){
 }
 
 $('#electrification-choice').innerHTML=ELECTRIFICATION_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
+$('#platform-edge-choice').innerHTML=PLATFORM_EDGES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
+$('#platform-sensor-choice').innerHTML=PLATFORM_SENSORS.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
+for(const [selector,key] of [['#platform-edge-choice','platformEdge'],['#platform-sensor-choice','platformSensor']])$(selector).addEventListener('change',e=>{rememberCurrentEntry();historyMode='push';state[key]=e.target.value;state.exploded=0;state.playing=false;configurationEffect='';syncPlatform();viewer?.setPlatform?.(state);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();});
 $('#electrification-choice').addEventListener('change',e=>{rememberCurrentEntry();historyMode='push';state.electrification=normalizeElectrification(e.target.value);state.exploded=0;configurationEffect=electrificationProfile(state.electrification).description;viewer?.setElectrification?.(state.electrification);chooseVisibleRepresentative();render();});
 $('#propulsion-choice').innerHTML=PROPULSION_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
 $('#control-choice').innerHTML=CONTROL_CHOICES.map(x=>`<option value="${x.id}">${safe(x.label)}</option>`).join('');
@@ -493,7 +560,8 @@ $('#cutaway').addEventListener('change',e=>{state.cutaway=e.target.checked;syncV
 $('#explode').addEventListener('input',e=>{state.exploded=Number(e.target.value);syncViewer();rememberCurrentEntry();$('#model-key').textContent=modelNote()+(state.exploded>=.5?' Message paths are hidden while parts are separated.':'');});
 $('#explode-scope').addEventListener('change',e=>{state.explodeScope=viewer?.setExplodeScope?.(e.target.value)||'all';viewer?.setExploded(state.exploded);syncControls();updateLabels();rememberCurrentEntry();});
 $('#label-density').addEventListener('change',e=>{state.labels=e.target.value!=='off';state.labelMode=e.target.value;updateLabels();rememberCurrentEntry();});
-$('#phase').addEventListener('input',e=>{state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Number(e.target.value)*5);syncControls();});
+$('#phase').addEventListener('input',e=>seekSequence(Number(e.target.value)));
+$('#motion-loop').addEventListener('change',e=>{state.loop=e.target.checked;viewer?.setPlayback({duration:guideForState()?.duration||12,loop:state.loop});});
 $('#sensor-error').addEventListener('input',updateSensor);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){state.playing=false;viewer?.setPlaying(false);syncControls();}});
 reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches){state.playing=false;viewer?.setPlaying(false);}syncControls();});

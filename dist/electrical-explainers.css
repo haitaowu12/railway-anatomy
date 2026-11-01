@@ -1,0 +1,22 @@
+.electrical-principle{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:22px;align-items:center;padding:20px 0;color:var(--ink)}
+.electrical-principle svg{display:block;width:100%;height:auto;overflow:visible}
+.electrical-principle svg text{font:24px system-ui,sans-serif;fill:#3f5349}
+.electrical-principle svg .wave-zero{font-size:18px;fill:#6b7d72}
+.transformer-core{fill:none;stroke:#d2d9d0;stroke-width:35;stroke-linejoin:miter}
+.flux-path{fill:none;stroke:#2e8a70;stroke-width:5}
+.flux-direction{fill:#245546}
+.primary-coil,.secondary-coil{fill:none;stroke:#aa6b37;stroke-width:3}
+.secondary-coil{stroke:#206a83}
+.wave-axis{fill:none;stroke:#c7d1c5;stroke-width:1}
+.wave-primary,.wave-secondary,.wave-flux,.wave-phase,.wave-dc{fill:none;stroke-width:2.5}
+.wave-primary,.phase-A{stroke:#aa6b37}.wave-secondary,.phase-B{stroke:#216e85}.wave-flux,.phase-C{stroke:#3c8359}.wave-dc{stroke:#245546;stroke-width:3}
+.electrical-principle text.phase-A{fill:#aa6b37;stroke:none}.electrical-principle text.phase-B{fill:#216e85;stroke:none}.electrical-principle text.phase-C{fill:#3c8359;stroke:none}
+.electrical-cursor path{stroke:#7b8980;stroke-width:1;stroke-dasharray:4 4}.electrical-cursor text{font-size:20px!important}
+.electrical-reading{font-size:12px;font-variant-numeric:tabular-nums;padding:9px 11px;background:#eaf0e6;line-height:1.65;margin:12px 0 0;min-height:3.4em}
+.principle-note{font-size:13px;line-height:1.75;color:#5a6a60;max-width:90ch}
+.principle-parts{display:flex;gap:10px 16px;flex-wrap:wrap;justify-content:center;margin-top:14px}.principle-parts button{color:var(--teal);font-size:12px;text-decoration:underline;text-underline-offset:3px;min-height:36px}
+.bridge-wire,.bridge-bus{fill:none;stroke:#a6b1a6;stroke-width:2.5}.bridge-phase circle{fill:#687d6e}.diode-symbol{stroke:#7e9082;fill:#eef2e9;stroke-width:2.5}.bridge-load{fill:#e4eadd;stroke:#607965;stroke-width:2}
+.conducting .bridge-wire{stroke:#b47b24;stroke-width:4}.conducting .diode-symbol{fill:#e5bc6a;stroke:#8c611d;stroke-width:3}
+@media(max-width:900px){.electrical-principle{grid-template-columns:1fr;gap:20px}.principle-circuit{max-width:480px;width:100%;margin:auto}.principle-waveforms{width:100%}}
+
+.principle-waveforms svg text{font-size:26px}.turns-ratio{text-align:center;font-size:12px;margin:5px 0;color:#5a6a60}

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {normalizePlatformState,platformForComponent} from '../dist/platform-config.js';
 import * as electrificationHelpers from '../dist/electrification.js';
 /**
  * Headless scene/content contract check using Three.js and the actual shared
@@ -60,13 +61,14 @@ const visible = node => {
   return true;
 };
 const variantsFor = view => model.VIEWS[view]?.variants?.map(v => v.id) || ['default'];
-function setScene(view, variant, { cutaway = true, phase = 1, scenario = 'nominal', signals = true, electrification = electrificationHelpers.DEFAULT_ELECTRIFICATION, technology = {propulsion:'lim',control:'loop'} } = {}) {
+function setScene(view, variant, { cutaway = true, phase = 1, scenario = 'nominal', signals = true, platformEdge, platformSensor='lidar', electrification = electrificationHelpers.DEFAULT_ELECTRIFICATION, technology = {propulsion:'lim',control:'loop'} } = {}) {
   const record = models.get(view);
   assert(record, `Missing constructed scene ${view}`);
   for (const candidate of models.values()) candidate.root.visible = candidate === record;
   for (const shell of record.shells) shell.visible = !cutaway;
   for (const e of record.exploded) e.node.position.copy(e.base);
-  const state = { view, variant, phase, scenario, signals, cutaway, technology, electrification, exploded: 0, mode: 'coasting', receptivity: 'train', selected: null };
+  const platformState=normalizePlatformState({variant,platformEdge,platformSensor});
+  const state = { view, variant, phase, scenario, signals, cutaway, technology, electrification, platformEdge:platformState.platformEdge, platformSensor, exploded: 0, mode: 'coasting', receptivity: 'train', selected: null };
   for (const animate of record.animators) animate(state);
   record.root.updateWorldMatrix(true, true);
   return record;
@@ -114,8 +116,8 @@ check('Every scene variant animates with finite geometry and known component IDs
       const ids = new Set();
       // Some explanatory skins are intentionally only visible when assembled.
       // The union represents equipment reachable with the exposed cutaway toggle.
-      for (const cutaway of [false, true]) for(const propulsion of ['lim','rotary']) for(const control of ['loop','radio']) for(const electrification of electrificationHelpers.ELECTRIFICATION_CHOICES.map(x=>x.id)) {
-        const active = setScene(view, variant, { cutaway, electrification, technology:{propulsion,control} });
+      for (const cutaway of [false, true]) for(const propulsion of ['lim','rotary']) for(const control of ['loop','radio']) for(const electrification of electrificationHelpers.ELECTRIFICATION_CHOICES.map(x=>x.id)) for(const platformEdge of ['station','platform-interface'].includes(view)?['open','half-height','full-height']:[undefined]) for(const platformSensor of view==='platform-interface'?['lidar','radar']:['lidar']) {
+        const active = setScene(view, variant, { cutaway, electrification, platformEdge, platformSensor, technology:{propulsion,control} });
         visibleParts(active).forEach(id => ids.add(id));
         active.root.traverse(node => {
           if (visible(node)) assert([...node.position.toArray(), ...node.scale.toArray()].every(Number.isFinite), `${view}/${variant} has an invalid pose`);
@@ -189,7 +191,7 @@ check('Every lesson action opens its selected component in a real variant', () =
   for (const lesson of TOURS) {
     const action = lesson.action, view = action.view || lesson.view;
     const variant = action.variant || model.defaultVariant(view), component = action.component || lesson.component;
-    const record = setScene(view, variant, { cutaway: action.cutaway ?? model.cutawayFor(view), scenario: action.scenario || 'nominal',technology:action.technology||{propulsion:'lim',control:'radio'} });
+    const record = setScene(view, variant, { cutaway: action.cutaway ?? model.cutawayFor(view), scenario: action.scenario || 'nominal',...platformForComponent(component,{variant}),technology:action.technology||{propulsion:'lim',control:'radio'} });
     if (!(record.parts.get(model.targetFor(component)) || []).some(visible)) missing.push(`${lesson.id} → ${view}/${variant} (${component})`);
   }
   assert.equal(missing.length, 0, missing.join('; '));
