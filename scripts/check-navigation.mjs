@@ -3,6 +3,7 @@
 // their rules. Browser history and viewport behavior still need browser QA.
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {normalizePlatformState,platformForComponent} from '../dist/platform-config.js';
 import {DOMAINS,VIEWS,MODES,variantFor,defaultVariant,cutawayFor} from '../dist/model.js';
 import {CONCEPTS} from '../dist/catalog.js';
 import {TOURS} from '../dist/tours.js';
@@ -37,7 +38,7 @@ function createBrowserEnvironment(){
     return processMenu;
   }};
 }
-const dependencies={createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent};
+const dependencies={normalizePlatformState,platformForComponent,createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent};
 const harness=new Function(...Object.keys(dependencies),`
   const {window,matchMedia,processMenu,querySelector:$}=createBrowserEnvironment();
   const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
@@ -49,6 +50,7 @@ const harness=new Function(...Object.keys(dependencies),`
   function announce(){}
   function applyLesson(){throw new Error('This bounded harness exercises explorer URLs only');}
   function render(){writeHash();}
+  ${source.slice(source.indexOf('const preferredPresentation='),source.indexOf('function equipmentInView'))}
   ${source.slice(begin,end)}
   ${source.slice(restoreBegin,restoreEnd)}
   return {
@@ -71,7 +73,7 @@ for(const [view,config]of Object.entries(VIEWS)){
   for(const variant of variants)for(const mode of ['coasting','motoring']){
     const component=config.variants?.find(v=>v.id===variant)?.component||config.component;
     const technology=technologyForView(technologyForComponent(base.technology,component),view,variant);
-    const expected={...base,view,domain,component,variant,mode,technology};
+    const expected={...base,view,domain,component,variant,mode,technology,...(view==='platform-interface'?normalizePlatformState({variant}):{})};
     const result=harness.roundTrip(expected);
     for(const key of ['view','domain','component','variant','mode'])assert.equal(result.state[key],expected[key],`${view}/${variant}: ${key} changed after reopening ${result.url}`);
     assert.deepEqual(result.state.technology,technology,`${view}/${variant}: technology changed after URL round trip`);
@@ -96,6 +98,19 @@ for(const [id,p]of Object.entries(PROCESS_VIEWS))for(const step of p.steps){cons
 for(const [hash,process]of [['explore/depot/change-evidence/change-baseline/installed','configuration-change'],['explore/operations/occ-incident/occ-alarm-queue/reported','incident-coordination'],['explore/operations/operations-centre/operations-centre/handover','duty-handover']]){const actual=harness.parse(`https://example.test/railway-anatomy/#${hash}`);assert.equal(actual.page,'processes','A legacy process route returned to a physical model');assert.equal(actual.processId,process);}
 for(const [legacy,profile]of [['ac','overhead-ac'],['dc','fourth-rail-dc']]){const actual=harness.parse(`https://example.test/railway-anatomy/#explore/power/electrification/supply-conversion/${legacy}`);assert.equal(actual.electrification,profile);assert.equal(actual.variant,'chain');}
 const map=harness.roundTrip({...base,domain:'communications',view:'communications-overview',component:'communications-system',variant:'supervision',presentation:'connections'}).state;assert.equal(map.presentation,'connections');
+for(const platformEdge of ['open','half-height','full-height'])for(const platformSensor of ['lidar','radar'])for(const focus of ['open-platform','platform-doors','interspace','platform-end']){
+ const normalized=normalizePlatformState({platformEdge,platformSensor,variant:focus});
+ const expected={...base,...normalized,domain:'station',view:'platform-interface',component:'platform-intrusion',presentation:'equipment'};
+ const actual=harness.roundTrip(expected).state;
+ for(const key of ['platformEdge','platformSensor','variant'])assert.equal(actual[key],expected[key],`Platform bookmark lost ${key}`);
+}
+const oldDoors=harness.parse('https://example.test/railway-anatomy/#explore/station/platform-interface/platform-screen-door/platform-doors');
+assert.equal(oldDoors.platformEdge,'full-height','A legacy door bookmark silently removed the facade');
+const openEnd=harness.parse('https://example.test/railway-anatomy/?platformEdge=open#explore/station/platform-interface/platform-end-gate/platform-end');
+assert.equal(openEnd.platformEdge,'open','End access added platform doors');
+assert.equal(harness.parse('https://example.test/railway-anatomy/#explore/operations/occ-supervision/occ-supervisory-request/traffic').presentation,'connections');
+assert.equal(harness.parse('https://example.test/railway-anatomy/?presentation=equipment#explore/operations/occ-supervision/occ-supervisory-request/traffic').presentation,'equipment');
+assert.equal(harness.parse('https://example.test/railway-anatomy/#explore/power/power-transformer/transformer/default').presentation,'connections');
 const invalid=harness.parse('https://example.test/railway-anatomy/?propulsion=invalid&control=invalid&mode=invalid#explore/invalid/invalid/invalid');
 assert.equal(invalid.view,'railway');assert.equal(invalid.component,'network-overview');
 assert.deepEqual(invalid.technology,{propulsion:'lim',control:'loop'});

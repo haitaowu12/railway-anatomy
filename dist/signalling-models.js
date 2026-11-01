@@ -524,10 +524,12 @@ export function buildSignallingView(id, api) {
   function trainDetection() {
     railbed(root, 11, { joints: [-2.5, 2.5] });
     const wagon = wheels(root, [0, 0, 0]);
+    wagon.node.name='train-detection-passage';
     const extent = part(wagon.node, 'train-integrity');
     box(extent, [2.28, .1, 1.4], M.white, [0, 1.18, 0]);
     for (const x of [-1.18, 1.18]) box(extent, [.035, .38, 1.5], M.signal, [x, 1.35, 0]);
     const section = blockStrip(root, -2.5, 2.5, 0, 'train-detection');
+    section.node.name='section-occupancy-indication';
     const circuit = group(root, 'variant-track-circuit');
     const feed = part(circuit, 'track-circuit', [-4, .1, 2.5]);
     plate(feed, [1.4, .08, .9], [0, .04, 0]);
@@ -551,6 +553,8 @@ export function buildSignallingView(id, api) {
     for (const x of [-.66, .66]) box(relayLid, [.04, .95, .82], M.white, [x, .55, 0]);
     box(relayLid, [1.35, .045, .85], M.white, [0, 1.05, 0]); shell(relayLid); explode(relayLid, [0, .7, 0]);
     const relayLight = lamp(receiver, [0, .32, .48], tint.alert, .08);
+    const shunt=group(wagon.node,'wheelset-conductive-shunt');
+    tube(shunt,[[0,.225,-.72],[0,.64,-.72],[0,.64,.72],[0,.225,.72]],.022,M.copper,{segments:8});
     for (const z of [-.72, .72]) {
       tube(feed, [[z < 0 ? -.2 : .2, .68, 0], [0, .08, -1], [1.55, .12, z - 2.5]], .018, M.dark, { segments: 10 });
       tube(receiver, [[z < 0 ? -.3 : .3, .2, 0], [0, .04, -1], [-1.55, .12, z - 2.5]], .018, M.dark, { segments: 10 });
@@ -560,7 +564,12 @@ export function buildSignallingView(id, api) {
     rack(counters, 'axle-counter', [3.7, 0, 2.8], ['axle-counter', 'train-detection'], [1.2, 1.75, .8]);
     const countPanel = part(counters, 'train-detection', [-3.7, .1, 2.7]);
     box(countPanel, [1.9, .9, .18], M.core, [0, .55, 0]);
-    const countBars = [0, 1].map(i => box(countPanel, [.18, .45, .035], M.signal, [-.32 + i * .6, .57, .13]));
+    const countRows=[
+      ['entry-count',.79,M.yellow],['exit-count',.55,M.signal],['remaining-count',.31,M.white]
+    ].map(([name,y,material])=>{
+      const row=group(countPanel,name);box(row,[.11,.07,.025],material,[-.78,y,.13]);
+      return [0,1].map(i=>box(row,[.25,.10,.035],material,[-.34+i*.5,y,.13]));
+    });
     const valid = lamp(countPanel, [.7, .88, .13], tint.green, .06);
     connection(counters, 'axle-counter', [[-2.5, .38, -1], [-1.5, .65, -2.1], [2.9, .65, -2.1], [3.7, 1, 3.2]], { color: tint.report });
     connection(counters, 'axle-counter', [[2.5, .38, -1], [3.5, .7, -.8], [3.7, 1.4, 3.2]], { color: tint.report });
@@ -574,25 +583,37 @@ export function buildSignallingView(id, api) {
     box(reference, [2, .95, .18], M.core, [0, .55, 0]);
     const estimate = box(reference, [.8, .035, .025], M.signal, [0, .65, .12]);
     const known = box(reference, [.025, .45, .035], M.yellow, [0, .54, .15]);
+    known.name='retained-balise-reference';known.position.x=-.6;
     const passRing = mesh(tags, torus(.32, .025, 5, 20), basic(tint.permit), [0, .58, 0], [Math.PI / 2, 0, 0]);
+    passRing.name='localized-balise-coupling';
     onFrame(s => {
       const selected = variant(s, ['track-circuit', 'axle-counter', 'balise']);
       circuit.visible = selected === 'track-circuit'; counters.visible = selected === 'axle-counter'; tags.visible = selected === 'balise'; reader.visible = selected === 'balise';
-      const x = Math.sin(phase(s) * .24) * 4.65;
+      const progress=Math.max(0,Math.min(1,phase(s)/5)),x=-4.65+9.3*progress;
       wagon.node.position.x = x;
       const axles = [x - .65, x + .65];
       const inside = axles.filter(axle => axle > -2.5 && axle < 2.5).length;
       const trainPresent = inside > 0;
       section.node.visible = selected !== 'balise'; section.set(trainPresent);
+      section.node.userData.occupied=trainPresent;
       for (const set of wagon.sets) set.rotation.z = -x / .415;
       armature.rotation.z = trainPresent ? -.12 : 0;
       relayLight.set(trainPresent ? tint.alert : tint.green);
-      countBars.forEach((bar, i) => { bar.visible = i < inside; }); valid.set(tint.green);
+      receiver.userData.energized=!trainPresent;
+      shunt.visible=selected==='track-circuit'&&trainPresent&&signals(s);
+      shunt.position.x=axles[1]>-2.5&&axles[1]<2.5?.65:-.65;
+      // A monotonic passage gives explicit cumulative entry/exit counts. This
+      // is an assumed valid two-axle example, not a reset or fault-recovery rule.
+      const entered=axles.filter(axle=>axle>-2.5).length,exited=axles.filter(axle=>axle>2.5).length;
+      countRows.forEach((row,r)=>row.forEach((bar,i)=>{bar.visible=i<[entered,exited,entered-exited][r];}));
+      countPanel.userData.entryCount=entered;countPanel.userData.exitCount=exited;countPanel.userData.remainingCount=entered-exited;
+      valid.set(tint.green);
       entry.cue.visible = signals(s) && axles.some(axle => Math.abs(axle + 2.5) < .18);
       exit.cue.visible = signals(s) && axles.some(axle => Math.abs(axle - 2.5) < .18);
       passRing.visible = signals(s) && Math.abs(x) < .55;
-      estimate.scale.x = .35 + Math.min(1, Math.abs(x) / 3.5);
-      known.visible = Math.abs(x) < .55;
+      const read=x>=0,length=.2+.9*Math.max(0,x)/4.65;
+      estimate.visible=read;estimate.scale.x=length/.8;estimate.position.x=-.6+length/2;
+      known.visible=read;reference.userData.referenceRead=read;
     });
   }
 

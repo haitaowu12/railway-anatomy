@@ -52,7 +52,8 @@ function scene(view,variant,technology,cutaway=true){
   for(const candidate of harness.models.values())candidate.root.visible=candidate===record;
   for(const node of record.shells)node.visible=!cutaway;
   for(const item of record.exploded)item.node.position.copy(item.base);
-  const state={view,variant,technology,phase:0,scenario:'nominal',signals:true,exploded:0,cutaway,mode:'coasting',receptivity:'train'};
+  // A point-drive throw starts from a shared mechanical pose. Compare its completed result.
+  const state={view,variant,technology,phase:view==='switch-drive'?5:0,scenario:'nominal',signals:true,exploded:0,cutaway,mode:'coasting',receptivity:'train'};
   for(const animate of record.animators)animate(state);
   record.root.updateWorldMatrix(true,true);return record;
 }

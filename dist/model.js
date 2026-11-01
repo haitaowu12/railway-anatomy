@@ -1,5 +1,7 @@
 import {SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VARIANTS,PART_CONTEXTS,PART_VIEW_VARIANTS,PART_RELATIONS} from './atlas-config.js';
 import {applyMotionGuides} from './motion-guides.js';
+import {OCC_CONTEXT_TARGETS} from './occ-data.js';
+import {applyElectricalStudies} from './electrical-explainers.js';
 export {PART_CONTEXTS};
 export const variantsFor=(id,view)=>PART_VIEW_VARIANTS[id]?.[view]||[];
 export const variantFor=(id,view)=>{const preferred=PART_VARIANTS[id]||'default',available=view?variantsFor(id,view):[];return available.length&&!available.includes(preferred)?available[0]:preferred;};
@@ -19,6 +21,7 @@ export const VIEWS = {
 
 Object.assign(VIEWS,NEW_VIEWS);
 applyMotionGuides(VIEWS);
+applyElectricalStudies(VIEWS);
 VIEWS['depot-support'].variants.find(v=>v.id==='planning').presentation='process';
 export const defaultVariant=view=>VIEWS[view]?.variants?.[0]?.id||'default';
 export const cutawayFor=view=>['communications-network','communications-scada','communications-telephony','communications-passenger','communications-security','control','communications','services','station','station-plant','tunnel-ventilation','station-networks','fire-systems','ventilation-unit','switch-drive','cbtc-network','etcs','seltrac','interlocking','train-detection','platform-interface','operations-centre','depot-maintenance','depot-wash','depot-protection','depot-workshop','depot-utilities','depot-support','depot-condition','depot-components','depot-testing','occ-supervision','occ-incident','occ-equipment','occ-workplace'].includes(view);
@@ -26,6 +29,7 @@ const VIEW_OVERRIDES = {
   utility:'system','ac-switchgear':'substation',transformer:'substation',rectifier:'substation','dc-switchgear':'substation',breaker:'substation','wayside-resistor':'substation',grounding:'substation','facility-transformer':'substation',disconnect:'substation','substation-control':'substation','control-battery':'substation','positive-rail':'guideway','negative-rail':'guideway',collector:'guideway','running-rail':'guideway','reaction-rail':'guideway',carbody:'vehicle',bogie:'bogie','traction-inverter':'vehicle','lim-primary':'lim','motor-slip':'lim',brakes:'bogie','parking-brake':'bogie',regeneration:'system',tachometer:'bogie',accelerometer:'control',balise:'control','brake-control':'control',ats:'control','wayside-radio':'communications','zone-controller':'control',apu:'services','vehicle-battery':'services',hvac:'services',compressor:'services',doors:'services','door-control':'services',
 };
 export const MODEL_TARGETS = {'moving-block':'movement-authority','braking-curve':'atp','train-integrity':'train-control','etcs-level-1':'leu','etcs-level-2':'rbc','station-hvac':'hvac-air-handler','motor-slip':'lim-primary','parking-brake':'brakes',regeneration:'traction-inverter','brake-control':'brakes'};
+Object.assign(MODEL_TARGETS,OCC_CONTEXT_TARGETS);
 export const targetFor = id => MODEL_TARGETS[id] || id;
 export const domainFor = id => DOMAINS.find(d=>d.parts.includes(id));
 export const viewFor = id => PART_VIEWS[id] || VIEW_OVERRIDES[id] || domainFor(id)?.view || 'system';

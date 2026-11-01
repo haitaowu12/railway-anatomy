@@ -131,9 +131,15 @@ export function buildOperationsView(id, api) {
       const bogie=part(g,'bogie',[x,.5,0]);
       bogie.name='attached-vehicle-bogie';bogie.userData.vehicleBogieX=x*scale;
       box(bogie,[1.9,.2,1.45],M.core);
-      for(const dx of [-.63,.63])for(const z of [-.58,.58]){
-        const wheel=cylinder(bogie,.3,.13,M.steel,[dx,-.05,z],[Math.PI/2,0,0],14);
-        wheel.name='depot-mounted-wheel';wheel.userData.wheelRadius=.3;
+      for(const dx of [-.63,.63]){
+        const axle=group(bogie,'depot-mounted-axle',[dx,-.05,0]);
+        axle.userData.vehicleAxleX=(x+dx)*scale;
+        cylinder(axle,.055,1.3,M.steel,[0,0,0],[Math.PI/2,0,0],10);
+        for(const z of [-.58,.58]){
+          const wheel=cylinder(axle,.3,.13,M.steel,[0,0,z],[Math.PI/2,0,0],14);
+          wheel.name='depot-mounted-wheel';wheel.userData.wheelRadius=.3;
+          box(axle,[.22,.022,.014],P.yellow,[.1,0,z+(z>0?.075:-.075)]);
+        }
       }
     }
     return g;
@@ -282,8 +288,9 @@ export function buildOperationsView(id, api) {
     box(p,[.8,.16,.85],M.core,[0,.1,0]);
     const column=box(p,[.32,3.25,.36],P.red,[0,1.75,0]);column.name='vehicle-lifting-column';
     cylinder(p,.045,3.1,M.steel,[0,1.7,z>0?-.23:.23],null,10);
-    box(p,[.48,.22,.82],M.yellow,[0,head,z>0?-.28:.28]);
-    return p;
+    const saddle=group(p,'vehicle-lifting-head',[0,head,0]);
+    box(saddle,[.48,.22,.82],M.yellow,[0,0,z>0?-.28:.28]);
+    return {node:p,saddle};
   }
   function roofAccess(parent) {
     const access=part(parent,'depot-roof-access');
@@ -300,19 +307,38 @@ export function buildOperationsView(id, api) {
     }
     return access;
   }
-  function workshopLathe(parent,offset=(-3.1-.63)*.95) {
+  function workshopLathe(parent,train,offset=(-3.1-.63)*.95) {
     const p=part(parent,'depot-wheel-lathe',[offset,0,0]);
     p.name='lathe-at-installed-axle';p.userData.vehicleAxleX=offset;
     foundation(p,[3.45,.18,3.05],[0,-.84,0]);
+    const rollers=[],tools=[];
     for(const z of [-.58,.58]) {
       box(p,[1.65,.6,.62],P.blue,[0,-.45,z]);
-      for(const x of [-.28,.28]){const roller=cylinder(p,.21,.28,M.steel,[x,.17,z],[Math.PI/2,0,0],14);roller.name='lathe-drive-roller';}
-      const tool=group(p,'wheel-profile-cutting-tool',[.06,.23,z+(z>0?.47:-.47)]);
+      for(const x of [-.28,.28]){
+        const rotor=group(p,'lathe-drive-rotor',[x,.17,z]);
+        const roller=cylinder(rotor,.21,.28,M.steel,[0,0,0],[Math.PI/2,0,0],14);roller.name='lathe-drive-roller';
+        box(rotor,[.15,.018,.014],P.yellow,[.065,0,z>0?.15:-.15]);rollers.push(rotor);
+      }
+      const tool=group(p,'wheel-profile-cutting-tool',[.25,.23,z+(z>0?.47:-.47)]);
       box(tool,[.5,.23,.4],P.red);box(tool,[.1,.1,.45],M.steel,[0,.14,z>0?-.3:.3]);
+      tools.push({node:tool,baseZ:tool.position.z,side:Math.sign(z)});
     }
     const chips=group(p,'swarf-removal-tray');box(chips,[2.6,.13,.48],M.core,[0,-.65,1.28]);
     for(let i=0;i<10;i++)box(chips,[.08,.04,.055],M.steel,[-1+i*.22,-.55,1.28]);
     infoBoard(parent,'depot-wheel-lathe',[.9,.12,3.6]);
+    let installedAxle=null;
+    train.traverse(n=>{if(n.name==='depot-mounted-axle'&&Math.abs(n.userData.vehicleAxleX-offset)<1e-8)installedAxle=n;});
+    if(!installedAxle)throw new Error('The illustrated lathe must align with an installed axle');
+    animations.push(state=>{
+      const phase=Math.max(0,Math.min(1,Number(state.phase||0)/5));
+      const cutting=Math.max(0,Math.min(1,(phase-.15)/.7));
+      const turn=cutting*Math.PI*4.5;
+      installedAxle.rotation.z=turn;
+      for(const roller of rollers)roller.rotation.z=-turn*(.3*.95/.21);
+      const approach=phase<.15?1-phase/.15:phase>.85?(phase-.85)/.15:0;
+      for(const tool of tools)tool.node.position.z=tool.baseZ+tool.side*(.24*approach+.07*Math.sin(cutting*Math.PI));
+      p.userData.machiningPhase=phase;p.userData.selectedAxle=installedAxle.userData.vehicleAxleX;
+    });
     return p;
   }
   function plantCabinet(parent,component,at,size=[1.4,2.1,.8]) {
@@ -687,23 +713,27 @@ export function buildOperationsView(id, api) {
       // Start with a separated, supported bogie below its original position.
       // The rail-borne carrier stays on its guides as its deck lowers. Only
       // then does the carrier traverse; the return completes before raising.
-      const t=state.phase%10;
-      const loweredFraction=t<=1?t:t<=8?1:t<=9?9-t:0;
+      const t=Math.max(0,Math.min(5,Number(state.phase||0)));
+      const loweredFraction=Math.min(1,t);
       carrier.position.set(0,-.86,0);
       deck.position.y=.61-.39*loweredFraction;
       if(t>1&&t<=4)carrier.position.z=(t-1)*1.4;
       else if(t>4&&t<=5)carrier.position.z=4.2;
-      else if(t>5&&t<=8)carrier.position.z=4.2-(t-5)*1.4;
       const extension=deck.position.y-.22;
       for(const {middle,inner}of liftStages){middle.position.y=.045+extension/2;inner.position.y=.045+extension;}
     });
     const jacks=alt('jacks');foundation(jacks,[21,.18,12]);track(jacks,13,[0,0,0]);
     const raised=vehicle(jacks,[0,0,0],.95);raised.name='raised-body-with-bogies-at-rail-level';
-    raised.children.find(n=>n.userData.component==='carbody').position.y=1.8/.95;
-    for(const x of [-4.5,4.5])for(const z of [-1.35,1.35])liftingColumn(jacks,x,z);
+    const liftedBody=raised.children.find(n=>n.userData.component==='carbody'),saddles=[];
+    const bodyBottom=raised.position.y+.76*.95,saddleStart=bodyBottom-.11;
+    for(const x of [-4.5,4.5])for(const z of [-1.35,1.35])saddles.push(liftingColumn(jacks,x,z,saddleStart).saddle);
+    animations.push(state=>{
+      const phase=Math.max(0,Math.min(1,Number(state.phase||0)/5)),lift=1.8*phase*phase*(3-2*phase);
+      liftedBody.position.y=lift/.95;for(const saddle of saddles)saddle.position.y=saddleStart+lift;
+    });
     infoBoard(jacks,'depot-lifting-jacks',[7,.1,2.5]);
     const lathe=alt('wheel-lathe');serviceFloor(lathe,{x:-3,width:3.8,depth:3.3});
-    track(lathe,13,[0,0,0],{sleeperGap:[-4.9,-1.1],railGap:[-3.9635,-3.1235]});vehicle(lathe,[0,0,0],.95);workshopLathe(lathe);
+    track(lathe,13,[0,0,0],{sleeperGap:[-4.9,-1.1],railGap:[-3.9635,-3.1235]});workshopLathe(lathe,vehicle(lathe,[0,0,0],.95));
   }
   if(id==='depot-workshop') {
     root.position.y=1.3;
@@ -711,7 +741,7 @@ export function buildOperationsView(id, api) {
     overheadHandling(root);
     trolley(root,[7,.1,3.6]);
     const lathe=alt('lathe');serviceFloor(lathe,{x:-3,width:3.8,depth:3.3});
-    track(lathe,15,[0,0,0],{sleeperGap:[-4.9,-1.1],railGap:[-3.9635,-3.1235]});vehicle(lathe,[0,0,0],.95);workshopLathe(lathe);
+    track(lathe,15,[0,0,0],{sleeperGap:[-4.9,-1.1],railGap:[-3.9635,-3.1235]});workshopLathe(lathe,vehicle(lathe,[0,0,0],.95));
     const removed=alt('wheelset');foundation(removed,[21,.18,12]);
     supportedWheelset(removed);
     const gauge=part(removed,'depot-wheelset',[1.4,.1,1.15]);

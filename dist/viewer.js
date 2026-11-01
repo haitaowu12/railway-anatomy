@@ -3,14 +3,16 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { SVGRenderer } from './vendor/SVGRenderer.js';
 import { TRACK_VIEWS, buildTrackView } from './track-models.js';
 import { SIGNALLING_VIEWS, buildSignallingView } from './signalling-models.js';
-import { STATION_VIEWS, buildStationView } from './station-models.js';
+import { STATION_VIEWS, STATION_FOCUS, buildStationView } from './station-models.js';
 import { OPERATIONS_VIEWS, buildOperationsView } from './operations-models.js';
-import { PLATFORM_VIEWS, buildPlatformView } from './platform-models.js';
+import { PLATFORM_VIEWS, PLATFORM_FOCUS, buildPlatformView } from './platform-models.js';
 import { NETWORK_VIEWS, buildNetworkView } from './network-model.js';
 import { OCC_VIEWS, buildOccView } from './occ-models.js';
 import { STUDY_CAMERAS, buildStudyView } from './studies-models.js';
 import { POWER_CAMERAS, buildPowerView } from './electrification-models.js';
 import { DEFAULT_ELECTRIFICATION, normalizeElectrification } from './electrification.js';
+import { normalizePlatformEdge, normalizePlatformSensor } from './platform-config.js';
+import { advancePlayback } from './interaction-state.js';
 import { COMMUNICATIONS_VIEWS, buildCommunicationsView } from './communications-models.js';
 import { nodeVisible, within, visibleBounds, componentBounds, assemblyRoots, restoreIsolation, applyIsolation,
   separationEntries, viewSeparationCapabilities, explorationCapabilities, restoreSeparation, applySeparation, fitPerspectiveBounds, screenPositions } from './exploration.js';
@@ -129,17 +131,16 @@ export function createViewer(container, callbacks = {}) {
 
   const models = new Map();
   let building;
-  const state = { view: 'system', selected: null, mode: 'motoring', exploded: 0, explodeScope: 'all', isolation: null, focused: null, cutaway: false, playing: false, phase: 0, receptivity: 'train', scenario: 'nominal', variant: 'default', signals: true, electrification: DEFAULT_ELECTRIFICATION, technology: { propulsion: 'lim', control: 'loop' } };
+  const state = { view: 'system', selected: null, mode: 'motoring', exploded: 0, explodeScope: 'all', isolation: null, focused: null, cutaway: false, playing: false, phase: 0, duration: 12, loop: false, receptivity: 'train', scenario: 'nominal', variant: 'default', signals: true, platformEdge: 'open', platformSensor: 'lidar', electrification: DEFAULT_ELECTRIFICATION, technology: { propulsion: 'lim', control: 'loop' } };
   let frameBeforeExploration = null, cachedComponentBounds = null;
   const labelAnchorInstances = new Map();
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const selectionBounds = new THREE.Box3();
-  const selectionBox = new THREE.Box3Helper(selectionBounds, 0xf6d17a);
-  selectionBox.material.transparent = true; selectionBox.material.opacity = .85;
-  selectionBox.material.depthTest = false; selectionBox.renderOrder = 20; selectionBox.visible = false;
-  scene.add(selectionBox);
+  const selectionGeometry = new THREE.BufferGeometry();
+  const selectionCorners = new THREE.LineSegments(selectionGeometry, new THREE.LineBasicMaterial({ color: 0xf6d17a, transparent: true, opacity: .85, depthTest: false }));
+  selectionCorners.renderOrder = 20; selectionCorners.visible = false; scene.add(selectionCorners);
 
   function startModel(id) {
     const root = new THREE.Group(); root.name = `view-${id}`;
@@ -1326,10 +1327,16 @@ export function createViewer(container, callbacks = {}) {
   function updateSelection() {
     const r = models.get(state.view);
     visibleBounds(state.selected ? assemblyRoots(r, state.selected) : [], selectionBounds);
-    selectionBox.visible = !selectionBounds.isEmpty();
-    if (!selectionBox.visible) return;
+    selectionCorners.visible = !selectionBounds.isEmpty();
+    if (!selectionCorners.visible) return;
     selectionBounds.expandByScalar(.06);
-    selectionBox.updateMatrixWorld(true);
+    const size = selectionBounds.getSize(new THREE.Vector3()), length = Math.min(.34, Math.max(.055, Math.min(size.x, size.y, size.z) * .23)), vertices = [];
+    for (const x of [selectionBounds.min.x, selectionBounds.max.x]) for (const y of [selectionBounds.min.y, selectionBounds.max.y]) for (const z of [selectionBounds.min.z, selectionBounds.max.z]) {
+      const corner = [x, y, z], directions = [x === selectionBounds.min.x ? 1 : -1, y === selectionBounds.min.y ? 1 : -1, z === selectionBounds.min.z ? 1 : -1];
+      for (let axis = 0; axis < 3; axis++) { const end = [...corner]; end[axis] += directions[axis] * length; vertices.push(...corner, ...end); }
+    }
+    selectionGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    selectionGeometry.computeBoundingSphere();
   }
   function clearStructuralExploration() {
     labelAnchorInstances.clear();
@@ -1340,7 +1347,7 @@ export function createViewer(container, callbacks = {}) {
   }
   function setView(id) {
     if (!ensureModel(id)) return;
-    if (state.view !== id) clearStructuralExploration();
+    if (state.view !== id) { clearStructuralExploration(); state.phase = 0; state.playing = false; }
     state.view = id;
     ground.position.y=VIEW[id].groundY??-.27;
     grid.position.y=ground.position.y+.015;
@@ -1360,20 +1367,25 @@ export function createViewer(container, callbacks = {}) {
     camera.far = previous.far; camera.updateProjectionMatrix();
     state.focused = null; controls.update(); requestRender(); return true;
   }
+  function viewFocus(){return (state.view === 'station' ? STATION_FOCUS : state.view === 'platform-interface' ? PLATFORM_FOCUS : null)?.[state.variant];}
   function frameRoots() {
     const record = models.get(state.view);
     const focused = state.focused && assemblyRoots(record, state.focused);
-    return focused?.length ? focused : [record.root];
+    const groupName = viewFocus()?.group;
+    const focusGroup = groupName && record.root.getObjectByName(groupName);
+    return focused?.length ? focused : focusGroup && nodeVisible(focusGroup) ? [focusGroup] : [record.root];
   }
   function resetCamera() {
-    const config = VIEW[state.view];
+    const config = viewFocus() || VIEW[state.view];
     state.focused = null;
     if (!state.isolation) frameBeforeExploration = null;
     camera.position.set(...config.camera); controls.target.set(...config.target);
     fitToView(); controls.update(); requestRender();
   }
-  function fitToView(nodes = frameRoots()) {
-    const fit = fitPerspectiveBounds(visibleBounds(nodes), { direction: camera.position.clone().sub(controls.target),
+  function fitToView(nodes = null) {
+    const authored = !nodes && !state.focused && !state.isolation && viewFocus()?.bounds;
+    const bounds = authored ? new THREE.Box3(new THREE.Vector3(...authored.min),new THREE.Vector3(...authored.max)) : visibleBounds(nodes||frameRoots());
+    const fit = fitPerspectiveBounds(bounds, { direction: camera.position.clone().sub(controls.target),
       up: camera.up, fov: camera.fov, aspect: camera.aspect });
     if (!fit) return false;
     controls.target.copy(fit.target); camera.position.copy(fit.position);
@@ -1433,7 +1445,9 @@ export function createViewer(container, callbacks = {}) {
   }
   function setExplodeScope(scope) {
     const selected = scope === 'selected' && explorationCapabilities(models.get(state.view), state.selected, state).canExplodeSelected;
-    state.explodeScope = selected ? 'selected' : 'all';
+    const next = selected ? 'selected' : 'all';
+    if (next === state.explodeScope) return next;
+    state.explodeScope = next;
     animateModel(); fitToView(); controls.update(); requestRender(); return state.explodeScope;
   }
   function setCameraPreset(id = 'isometric') {
@@ -1443,6 +1457,10 @@ export function createViewer(container, callbacks = {}) {
     controls.target.copy(target);
     camera.position.copy(target).add(id === 'top' ? new THREE.Vector3(.001, d, .001) : new THREE.Vector3(0, d * .17, d));
     fitToView(); controls.update(); requestRender();
+  }
+  function frameVariant() {
+    if (!['station', 'platform-interface'].includes(state.view)) return false;
+    resetCamera(); return true;
   }
   function resize() {
     const width = Math.max(container.clientWidth, 1), height = Math.max(container.clientHeight, 1);
@@ -1478,9 +1496,11 @@ export function createViewer(container, callbacks = {}) {
   function loop(time) {
     if (disposed) return;
     frame = requestAnimationFrame(loop);
-    const dt = lastTime ? Math.min((time - lastTime) / 1000, .05) : 0; lastTime = time;
+    // Poses are evaluated from absolute phase, so use elapsed time even when
+    // the compatibility renderer draws slowly. Visibility changes reset time.
+    const dt = lastTime ? Math.max(0, (time - lastTime) / 1000) : 0; lastTime = time;
     const moving = state.playing && !document.hidden && !reducedMotion.matches;
-    if (moving) { state.phase += dt; animateModel(); renderPending = true; }
+    if (moving) { Object.assign(state, advancePlayback(state.phase, dt, state)); animateModel(); renderPending = true; }
     if (settleFrames > 0) { controls.update(); settleFrames--; }
     if ((renderPending || moving || settleFrames > 0) && (!compatibility || time - lastDraw > 90)) {
       renderer.render(scene, camera); renderPending = false; lastDraw = time;
@@ -1522,6 +1542,13 @@ export function createViewer(container, callbacks = {}) {
       animateModel();if(changed){fitToView();controls.update();}requestRender();return next;
     },
     getElectrification(){return state.electrification;},
+    setPlatform(value = {}) {
+      const platformEdge = normalizePlatformEdge(value.platformEdge), platformSensor = normalizePlatformSensor(value.platformSensor);
+      const changed = platformEdge !== state.platformEdge || platformSensor !== state.platformSensor;
+      if (!changed) return;
+      clearStructuralExploration(); Object.assign(state, { platformEdge, platformSensor });
+      animateModel(); if (state.view === 'platform-interface') { fitToView(); controls.update(); } requestRender();
+    },
     getViewCapabilities() {
       const record=models.get(state.view);
       return {cutaway:Boolean(record?.shells.length),...viewSeparationCapabilities(record,{isolation:state.isolation})};
@@ -1534,6 +1561,7 @@ export function createViewer(container, callbacks = {}) {
     frameSelection,
     restoreFrame,
     frameModel,
+    frameVariant,
     setSelected,
     setMode(mode) { if (!['motoring', 'regeneration', 'coasting', 'isolated'].includes(mode)) return; state.mode = mode; animateModel(); requestRender(); },
     setExploded(value) {
@@ -1550,15 +1578,17 @@ export function createViewer(container, callbacks = {}) {
       if (changed) { fitToView(); controls.update(); }
       requestRender();
     },
-    setPlaying(value) { state.playing = Boolean(value) && !reducedMotion.matches && !document.hidden; lastTime = 0; requestRender(); return state.playing; },
-    setPhase(value) { state.phase = Math.max(0, Number(value) || 0); animateModel(); requestRender(); },
+    setPlayback({ duration = 12, loop = false } = {}) { state.duration = Math.max(1, Number(duration) || 12); state.loop = Boolean(loop); },
+    setPlaying(value) { state.playing = Boolean(value) && !reducedMotion.matches && !document.hidden; if (state.playing && state.phase >= 5) { state.phase = 0; animateModel(); } lastTime = 0; requestRender(); return state.playing; },
+    getPlaying() { return state.playing; },
+    setPhase(value) { state.phase = Math.max(0, Math.min(5, Number(value) || 0)); animateModel(); requestRender(); },
     getPhase() { return state.phase; },
     getView() { return state.view; },
     setReceptivity(value) { state.receptivity = value === 'resistor' ? 'resistor' : 'train'; animateModel(); requestRender(); },
     setVariant(value) {
       const variant = typeof value === 'string' ? value : 'default', changed = state.variant !== variant;
-      if (changed) clearStructuralExploration();
-      state.variant = variant; animateModel(); if (changed) { fitToView(); controls.update(); } requestRender();
+      if (changed) { clearStructuralExploration(); state.phase = 0; state.playing = false; }
+      state.variant = variant; animateModel(); if (changed) { if (!frameVariant()) { fitToView(); controls.update(); } } requestRender();
     },
     setScenario(value) { state.scenario=typeof value==='string'?value:'nominal'; animateModel(); updateSelection(); requestRender(); },
     setSignals(value) { state.signals=Boolean(value);animateModel();requestRender(); },
@@ -1569,7 +1599,16 @@ export function createViewer(container, callbacks = {}) {
     dispose,
     getComponentScreenPositions() {
       if (!cachedComponentBounds) cachedComponentBounds = componentBounds(models.get(state.view));
-      return screenPositions(cachedComponentBounds, camera, labelAnchorInstances);
+      const record = models.get(state.view), positions = screenPositions(cachedComponentBounds, camera, labelAnchorInstances);
+      const visible = [];record.root.traverse(node => { if (node.isMesh && nodeVisible(node) && (!node.material?.transparent || node.material.opacity > .4)) visible.push(node); });
+      for (const p of positions) {
+        raycaster.setFromCamera(new THREE.Vector2(p.x * 2 - 1, 1 - p.y * 2), camera);
+        const hit = raycaster.intersectObjects(visible, false)[0];
+        // A rear component has a key entry, but no pin drawn through equipment
+        // in front of it. Ancestors of the first hit belong to that assembly.
+        p.occluded = Boolean(hit && !assemblyRoots(record, p.id).some(root => within(hit.object, root)));
+      }
+      return positions;
     },
     getVisibleComponentIds() {
       if (!cachedComponentBounds) cachedComponentBounds = componentBounds(models.get(state.view));

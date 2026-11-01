@@ -19,6 +19,9 @@ export function buildTrackView(id, api) {
     torus, tube, explode, shell, registerAnimator,
   } = api;
   const root = startModel(id);
+  // Finite teaching traces share the player's 0..5 scrubber. Phase5 is the
+  // demonstrated end; replay is an explicit player action.
+  const studyProgress = state => Math.max(0, Math.min(1, Number(state.phase || 0) / 5));
   const concrete = mat(0x89958e, .96, .015);
   const concreteEdge = mat(0x6a7976, .98, .01);
   const rubber = mat(0x244346, .92, .015);
@@ -474,18 +477,23 @@ export function buildTrackView(id, api) {
     box(detectorRod, [.10, .16, .08], M.core, [0, .07, .84]);
     const indicator = mesh(detection, new THREE.SphereGeometry(.064, 10, 6), cueMaterial, [0, .15, 0]);
     const cues = group(parent, 'request-and-position-feedback');
-    const request = animatedPath(cues, [[position[0] - .9, .36, position[2] - .75], [position[0] -.5, .36, position[2] -.55], [position[0], .57, position[2] -.4]], C.signal, { radius: .018, beads: 2 });
-    const feedback = animatedPath(cues, [[position[0] + .43, .78, position[2] + .49], [position[0] + .85, .45, position[2] + .12], [position[0] + .9, .36, position[2] -.75]], C.service, { radius: .018, beads: 2 });
+    const requestGroup=group(cues,'finite-drive-request'),feedbackGroup=group(cues,'finite-position-feedback');
+    const request = animatedPath(requestGroup, [[position[0] - .9, .36, position[2] - .75], [position[0] -.5, .36, position[2] -.55], [position[0], .57, position[2] -.4]], C.signal, { radius: .018, beads: 1 });
+    const feedback = animatedPath(feedbackGroup, [[position[0] + .43, .78, position[2] + .49], [position[0] + .85, .45, position[2] + .12], [position[0] + .9, .36, position[2] -.75]], C.service, { radius: .018, beads: 1 });
     return {
       update(movement, state, shift) {
-        const proved = state.variant !== 'unproved';
+        const proved = state.pointProof ?? (state.variant !== 'unproved');
         output.position.z = .25 + shift;
         detectorRod.position.z = .75 * shift - .03;
-        gear.rotation.x = proved ? movement * 1.4 : (state.phase || 0) * .7;
-        lock.position.x = proved ? 0 : .12;
+        gear.rotation.x = movement * 1.4;
+        const lockFraction=state.pointLockFraction ?? (proved?1:0);
+        lock.position.x = .12*(1-lockFraction);
         indicator.material = proved ? cueMaterial : warningMaterial;
-        cues.visible = Boolean(state.signals) && state.exploded < .15;
-        request(state.phase || 0); feedback(proved ? state.phase || 0 : 0);
+        const p=studyProgress(state);
+        cues.visible = id==='switch-drive'&&Boolean(state.signals)&&(state.exploded||0)<.15;
+        requestGroup.visible=p<.18;feedbackGroup.visible=proved&&p>=.9;
+        request(Math.min(.9999,p/.18)*4);feedback(Math.max(0,Math.min(.9999,(p-.9)/.1))*4);
+        machine.userData.targetProved=proved;machine.userData.lockEngaged=lockFraction>=.999;
       },
     };
   }
@@ -494,6 +502,7 @@ export function buildTrackView(id, api) {
     const single = group(root, 'single-turnout');
     const assembly = makeSwitch(single, { drive: true });
     const train = wheelset(single, [-2.7, assembly.railY + railHeight + .42, 0], { detail: false });
+    train.root.name='turnout-running-wheelset';
     const routes = group(single, 'illustrative-running-path');
     const straightCue = group(routes, 'straight-path');
     const divergingCue = group(routes, 'diverging-path');
@@ -519,6 +528,9 @@ export function buildTrackView(id, api) {
     const linkPoints = [...points(-6.3, 6.8, a.diverge, 1.10, 28).map(p => [p[0] - 7.3, p[1], p[2] - 3.1]),
       ...points(6.8, -6.3, b.diverge, 1.10, 28).map(p => [7.3 - p[0], p[1], 3.1 - p[2]])];
     tube(linkCue, linkPoints, .05, cueMaterial, { segments: 52 });
+    const crossCurve=new THREE.CatmullRomCurve3(linkPoints.map(p=>new THREE.Vector3(...p)));
+    const crossTrain=wheelset(crossover,[-13.6,assembly.railY+railHeight+.42,-3.1],{detail:false});
+    crossTrain.root.name='crossover-running-wheelset';
     registerAnimator(state => {
       const cross = state.variant === 'crossover', divergent = state.variant === 'diverging';
       single.visible = !cross; crossover.visible = cross;
@@ -526,11 +538,15 @@ export function buildTrackView(id, api) {
       routes.visible = Boolean(state.signals) && state.exploded < .2;
       straightCue.visible = !divergent; divergingCue.visible = divergent;
       linkCue.visible = Boolean(state.signals);
-      const x = -5.7 + ((state.phase || 0) / 9 + .28) % 1 * 11.4;
+      const progress=studyProgress(state),x=-5.7+progress*11.4;
       train.root.position.x = x; train.root.position.z = divergent ? assembly.diverge(x) : 0;
       const tangent = divergent ? (assembly.diverge(x + .015) - assembly.diverge(x - .015)) / .03 : 0;
       train.root.rotation.y = -Math.atan(tangent);
       train.wheels.forEach(w => { w.rotation.z = -x / train.radius; });
+      const p=crossCurve.getPointAt(progress),t=crossCurve.getTangentAt(progress);
+      crossTrain.root.position.set(p.x,assembly.railY+railHeight+crossTrain.radius,p.z);
+      crossTrain.root.rotation.y=-Math.atan2(t.z,t.x);
+      crossTrain.wheels.forEach(w=>{w.rotation.z=-progress*crossCurve.getLength()/crossTrain.radius;});
     });
   }
 
@@ -580,14 +596,16 @@ export function buildTrackView(id, api) {
     let last = -1;
     registerAnimator(state => {
       const unproved = state.variant === 'unproved';
-      const movement = unproved ? .50 + .045 * Math.sin((state.phase || 0) * .8) : 1;
+      const p=studyProgress(state),travel=smooth(clamp((p-.18)/.54)),movement=travel*(unproved?.52:1);
+      const lockFraction=p<.15?1-clamp(p/.15):!unproved&&p>.76?clamp((p-.76)/.14):0;
+      const proof=!unproved&&p>=.9;
       if (Math.abs(movement - last) > .0001) {
         bladeMeshes.forEach((b, i) => b.update(bladePath(i ? 1 : -1, movement)));
         bar.position.z = mix(.106, -.106, movement) * .8464; last = movement;
       }
-      machine.update(movement, state, bar.position.z);
+      machine.update(movement, {...state,pointProof:proof,pointLockFraction:lockFraction}, bar.position.z);
       contactCue.visible = Boolean(state.signals);
-      closedDot.material = unproved ? warningMaterial : cueMaterial;
+      closedDot.material = proof ? cueMaterial : warningMaterial;
       closedDot.position.z = -gauge + mix(.29, .078, movement);
       openDot.position.z = gauge - mix(.078, .29, movement);
     });
@@ -634,6 +652,7 @@ export function buildTrackView(id, api) {
       }
     }
     const train = wheelset(frog, [-.24, railY + railHeight + .42, 0]);
+    train.root.name='crossing-running-wheelset';
     explode(train.root, [0, .85, 0]);
     const contact = group(frog, 'paired-wheel-contact-markers');
     const tread = mesh(contact, new THREE.SphereGeometry(.065, 10, 6), cueMaterial, [-.24, railY + railHeight + .015, gauge]);
@@ -682,13 +701,14 @@ export function buildTrackView(id, api) {
       seat(support, 0, 0, railY, { direct: true, detailed: false, lifted: false });
     }
     const diamondWheel = wheelset(diamond, [-.24, railY + railHeight + .42, 0], { detail: false });
+    diamondWheel.root.name='diamond-running-wheelset';
     explode(diamondWheel.root, [0, .85, 0]);
     const through = group(diamond, 'separate-through-alignments');
     tube(through, points(-3.5, 3.5, 0, railY + .37, 2), .023, cueMaterial, { segments: 10 });
     tube(through, points(-2.35, 2.35, x => slope * x, railY + .37, 2), .023, M.signal, { segments: 10 });
     registerAnimator(state => {
       const active = applyVariants(variants, state.variant, 'frog');
-      const x = -2.8 + (((state.phase || 0) / 8 + .457) % 1) * 5.6;
+      const x = -2.8 + studyProgress(state)*5.6;
       train.root.position.x = x; diamondWheel.root.position.x = x;
       for (const w of [...train.wheels, ...diamondWheel.wheels]) w.rotation.z = -x / .42;
       tread.position.x = x; back.position.x = x;
@@ -705,3 +725,4 @@ export function buildTrackView(id, api) {
   else if (id === 'crossing') crossingView();
   return root;
 }
+

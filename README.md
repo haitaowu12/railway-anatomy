@@ -8,6 +8,12 @@ Railway Anatomy is intended especially for graduates, newcomers and people movin
 
 This is a young project. Some topics are developed further than others, and railway practice varies between systems. Feedback from learners and practitioners is welcome: a confusing explanation, a missing interface, a misleading model or a better public reference is a useful contribution. You do not need to write code to help.
 
+## Why I am building this
+
+This project grew out of the experience of bringing graduates into railway work in Canada. People can arrive with strong engineering fundamentals and little exposure to the systems that make a metro or railway run. I want to make that first step easier: an approachable place to see the equipment, ask questions about its interfaces and find public material for the next stage of learning.
+
+It is also a way to share more railway systems knowledge beyond the people already working in the industry. The models and guided journeys are an introduction and an invitation to explore further. Additions, corrections and feedback from both newcomers and experienced practitioners are welcome.
+
 ## Explore from the railway to its parts
 
 Begin with the whole railway, then enter a station, train, depot or control centre. Movement, power and information overlays connect those places. From there, inspect an assembly, compare an arrangement or follow an interface into another system. Breadcrumbs, related-component links and return navigation help retain the surrounding context.
@@ -17,11 +23,11 @@ Different questions need different representations:
 | Representation | What it helps explain | Examples |
 |---|---|---|
 | **3D equipment and places** | Where equipment sits, how parts fit together and what changes physically | Track fastenings, point drives, bogies, collection equipment, component benches, ventilation plant and communications cabinets |
-| **2D communications relationships** | What connects to what, which way information travels and where functions are located | Field input/output to SCADA, onboard and wayside networks, help-point calls, passenger information, audio, video and access-control interfaces |
+| **2D information and electrical relationships** | What connects to what, which way information travels and where functions are located | OCC requests and returned indications, field input/output to SCADA, networks, voice and video paths, transformer waveforms and rectifier conduction |
 | **2D people and processes** | Who contributes, which information crosses a boundary and what remains unresolved | Configuration change, asset handover, worksite handback, maintenance release, duty handover and incident coordination |
 | **Reading and guided exploration** | Why an interface matters and where to investigate further | Component explanations, system guides, public sources and optional learning questions |
 
-In a model, select equipment to inspect it, frame it or isolate its visible assembly. Authored cutaways and separation expose parts where that helps explain construction. Comparisons change the represented equipment or relationship; phase controls explain selected mechanisms and information exchanges. These controls are available where the particular model supports them.
+In a model, select equipment to inspect it, frame it or isolate its visible assembly. Authored cutaways and separation expose parts where that helps explain construction. Comparisons change the represented equipment or relationship; phase controls explain selected mechanisms and information exchanges. Sequences have named steps, manual previous/next controls and a finite end state; repeating is optional. Numbered pins remain attached to visible equipment and correspond to a fixed parts key. The complete explanation and public references open below the workspace.
 
 The railway also has systems that cross physical boundaries. Power supply reaches trains and stations; communications connect endpoints in several locations; train control combines onboard, trackside and control-centre functions. The navigation and cross-links preserve these relationships instead of giving each component only one place in a rigid tree.
 
@@ -45,6 +51,12 @@ These are selected schematic arrangements. Their public references and assumptio
 ### Train control and shared equipment
 
 Conventional signalling, CBTC/urban ATC and ETCS are explained as related families with different purposes and implementations. Protection, automatic operation, supervision, interlocking and train detection are distinguishable functions. Devices such as balises, axle counters or radio equipment can appear in more than one architecture. Supplier examples keep their generation and source scope, rather than defining the whole subject around a product name.
+
+### Stations and control centres
+
+At a platform, choose the **physical edge** independently of the mechanism being studied. Open, half-height and full-height arrangements remain in place when switching between applicable studies; interspace sensing requires a fitted barrier. The boarding illustration separates leaf movement, the closed contact, the lock mechanism and the returned indication. A two-landing lift study shows the relationship between the moving cabin and the fixed landing doors.
+
+The OCC equipment views cover the **room, console and technical room**. An information diagram follows requests, interface receipt and returned observations between their actual locations. Roles, incident coordination and duty handover remain in People & processes. This helps distinguish equipment that carries or presents information from the operational decisions made with it.
 
 ### People and responsibilities
 
@@ -88,7 +100,7 @@ After changing catalog explanations, guides or sources, regenerate the static re
 npm run reading
 ```
 
-Automated checks cover content references, routes, model construction and selected behavioural invariants. Changes to presentation or interaction also need inspection in a browser. Record the viewport, renderer and journeys actually checked; a passing script does not establish visual quality on every device. The [revision 6 review](docs/REVISION-6.md) includes examples, screenshots and verification scope. Historical review records in `docs/` describe their own revisions and scope.
+Automated checks cover content references, routes, model construction and selected behavioural invariants. Changes to presentation or interaction also need inspection in a browser. Record the viewport, renderer and journeys actually checked; a passing script does not establish visual quality on every device. The [revision 7 review](docs/REVISION-7.md) records the latest changes, the matched layout comparison, screenshots and verification scope. The [revision 6 review](docs/REVISION-6.md) remains available for its earlier baseline. Historical review records in `docs/` describe their own revisions and scope.
 
 ## Where the code lives
 
@@ -97,8 +109,9 @@ Automated checks cover content references, routes, model construction and select
 | Application and navigation | `dist/index.html`, `style.css`, `app.js`, `navigation.js` |
 | Concepts, sources and view configuration | `dist/catalog.js`, `atlas-config.js`, domain-specific `*-data.js` modules |
 | Equipment models and interaction | `dist/viewer.js`, `model.js`, `*-models.js`, `network-model.js`, `exploration.js` |
-| Technology comparisons | `dist/technology.js`, `electrification.js`, `comparisons.js` |
-| Communications diagrams | `dist/communications-data.js`, `topology-ui.js` |
+| Technology comparisons | `dist/technology.js`, `electrification.js`, `platform-config.js`, `comparisons.js` |
+| Information and electrical diagrams | `dist/communications-data.js`, `topology-ui.js`, `electrical-explainers.js` |
+| Playback and pins | `dist/interaction-state.js`, `motion-guides.js` |
 | People and process diagrams | `dist/process-data.js`, `process-ui.js` |
 | Learning and reading | `dist/tours.js`, `reading-guides.js`, `reading.html`, `scripts/generate-reading.mjs` |
 | Checks | `scripts/check-site.mjs` and the focused `scripts/check-*.mjs` suites |

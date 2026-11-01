@@ -180,11 +180,25 @@ check('Bogie transfer lowers before traversing through an open channel with fixe
  }
 });
 check('Vehicle lifting raises only the body while both bogies remain at rail level',()=>{
- const record=recordFor('depot-maintenance','jacks');
+ const record=setScene('depot-maintenance','jacks',{phase:0});
  const raised=namedVisible(record,'raised-body-with-bogies-at-rail-level')[0];assert(raised);
- const body=raised.children.find(n=>n.userData.component==='carbody');assert(body.position.y>1.8);
+ const body=raised.children.find(n=>n.userData.component==='carbody');assert.equal(body.position.y,0);
  const bogies=namedVisible(record,'attached-vehicle-bogie');assert.equal(bogies.length,2);
- for(const b of bogies)assert.equal(b.position.y,.5);
+ const bogiePoses=bogies.map(b=>b.getWorldPosition(new THREE.Vector3()).toArray());
+ const saddles=namedVisible(record,'vehicle-lifting-head');assert.equal(saddles.length,4);
+ let previousBody=-1;
+ for(const phase of [0,1.25,2.5,3.75,5]){
+  setScene('depot-maintenance','jacks',{phase});
+  const bodyBounds=new THREE.Box3().setFromObject(body);
+  assert(body.position.y>=previousBody,'The finite lift reverses unexpectedly');previousBody=body.position.y;
+  for(const saddle of saddles){
+   const bounds=new THREE.Box3().setFromObject(saddle);
+   assert(Math.abs(bounds.max.y-bodyBounds.min.y)<1e-5,'Saddle loses contact with the moving carbody');
+   assert(bounds.max.x>bodyBounds.min.x&&bounds.min.x<bodyBounds.max.x&&bounds.max.z>bodyBounds.min.z&&bounds.min.z<bodyBounds.max.z,'Saddle misses the body in plan');
+  }
+  assert.deepEqual(bogies.map(b=>b.getWorldPosition(new THREE.Vector3()).toArray()),bogiePoses,'A bogie rises with the body');
+ }
+ assert(Math.abs(body.position.y-1.8/.95)<1e-8,'The lifted endpoint differs from its authored body displacement');
  assert.equal(namedVisible(record,'lowered-vehicle-bogie').length,0);
 });
 check('Vehicle lifting columns clear the fixed roof-access platforms',()=>{
@@ -242,6 +256,25 @@ check('Underfloor lathe aligns with one installed axle and leaves the adjacent a
   const wheel=wheels.find(w=>Math.abs(w.getWorldPosition(new THREE.Vector3()).z-r.z)<.01);assert(wheel);
   const distance=r.distanceTo(wheel.getWorldPosition(new THREE.Vector3()));
   assert(Math.abs(distance-(.21+.3*.95))<.01,'Drive roller misses the wheel tread');
+ }
+});
+check('Lathe rotation selects one installed axle and retains roller contact during tool feed',()=>{
+ for(const [view,variant]of [['depot-maintenance','wheel-lathe'],['depot-workshop','lathe']]){
+  const record=setScene(view,variant,{phase:0});
+  const machine=namedVisible(record,'lathe-at-installed-axle')[0],axles=namedVisible(record,'depot-mounted-axle');
+  const selected=axles.find(n=>Math.abs(n.userData.vehicleAxleX-machine.userData.vehicleAxleX)<1e-8);assert(selected);
+  const centres=axles.map(n=>n.getWorldPosition(new THREE.Vector3()).toArray());
+  const tools=namedVisible(record,'wheel-profile-cutting-tool'),toolStart=tools.map(n=>n.position.z);
+  const rollers=namedVisible(record,'lathe-drive-rotor');assert.equal(rollers.length,4);
+  setScene(view,variant,{phase:2.5});
+  assert(selected.rotation.z>0,'Selected axle does not rotate');
+  assert(axles.filter(n=>n!==selected).every(n=>n.rotation.z===0),'An adjacent axle rotates');
+  assert.deepEqual(axles.map(n=>n.getWorldPosition(new THREE.Vector3()).toArray()),centres,'Machining translates an axle');
+  assert(rollers.every(n=>Math.abs(n.rotation.z+selected.rotation.z*(.3*.95/.21))<1e-8),'Roller and wheel surface velocities disagree');
+  assert(tools.every((n,i)=>Math.abs(n.position.z-toolStart[i])>.1),'Tool carriers do not feed');
+  setScene(view,variant,{phase:5});
+  assert(tools.every((n,i)=>Math.abs(n.position.z-toolStart[i])<1e-8),'Tools do not withdraw at the endpoint');
+  assert.equal(selected.rotation.z,Math.PI*4.5);
  }
 });
 check('Roll-by measurement uses fixed sensors and activates only during vehicle overlap',()=>{

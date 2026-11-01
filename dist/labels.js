@@ -63,7 +63,7 @@ Object.assign(SHORT_LABELS,{
   "platform-intrusion": "Intrusion sensing",
   "platform-lidar": "LiDAR coverage",
   "platform-radar": "Radar plane",
-  "platform-alarm-video": "Alarm & video",
+  "platform-alarm-video": "Associated camera",
   "platform-response": "Detection interface",
   "platform-screen-door": "Platform doors",
   "platform-door-drive": "Door drive",

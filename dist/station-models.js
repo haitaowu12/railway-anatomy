@@ -2,15 +2,28 @@
  * are illustrative. These scenes are neither a station design nor an operating
  * sequence, fire simulation, hydraulic calculation or electrical single-line. */
 import { createCommunicationsAssemblies } from './communications-models.js';
+import { createPlatformAssemblies, PLATFORM_GEOMETRY } from './platform-models.js';
+import { normalizePlatformEdge, platformDoorPose, stationLiftPose } from './platform-config.js';
 
 export const STATION_VIEWS = {
-  station: { camera: [23, 18, 25], target: [0, 2.8, 0], distance: 48 },
+  station: { camera: [32, 24, 34], target: [0, 3.2, -.5], distance: 59 },
   'station-plant': { camera: [18, 13, 21], target: [0, 1.4, 0], distance: 36 },
   'tunnel-ventilation': { camera: [15, 12, 18], target: [0, 2.1, 0], distance: 34 },
   'ventilation-unit': { camera: [8, 6, 9], target: [0, 1.65, 0], distance: 18 },
   'station-networks': { camera: [18, 13, 22], target: [0, 1.3, .7], distance: 38 },
   'fire-systems': { camera: [17, 11, 20], target: [0, 1.3, 0], distance: 34 },
 };
+
+export const STATION_FOCUS = {
+  all: { camera: [32, 24, 34], target: [0, 3.2, -.5], distance: 59, group: 'station-spatial-context' },
+  passenger: { camera: [22, 15, 25], target: [-1, 3.1, .1], distance: 39, group: 'station-passenger-area' },
+  equipment: { camera: [22, 15, 16], target: [11.1, 6.55, -1.45], distance: 21, group: 'supported-equipment-room' },
+};
+export const STATION_GEOMETRY = Object.freeze({
+  platform: PLATFORM_GEOMETRY.floor, concourse: 5.4, halfWidth: 3.7, halfLength: 16.2,
+  trackCenters: [-5.55,5.55], liftAt: [4.8,PLATFORM_GEOMETRY.floor,-.7],
+  liftOpening: {min:[3.6,-1.85],max:[6.0,.45]},
+});
 
 const VARIANTS = {
   station: ['all', 'passenger', 'equipment'],
@@ -329,7 +342,7 @@ export function buildStationView(id, api) {
     const bladeGeometry = new THREE.ExtrudeGeometry(shape, { depth: .045, bevelEnabled: false });
     for (let i = 0; i < 7; i++) mesh(rotor, bladeGeometry, paint.air, [0, 0, 0], [.18, 0, i * Math.PI * 2 / 7]);
     explode(rotor, [0, 0, 1.0]);
-    animations.push(state => { rotor.rotation.z = state.phase * .85; });
+    animations.push(state => { rotor.rotation.z = id==='ventilation-unit' ? Math.PI*4*Math.max(0,Math.min(1,state.phase/5)) : state.phase*.85; });
     const motor = group(g, 'fan-drive-motor', [0, 0, -1.22]);
     cylinder(motor, .37, .8, M.teal, [0, 0, 0], [Math.PI / 2, 0, 0], 16);
     for (let i = 0; i < 10; i++) {
@@ -354,29 +367,51 @@ export function buildStationView(id, api) {
       const blade = group(g, 'damper-blade', [0, y, 0]);
       box(blade, [2.27, .265, .05], paint.air);
       cylinder(blade, .035, 2.48, M.steel, [0, 0, 0], [0, 0, Math.PI / 2], 8);
-      box(blade, [.07, .21, .045], M.core, [1.28, .06, 0]);
+      box(blade, [.07, .20, .045], M.core, [1.28, .10, 0]);
+      cylinder(blade,.03,.11,M.steel,[1.28,.20,0],[0,0,Math.PI/2],8);
+      blade.userData.explorationLabel='Damper blade and crank';
       explode(blade, [0, 0, .55 + i * .13]);
       blades.push(blade);
     }
-    box(g, [.055, 1.6, .07], M.copper, [1.35, 0, .12]);
+    const linkage=group(g,'damper-common-link',[1.34,.20,0]);
+    box(linkage,[.055,1.6,.07],M.copper);
+    linkage.userData.explorationLabel='Common blade link';explode(linkage,[.7,0,.5]);
     const actuator = part(g, 'bas-actuator', [1.55, -.1, 0]);
     actuator.userData.explorationAssembly = 'bas-actuator';
     const casework = group(actuator, 'damper-actuator-cover');
     box(casework, [.45, .57, .4], paint.fire); shell(casework); explode(casework, [.55, .35, 0]);
     const reduction = group(actuator, 'damper-actuator-reduction');
-    for (const [y, r] of [[-.08, .13], [.12, .075]]) {
-      cylinder(reduction, r, .09, M.copper, [0, y, 0], [0, 0, Math.PI / 2], 14);
-      cylinder(reduction, .025, .2, M.steel, [0, y, 0], [0, 0, Math.PI / 2], 8);
+    const driveGears=[];
+    for (const [y, r] of [[0, .13], [.205, .075]]) {
+      const gear=group(reduction,'damper-reduction-wheel',[0,y,0]);
+      cylinder(gear,r,.09,M.copper,[0,0,0],[0,0,Math.PI/2],14);
+      box(gear,[.015,r*1.3,.018],paint.pale,[.055,0,0]);
+      cylinder(gear,.025,.2,M.steel,[0,0,0],[0,0,Math.PI/2],8);
+      driveGears.push({node:gear,ratio:r===.13?1:-.13/.075});
     }
     explode(reduction, [.6, 0, .4]);
     cylinder(actuator, .08, .3, M.steel, [-.3, 0, 0], [0, 0, Math.PI / 2], 10);
-    box(g, [.28, .22, .2], paint.pale, [1.49, .59, .07]);
-    diode(g, [1.49, .61, .185]);
+    const crank=group(g,'damper-output-crank',[1.32,-.1,0]);
+    box(crank,[.055,.20,.045],M.core,[0,.10,0]);
+    cylinder(crank,.035,.10,M.steel,[0,.20,0],[0,0,Math.PI/2],8);
+    const target=group(crank,'damper-limit-target',[0,.20,0]);box(target,[.065,.055,.065],paint.pale);
+    const limit=group(g,'damper-open-limit-contact',[1.49,-.1,.29]);
+    box(limit,[.28,.22,.20],paint.pale);
+    box(limit,[.04,.08,.12],M.core,[-.13,0,-.10]);
+    const limitOff=cylinder(limit,.027,.02,paint.trim,[0,.02,.115],[Math.PI/2,0,0],8);
+    const limitOn=diode(limit,[0,.02,.117]);limitOn.name='damper-open-indication';
     animations.push(state => {
       // A mechanism demonstration only. Smoke-objective never prescribes a
       // different damper position or an emergency command hierarchy.
-      const opening = id === 'ventilation-unit' ? .65 + .25 * Math.sin(state.phase * .4) : .95;
-      blades.forEach((blade, i) => { blade.rotation.x = opening * (i % 2 ? -1 : 1); });
+      const progress=Math.max(0,Math.min(1,state.phase/5));
+      const opening=id==='ventilation-unit'?Math.min(1,progress/.90)*Math.PI/2:.95;
+      // Parallel-blade example: each equal crank meets one translating link.
+      blades.forEach(blade=>{blade.rotation.x=opening;});
+      crank.rotation.x=opening;
+      linkage.position.y=.20*Math.cos(opening);linkage.position.z=.20*Math.sin(opening);
+      driveGears.forEach(gear=>{gear.node.rotation.x=opening*gear.ratio;});
+      const proved=id==='ventilation-unit'&&progress>=.98;
+      limitOn.visible=proved;limitOff.visible=!proved;
     });
     return g;
   }
@@ -415,7 +450,7 @@ export function buildStationView(id, api) {
     }
     cylinder(rotor, .13, .86, paint.air, [0, 0, 0], [0, 0, Math.PI / 2], 12);
     explode(rotor, [.65, .3, 1.1]);
-    animations.push(state => { rotor.rotation.x = state.phase * .7; });
+    animations.push(state => { rotor.rotation.x = id==='ventilation-unit' ? Math.PI*4*Math.max(0,Math.min(1,state.phase/5)) : state.phase*.7; });
     sensor(g, [.56, 2.31, 0], true);
     return g;
   }
@@ -439,23 +474,91 @@ export function buildStationView(id, api) {
   }
   function stairFlight(parent, at, direction = -1, rise = 3.8, run = 6.4, width = 1.45) {
     const g = part(parent, 'station-egress', at), count = 16;
+    g.userData.labelAnchor = new THREE.Vector3(direction * run * .55, rise * .56, width / 2);
     for (let i = 0; i < count; i++) {
       const h = rise * (i + 1) / count, x = direction * (i + .5) * run / count;
-      box(g, [run / count, h, width], paint.concrete, [x, h / 2, 0]);
-      box(g, [run / count * .9, .035, width], paint.pale, [x, h + .02, 0]);
+      box(g, [run / count, h - .03, width], paint.concrete, [x, (h - .03) / 2, 0]);
+      const tread = box(g, [run / count, .03, width], paint.pale, [x, h - .015, 0]);
+      tread.name = 'stair-tread-' + i;
       if (i % 3 === 0) for (const z of [-width / 2, width / 2]) cylinder(g, .025, .9, M.steel, [x, h + .47, z], null, 8);
     }
     for (const z of [-width / 2, width / 2]) tube(g, [[0, .95, z], [direction * run, rise + .95, z]], .035, M.steel, { segments: 8, straight: true });
     return g;
   }
   function liftContext(parent, at) {
-    const g = part(parent, 'station-egress', at);
-    for (const x of [-.7, .7]) for (const z of [-.6, .6]) box(g, [.075, 5.4, .075], M.steel, [x, 2.7, z]);
-    for (const y of [.12, 4.1, 5.4]) box(g, [1.6, .09, 1.38], M.core, [0, y, 0]);
-    box(g, [1.2, .13, 1.08], paint.pale, [0, 1.85, 0]);
-    box(g, [1.2, 1.95, .055], M.glass, [0, 2.86, -.53]);
-    for (const x of [-.31, .31]) box(g, [.58, 1.9, .055], paint.pale, [x, 2.85, .56]);
-    for (const x of [-.17, .17]) cylinder(g, .015, 1.45, M.steel, [x, 4.6, 0], null, 6);
+    const g = part(parent, 'station-lift', at), rise = STATION_GEOMETRY.concourse - STATION_GEOMETRY.platform;
+    g.userData.explorationAssembly = 'station-lift';
+    g.userData.labelAnchor = new THREE.Vector3(1.05, rise*.55, 1.05);
+    for (const x of [-1.1,1.1]) for (const z of [-1.05,1.05])
+      box(g,[.085,rise+2.7,.085],M.steel,[x,(rise+2.7)/2,z]);
+    for (const y of [0,rise,rise+2.7]) for (const z of [-1.05,1.05])
+      box(g,[2.28,.085,.085],M.steel,[0,y,z]);
+    for (const x of [-1.0,1.0]) box(g,[.055,rise+2.55,.09],M.steel,[x,(rise+2.55)/2,-.72]);
+    const car = part(g,'station-lift-car');
+    car.name='lift-carriage';car.userData.explorationAssembly='station-lift-car';
+    car.userData.labelAnchor=new THREE.Vector3(.8,1.05,.86);
+    const floor=box(car,[1.85,.12,1.7],paint.pale,[0,-.06,0]);floor.name='lift-cabin-floor';
+    box(car,[1.85,.10,1.7],paint.pale,[0,2.2,0]);
+    box(car,[1.85,2.15,.05],M.glass,[0,1.075,-.83]);
+    for(const x of [-.90,.90])box(car,[.05,2.15,1.7],M.glass,[x,1.075,0]);
+    box(car,[1.55,.035,.05],M.steel,[0,.95,-.77]);
+    const carLeaves=[];
+    for(const direction of [-1,1]){
+      const leaf=group(car,'lift-car-door',[direction*.25,1.04,.87]);
+      box(leaf,[.48,2.07,.055],paint.pale);
+      box(leaf,[.28,.94,.025],M.glass,[0,.25,.04]);
+      carLeaves.push({node:leaf,direction});
+      box(car,[.60,2.15,.06],paint.trim,[direction*.79,1.075,.82]);
+    }
+    const roofDrive=group(car,'lift-car-door-operator',[0,2.29,.45]);
+    box(roofDrive,[1.66,.14,.24],M.core);roofDrive.userData.explorationLabel='Car door operator';explode(roofDrive,[0,.45,.35]);
+    const landing = part(g,'station-lift-landing-doors');
+    landing.userData.explorationAssembly='station-lift-landing-doors';
+    landing.userData.labelAnchor=new THREE.Vector3(.93,1.15,1.12);
+    const landingLeaves=[],contacts=[];
+    for(const [index,y]of [0,rise].entries()){
+      const sill=box(landing,[2.18,.06,.28],M.steel,[0,y-.03,1.02]);sill.name='lift-landing-sill-'+index;
+      for(const x of [-1.04,1.04])box(landing,[.10,2.24,.12],paint.trim,[x,y+1.12,1.07]);
+      box(landing,[2.18,.10,.12],paint.trim,[0,y+2.23,1.07]);
+      for(const direction of [-1,1]){
+        const leaf=group(landing,'lift-landing-door-'+index,[direction*.25,y+1.05,1.10]);
+        box(leaf,[.48,2.08,.055],paint.pale);box(leaf,[.28,.83,.025],M.glass,[0,.30,.04]);
+        landingLeaves.push({node:leaf,direction,index});
+        box(landing,[.60,2.15,.06],paint.trim,[direction*.79,y+1.075,1.04]);
+      }
+      const contact=group(landing,'lift-landing-contact-'+index,[.80,y+2.20,1.10]);
+      box(contact,[.17,.12,.12],M.core);contact.userData.explorationLabel='Landing-door contact';explode(contact,[.4,.35,.4]);contacts.push(contact);
+      const magnet=group(landing,'lift-landing-contact-target-'+index,[.65,y+2.20,1.10]);
+      box(magnet,[.07,.09,.08],M.steel);contacts.push(magnet);
+      box(landing,[.17,.28,.10],paint.black,[1.33,y+1.12,1.10]);
+      diode(landing,[1.33,y+1.12,1.17]);
+    }
+    const drive=part(g,'station-lift-drive',[0,rise+2.48,0]);
+    drive.userData.explorationAssembly='station-lift-drive';
+    drive.userData.labelAnchor=new THREE.Vector3(.32,0,0);
+    const machine=group(drive,'lift-traction-machine',[-.46,0,-.20]);
+    cylinder(machine,.25,.55,M.teal,[0,0,0],[Math.PI/2,0,0],16);machine.userData.explorationLabel='Traction machine';explode(machine,[-.5,.45,-.35]);
+    const sheave=group(drive,'lift-traction-sheave',[0,0,-.20]);
+    cylinder(sheave,.29,.10,M.steel,[0,0,0],[Math.PI/2,0,0],18);
+    box(sheave,[.43,.03,.02],paint.pale,[0,0,.065]);sheave.userData.explorationLabel='Traction sheave';explode(sheave,[0,.45,.5]);
+    const counterweight=group(g,'lift-counterweight',[0,rise+.5,-1.0]);
+    for(let i=0;i<7;i++)box(counterweight,[1.25,.12,.16],M.core,[0,i*.13,0]);
+    const ropes=[];
+    for(const x of [-.22,.22]){
+      const rope=cylinder(g,.013,1,M.steel,[x,0,-.20],null,6);ropes.push(rope);
+    }
+    animations.push(state=>{
+      const pose=stationLiftPose(variant(state)==='passenger'?state:{phase:0});
+      car.position.y=pose.height*rise;
+      for(const leaf of carLeaves)leaf.node.position.x=leaf.direction*(.25+.50*pose.carOpening);
+      for(const leaf of landingLeaves){const opening=leaf.index?pose.upperOpening:pose.lowerOpening;leaf.node.position.x=leaf.direction*(.25+.50*opening);}
+      contacts[1].position.x=.65+.50*pose.lowerOpening;contacts[3].position.x=.65+.50*pose.upperOpening;
+      counterweight.position.y=rise+.5-pose.height*rise;
+      sheave.rotation.z=-pose.height*rise/.29;
+      const roof=car.position.y+2.2,top=rise+2.48;
+      for(const rope of ropes){rope.scale.y=top-roof;rope.position.y=(top+roof)/2;}
+      g.userData.liftPose=pose;
+    });
     return g;
   }
   function contextTrain(parent, at = [0, 0, 0]) {
@@ -500,70 +603,120 @@ export function buildStationView(id, api) {
   }
 
   if (id === 'station') {
-    slab(root, 25.3, 12.5);
-    for (const z of [-3.15, 3.15]) {
-      const corridor = group(root, 'station-track-context', [0, .08, z]); corridor.scale.setScalar(.75);
-      makeTrack(corridor, 32, { detail: false });
-      if (z > 0) contextTrain(corridor, [-8, 0, 0]);
+    const S=STATION_GEOMETRY,A=createPlatformAssemblies(api);
+    const spatial=group(root,'station-spatial-context'),passenger=group(spatial,'station-passenger-area');
+    const equipment=group(spatial,'station-equipment-area');
+    slab(spatial,34.5,18.7,[0,0,-.7]);
+    for(const z of S.trackCenters)A.track(spatial,34,[0,0,z]);
+    A.train(spatial,{at:[-5.4,0,S.trackCenters[1]],platformSide:-1});
+    // A broad island keeps the boarding strips clear of stairs, lift and seats.
+    const base=box(passenger,[S.halfLength*2,S.platform-.10,S.halfWidth*2],M.deck,[0,(S.platform-.10)/2,0]);
+    base.name='station-platform-foundation';
+    const top=box(passenger,[S.halfLength*2,.10,S.halfWidth*2],paint.floor,[0,S.platform-.05,0]);
+    top.name='station-platform-surface';top.renderOrder=-70;
+    for(const side of [-1,1]){
+      box(passenger,[32,.018,.30],M.yellow,[0,S.platform+.009,side*(S.halfWidth-.27)]);
+      box(passenger,[32,.014,.035],paint.pale,[0,S.platform+.01,side*(S.halfWidth-.63)]);
     }
-    const platformBase = box(root, [23.6, 1.02, 4.6], paint.concrete, [0, .56, 0]); platformBase.renderOrder = -75;
-    const platformTop = box(root, [23.6, .08, 4.6], paint.floor, [0, 1.11, 0]); platformTop.renderOrder = -70;
-    for (const z of [-2.15, 2.15]) {
-      box(root, [23.3, .018, .13], M.yellow, [0, 1.16, z]);
-      for (let x = -11; x <= 11; x += .85) box(root, [.48, .022, .19], paint.pale, [x, 1.17, z - Math.sign(z) * .22]);
+    const facades=[];
+    for(const edge of ['half-height','full-height'])for(const side of [-1,1]){
+      const f=A.barrier(spatial,{edge,at:[0,0,side*5.55],side:-side,length:31.9,doorCenters:[-9,-1.8,5.4,12.6],detailed:false});
+      facades.push(f);f.node.visible=false;
     }
-    // Partial mezzanine leaves a central void and an open foreground platform.
-    for (const x of [-7.9, 8.05]) {
-      box(root, [7.4, .23, 3.9], paint.floor, [x, 5.06, -.25]);
-      for (const dx of [-2.8, 2.8]) cylinder(root, .14, 3.78, paint.trim, [x + dx, 3.07, -1.55], null, 10);
-      for (let dx = -3.5; dx <= 3.6; dx += 1) cylinder(root, .025, .91, M.steel, [x + dx, 5.64, 1.7], null, 8);
-      tube(root, [[x - 3.7, 6.1, 1.7], [x + 3.7, 6.1, 1.7]], .035, M.steel, { straight: true, segments: 8 });
+    animations.push(state=>{
+      const edge=normalizePlatformEdge(state.platformEdge);
+      for(const f of facades){f.node.visible=f.edge===edge;f.set(platformDoorPose({phase:0}));}
+    });
+    // Every upper slab excludes the lift shaft. All walking surfaces share a
+    // single concourse datum, including the final stair tread and landing sill.
+    const mezzanine=group(passenger,'concourse-slabs-with-lift-opening');
+    const floorPiece=(name,x0,x1,z0,z1)=>{
+      const mesh=box(mezzanine,[x1-x0,.22,z1-z0],paint.floor,[(x0+x1)/2,S.concourse-.11,(z0+z1)/2]);
+      mesh.name=name;return mesh;
+    };
+    floorPiece('west-concourse',-16.2,-5.4,-3.1,2.75);
+    floorPiece('rear-concourse-link',-5.4,3.0,-3.1,-1.85);
+    floorPiece('lift-opening-west-strip',3.0,3.6,-3.1,2.75);
+    floorPiece('lift-opening-rear-strip',3.6,6.0,-3.1,-1.85);
+    floorPiece('lift-opening-front-strip',3.6,6.0,.45,2.75);
+    floorPiece('east-concourse',6.0,16.2,-3.1,2.75);
+    for(const x of [-14.7,-8.1,7.0,14.7])for(const z of [-2.6,2.2])
+      cylinder(passenger,.12,S.concourse-S.platform-.22,paint.trim,[x,(S.concourse+S.platform-.22)/2,z],null,12);
+    const rail=(a,b,y,z)=>{
+      for(let x=a;x<=b;x+=1.1)cylinder(passenger,.027,.94,M.steel,[x,y+.47,z],null,8);
+      tube(passenger,[[a,y+.97,z],[b,y+.97,z]],.035,M.steel,{straight:true,segments:6});
+    };
+    rail(-16.2,-5.4,S.concourse,2.75);rail(3.0,16.2,S.concourse,2.75);
+    rail(-5.4,3.0,S.concourse,-1.85);
+    stairFlight(passenger,[1.8,S.platform,-.55],-1,S.concourse-S.platform,7.2,1.75);
+    liftContext(passenger,S.liftAt);
+    // The equipment room is completely supported by the eastern concourse.
+    // Its front wall has a real door opening beside the equipment aisle.
+    const room=group(equipment,'supported-equipment-room',[11.15,S.concourse,-1.45]);
+    const roomFloor=box(room,[7.8,.10,2.9],paint.floor,[0,-.05,0]);roomFloor.name='equipment-room-floor';
+    const roomShell=group(room,'station-equipment-room-shell');
+    box(roomShell,[7.8,2.65,.12],paint.wall,[0,1.325,-1.45]);
+    box(roomShell,[.12,2.65,2.9],paint.wall,[-3.9,1.325,0]);
+    box(roomShell,[.12,2.65,2.9],paint.wall,[3.9,1.325,0]);
+    box(roomShell,[7.9,.10,3.0],paint.wall,[0,2.7,0]);
+    // Entrance is x=-3.0, not a door overlaid on an unbroken wall.
+    box(roomShell,[.26,2.65,.10],paint.wall,[-3.77,1.325,1.45]);
+    box(roomShell,[6.285,2.65,.10],paint.wall,[.7575,1.325,1.45]);
+    box(roomShell,[1.23,.35,.10],paint.wall,[-3.0,2.475,1.45]);
+    shell(roomShell);
+    const access=accessDoor(room,[-3.0,0,1.45]);
+    access.userData.labelAnchor=new THREE.Vector3(.83,1.14,.15);
+    const rack=telecomRack(room,[-2.05,0,-.45],.72);rack.userData.labelAnchor=new THREE.Vector3(0,1.7,.5);
+    const fire=firePanel(room,[.20,0,-.55],.76);fire.userData.labelAnchor=new THREE.Vector3(0,1.2,.35);
+    const bas=basController(room,[2.35,0,-.52],.72);bas.userData.labelAnchor=new THREE.Vector3(0,1.2,.35);
+    duct(equipment,[11.1,7.5,-2.55],[9.1,.40,.52]);
+    for(const x of [7.7,10.8,14.1])box(equipment,[.04,.40,.05],M.steel,[x,7.9,-2.55]);
+    sensor(equipment,[13.5,7.15,-.05]);
+    // Devices are attached to concourse soffits or explicit cross-platform
+    // frames. There are no unsupported floating cameras or speakers.
+    for(const x of [-11.6,-7.0,8.0,13.6]){
+      const mount=group(passenger,'soffit-device-bracket',[x,4.68,1.35]);
+      box(mount,[.055,.5,.055],M.steel,[0,.25,0]);
+      box(mount,[1.25,.07,.07],M.steel,[.38,0,0]);
+      speaker(mount,[0,-.25,0],.82);
+      cameraDevice(mount,[.78,-.16,-.05]);
+      emergencyLight(mount,[.27,-.27,.12]);
+      detector(mount,[-.27,.30,-.30]);
     }
-    box(root, [9, .23, 1], paint.floor, [.2, 5.06, -1.75]);
-    stairFlight(root, [2.2, 1.15, .82], -1, 3.81, 6.4, 1.4);
-    liftContext(root, [4.4, 1.15, -.17]);
-    const upperRooms = room(root, [8.3, 5.18, -1.55], 5.6, 2.5, 2.65);
-    telecomRack(upperRooms, [-1.7, .13, -.25], .66);
-    firePanel(upperRooms, [.2, .13, -.28], .75);
-    basController(upperRooms, [1.6, .13, -.3], .68);
-    accessDoor(root, [5.38, 5.2, -.3]).rotation.y = Math.PI / 2;
-    duct(root, [1.25, 6.4, -1.3], [9.1, .43, .65]);
-    for (const x of [-7.5, -.4, 7.4]) {
-      speaker(root, [x, 3.7, -.1], .82);
-      cameraDevice(root, [x + .55, 4.4, -.32]);
-      emergencyLight(root, [x, 4.15, .43]);
-      detector(root, [x - .4, 4.27, -.5]);
+    const centralFrame=group(passenger,'platform-device-support-frame',[2.4,S.platform,0]);
+    for(const z of [-2.45,2.45])box(centralFrame,[.10,3.37,.10],paint.trim,[0,1.685,z]);
+    box(centralFrame,[.11,.12,5.0],M.steel,[0,3.42,0]);
+    speaker(centralFrame,[0,3.08,.72],.82);cameraDevice(centralFrame,[0,3.12,-.45]);
+    emergencyLight(centralFrame,[0,3.09,1.35]);detector(centralFrame,[0,3.33,-1.12]);
+    for(const x of [-10.3,10.3]){
+      box(passenger,[.055,1.03,.055],M.steel,[x,4.62,1.95]);
+      display(passenger,[x,4.03,1.95]);
     }
-    display(root, [-6.8, 3.6, .75]); display(root, [6.3, 3.6, .75]);
-    display(root, [-8.5, 6.78, .7], .85);
-    helpPoint(root, [-9.1, 1.15, 1.65]); helpPoint(root, [8.8, 1.15, 1.65]);
-    sensor(root, [6, 6.45, -.15]);
-    for (const x of [-7.5, 7.3]) {
-      box(root, [2.1, .12, .52], M.teal, [x, 1.7, -.52]);
-      box(root, [2.1, .49, .06], M.teal, [x, 1.97, -.77]);
-      for (const dx of [-.7, .7]) box(root, [.06, .5, .4], M.steel, [x + dx, 1.4, -.52]);
+    box(passenger,[.06,1.45,.06],M.steel,[-12.8,6.1,.9]);
+    display(passenger,[-12.8,6.75,.9],.85);
+    helpPoint(passenger,[-13.7,S.platform,1.65]);helpPoint(passenger,[13.8,S.platform,1.65]);
+    for(const x of [-11.7,11.7]){
+      box(passenger,[2.8,.12,.55],M.teal,[x,S.platform+.49,-.5]);
+      box(passenger,[2.8,.5,.06],M.teal,[x,S.platform+.78,-.78]);
+      for(const dx of [-1,1])box(passenger,[.07,.45,.45],M.steel,[x+dx,S.platform+.23,-.5]);
     }
-    const egress = part(root, 'station-egress');
-    for (const x of [-10.2, -9.25, -8.3]) {
-      box(egress, [.25, .95, 1.15], paint.pale, [x, 5.68, -.2]);
-      box(egress, [.29, .06, 1.18], M.teal, [x, 6.17, -.2]);
+    const egress=part(passenger,'station-egress');egress.userData.labelAnchor=new THREE.Vector3(-12.2,S.concourse+.55,-.25);
+    for(const x of [-13.2,-12.2,-11.2]){
+      box(egress,[.25,.95,1.2],paint.pale,[x,S.concourse+.475,-.25]);
+      box(egress,[.29,.055,1.22],M.teal,[x,S.concourse+.96,-.25]);
     }
-    arch(root, [11.9, .08, -3.15], 1.98, 1.3);
-    const shaft = part(root, 'tunnel-shaft', [10.6, 0, -5.4]);
-    for (const x of [-.7, .7]) box(shaft, [.13, 7.5, 1.2], paint.concrete, [x, 3.75, 0]);
-    box(shaft, [1.53, 7.5, .13], paint.concrete, [0, 3.75, -.6]);
-    for (let y = 6.8; y < 7.45; y += .16) box(shaft, [1.25, .055, .16], paint.trim, [0, y, .61], [-.35, 0, 0]);
-    const canopy = group(root, 'removable-station-canopy');
-    for (const x of [-8.1, -.2, 7.7]) {
-      box(canopy, [.12, .14, 6.1], M.steel, [x, 8.05, -.1]);
-      for (const z of [-2.8, 2.8]) cylinder(canopy, .09, 2.9, M.steel, [x, 6.6, z], null, 10);
-    }
-    box(canopy, [23.7, .1, 2.1], paint.pale, [0, 8.22, -1.9]);
-    shell(canopy); explode(canopy, [0, 1.2, 0]);
-    route(root, [[6.7, 6.6, -1.25], [3, 6.6, -.75], [1, 4.4, .4], [-6.8, 3.7, .8]], 'data', ['all', 'passenger']);
-    route(root, [[6.7, 6.2, -1.25], [9.7, 4.4, 1.7], [8.8, 2.4, 1.78]], 'data', ['all', 'passenger']);
-    route(root, [[10.6, 7.2, -5.4], [10.6, 3.5, -5.4], [9.2, 2.5, -3.15]], 'air', ['all', 'equipment']);
-    route(root, [[9.8, 6.2, -1.6], [7, 6.45, -1.2], [2, 6.4, -1.2], [-3, 6.4, -1.2]], 'air', ['equipment']);
+    const shaft=part(equipment,'tunnel-shaft',[15.55,0,-8.0]);
+    shaft.userData.labelAnchor=new THREE.Vector3(.7,6.85,.6);
+    for(const x of [-.7,.7])box(shaft,[.13,7.5,1.35],paint.concrete,[x,3.75,0]);
+    box(shaft,[1.53,7.5,.13],paint.concrete,[0,3.75,-.68]);
+    for(let y=6.8;y<7.45;y+=.16)box(shaft,[1.25,.055,.16],paint.trim,[0,y,.68],[-.35,0,0]);
+    const ventilationConnection=group(equipment,'supported-service-duct');
+    box(ventilationConnection,[.62,.42,5.3],paint.trim,[15.55,7.3,-5.1]);
+    for(const z of [-6.5,-4.1])box(ventilationConnection,[.07,7.08,.07],M.steel,[16.1,3.54,z]);
+    route(spatial,[[9.1,7.0,-1.9],[6.2,7.0,-1.9],[6.2,4.8,1.95],[10.3,4.1,1.95]],'data',['all','passenger'],{moving:false});
+    route(spatial,[[9.1,6.8,-1.9],[14.4,6.8,-1.9],[14.4,2.4,1.65],[13.8,2.4,1.65]],'data',['all','passenger'],{moving:false});
+    route(spatial,[[15.55,7.3,-8],[15.55,7.3,-2.55],[11.1,7.5,-2.55]],'air',['equipment'],{moving:false});
+    root.userData.focusGroups=STATION_FOCUS;
   } else if (id === 'station-plant') {
     for (const x of [-6.8, 0, 6.8]) slab(root, 6.05, 5.9, [x, 0, 0]);
     transformer(root, [-8.25, .1, -1.2], .78);
@@ -623,7 +776,7 @@ export function buildStationView(id, api) {
     const ahu = group(root, 'air-handler-alternative'); slab(ahu, 7.2, 4.3); airHandler(ahu, [0, .12, 0], 1.15);
     alternatives.push({ node: fan, name: 'fan' }, { node: blades, name: 'damper' }, { node: ahu, name: 'air-handler' });
     for (const x of [-.6, .6]) route(fan, [[x, 1.9, -3.1], [x, 1.9, -.8], [x, 1.9, 1.6], [x, 1.9, 2.8]], 'air', ['fan']);
-    route(blades, [[-.35, 1.85, -2.6], [-.35, 1.85, 0], [-.35, 1.85, 2.6]], 'air', ['damper']);
+    route(blades, [[-.35, 1.85, -2.6], [-.35, 1.85, 0], [-.35, 1.85, 2.6]], 'air', ['damper'],{moving:false,openDamper:true}).name='damper-open-path';
     route(ahu, [[-3.7, 1.5, 0], [-1.5, 1.5, 0], [1, 1.5, 0], [3.7, 1.5, 0]], 'air', ['air-handler']);
   } else if (id === 'station-networks') {
     slab(root, 22, 11, [0, 0, .5]);
@@ -702,7 +855,7 @@ export function buildStationView(id, api) {
     alternatives.forEach(item => { item.node.visible = item.name === chosen; });
     for (const animate of animations) animate(safeState);
     for (const connection of routes) {
-      const visible = state.signals !== false && (state.exploded || 0) < .2 && (!connection.showFor || connection.showFor.includes(chosen));
+      const visible = state.signals !== false && (state.exploded || 0) < .2 && (!connection.showFor || connection.showFor.includes(chosen)) && (!connection.options.openDamper || phase>=4.5);
       connection.line.visible = visible;
       connection.marks.forEach((mark, index) => {
         // Water traces show connectivity with stationary markers, not a running

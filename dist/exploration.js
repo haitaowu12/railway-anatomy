@@ -219,7 +219,9 @@ export function screenPositions(boundsByComponent, camera, anchorInstances = nul
   for (const [id, instances] of boundsByComponent) {
     const candidates = [];
     for (const { node, bounds } of instances) {
-      const point = bounds.getCenter(new Vector3()).project(camera);
+      const localAnchor = node.userData?.labelAnchor;
+      const world = localAnchor ? node.localToWorld(Array.isArray(localAnchor) ? new Vector3(...localAnchor) : localAnchor.clone()) : bounds.getCenter(new Vector3());
+      const point = world.clone().project(camera);
       if (point.z <= -1 || point.z >= 1 || Math.abs(point.x) >= 1 || Math.abs(point.y) >= 1) continue;
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
       for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
@@ -227,7 +229,7 @@ export function screenPositions(boundsByComponent, camera, anchorInstances = nul
         minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
       }
       const width = (maxX - minX) * .5, height = (maxY - minY) * .5;
-      candidates.push({ id, node, x: (point.x + 1) * .5, y: (1 - point.y) * .5, depth: point.z,
+      candidates.push({ id, node, world: world.toArray(), x: (point.x + 1) * .5, y: (1 - point.y) * .5, depth: point.z,
         width, height, instanceCount: instances.length, area: width * height });
     }
     candidates.sort((a, b) => b.area - a.area || a.depth - b.depth);
