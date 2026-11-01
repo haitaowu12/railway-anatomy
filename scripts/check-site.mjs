@@ -344,8 +344,13 @@ await check('All local links and module dependencies work at a repository subpat
         references.push({ from: file, value: location, runtime: true });
       }
     }
-    for (const match of html.matchAll(/<(script|link|img|a|source)\b[^>]*?\b(?:src|href)\s*=\s*["']([^"']+)["']/gi)) {
-      references.push({ from: file, value: match[2], runtime: match[1].toLowerCase() !== 'a' });
+    for (const match of html.matchAll(/<(script|link|img|a|source)\b[^>]*>/gi)) {
+      const target = match[0].match(/\b(?:src|href)\s*=\s*["']([^"']+)["']/i);
+      if (!target) continue;
+      const tag = match[1].toLowerCase();
+      const rel = match[0].match(/\brel\s*=\s*["']([^"']+)["']/i)?.[1].trim().toLowerCase();
+      const runtime = tag !== 'a' && !(tag === 'link' && rel === 'canonical');
+      references.push({ from: file, value: target[1], runtime });
     }
   }
   for (const file of modules) {
