@@ -1475,18 +1475,20 @@ export function createViewer(container, callbacks = {}) {
     controls.minDistance = fit.minimumDistance;
     controls.maxDistance = Math.max(VIEW[state.view].distance * 1.65, fit.distance * 2);
     camera.far = fit.far; camera.updateProjectionMatrix();
-    // A shallow overview is asymmetric in perspective. Center its projected
-    // board rather than leaving the near edge against the camera controls.
-    if(state.view==='railway'&&!state.focused&&!state.isolation){
+    // A shallow overview is asymmetric in perspective. Explicit assembly
+    // framing also reserves the measured toolbar overlay, so an exposed part
+    // cannot be fitted underneath the controls. Orbiting does not call this fit.
+    const overview=state.view==='railway'&&!state.focused&&!state.isolation;
+    const width=container.clientWidth,height=container.clientHeight;
+    const footer=container.parentElement?.querySelector('.stage-footer');
+    const footerHeight=footer&&getComputedStyle(footer).position==='absolute'?footer.offsetHeight:0;
+    if(overview||footerHeight>0&&(nodes||state.focused||state.isolation)){
       camera.lookAt(controls.target);camera.updateMatrixWorld(true);
       const points=[];
       for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])points.push(new THREE.Vector3(x,y,z).project(camera));
       const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x)),bottom=Math.min(...points.map(p=>p.y)),top=Math.max(...points.map(p=>p.y));
-      const width=container.clientWidth,height=container.clientHeight;
-      const footer=container.parentElement?.querySelector('.stage-footer');
-      const footerHeight=footer&&getComputedStyle(footer).position==='absolute'?footer.offsetHeight:0;
       const bottomEdge=-1+2*(footerHeight+12)/height,topEdge=.92;
-      camera.zoom=Math.min(1.35,1.88/(right-left),(topEdge-bottomEdge)/(top-bottom));
+      camera.zoom=Math.min(overview?1.35:1,1.88/(right-left),(topEdge-bottomEdge)/(top-bottom));
       const center=(topEdge+bottomEdge)/2;
       camera.setViewOffset(width,height,(left+right)*camera.zoom*width/4,(center-(top+bottom)*camera.zoom/2)*height/2,width,height);
       camera.updateProjectionMatrix();

@@ -207,4 +207,23 @@ check('Physical selection rejects inactive arrangements while retaining covered 
   assert.equal(v.selectInstance(inactive.instanceId),false);const after=v.getInspectionState();
   assert.equal(after.selectedInstanceId,before.selectedInstanceId);assert.equal(after.allInstances,true);assert.equal(selected.length,notifications);assert(h.renderer.camera.position.distanceTo(camera)<1e-9);
 });
+
+const desktopFrame=await viewerHarness({}, {width:1052,height:516,footerHeight:104,footerPosition:'absolute'});
+check('Explicit near/far axlebox framing keeps exposed geometry above the measured desktop controls',()=>{
+  const framed=desktopFrame.viewer;framed.setView('bogie');framed.setTechnology({propulsion:'lim',control:'loop'});
+  for(const side of ['near','far']){
+    framed.restoreExploration();const assembly=desktopFrame.root().getObjectByName('axlebox-'+side);assert(assembly);
+    assert(framed.selectInstance(assembly.userData.instanceId,{notify:false}));assert(framed.setInspectionMode('inspection'));assert(framed.frameSelection());desktopFrame.draw();
+    const camera=desktopFrame.renderer.camera,points=[];assembly.updateWorldMatrix(true,true);
+    assembly.traverseVisible(n=>{if(!n.isMesh)return;const p=n.geometry.attributes.position;for(let i=0;i<p.count;i++)points.push(new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(n.matrixWorld).project(camera));});
+    assert(points.length>0);const top=Math.min(...points.map(p=>(1-p.y)*516/2)),bottom=Math.max(...points.map(p=>(1-p.y)*516/2));
+    assert(top>=0,side+' inspection clipped the top of the model');assert(bottom<=516-desktopFrame.footer.offsetHeight-12+1e-7,side+' exposed parts were fitted beneath the toolbar');assert(points.every(p=>Math.abs(p.x)<1),'The footer correction clipped the horizontal frame');assert(camera.zoom<=1,'Selection framing enlarged the model unnecessarily');
+    camera.position.add(new THREE.Vector3(.13,.04,-.07));camera.lookAt(visibleBounds(assembly).getCenter(new THREE.Vector3()));camera.updateMatrixWorld(true);
+    const orbitPosition=camera.position.clone(),orbitRotation=camera.quaternion.clone();framed.setPhase(.5);desktopFrame.draw();
+    assert(camera.position.distanceTo(orbitPosition)<1e-9&&camera.quaternion.angleTo(orbitRotation)<1e-7,'Rendering or phase changes overrode a manually chosen camera');
+  }
+  desktopFrame.footer.position='static';assert(framed.frameSelection());desktopFrame.draw();
+  assert(!desktopFrame.renderer.camera.view?.enabled,'A static mobile-style footer reserved part of the canvas');assert.equal(desktopFrame.renderer.camera.zoom,1);
+});
+desktopFrame.viewer.dispose();
 v.dispose();console.log(`PASS ${passed} mechanical-depth and physical-inspection contracts (GPU rendering not assessed)`);
