@@ -199,7 +199,7 @@ assert(syncStart >= 0 && syncEnd > syncStart, 'Viewer synchronization markers ch
 const syncCalls=[];
 const synchronizationViewer=new Proxy(viewer,{get(target,key){const value=target[key];if(typeof value!=='function')return value;return (...args)=>{syncCalls.push(key);return value(...args);};}});
 const motionStart=appSource.indexOf('const isProcessPage='),motionEnd=appSource.indexOf('const preferredPresentation=',motionStart);
-const interfaceStart=appSource.indexOf('function isInterfaceTour()'),interfaceEnd=appSource.indexOf('function routeLabel(',interfaceStart);
+const interfaceStart=appSource.indexOf('function isOccTour()'),interfaceEnd=appSource.indexOf('function routeLabel(',interfaceStart);
 assert(motionStart>=0&&motionEnd>motionStart&&interfaceStart>=0&&interfaceEnd>interfaceStart,'Production motion/route helpers changed');
 const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', 'animationFor', 'platformAnimationFor','systemDiagram','electricalStudy','representationFor','processFor', `
   let state, lastExplorationContext = '', lastSequenceKey = '', lastTopologyStep = '';

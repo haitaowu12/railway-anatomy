@@ -18,6 +18,7 @@ import { buildAssemblyIndex, instanceNode, instanceMetadata, assemblyTree, insta
 import { createEquipmentDetails } from './equipment-details.js';
 import { createMechanicalDetails } from './mechanical-details.js';
 import { installStudioEnvironment } from './studio-lighting.js';
+import { drawWithEnclosureOcclusion } from './precision-geometry.js';
 import { nodeVisible, within, visibleBounds, componentBounds, assemblyRoots, restoreIsolation, applyIsolation,
   separationEntries, viewSeparationCapabilities, explorationCapabilities, restoreSeparation, applySeparation, fitPerspectiveBounds, screenPositions } from './exploration.js';
 
@@ -180,6 +181,13 @@ export function createViewer(container, callbacks = {}) {
     m.castShadow = true; m.receiveShadow = true; parent.add(m); identify(m, parent); return m;
   }
   function box(parent, size, material, position = [0, 0, 0], rotation = null) {
+    // Manufactured enclosures have an edge radius; thin shims, rails, teeth and
+    // contact faces retain their exact rectangular construction. The panel
+    // helper keeps the same outer dimensions, including its bevel.
+    if(Math.min(...size)>=.1&&Math.max(...size)<9){
+      const m=roundedPanel(parent,size[0],size[1],size[2],material,position,Math.min(.045,Math.min(...size)*.16));
+      if(rotation)m.rotation.set(...rotation);m.userData.manufacturedEdge=true;return m;
+    }
     return mesh(parent, new THREE.BoxGeometry(...size), material, position, rotation);
   }
   function cylinder(parent, radius, height, material, position, rotation = null, segments = 24) {
@@ -195,13 +203,14 @@ export function createViewer(container, callbacks = {}) {
     return { m, curve };
   }
   function roundedPanel(parent, w, h, depth, material, position = [0, 0, 0], radius = .08) {
-    const s = new THREE.Shape(), x = -w / 2, y = -h / 2, r = Math.min(radius, w / 4, h / 4);
-    s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
-    s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+    const b=Math.min(.014,depth*.14,w*.04,h*.04),iw=w-2*b,ih=h-2*b;
+    const s = new THREE.Shape(), x = -iw / 2, y = -ih / 2, r = Math.max(.001,Math.min(radius-b, iw / 4, ih / 4));
+    s.moveTo(x + r, y); s.lineTo(x + iw - r, y); s.quadraticCurveTo(x + iw, y, x + iw, y + r);
+    s.lineTo(x + iw, y + ih - r); s.quadraticCurveTo(x + iw, y + ih, x + iw - r, y + ih);
+    s.lineTo(x + r, y + ih); s.quadraticCurveTo(x, y + ih, x, y + ih - r);
     s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
-    const geo = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: false, curveSegments: compatibility ? 2 : 5 });
-    geo.translate(0, 0, -depth / 2);
+    const geo = new THREE.ExtrudeGeometry(s, { depth:depth-2*b, bevelEnabled:true, bevelThickness:b,bevelSize:b,bevelSegments:1,curveSegments: compatibility ? 2 : 5 });
+    geo.translate(0, 0, -depth / 2+b);geo.userData.outerDimensions=[w,h,depth];
     return mesh(parent, geo, material, position);
   }
   function explode(node, delta) {
@@ -1510,6 +1519,7 @@ export function createViewer(container, callbacks = {}) {
     fitToView(); controls.update(); requestRender();
   }
   function fitToView(nodes = null) {
+    if(container.clientWidth<=0||container.clientHeight<=0)return false;
     camera.clearViewOffset(); camera.zoom=1; camera.updateProjectionMatrix();
     const authored = !nodes && !state.focused && !state.isolation && viewFocus()?.bounds;
     const bounds = authored ? new THREE.Box3(new THREE.Vector3(...authored.min),new THREE.Vector3(...authored.max)) : visibleBounds(nodes||frameRoots());
@@ -1530,16 +1540,25 @@ export function createViewer(container, callbacks = {}) {
     // framing also reserves the measured toolbar overlay, so an exposed part
     // cannot be fitted underneath the controls. Orbiting does not call this fit.
     const overview=state.view==='railway'&&!state.focused&&!state.isolation;
+    const workplace=['operations-centre','occ-workplace','occ-equipment'].includes(state.view);
     const width=container.clientWidth,height=container.clientHeight;
     const footer=container.parentElement?.querySelector('.stage-footer');
     const footerHeight=footer&&getComputedStyle(footer).position==='absolute'?footer.offsetHeight:0;
-    if(overview||footerHeight>0&&(nodes||state.focused||state.isolation)){
+    if(overview||workplace||footerHeight>0&&(nodes||state.focused||state.isolation)){
       camera.lookAt(controls.target);camera.updateMatrixWorld(true);
       const points=[];
-      for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])points.push(new THREE.Vector3(x,y,z).project(camera));
+      if(workplace){
+        // Fit the occupied mesh silhouette, not the empty upper corners of the
+        // room AABB. This is why an otherwise large room used to sit at the
+        // bottom of a mostly blank stage. The floor still contributes bounds.
+        for(const root of nodes||frameRoots())root.traverseVisible(o=>{
+          if(!o.isMesh)return;if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();const b=o.geometry.boundingBox;
+          if(!b)return;for(const x of [b.min.x,b.max.x])for(const y of [b.min.y,b.max.y])for(const z of [b.min.z,b.max.z])points.push(new THREE.Vector3(x,y,z).applyMatrix4(o.matrixWorld).project(camera));
+        });
+      }else for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])points.push(new THREE.Vector3(x,y,z).project(camera));
       const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x)),bottom=Math.min(...points.map(p=>p.y)),top=Math.max(...points.map(p=>p.y));
       const bottomEdge=-1+2*(footerHeight+12)/height,topEdge=.92;
-      camera.zoom=Math.min(overview?1.35:1,1.88/(right-left),(topEdge-bottomEdge)/(top-bottom));
+      camera.zoom=Math.min(overview?1.35:workplace?1.55:1,1.88/(right-left),(topEdge-bottomEdge)/(top-bottom));
       const center=(topEdge+bottomEdge)/2;
       camera.setViewOffset(width,height,(left+right)*camera.zoom*width/4,(center-(top+bottom)*camera.zoom/2)*height/2,width,height);
       camera.updateProjectionMatrix();
@@ -1734,7 +1753,8 @@ export function createViewer(container, callbacks = {}) {
     if (moving) { Object.assign(state, advancePlayback(state.phase, dt, state)); animateModel(); renderPending = true; }
     if (settleFrames > 0) { controls.update(); settleFrames--; }
     if ((renderPending || moving || settleFrames > 0) && (!compatibility || time - lastDraw > 90)) {
-      renderer.render(scene, camera); renderPending = false; lastDraw = time;
+      if(compatibility)drawWithEnclosureOcclusion(scene,state,()=>renderer.render(scene,camera));else renderer.render(scene,camera);
+      renderPending = false; lastDraw = time;
     }
   }
   function visibility() { if (document.hidden) state.playing = false; lastTime = 0; requestRender(); }

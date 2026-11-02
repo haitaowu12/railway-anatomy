@@ -8,7 +8,7 @@ export const VIEW_GROUPS = {
   control:[{label:'Functions & architecture',views:['control','cbtc-network','signalling','etcs']},{label:'Shared detection & routes',views:['interlocking','train-detection']},{label:'Supplier example',views:['seltrac']}],
   power:[{label:'Supply & collection',views:['system','electrification','guideway']},{label:'Substation assemblies',views:['substation','power-transformer','power-rectifier','power-switchgear']}],
   communications:[{label:'Architecture',views:['communications-overview','communications-network']},{label:'Services & equipment',views:['communications-scada','communications-telephony','communications-passenger','communications-security']},{label:'Vehicle interface',views:['communications']}],
-  operations:[{label:'Equipment & locations',views:['operations-centre','occ-workplace','occ-equipment']},{label:'Information & dependencies',views:['occ-supervision','dependencies']}],
+  operations:[{label:'Equipment & locations',views:['operations-centre','occ-workplace','occ-equipment']},{label:'Applications & dependencies',views:['occ-supervision','dependencies']}],
   depot:[{label:'Site & servicing',views:['depot-overview','depot-yard','depot-wash','depot-utilities']},{label:'Workshops & equipment',views:['depot-maintenance','depot-workshop','depot-components','depot-support']},{label:'Protection & assessment',views:['depot-protection','depot-condition','depot-testing']}],
   station:[{label:'Passenger areas',views:['station','platform-interface','accessible-journey']},{label:'Station plant & services',views:['station-plant','ventilation-unit','tunnel-ventilation','station-networks','fire-systems']}],
 };
@@ -39,7 +39,7 @@ export function viewTrail(view, views) {
 }
 
 export function routeState(state) {
-  return {controlInterface:state.controlInterface?structuredClone(state.controlInterface):null,page:state.page,domain:state.domain,view:state.view,component:state.component,variant:state.variant,
+  return {occ:state.occ?structuredClone(state.occ):null,controlInterface:state.controlInterface?structuredClone(state.controlInterface):null,page:state.page,domain:state.domain,view:state.view,component:state.component,variant:state.variant,
     technology:{...state.technology},electrification:state.electrification,platformEdge:state.platformEdge||'open',platformSensor:state.platformSensor||'lidar',presentation:state.presentation,processId:state.processId,processStep:state.processStep,roleId:state.roleId,mode:state.mode,scenario:state.scenario,sink:state.sink,
     cutaway:state.cutaway,exploded:state.exploded,explodeScope:state.explodeScope||'all',playing:false,labels:state.labels,labelMode:state.labelMode||(state.labels===false?'off':'nearby'),lesson:state.lesson,
     instanceId:state.instanceId||null,functionalPath:state.functionalPath||null,allInstances:Boolean(state.allInstances),workspace:state.workspace||null,studyId:state.studyId||null};

@@ -155,21 +155,19 @@ export function systemDiagram(state,definition={}) {
     node('objective','Engineered smoke objective','smoke-control','Design and operations','Depends on zone and incident'),node('controller','Tunnel ventilation controller','tvcs-controller','Local control','Owns the defined mode logic and interlocks'),
     node('fan','Fan equipment','tunnel-fan','Plant','Command and measured state differ'),node('damper','Damper equipment','tunnel-damper','Plant','Returned position is a separate input'),node('supervision','Supervisory interface','station-scada','Design and operations','Optional status / permitted mode requests'),
   ],[edge('objective','controller','Approved control design defines eligible modes; the diagram gives no fan recipe'),edge('controller','fan','Defined commands and returned plant feedback','both'),edge('controller','damper','Defined commands and separate position evidence','both'),edge('controller','supervision','Selected monitoring / request interface if provided','both')],{interfaceDomain:'tunnel'});
-  if(view==='occ-equipment'){
-    const alternate=variant==='alternate',display=variant!=='display-loss';
-    return diagram('One chosen host; separate display and recording',description,[
-      status(node('service','Application host A','occ-application-service','Application','Selected before the information trace'),alternate?null:true,alternate?'Not selected':'Host A selected'),
-      status(node('alternate','Application host B','occ-alternate-service','Application','A selected alternative, not automatic failover'),alternate?true:null,alternate?'Host B selected':'Not selected'),
-      status(node('network','Data-network interface','occ-supervisory-network','Distribution','Declared application information path'),true,'Path available in example'),
-      status(node('display','Operator display','occ-task-display','Presentation and record','Presentation is separate from the host'),display,display?'Picture available':'Picture unavailable'),
-      status(node('record','Event recorder','operations-event-recording','Presentation and record','Recording is separate from the task picture'),true,'Recording path available'),
-    ],[
-      status(edge('service','network','Application information from host A'),alternate?null:true,alternate?'Not the selected host':'Selected information source'),
-      status(edge('alternate','network','Application information from host B'),alternate?true:null,alternate?'Selected information source':'Not the selected host'),
-      status(edge('network','display','Task-display branch'),display,display?'Picture available':'Presentation unavailable'),
-      status(edge('network','record','Independent recording branch'),true,'Record path remains available'),
-    ],{sources:chosen?.sources||['F17','F19','OC08'],rows:[['Application selection',alternate?'Host B selected':'Host A selected','The choice precedes the example; no failover detection, timing or transfer is simulated.'],['Task picture',display?'Available':'Unavailable','A missing display does not establish that the host, network or field plant has failed.'],['Recording path','Available in this example','A record can continue without a task picture; its source and quality still require interpretation.'],['Remote plant condition','No conclusion from screen availability','The observation and its validity must be assessed through their own interfaces.']],result:'Display loss, application selection and recording are different states.'});
-  }
+  if(view==='occ-equipment')return diagram('Physical equipment and the functions it supports',description,[
+    node('service','Compute host','occ-application-service','Computing','One physical host can run multiple services; an application can span hosts'),
+    node('network','Network / interface hardware','occ-supervisory-network','Communications','Carries defined exchanges; device management and service payloads differ'),
+    node('display','Workplace display interface','occ-task-display','Presentation','A physical output surface and its client/distribution connection'),
+    node('record','Storage hardware','operations-event-recording','Retained data','Records may share a host or use a separate storage service'),
+    node('power','Power support','occ-uninterruptible-power','Electrical supply','An illustrated UPS dependency; no runtime or continuity is inferred'),
+  ],[
+    edge('service','network','Application and management interfaces','both'),
+    edge('network','display','Example client / presentation connection','both'),
+    edge('service','record','Configured storage interface','both'),
+    edge('power','service','Illustrative supported electrical supply'),
+    edge('power','network','Illustrative supported electrical supply'),
+  ],{sources:['OC16','OC08','OC09'],rows:[['Hardware and function','Different subjects','A rack or host is equipment. An application is a software function with an allocated scope.'],['Deployment','Illustrative arrangement','Additional hosts do not establish redundancy, synchronization or failover.'],['Availability','Not inferred from this layout','Use the OCC application inspector to compare an actual point path, quality and returned evidence.']],result:'Physical connections and software responsibilities are related, but they do not have a one-to-one deployment rule.'});
   if(view==='depot-testing')return diagram('A test fixture and a test conclusion are different',description,[
     node('subject','Identified vehicle / item','depot-functional-checks','Test definition','Configuration and work scope'),node('conditions','Declared test conditions','depot-diagnostics','Test definition',variant==='movement'?'Defined movement-test boundary':'Defined stationary-test boundary'),
     node('observe','Stimulus and observation','depot-functional-checks','Evidence','Expected and observed response'),node('record','Result and limitations','change-test','Evidence','Traceable to the subject'),node('decision','Maintenance release interface','depot-maintenance-release','Review','A separate responsible decision'),

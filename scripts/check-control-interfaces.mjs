@@ -28,12 +28,12 @@ check('Separate, shared-status and integrated patterns change actual interface c
     assert.equal(connectionFor({domain:d.id,architecture:'integrated'}),d.request?'supervisory':'monitor');
     const absent=evaluateControlInterface({domain:d.id,architecture:'integrated',connections:{[d.id]:'absent'}});
     assert.equal(absent.mode,'absent');assert.equal(absent.canRequest,false);
-    assert.match(absent.steps[4].text,/No common station interface/);
+    assert.match(absent.steps[4].text,/No common supervisory interface/);
   }
 });
 
-check('Fire, PSD, signalling, video and network summaries cannot acquire generic station command rights',()=>{
-  for(const id of ['fire','platform','signalling','security','network','radio']){
+check('Selected fire, PSD, signalling, voice and network summaries retain native control boundaries',()=>{
+  for(const id of ['fire','platform','signalling','network','radio']){
     assert(!connectionModesFor(id).includes('supervisory'));
     const m=evaluateControlInterface({domain:id,architecture:'integrated',connections:{[id]:'supervisory'},trace:'request'});
     assert.equal(m.canRequest,false);assert.equal(m.mode,'monitor');
@@ -71,7 +71,7 @@ check('Per-function custom allocations preserve all other functions and reject i
   const custom={domain:'building',architecture:'integrated',connections:{building:'absent',tunnel:'monitor',fire:'supervisory',unknown:'monitor'}};
   assert.equal(connectionFor(custom,'building'),'absent');assert.equal(connectionFor(custom,'tunnel'),'monitor');assert.equal(connectionFor(custom,'traction'),'supervisory');assert.equal(connectionFor(custom,'fire'),'monitor');
   const s=normalizeControlState({domain:'x',architecture:'x',connections:['unsafe'],scenario:'x',step:-100});
-  assert.equal(s.domain,'traction');assert.equal(s.step,0);assert.deepEqual(s.connections,{});
+  assert.equal(s.domain,'telecom');assert.equal(s.step,0);assert.deepEqual(s.connections,{});
   assert.equal(normalizeControlState({step:Infinity}).step,4);assert.equal(normalizeControlState({step:'no'}).step,0);
 });
 
@@ -109,5 +109,12 @@ check('Legacy I/O lesson identifies a building actuator and preserves an interve
   }
 });
 
+
+check('Communications equipment SCADA has explicit optional request capabilities and source scope',()=>{
+ const domain=CONTROL_DOMAINS.find(d=>d.id==='telecom');assert(domain);assert.match(domain.supervisor,/telecom SCADA/);assert(domain.sources.includes('OC10'));assert(domain.sources.includes('OC11'));assert(domain.sources.includes('OC14'));assert.match(domain.boundary,/NMS/);assert.match(domain.boundary,/mandatory/);
+ for(const id of ['telecom','security','passenger']){assert(connectionModesFor(id).includes('supervisory'));const enabled=evaluateControlInterface({domain:id,architecture:'integrated',trace:'request'});assert(enabled.canRequest);assert.match(enabled.steps[0].text,/configured common interface/);const disabled=evaluateControlInterface({domain:id,architecture:'summaries',trace:'request'});assert.equal(disabled.canRequest,false);assert.match(disabled.steps[1].text,/No request is sent/);}
+ assert.equal(getInterfaceContext('telecom-scada').domain,'telecom');assert.deepEqual(getInterfaceContext('unrecognised-asset','unrelated-view'),{});assert.notEqual(getInterfaceContext('scada-rtu','communications-scada').domain,'traction','Generic field acquisition must not silently become traction SCADA');
+});
+if(failures.length)process.exitCode=1;
 console.log(`\n${passed} control-interface checks passed; ${failures.length} failed.`);
 if(failures.length)process.exitCode=1;

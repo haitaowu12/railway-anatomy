@@ -81,13 +81,14 @@ check('Case status is conveyed by text and symbol as well as node/path styling',
   assert(!plain.includes('topology-status-legend'),'Unannotated existing graphs must not acquire invented availability');
 });
 
-check('A lost OCC task picture does not remove the selected application or recording branch',()=>{
-  const d=systemDiagram({view:'occ-equipment',variant:'display-loss'},VIEWS['occ-equipment']);
-  assert.equal(d.nodes.find(n=>n.id==='display').status,'unavailable');assert.equal(d.nodes.find(n=>n.id==='record').status,'available');
-  assert.equal(d.edges.find(e=>e.to==='display').status,'unavailable');assert.equal(d.edges.find(e=>e.to==='record').status,'available');
-  const alternate=systemDiagram({view:'occ-equipment',variant:'alternate'},VIEWS['occ-equipment']);
-  assert.equal(alternate.nodes.find(n=>n.id==='alternate').status,'available');assert.equal(alternate.nodes.find(n=>n.id==='service').status,'unknown');
-  assert.match(alternate.rows[0][2],/no failover detection/);
+check('OCC hardware dependencies do not infer service availability or automatic failover',()=>{
+  for(const variant of ['normal','display-loss','alternate']){
+    const d=systemDiagram({view:'occ-equipment',variant},VIEWS['occ-equipment']);validate(d,'occ-equipment/'+variant);
+    assert(d.nodes.some(n=>n.component==='occ-uninterruptible-power'));assert(d.nodes.some(n=>n.component==='occ-application-service'));assert(d.nodes.some(n=>n.component==='operations-event-recording'));
+    assert(d.nodes.every(n=>!n.status));assert(d.edges.every(e=>!e.status));
+    assert.match(d.rows.find(row=>row[0]==='Deployment')[2],/do not establish redundancy/);
+    assert.match(d.rows.find(row=>row[0]==='Availability')[2],/OCC application inspector/);
+  }
 });
 
 console.log(`\n${passed} system-diagram checks passed; ${failures.length} failed.`);

@@ -121,8 +121,8 @@ if (catalog && model && tours && atlas) {
   };
 
   await check('Expanded concepts and source records have complete, public content', async () => {
-    assert.equal(CONCEPTS.length, 329, 'Update the published content count when the release scope changes');
-    assert.equal(SOURCES.length, 219, 'Update the published source count when the release scope changes');
+    assert.equal(CONCEPTS.length, 330, 'Update the published content count when the release scope changes');
+    assert.equal(SOURCES.length, 226, 'Update the published source count when the release scope changes');
     unique(CONCEPTS.map(item => item.id), 'Concepts');
     unique(SOURCES.map(item => item.id), 'Sources');
     for (const source of SOURCES) {
@@ -392,40 +392,17 @@ await check('All local links and module dependencies work at a repository subpat
 });
 
 await check('Actual 3D geometry agrees with navigation, lessons and architecture boundaries', async () => {
-  const { GEOMETRY_CHECK_RESULT } = await import(pathToFileURL(path.join(repo, 'scripts/check-models.mjs')).href);
-  assert.deepEqual(GEOMETRY_CHECK_RESULT.failures, [], 'See the geometry contract failures above');
+  runSuite('check-models.mjs');
 });
 
+// Geometry suites retain their own Three scenes and test harnesses. Isolate
+// them so earlier suites do not accumulate in this process's module cache.
+function runSuite(script) {
+  const result=spawnSync(process.execPath,[path.join(repo,'scripts',script)],{cwd:repo,stdio:'inherit'});
+  assert.equal(result.status,0,`${script}: ${result.error?.message||result.signal||'checks failed'}`);
+}
+for(const script of ["check-technology.mjs", "check-navigation.mjs", "check-depot.mjs", "check-occ.mjs", "check-occ-applications.mjs", "check-exploration.mjs", "check-comparisons.mjs", "check-studies.mjs", "check-processes.mjs", "check-electrification.mjs", "check-communications.mjs", "check-station-platform.mjs", "check-interactions.mjs", "check-motion.mjs", "check-depth-mechanics.mjs", "check-domain-depth.mjs", "check-workspaces.mjs", "check-physical-labs.mjs", "check-evidence-labs.mjs", "check-component-motion.mjs", "check-system-diagrams.mjs", "check-control-interfaces.mjs", "check-learning-surfaces.mjs", "check-reading.mjs"]) {
+  await check(`Independent suite: ${script}`,async()=>runSuite(script));
+}
 console.log(`\n${passed} checks passed; ${failures.length} failed.`);
-if (failures.length) process.exitCode = 1;
-
-await import('./check-technology.mjs');
-
-
-await import('./check-navigation.mjs');
-await import('./check-depot.mjs');
-await import('./check-occ.mjs');
-await import('./check-exploration.mjs');
-await import('./check-comparisons.mjs');
-
-await import('./check-studies.mjs');
-
-await import('./check-processes.mjs');
-await import('./check-electrification.mjs');
-await import('./check-communications.mjs');
-
-await import('./check-station-platform.mjs');
-await import('./check-interactions.mjs');
-await import('./check-motion.mjs');
-await import('./check-depth-mechanics.mjs');
-await import('./check-domain-depth.mjs');
-await import('./check-workspaces.mjs');
-await import('./check-physical-labs.mjs');
-await import('./check-evidence-labs.mjs');
-
-
-await import('./check-component-motion.mjs');
-await import('./check-system-diagrams.mjs');
-await import('./check-control-interfaces.mjs');
-await import('./check-learning-surfaces.mjs');
-await import('./check-reading.mjs');
+if(failures.length)process.exitCode=1;
