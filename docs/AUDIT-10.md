@@ -45,3 +45,12 @@ The complete `npm run check` gate passes **37 outer checks with zero failures**,
 The full gate now runs its geometry and behavior suites in isolated child processes. The previous single-process import chain retained large scenes and exhausted the default Node heap; the change preserves every suite and assertion without increasing the heap limit or removing a release check.
 
 The research and scope qualifications are recorded in [OCC-REVISION-10.md](OCC-REVISION-10.md). Named points are illustrative, not a recovered operator point list. Source examples demonstrate possible integration patterns; they do not imply that every railway exposes the same remote controls or uses one common application. Public release identity is verified separately through the generated `release.json` on both hosts. Hardware WebGL appearance, GPU performance and unavailable device classes are outside this browser acceptance evidence.
+
+
+## Illustrated surface visibility — 10.0.2
+
+The illustrated renderer now orders overlapping broad surfaces using world-space plane separation, with a stable topological order instead of relying only on face-centre depth. This prevents a floor, ballast layer, room wall or train roof from painting over equipment on its nearer side. Unchanged scenes reuse their established drawing order. Faces crossing the camera near plane retain their visible portion and original boundary ink.
+
+The catalogue scan covers all 113 physical view/variant contexts at isometric, side and top cameras, both assembled and cut away: 678 sampled camera/state combinations. Ray intersections identify visibility candidates independently of the painter. Regressions sample exposed equipment on the actual substation, switch-drive, vehicle and control-room models; the prior renderer fails these checks. Existing six-angle turnout and closed-plinth reinforcement checks remain. Browser acceptance includes camera presets and section/reassembly in the substation interface.
+
+This remains a painter renderer. Coplanar overlaps, intersecting faces and small-detail hull simplification can differ from nearest-surface ray results; the scan is not proof of exact visibility at every possible orbit and zoom. Explicit teaching layers and overlays retain their drawing priority.
