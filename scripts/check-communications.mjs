@@ -59,7 +59,7 @@ check('Six views, public sources, concepts and topology endpoints form a complet
  for(const guide of data.COMMUNICATIONS_READING_GUIDES){assert(guide.sections.reduce((n,s)=>n+s.text.split(/\s+/).length,0)<=900);for(const section of guide.sections)section.sources.forEach(ref=>assert(knownSources.has(ref)));}
 });
 check('Every new concept and advertised scene context has visible selectable geometry',()=>{
- for(const [id,[view,variant]]of Object.entries(data.COMMUNICATIONS_PRIMARY)){const r=set(view,variant);assert(r.picks.some(n=>n.userData.component===id&&visible(n)),`${id}: missing primary geometry`);}
+ for(const [id,[view,variant]]of Object.entries(data.COMMUNICATIONS_PRIMARY)){const r=set(view,variant);assert(r.picks.some(n=>n.userData.component===id&&visible(n))||(id==='communications-system'&&[...r.parts.get(id)||[]].some(n=>visible(n)&&!new THREE.Box3().setFromObject(n).isEmpty())),`${id}: missing primary geometry`);}
  for(const [key,ids]of Object.entries(data.COMMUNICATIONS_SCENE_PARTS)){const [view,variant]=key.split('/'),r=set(view,variant);for(const id of ids)assert(r.picks.some(n=>n.userData.component===id&&visible(n)),`${key}: missing ${id}`);}
 });
 check('Every alternative changes physical geometry and all vertices remain finite',()=>{

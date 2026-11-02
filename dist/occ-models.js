@@ -1,6 +1,6 @@
 /* Original public teaching geometry. Room dimensions, equipment quantities and
  * software deployment are illustrative. This module builds physical workplace
- * equipment; application behaviour belongs in the readable OCC workspace. */
+ * equipment; functional responsibilities belong in Interfaces. */
 import {createEquipmentDetails} from './equipment-details.js';
 import {createCommunicationsAssemblies} from './communications-models.js';
 import {plateWithOpenings,perforatedPanel} from './precision-geometry.js';
@@ -8,7 +8,6 @@ export const OCC_VIEWS = {
   'operations-centre':{camera:[18,13,22],target:[0,1.3,0],distance:39},
   'occ-workplace':{camera:[7,5.4,10],target:[0,1.6,.2],distance:20},
   'occ-equipment':{camera:[13,9.5,17],target:[0,1.8,0],distance:30},
-  'occ-supervision':{camera:[8,6.4,10],target:[0,1.7,.1],distance:19},
   // Compatibility only: this route opens People & processes.
   'occ-incident':{camera:[8,6.4,10],target:[0,1.7,.1],distance:19},
 };
@@ -17,13 +16,13 @@ export function buildOccView(id,api){
   const {THREE,M,mat,startModel,group,part,mesh,box,cylinder,tube,roundedPanel,shell,explode,registerAnimator}=api;
   const root=startModel(id),updates=[],F=createCommunicationsAssemblies(api),E=createEquipmentDetails(api);
   const P={dark:mat(0x1c303b,.8,.08),frame:mat(0x526b74,.76,.18),pale:mat(0xcbd7d4,.82,.08),
-    blue:mat(0x496e7d,.76,.13),board:mat(0x42746c,.8,.1),muted:mat(0x52616a,.85,.03),
+    blue:mat(0x89a9b4,.76,.13),board:mat(0x42746c,.8,.1),muted:mat(0x52616a,.85,.03),
     cyan:new THREE.MeshBasicMaterial({color:0x84bdc7}),amber:new THREE.MeshBasicMaterial({color:0xd7b36d}),
     white:new THREE.MeshBasicMaterial({color:0xd5dfd9}),red:new THREE.MeshBasicMaterial({color:0xc78b78})};
   const separate=(node,delta,label)=>E.separate(node,label,delta,{sources:['OC08','OC09','DP03'],stage:/cover|enclosure/i.test(label)?'Open enclosure':/keyboard|pointing|handset/i.test(label)?'Workplace interfaces':'Display and computing electronics',range:/cover|enclosure/i.test(label)?[0,.3]:[.35,1]});
   const physicalNames={'operations-centre':'Control-room layout','operations-equipment-room':'Technical equipment room','occ-console':'Control-room console','occ-task-display':'Task display','occ-shared-display':'Shared display wall','occ-workstation-input':'Keyboard and pointing device','operations-radio-dispatch':'Radio dispatch terminal','occ-client-computer':'Local workstation computer','occ-kvm-interface':'Remote workplace receiver','occ-display-controller':'Display distribution controller','occ-equipment-cabinet':'Equipment rack','occ-field-gateway':'Field interface gateway','occ-uninterruptible-power':'Uninterruptible power supply','occ-cable-route':'Cable containment and supply routes','occ-workplace-environment':'Room lighting and enclosure'};
   const assembly=(parent,component,at=[0,0,0],scale=1)=>{const p=part(parent,component,at);p.userData.explorationAssembly=component;p.scale.setScalar(scale);E.inspect(p,physicalNames[component]||'Installed equipment',{sources:['OC08','OC09']});return p;};
-  const floor=(parent,w,d)=>box(parent,[w,.15,d],M.deck,[0,-.08,0]);
+  const floor=(parent,w,d)=>{const node=box(parent,[w,.15,d],mat(0xd7d0bf,.9,.02),[0,-.08,0]);node.renderOrder=-100;return node;};
   const indicator=(parent,name,at,size=.1)=>F.indicator(parent,name,at,size);
   const cable=(parent,points,material=P.dark,radius=.027)=>tube(parent,points,radius,material,{segments:12});
   const enclosed=(...nodes)=>nodes.forEach(node=>node.traverse(o=>{if(o.isMesh)o.userData.concealedWhenAssembled=true;}));
@@ -182,7 +181,7 @@ export function buildOccView(id,api){
   }
   if(id==='operations-centre'){
     const room=assembly(root,'operations-centre');floor(room,18,12.6);
-    const enclosure=group(room,'room-cutaway-enclosure');box(enclosure,[18,3.6,.12],P.frame,[0,1.8,-6.3]);box(enclosure,[.12,3.6,12.6],P.frame,[-9,1.8,0]);shell(enclosure);separate(enclosure,[0,.6,-.5],'Room enclosure');
+    const enclosure=group(room,'room-cutaway-enclosure');box(enclosure,[18,3.6,.12],P.pale,[0,1.8,-6.3]);box(enclosure,[.12,3.6,12.6],P.pale,[-9,1.8,0]);shell(enclosure);separate(enclosure,[0,.6,-.5],'Room enclosure');
     const wall=sharedWall(room,[-3.1,0,-4.5],.95);
     const desks=[[-5.7,0,-.6],[-.7,0,-.6],[-5.7,0,3.3],[-.7,0,3.3]].map((at,i)=>consoleAssembly(room,at,.78,{mode:['traffic','power','station','traffic'][i],remote:true}));
     const technical=systems(room,{at:[5.5,0,-1.8],scale:.53});

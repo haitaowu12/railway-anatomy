@@ -116,6 +116,14 @@ export function evaluateControlInterface(input={}){
 export function getInterfaceContext(conceptId,viewId,variantId){
   // A selected component is stronger evidence than the page from which the
   // learner followed a cross-system link. Do not inherit its previous owner.
+  const previousApplication={
+    'operations-traffic-supervision':'signalling','operations-signalling-workstation':'signalling',
+    'operations-power-control':'traction','operations-station-supervision':'building',
+    'occ-supervisory-request':'telecom','occ-field-indication':'telecom',
+    'occ-information-quality':'telecom','occ-record-timeline':'telecom','occ-alarm-queue':'telecom',
+    'occ-cctv-assessment':'security','occ-passenger-communications':'passenger','occ-access-supervision':'security'
+  };
+  if(previousApplication[conceptId])return {domain:previousApplication[conceptId]};
   const domain=CONTROL_DOMAINS.find(d=>d.components.includes(conceptId));
   if(domain)return {domain:domain.id};
   if(viewId==='station-networks')return {domain:variantId==='building'?'building':variantId==='power'?'traction':'building'};

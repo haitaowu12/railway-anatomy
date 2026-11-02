@@ -147,7 +147,7 @@ if (catalog && model && tours && atlas) {
 
   await check('Every concept is reachable through one domain and a valid view', async () => {
     assert.equal(DOMAINS.length, 9);
-    assert.equal(views.size, 60);
+    assert.equal(views.size, 58);
     unique(DOMAINS.map(item => item.id), 'Domains');
     const assigned = DOMAINS.flatMap(item => item.parts);
     unique(assigned, 'Domain assignments');
@@ -235,7 +235,7 @@ if (catalog && model && tours && atlas) {
   });
 
   await check('Guided tours have valid domains, actions, evidence and answer feedback', async () => {
-    assert.equal(tours.length, 32);
+    assert.equal(tours.length, 31);
     unique(tours.map(item => item.id), 'Lessons');
     for (const tour of tours) {
       for (const field of ['id', 'label', 'title', 'explanation', 'actionText', 'actionLabel', 'question']) nonempty(tour[field], `${tour.id}.${field}`);
@@ -401,7 +401,7 @@ function runSuite(script) {
   const result=spawnSync(process.execPath,[path.join(repo,'scripts',script)],{cwd:repo,stdio:'inherit'});
   assert.equal(result.status,0,`${script}: ${result.error?.message||result.signal||'checks failed'}`);
 }
-for(const script of ["check-technology.mjs", "check-navigation.mjs", "check-depot.mjs", "check-occ.mjs", "check-occ-applications.mjs", "check-exploration.mjs", "check-comparisons.mjs", "check-studies.mjs", "check-processes.mjs", "check-electrification.mjs", "check-communications.mjs", "check-station-platform.mjs", "check-interactions.mjs", "check-motion.mjs", "check-depth-mechanics.mjs", "check-domain-depth.mjs", "check-workspaces.mjs", "check-physical-labs.mjs", "check-evidence-labs.mjs", "check-component-motion.mjs", "check-system-diagrams.mjs", "check-control-interfaces.mjs", "check-learning-surfaces.mjs", "check-reading.mjs"]) {
+for(const script of ["check-colorfigures.mjs", "check-technology.mjs", "check-navigation.mjs", "check-depot.mjs", "check-occ.mjs", "check-exploration.mjs", "check-comparisons.mjs", "check-studies.mjs", "check-processes.mjs", "check-electrification.mjs", "check-communications.mjs", "check-station-platform.mjs", "check-interactions.mjs", "check-motion.mjs", "check-depth-mechanics.mjs", "check-domain-depth.mjs", "check-workspaces.mjs", "check-physical-labs.mjs", "check-evidence-labs.mjs", "check-component-motion.mjs", "check-system-diagrams.mjs", "check-control-interfaces.mjs", "check-learning-surfaces.mjs", "check-reading.mjs"]) {
   await check(`Independent suite: ${script}`,async()=>runSuite(script));
 }
 console.log(`\n${passed} checks passed; ${failures.length} failed.`);

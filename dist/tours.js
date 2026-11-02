@@ -526,15 +526,15 @@ export const TOURS = [
     "label": "15 · Follow the messages",
     "title": "One train, several information services",
     "domain": "communications",
-    "view": "communications-overview",
+    "view": "communications-network",
     "component": "communications-system",
     "explanation": "Follow passenger information, operational voice and supervision between their endpoints. These services have different functions even when they share infrastructure or locations. The connection diagram labels those relationships; a working passenger service does not by itself establish current train-control information or movement permission.",
-    "actionText": "Select Connections and follow the passenger-content path from source to display. Compare it with Operational voice and Supervision, noting their different endpoints and messages.",
+    "actionText": "Inspect the station rack, then compare its onboard alternative. Follow a specific service in the SCADA, voice or passenger-information study.",
     "actionLabel": "Compare communication roles",
     "action": {
-      "view": "communications-overview",
+      "view": "communications-network",
       "component": "communications-system",
-      "variant": "passenger",
+      "variant": "station",
       "cutaway": true,
       "exploded": 0,
       "mode": "coasting",
@@ -654,7 +654,11 @@ export const TOURS = [
       "exploded": 0,
       "mode": "coasting",
       "scenario": "nominal",
-      "interfaces": {"domain":"building","architecture":"summaries","trace":"indication"}
+      "interfaces": {
+        "domain": "building",
+        "architecture": "summaries",
+        "trace": "indication"
+      }
     },
     "question": "In the illustrated building-control loop, which element uses a measured value to determine an actuator command?",
     "choices": [
@@ -826,51 +830,6 @@ export const TOURS = [
       "platform-door-proof",
       "platform-door-drive",
       "platform-gap-detector"
-    ]
-  },
-  {
-    "id": "operations-roles",
-    "label": "23 · Trace an OCC request",
-    "title": "Separate telecom control, acknowledgement and returned evidence",
-    "domain": "operations",
-    "view": "occ-supervision",
-    "component": "telecom-scada",
-    "explanation": "Telecom SCADA can monitor communications-equipment health and expose specifically configured maintenance requests. This example follows a named PA-amplifier reset interface. An accepted request and a fresh returned equipment condition are different evidence; neither alone establishes audible service across a station.",
-    "actionText": "Compare Telecom SCADA monitoring with monitoring plus the named request. Follow Request & feedback, then choose Outcome feedback missing. Read what is known at each step; no device is operated.",
-    "actionLabel": "Inspect the telecom point",
-    "action": {
-      "view": "occ-supervision",
-      "component": "telecom-scada",
-      "variant": "traffic",
-      "mode": "coasting",
-      "scenario": "nominal",
-      "cutaway": false,
-      "exploded": 0,
-      "occ": {
-        "app": "telecom",
-        "point": "pa-health",
-        "integration": "control",
-        "trace": "request",
-        "condition": "feedback-missing",
-        "step": 3
-      }
-    },
-    "question": "A configured telecom-equipment request has been accepted, but its returned outcome indication is unavailable. What is known?",
-    "choices": [
-      "The request was accepted; its resulting equipment state and service outcome remain unconfirmed",
-      "The communications device has recovered and all passengers can hear announcements",
-      "Telecom equipment cannot have a SCADA control interface"
-    ],
-    "answer": 0,
-    "feedback": [
-      "Acceptance, returned equipment condition and service performance are separate observations.",
-      "Acceptance does not establish completion, and device health alone does not prove station-wide audible delivery.",
-      "Published telecom supervisory examples can include configured remote controls. The point list and permissions determine whether a particular request is available."
-    ],
-    "sourceConcepts": [
-      "telecom-scada",
-      "occ-supervisory-request",
-      "occ-field-indication"
     ]
   },
   {

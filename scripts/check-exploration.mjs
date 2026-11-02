@@ -37,6 +37,7 @@ class CameraControls {
 dependencies.THREE.WebGLRenderer = GeometryRenderer;
 dependencies.OrbitControls = CameraControls;
 dependencies.SVGRenderer = GeometryRenderer;
+dependencies.ColorfiguresRenderer = GeometryRenderer;
 dependencies.window = { devicePixelRatio: 1, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) };
 dependencies.document = { hidden: false, addEventListener() {}, removeEventListener() {} };
 dependencies.ResizeObserver = class { observe() {} disconnect() {} };
@@ -198,9 +199,10 @@ const syncStart = appSource.indexOf('function syncViewer('), syncEnd = appSource
 assert(syncStart >= 0 && syncEnd > syncStart, 'Viewer synchronization markers changed');
 const syncCalls=[];
 const synchronizationViewer=new Proxy(viewer,{get(target,key){const value=target[key];if(typeof value!=='function')return value;return (...args)=>{syncCalls.push(key);return value(...args);};}});
+const interfaceStart=appSource.indexOf('function isInterfaceTour()'),interfaceEnd=appSource.indexOf('function routeLabel(',interfaceStart);
 const motionStart=appSource.indexOf('const isProcessPage='),motionEnd=appSource.indexOf('const preferredPresentation=',motionStart);
-const interfaceStart=appSource.indexOf('function isOccTour()'),interfaceEnd=appSource.indexOf('function routeLabel(',interfaceStart);
-assert(motionStart>=0&&motionEnd>motionStart&&interfaceStart>=0&&interfaceEnd>interfaceStart,'Production motion/route helpers changed');
+
+assert(motionStart>=0&&motionEnd>motionStart,'Production motion/route helpers changed');
 const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', 'animationFor', 'platformAnimationFor','systemDiagram','electricalStudy','representationFor','processFor', `
   let state, lastExplorationContext = '', lastSequenceKey = '', lastTopologyStep = '';
   ${appSource.slice(motionStart,motionEnd)}

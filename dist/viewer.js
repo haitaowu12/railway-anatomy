@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import { SVGRenderer } from './vendor/SVGRenderer.js';
+import { ColorfiguresRenderer } from './colorfigures-renderer.js';
 import { TRACK_VIEWS, buildTrackView } from './track-models.js';
 import { SIGNALLING_VIEWS, buildSignallingView } from './signalling-models.js';
 import { STATION_VIEWS, STATION_FOCUS, buildStationView } from './station-models.js';
@@ -51,26 +51,8 @@ const VIEW = {
 };
 export function createViewer(container, callbacks = {}) {
   const { onSelect = () => {}, onReady = () => {}, onError = () => {} } = callbacks;
-  let renderer, rendererKind = 'webgl';
-  try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-  } catch (webglError) {
-    // CPU projection retains these actual three-dimensional meshes, the camera,
-    // raycaster and controls when a browser does not expose a graphics context.
-    try {
-      renderer = new SVGRenderer();
-      rendererKind = 'svg';
-      renderer.overdraw = .3;
-      renderer.setQuality('high');
-      renderer.setPrecision(2);
-      renderer.shadowMap = {};
-      renderer.dispose = () => {};
-    } catch (error) {
-      onError(error);
-      throw error;
-    }
-  }
-  const compatibility = rendererKind === 'svg';
+  const renderer=new ColorfiguresRenderer(),rendererKind='colorfigures';
+  const compatibility=true;
   renderer.setClearColor(C.background);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1752,7 +1734,7 @@ export function createViewer(container, callbacks = {}) {
     const moving = state.playing && !document.hidden && !reducedMotion.matches;
     if (moving) { Object.assign(state, advancePlayback(state.phase, dt, state)); animateModel(); renderPending = true; }
     if (settleFrames > 0) { controls.update(); settleFrames--; }
-    if ((renderPending || moving || settleFrames > 0) && (!compatibility || time - lastDraw > 90)) {
+    if ((renderPending || moving || settleFrames > 0) && (!compatibility || time - lastDraw > (renderer.isColorfiguresRenderer ? 50 : 90))) {
       if(compatibility)drawWithEnclosureOcclusion(scene,state,()=>renderer.render(scene,camera));else renderer.render(scene,camera);
       renderPending = false; lastDraw = time;
     }

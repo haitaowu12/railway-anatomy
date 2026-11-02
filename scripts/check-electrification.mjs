@@ -31,6 +31,7 @@ class CameraControls {
 dependencies.THREE.WebGLRenderer = GeometryRenderer;
 dependencies.OrbitControls = CameraControls;
 dependencies.SVGRenderer = GeometryRenderer;
+dependencies.ColorfiguresRenderer = GeometryRenderer;
 dependencies.window = { devicePixelRatio: 1, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) };
 dependencies.document = { hidden: false, addEventListener() {}, removeEventListener() {} };
 dependencies.ResizeObserver = class { observe() {} disconnect() {} };
