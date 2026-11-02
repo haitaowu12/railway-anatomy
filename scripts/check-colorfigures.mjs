@@ -83,3 +83,22 @@ test('the actual turnout bed never paints over sleeper centres or ends during or
   }
  }
 });
+
+test('closed direct-fixation concrete hides its internal reinforcing bars',async()=>{
+ const {viewerHarness}=await import('./viewer-test-harness.mjs');
+ const h=await viewerHarness();h.viewer.setView('rail-fastening');h.viewer.setVariant('direct');h.viewer.setCutaway(false);h.draw();
+ const root=h.root(),plinth=root.getObjectByName('direct-rail-seat').getObjectByName('track-plinth'),bars=[];
+ root.traverseVisible(node=>{
+  if(!node.isMesh)return;
+  let ancestor=node;while(ancestor&&ancestor!==plinth)ancestor=ancestor.parent;
+  if(!ancestor){node.visible=false;return;}
+  const bar=node.geometry.type==='CylinderGeometry';node.material=new T.MeshBasicMaterial({color:bar?0xff0000:0x0000ff});if(bar)bars.push(node);
+ });
+ assert.equal(bars.length,2,'both authored reinforcing bars must be exercised');
+ const scene=new T.Scene();scene.add(root);const r=new ColorfiguresRenderer({raster:false});r.setQuality('detail');r.setSize(800,600);
+ const c=new T.PerspectiveCamera(36,4/3,.03,120);c.position.set(4,3,5);c.lookAt(0,.65,0);r.render(scene,c);
+ for(const bar of bars){
+  const point=bar.getWorldPosition(new T.Vector3()).project(c),color=fillAt(r.domElement.innerHTML,(point.x+1)*400,(1-point.y)*300);
+  assert(color&&parseInt(color.slice(5,7),16)>parseInt(color.slice(1,3),16),'solid concrete must cover its internal reinforcement');
+ }
+});

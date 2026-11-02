@@ -133,27 +133,29 @@ export function buildTrackView(id, api) {
   // The SVG fallback sorts triangles without a depth buffer. Subdivide broad
   // support faces so a distant triangle centroid cannot paint ballast across
   // the rails above it. Each support remains one mesh with unchanged bounds.
-  function supportBox(parent, dimensions, material, position = [0, 0, 0]) {
+  function supportBox(parent, dimensions, material, position = [0, 0, 0], { background = false } = {}) {
     const [x, y, z] = dimensions;
     const geometry = new THREE.BoxGeometry(x, y, z,
       Math.max(1, Math.ceil(x / .6)), 1, Math.max(1, Math.ceil(z / .6)));
     const support = mesh(parent, geometry, material, position);
     // The atlas camera stays above the track. Foundations must paint behind
     // raised equipment, as the viewer already does for its other decks.
-    support.updateWorldMatrix(true, false);
-    support.renderOrder = -100 + new THREE.Vector3(0, y / 2, 0).applyMatrix4(support.matrixWorld).y;
+    if (background) {
+      support.updateWorldMatrix(true, false);
+      support.renderOrder = -100 + new THREE.Vector3(0, y / 2, 0).applyMatrix4(support.matrixWorld).y;
+    }
     return support;
   }
 
-  function layer(parent, component, dimensions, position, material, { cut = false, lift = 0 } = {}) {
+  function layer(parent, component, dimensions, position, material, { cut = false, lift = 0, background = false } = {}) {
     const p = part(parent, component, position);
     if (cut) {
       const [x, y, z] = dimensions;
-      supportBox(p, [x, y, z * .68], material, [0, 0, -z * .16]);
+      supportBox(p, [x, y, z * .68], material, [0, 0, -z * .16], { background });
       const front = group(p, 'removable-front-section');
-      supportBox(front, [x, y, z * .32], material, [0, 0, z * .34]);
+      supportBox(front, [x, y, z * .32], material, [0, 0, z * .34], { background });
       shell(front);
-    } else supportBox(p, dimensions, material);
+    } else supportBox(p, dimensions, material, [0, 0, 0], { background });
     if (lift) explode(p, [0, lift, 0]);
     return p;
   }
@@ -397,8 +399,8 @@ export function buildTrackView(id, api) {
     const branchDx = (offsetPoint(crossingParameter + .01, diverge, -gauge, railY)[0] - offsetPoint(crossingParameter - .01, diverge, -gauge, railY)[0]) / .02;
     const branchGap = frogSpan * Math.cos(2 * halfAngle) / Math.cos(halfAngle) / branchDx;
     const turnout = part(parent, 'track-turnout');
-    supportBox(turnout, [14.1, .24, drive ? 7.3 : 6.2], M.deck, [0, .14, drive ? .95 : 1.4]);
-    layer(turnout, 'track-ballast', [13.95, .28, 6.0], [0, .40, 1.4], aggregate[2]);
+    supportBox(turnout, [14.1, .24, drive ? 7.3 : 6.2], M.deck, [0, .14, drive ? .95 : 1.4], { background: true });
+    layer(turnout, 'track-ballast', [13.95, .28, 6.0], [0, .40, 1.4], aggregate[2], { background: true });
     const stock = part(turnout, 'track-stock-rail');
     rail(stock, points(x0, x1, -gauge, railY));
     rail(stock, offsetPoints(x0, x1, diverge, gauge, railY, 38));
@@ -541,8 +543,8 @@ export function buildTrackView(id, api) {
     tube(straightCue, points(-6.35, 6.35, 0, 1.075, 2), .025, cueMaterial, { segments: 10 });
     tube(divergingCue, points(-6.35, 6.35, assembly.diverge, 1.075, 35), .025, M.yellow, { segments: 32 });
     const crossover = part(root, 'track-crossover'); crossover.scale.setScalar(.49); crossover.position.z = 1.25;
-    supportBox(crossover, [29, .23, 9], M.deck, [0, -.01, 0]);
-    layer(crossover, 'track-ballast', [28.8, .42, 8.7], [0, .31, 0], aggregate[2]);
+    supportBox(crossover, [29, .23, 9], M.deck, [0, -.01, 0], { background: true });
+    layer(crossover, 'track-ballast', [28.8, .42, 8.7], [0, .31, 0], aggregate[2], { background: true });
     const left = group(crossover, 'first-turnout', [-7.3, 0, -3.1]);
     const right = group(crossover, 'second-turnout', [7.3, 0, 3.1]); right.rotation.y = Math.PI;
     const a = makeSwitch(left, { small: true }), b = makeSwitch(right, { small: true });
