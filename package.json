@@ -1,6 +1,6 @@
 {
   "name": "railway-anatomy",
-  "version": "9.0.0",
+  "version": "10.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,4 +11,3 @@
   },
   "description": "A public railway systems learning guide with equipment models, communication architecture, people and processes"
 }
-

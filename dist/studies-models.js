@@ -212,7 +212,7 @@ export function buildStudyView(id,api){
     for(const x of [-1.45,1.45]){box(doorway,[.12,2.7,2],P.paper,[x,1.4,0]);box(doorway,[.14,.65,1.1],M.glass,[x,1.7,-.15]);}
     box(doorway,[3,.12,2],P.paper,[0,2.8,0]);box(doorway,[3,2.7,.12],P.blue,[0,1.4,-1]);
     for(const x of [-1.1,1.1])box(doorway,[.18,2.7,.2],M.aluminum,[x,1.35,.8]);box(doorway,[2.4,.18,.2],M.aluminum,[0,2.7,.8]);
-    const bridge=box(boarding,[1.9,.12,1.25],P.green,[0,.05,-3.35]);
+    const bridge=box(boarding,[1.9,.12,1.25],P.green,[0,.05,-3.35]);bridge.name='boarding-bridge-plate';
     const gap=crossed(boarding,'boarding-gap-marker',[0,.2,-3.35],.9);
     const available=s=>!['outage'].includes(s.variant);
     trace(entrance,'entrance-to-gate',[[0,.3,0],[3,.3,0]],P.green);

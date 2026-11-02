@@ -21,7 +21,7 @@ set('accessible-journey', 'journey', 'Passenger journey and assistance', 'Use an
 set('electrification', 'connections', 'Supply and return architecture', 'Follow the complete supply, collection, conversion and return paths in a diagram; compare physical arrangements only within the selected architecture.', true);
 set('power-transformer power-rectifier', 'connections', 'Electrical principle', 'The time-varying electrical relationship belongs in the circuit diagram. The core, windings and semiconductor hardware remain physically stationary.', true, 'electrical');
 set('infrastructure-assets', 'equipment', 'Structures and drainage anatomy', 'A physical section retains bridge load-transfer interfaces and an open culvert passage. Inspection evidence, work boundaries and release decisions belong in the separate process.', true);
-entries['occ-equipment']={kind:'connections',label:'Equipment and display dependencies',reason:'Map the power, data, computing and display dependencies. A physical rack or console remains available for hardware inspection.',equipmentContext:true,motionKind:'information'};
+entries['occ-equipment']={kind:'equipment',label:'Technical equipment anatomy',reason:'Inspect representative computing, network, storage and power hardware. The optional dependency diagram names functions without inferring service availability.',equipmentContext:true,motionKind:'static'};
 for(const id of ['control','communications','signalling','cbtc-network','etcs','seltrac','occ-supervision','station-networks','communications-scada'])entries[id].equipmentContext=false;
 
 const overrides = {

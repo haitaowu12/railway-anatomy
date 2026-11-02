@@ -1,3 +1,4 @@
+import {OCC_APPLICATIONS,normalizeOccState,occContextFor} from '../dist/occ-applications-data.js';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {VIEWS,defaultVariant,cutawayFor} from '../dist/model.js';
@@ -19,18 +20,18 @@ import {platformAnimationFor} from '../dist/station-platform-data.js';
 // focus visibility and the interface explorer's own interaction/rendering.
 const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
 function between(start,end){const a=source.indexOf(start),b=source.indexOf(end,a+start.length);assert(a>=0&&b>a,`Production marker changed: ${start}`);return source.slice(a,b);}
-const dependencies={VIEWS,defaultVariant,cutawayFor,CONCEPTS,TOURS,PROCESS_VIEWS,PROCESS_REDIRECTS,processFor,processStepFor,renderProcessPage,representationFor,systemDiagram,electricalStudy,getInterfaceContext,normalizeControlState,normalizeTechnology,technologyForView,technologyForComponent,normalizeElectrification,canAnimate,animationFor,platformAnimationFor};
+const dependencies={OCC_APPLICATIONS,normalizeOccState,occContextFor,VIEWS,defaultVariant,cutawayFor,CONCEPTS,TOURS,PROCESS_VIEWS,PROCESS_REDIRECTS,processFor,processStepFor,renderProcessPage,representationFor,systemDiagram,electricalStudy,getInterfaceContext,normalizeControlState,normalizeTechnology,technologyForView,technologyForComponent,normalizeElectrification,canAnimate,animationFor,platformAnimationFor};
 const harness=new Function(...Object.keys(dependencies),`
-  let state={page:'explore',view:'vehicle',domain:'vehicle',component:'carbody',variant:'default',technology:{propulsion:'lim',control:'radio'},sink:'train'},returnContext=null,interfaceExplorer=null,historyMode='replace',loadingViewer=false;
-  let mounts=0,destroys=0,feedback=null;const writes=[],viewerCalls=[];
+  let state={page:'explore',view:'vehicle',domain:'vehicle',component:'carbody',variant:'default',technology:{propulsion:'lim',control:'radio'},sink:'train'},returnContext=null,interfaceExplorer=null,occExplorer=null,historyMode='replace',loadingViewer=false;
+  let mounts=0,destroys=0,occMounts=0,occDestroys=0,feedback=null;const writes=[],viewerCalls=[];
   const viewer={setPlaying(value){viewerCalls.push(['setPlaying',value]);},resize(){throw new Error('A nonphysical tour resized the 3D renderer');}};
   const parts=new Map(CONCEPTS.map(c=>[c.id,c])),lessonAnswers={},quizSelections={},lessonAttempts={};
   const nodes=new Map(),node=selector=>{if(!nodes.has(selector))nodes.set(selector,{hidden:false,innerHTML:'',textContent:'',replaceChildren(){this.innerHTML='';},insertAdjacentHTML(where,value){this.innerHTML=where==='afterbegin'?value+this.innerHTML:this.innerHTML+value;}});return nodes.get(selector);};
-  const $=selector=>node(selector),$$=selector=>selector==='#lesson-detail,#process-lesson,#interface-lesson'?['#lesson-detail','#process-lesson','#interface-lesson'].map(node):[];
+  const $=selector=>node(selector),$$=selector=>selector==='#lesson-detail,#process-lesson,#interface-lesson,#occ-lesson'?['#lesson-detail','#process-lesson','#interface-lesson','#occ-lesson'].map(node):[];
   const document={activeElement:null};const safe=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
   function sourceChips(){return '';}
   function writeHash(){writes.push(structuredClone(state));}
-  function renderNavigation(){node('#explorer-page').hidden=isInterfacePage()||isProcessPage();node('#interfaces-page').hidden=!isInterfacePage();node('#processes-page').hidden=!isProcessPage();}
+  function renderNavigation(){node('#explorer-page').hidden=isOccPage()||isInterfacePage()||isProcessPage();node('#occ-page').hidden=!isOccPage();node('#interfaces-page').hidden=!isInterfacePage();node('#processes-page').hidden=!isProcessPage();}
   function showFeedback(correct){feedback=correct;}
   function syncPlatform(){}
   function showInterfaceConcept(){}
@@ -42,18 +43,20 @@ const harness=new Function(...Object.keys(dependencies),`
     mounts++;let current=normalizeControlState(options.initialState),destroyed=false;
     return {getState(){return structuredClone(current);},change(value){if(destroyed)throw new Error('Destroyed explorer changed state');current=normalizeControlState(value);options.onStateChange(structuredClone(current));},destroy(){if(destroyed)throw new Error('Explorer destroyed twice');destroyed=true;destroys++;}};
   }
+  function createOccApplicationExplorer(host,options){occMounts++;let current=normalizeOccState(options.initialState);return {getState(){return structuredClone(current);},change(value){current=normalizeOccState(value);options.onStateChange(current,{push:false});},destroy(){occDestroys++;}};}
   ${between('const isProcessPage=','const preferredPresentation=')}
   ${between('const preferredPresentation=','function syncPlatform(')}
-  ${between('function isInterfaceTour()','function routeLabel(')}
+  ${between('function isOccTour()','function routeLabel(')}
   ${between('function tourNavigationMarkup(','function renderNavigation(')}
   ${between('function renderLesson(){','function showFeedback(')}
   ${between('function render(changedView=','function setPage(')}
   ${between('function applyLesson(','function updateSensor()')}
   return {
     enter(id,priorStep='verify'){state.lesson=TOURS.findIndex(t=>t.id===id);state.processId='configuration-change';state.processStep=priorStep;applyLesson(false);render(true);return this.snapshot();},
+    changeOcc(value){occExplorer.change(value);return this.snapshot();},
     changeInterface(value){interfaceExplorer.change(value);return this.snapshot();},
     complete(id,choice){lessonAnswers[id]=true;quizSelections[id]=choice;renderLesson();return this.snapshot();},
-    snapshot(){return {state:structuredClone(state),mounts,destroys,feedback,writes:structuredClone(writes),viewerCalls:structuredClone(viewerCalls),html:Object.fromEntries([...nodes].map(([key,value])=>[key,value.innerHTML]))};},
+    snapshot(){return {state:structuredClone(state),mounts,destroys,occMounts,occDestroys,feedback,writes:structuredClone(writes),viewerCalls:structuredClone(viewerCalls),html:Object.fromEntries([...nodes].map(([key,value])=>[key,value.innerHTML]))};},
   };
 `)(...Object.values(dependencies));
 
@@ -91,3 +94,8 @@ assert.equal(current.html['#process-lesson'],'');
 assert.match(current.html['#interface-lesson'],/value="0" checked/,'Returning to the tour lost its saved self-check');
 assert(current.viewerCalls.every(([name,value])=>name==='setPlaying'&&value===false),'A functional surface started physical animation');
 console.log('PASS learning surfaces: production interface-tour mount/teardown, retained lesson and interface state, single active self-check, progress restoration, intended process steps and nonphysical rendering dispatch');
+
+current=harness.enter('operations-roles');assert.equal(current.state.page,'learn');assert.equal(current.occMounts,1);assert.equal(current.state.occ.app,'telecom');assert.equal(current.state.occ.condition,'feedback-missing');assert.match(current.html['#occ-lesson'],/id="check-answer"/);assert.match(current.html['#occ-lesson'],/Explore the application and point/);assert.equal(current.html['#interface-lesson'],'');
+current=harness.changeOcc({app:'telecom',point:'camera-health',integration:'control',condition:'local',trace:'request',step:4});assert.equal(current.state.page,'learn');assert.equal(current.writes.at(-1).occ.point,'camera-health');
+current=harness.enter('depot-energy');assert.equal(current.occDestroys,1);assert.equal(current.html['#occ-lesson'],'');
+console.log('PASS OCC learning surface: actual application mount/teardown, retained tour, named point conditions and single quiz surface');

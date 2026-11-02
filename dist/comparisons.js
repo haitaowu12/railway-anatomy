@@ -24,7 +24,7 @@ export const COMPARISON_LABELS = {
   'operations-centre':'Equipment in focus',
   'occ-supervision':'System under supervision',
   'occ-incident':'Event coordination state',
-  'occ-equipment':'Equipment availability example',
+  'occ-equipment':'Equipment arrangement',
   'occ-workplace':'Console equipment in focus',
   'depot-overview':'Depot activity',
   'depot-yard':'Yard movement and handover',

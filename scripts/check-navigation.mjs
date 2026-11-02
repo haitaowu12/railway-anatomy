@@ -1,3 +1,4 @@
+import {OCC_APPLICATIONS,OCC_DEVICE_POINTS,normalizeOccState,occStateFromQuery,writeOccQuery,occContextFor} from '../dist/occ-applications-data.js';
 import {representationFor} from '../dist/representation-guidance.js';
 import {CONTROL_DOMAINS,CONTROL_ARCHITECTURES,CONTROL_SCENARIOS,normalizeControlState,getInterfaceContext,evaluateControlInterface} from '../dist/control-interfaces-data.js';
 // Exercise the production URL reader/writer, not a second implementation of
@@ -41,7 +42,7 @@ function createBrowserEnvironment(){
     return processMenu;
   }};
 }
-const dependencies={PROCESS_REDIRECTS,representationFor,normalizeControlState,getInterfaceContext,processStepFor,applyAnatomyQuery,writeAnatomyQuery,normalizePlatformState,platformForComponent,createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent,normalizeTechnology};
+const dependencies={OCC_APPLICATIONS,normalizeOccState,occStateFromQuery,writeOccQuery,occContextFor,PROCESS_REDIRECTS,representationFor,normalizeControlState,getInterfaceContext,processStepFor,applyAnatomyQuery,writeAnatomyQuery,normalizePlatformState,platformForComponent,createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent,normalizeTechnology};
 const harness=new Function(...Object.keys(dependencies),`
   const {window,matchMedia,processMenu,querySelector:$}=createBrowserEnvironment();
   const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
@@ -97,6 +98,7 @@ for(const [view,config]of Object.entries(VIEWS)){
     const technology=technologyForView(technologyForComponent(base.technology,component),view,variant);
     const expected={...base,view,domain,component,variant,mode,technology,...(view==='platform-interface'?normalizePlatformState({variant}):{})};
     const result=harness.roundTrip(expected);
+    if(!processFor(view,component,variant)&&(view==='occ-supervision'||occContextFor(component))){assert.equal(result.state.page,'occ');assert.equal(result.state.occ.app,(occContextFor(component,variant)||normalizeOccState()).app);routes++;continue;}
     for(const key of ['view','domain','component','variant','mode'])assert.equal(result.state[key],expected[key],`${view}/${variant}: ${key} changed after reopening ${result.url}`);
     assert.deepEqual(result.state.technology,technology,`${view}/${variant}: technology changed after URL round trip`);
     routes++;
@@ -181,7 +183,7 @@ for(const c of requestCases){
 }
 
 const malformedInterface=harness.parse('https://example.test/railway-anatomy/?ciLinks=building%3Aabsent%2Cfire%3Asupervisory%2Cunknown%3Amonitor%2Cnetwork%3Aadministrate&ciScenario=operate&ciTrace=execute&ciStep=999#interfaces/missing/missing');
-assert.deepEqual(malformedInterface.controlInterface,{domain:'traction',architecture:'summaries',connections:{building:'absent'},scenario:'normal',trace:'indication',step:4},'External links may not invent domains, outputs or conditions');
+assert.deepEqual(malformedInterface.controlInterface,{domain:'telecom',architecture:'summaries',connections:{building:'absent'},scenario:'normal',trace:'indication',step:4},'External links may not invent domains, outputs or conditions');
 const minimalInterface=harness.roundTrip({...base,page:'interfaces',controlInterface:normalizeControlState({domain:'building',architecture:'separate'})});
 for(const key of ['ciLinks','ciScenario','ciTrace','ciStep'])assert.equal(new URL(minimalInterface.url).searchParams.has(key),false,`Default ${key} should not survive from a previous custom URL`);
 const leftInterface=harness.roundTrip({...base,controlInterface:normalizeControlState({domain:'tunnel',scenario:'link-loss'})});
@@ -237,7 +239,7 @@ assert.deepEqual(searchNavigation(navigationIndex,'BMS nonexistentzz'),[],'Multi
 assert.deepEqual(searchNavigation(navigationIndex,'  '),[]);
 assert(!navigationIndex.some(item=>item.kind==='view'&&PROCESS_REDIRECTS[item.id]),'Finder exposes a legacy process-only 3D destination');
 for(const item of navigationIndex){
-  const known=item.kind==='view'?Boolean(VIEWS[item.id]):item.kind==='component'?CONCEPTS.some(c=>c.id===item.id):item.kind==='process'?Boolean(PROCESS_VIEWS[item.id]):item.kind==='interface'?CONTROL_DOMAINS.some(d=>d.id===item.id):item.kind==='tour'?Boolean(TOURS[Number(item.id)]):false;
+  const known=item.kind==='view'?Boolean(VIEWS[item.id]):item.kind==='component'?CONCEPTS.some(c=>c.id===item.id):item.kind==='process'?Boolean(PROCESS_VIEWS[item.id]):item.kind==='interface'?CONTROL_DOMAINS.some(d=>d.id===item.id):item.kind==='tour'?Boolean(TOURS[Number(item.id)]):item.kind==='occ'?OCC_APPLICATIONS.some(a=>a.id===item.id):false;
   assert(known,`Finder points to a missing destination: ${item.kind}/${item.id}`);
 }
 console.log(`PASS production route round trips: ${routes} view/variant/mode routes, 40 independent vehicle configurations, 8 electrical/propulsion bookmarks, ${processRoutes} process-step routes across ${Object.keys(PROCESS_VIEWS).length} processes, legacy process/electrification redirects, connection-mode bookmarks, ETCS radio bookmarks, 6 history/context presentation combinations, malformed-route fallback, parent trails and process-menu resize events`);
@@ -245,3 +247,19 @@ console.log('PASS anatomy bookmark contracts: physical instance, path, workspace
 console.log(`PASS interface bookmark contracts: ${interfaceRoutes} custom domain/architecture/condition/trace round trips, ${requestCases.length} independent authority/degraded conclusions, malformed-link rejection, default/exit cleanup, legacy-owner redirects and immutable history restoration`);
 console.log(`PASS global finder: ${finderCases.length} functional acronym/task queries, complete destination integrity and exclusion of legacy process-only views`);
 
+
+// OCC application URLs carry their own semantic state and leave physical inspection behind.
+for(const p of OCC_DEVICE_POINTS)for(const integration of ['native','monitor','control']){
+  const occ=normalizeOccState({app:p.app,point:p.id,integration,condition:'feedback-missing',trace:'request',step:4,acquisition:'nms'});
+  const current={...base,page:'occ',domain:'operations',view:'occ-supervision',component:OCC_APPLICATIONS.find(a=>a.id===p.app).component,variant:'traffic',occ,instanceId:'unrelated/physical/instance',functionalPath:'old-path',cutaway:true,exploded:.6,explodeScope:'selected'};
+  const result=harness.roundTrip(current);assert.deepEqual(result.state.occ,occ);assert.equal(result.state.page,'occ');
+  const url=new URL(result.url);assert.equal(url.hash,`#occ/${p.app}/${p.id}`);for(const key of ['instance','trace','inspect','exposure'])assert(!url.searchParams.has(key),`OCC inherited physical ${key}`);
+}
+const occTour=harness.lesson('operations-roles',base),reopenedOccTour=harness.roundTrip(occTour);assert.equal(reopenedOccTour.state.page,'learn');assert.deepEqual(reopenedOccTour.state.occ,occTour.occ);assert.equal(new URL(reopenedOccTour.url).hash,'#learn/operations-roles');
+for(const [component,variant,app] of [['operations-signalling-workstation','traffic','traffic'],['operations-power-control','power','power'],['operations-station-supervision','station','facilities'],['occ-information-quality','traffic','telecom']]){
+ const result=harness.parse(`https://example.test/railway-anatomy/#explore/operations/occ-supervision/${component}/${variant}`);assert.equal(result.page,'occ');assert.equal(result.occ.app,app);
+}
+const noOwner=getInterfaceContext('unknown-component','unrelated-view');assert.deepEqual(noOwner,{},'Unknown context was silently assigned to a functional owner');
+for(const view of ['operations-centre','occ-workplace','occ-equipment'])assert.equal(cutawayFor(view),false,'New OCC physical context must start assembled');
+const occIndex=buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS});assert(searchNavigation(occIndex,'communications SCADA').some(x=>x.kind==='occ'&&x.id==='telecom'));
+console.log('PASS OCC navigation: all device/integration routes, legacy redirects, guided-tour conditions, no inherited physical query and searchable applications');

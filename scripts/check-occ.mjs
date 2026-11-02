@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import {createMechanicalDetails} from '../dist/mechanical-details.js';
 import {createEquipmentDetails} from '../dist/equipment-details.js';
+import {occContextFor,OCC_APPLICATIONS,OCC_DEVICE_POINTS} from '../dist/occ-applications-data.js';
+import {drawWithEnclosureOcclusion} from '../dist/precision-geometry.js';
 const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import * as electrificationHelpers from '../dist/electrification.js';
 // Exercise actual OCC builders with the viewer's primitives, without a DOM.
@@ -63,6 +65,10 @@ check('OCC builders, legacy routes and public references form a complete contrac
 });
 check('Every promised OCC primary/context has visible equipment or a deliberate process-context alias',()=>{
  for(const [component,contexts]of Object.entries(data.OCC_CONTEXTS))for(const [view,variants]of Object.entries(contexts))for(const variant of variants){
+  if(view==='occ-supervision'){
+   const context=occContextFor(component,variant);assert(context,component+': missing readable application route');
+   assert(OCC_APPLICATIONS.some(a=>a.id===context.app));assert(OCC_DEVICE_POINTS.some(p=>p.id===context.point));continue;
+  }
   const target=data.OCC_CONTEXT_TARGETS[component]||component,r=set(view,variant,{phase:1});
   assert(r.picks.some(n=>n.userData.component===target&&visible(n)),component+' → '+view+'/'+variant+' ('+target+')');
  }
@@ -73,15 +79,14 @@ check('Equipment sidebar lists only physical equipment or places',()=>{
  assert.equal(data.OCC_VIEW_DATA['occ-supervision'].defaultPresentation,'connections');
  assert(data.OCC_VIEW_DATA['occ-incident'].variants.every(v=>v.presentation==='process'));
 });
-check('OCC geometry contains no people, paper process forms or freestanding logical timelines',()=>{
+check('OCC geometry contains physical hardware without people or software component proxies',()=>{
+ const informationIds=new Set(['occ-information-quality','occ-supervisory-request','occ-field-indication','occ-record-timeline','occ-cctv-assessment','occ-passenger-communications','occ-access-supervision','occ-alarm-queue','operations-signalling-workstation','operations-power-control','operations-station-supervision','operations-traffic-supervision','telecom-scada']);
  for(const [view,r]of models){r.root.traverse(n=>{
   assert(!n.userData.role,view+': role figure survived');
   assert(!/role-figure|person-head|coordination-record|outgoing-record|incoming-record|record-table|persistent-coordination-position/.test(n.name),view+': '+n.name);
+  assert(!informationIds.has(n.userData.component),view+': software drawn as hardware '+n.userData.component);
+  assert(!/received-state-glyph|issued-request-glyph|history-glyph/.test(n.name),view+': obsolete message glyph');
  });}
- for(const view of ['occ-workplace','occ-supervision','occ-equipment']){
-  const r=set(view,view==='occ-workplace'?'task':view==='occ-equipment'?'normal':'traffic',{phase:5});
-  for(const n of r.parts.get('occ-record-timeline')||[])if(visible(n)){let p=n,screen=false;while(p){if(p.name==='monitor-lcd-panel')screen=true;p=p.parent;}assert(screen,'History must be on a display surface');}
- }
 });
 check('Room furniture stays fixed across legacy activity links',()=>{
  const r=set('operations-centre','service',{phase:0}),before=geometryDigest(r.root);
@@ -91,46 +96,44 @@ check('Local and remote console arrangements change actual computing hardware',(
  const r=set('occ-workplace','task');one(r,'client-computer-board');assert.equal(nodes(r,'kvm-interface-board').length,0);assert.equal(nodes(r,'shared-display-panel').length,0);
  set('occ-workplace','shared');assert.equal(nodes(r,'client-computer-board').length,0);assert(nodes(r,'kvm-interface-board').length>0);assert.equal(nodes(r,'shared-display-panel').length,2);
 });
-check('A returned observation appears at its captioned stage and stays present at phase5',()=>{
- for(const variant of ['traffic','power','station']){
-  const r=set('occ-supervision',variant,{phase:0});assert.equal(nodes(r,'received-state-glyph').length,0);
-  set('occ-supervision',variant,{phase:2.8});assert.equal(nodes(r,'received-state-glyph').length,0);
-  set('occ-supervision',variant,{phase:3.6});assert.equal(nodes(r,'received-state-glyph').length,1);
-  set('occ-supervision',variant,{phase:5});assert.equal(nodes(r,'received-state-glyph').length,2);
-  const end=geometryDigest(r.root);set('occ-supervision',variant,{phase:5,playing:true});assert.equal(geometryDigest(r.root),end,'Playing must not wrap phase5 unexpectedly');
+check('Physical OCC configurations do not animate application traces or assert failover outcomes',()=>{
+ for(const view of ['operations-centre','occ-workplace','occ-equipment'])for(const option of data.OCC_VIEW_DATA[view].variants){
+  assert(!option.motion,view+'/'+option.id+': process playback on a physical room');
+  const r=set(view,option.id,{phase:0}),before=geometryDigest(r.root);set(view,option.id,{phase:5,playing:true});assert.equal(geometryDigest(r.root),before,view+': physical hardware changed with process time');
  }
+ const r=set('occ-equipment','normal',{cutaway:false});one(r,'application-host-a');one(r,'application-host-b');one(r,'event-recorder-hardware');
+ for(const variant of ['alternate','display-loss']){const before=geometryDigest(r.root);set('occ-equipment',variant,{cutaway:false});assert.equal(geometryDigest(r.root),before,'retired availability link changed hardware outcome');}
+ for(const id of ['interlocking','breaker','power-scada','station-scada','telecom-scada','tunnel-fan'])assert(!r.parts.has(id),'Remote field/application system incorrectly colocated: '+id);
 });
-check('Logical field systems are located in topology rather than placed inside the console model',()=>{
- for(const variant of ['traffic','power','station']){
-  const r=set('occ-supervision',variant);
-  for(const id of ['interlocking','breaker','power-scada','station-scada','tunnel-fan'])assert(!r.parts.has(id),variant+': field equipment incorrectly colocated');
-  const v=data.OCC_VIEW_DATA['occ-supervision'].variants.find(v=>v.id===variant),topology=v.topology,known=new Set(topology.nodes.map(n=>n.id));
-  assert(topology.nodes.find(n=>n.id==='field').location!=='Control room');
-  assert(topology.nodes.find(n=>n.id==='application').location==='Technical room');
-  for(const edge of topology.edges){assert(known.has(edge.from));assert(known.has(edge.to));}
-  for(const step of v.animation.steps){for(const id of step.activeNodes||[])assert(known.has(id));for(const i of step.activeEdges||[])assert(topology.edges[i]);for(const id of Object.keys(step.states||{}))assert(known.has(id));}
-  const received=v.animation.steps.find(s=>s.label==='Received at interface');assert.match(received.states.field,/unconfirmed/);
+check('Desktop cable openings are actual holes and the computer has an installed mounting tray',()=>{
+ const r=set('occ-workplace','task',{cutaway:false}),desktop=one(r,'desktop-with-cable-grommets'),tray=one(r,'client-computer-mounting-tray');
+ const ray=new THREE.Raycaster();
+ for(const [x,z]of [[-1.65,-.72],[1.5,-.72]]){
+  const origin=desktop.localToWorld(new THREE.Vector3(x,1,z)),direction=new THREE.Vector3(0,-1,0).transformDirection(desktop.matrixWorld);ray.set(origin,direction);assert.equal(ray.intersectObject(desktop,false).length,0,'Cable grommet is a painted circle');
  }
+ ray.set(desktop.localToWorld(new THREE.Vector3(0,1,0)),new THREE.Vector3(0,-1,0));assert(ray.intersectObject(desktop,false).length>0,'Desktop solid surface disappeared');
+ const computer=one(r,'occ-client-computer'),tb=new THREE.Box3().setFromObject(tray),cb=new THREE.Box3().setFromObject(computer);
+ assert(tb.min.y<cb.min.y&&tb.max.y>cb.max.y,'Computer is not captured by the mounting cradle');
+ const supply=one(r,'console-supply-distribution');assert.equal(supply.userData.explorationLabel,'Console power distribution');assert.equal(nodes(r,'console-supply-socket-0').length,1);
+ assert(!nodes(r,'physical-console')[0].children.some(n=>n.userData.explorationLabel==='Named field terminal strip'));
 });
-check('Display loss retains application and recording outcome without inventing a field failure',()=>{
- const r=set('occ-equipment','display-loss',{phase:0});one(r,'display-unavailable-symbol');
- set('occ-equipment','display-loss',{phase:5});one(r,'display-unavailable-symbol');
- const host=one(r,'application-host-a'),recorder=one(r,'event-recorder-hardware');
- const enabled=n=>n.children.some(c=>c.visible);
- assert(enabled(host)&&enabled(recorder));
- assert.equal(nodes(r,'recording-state').filter(n=>n.children[1].visible).length,1,'Recorder receives despite unavailable task display');
- const task=one(r,'task-monitor');assert.equal(nodes({root:task},'received-state-glyph').length,0,'Unavailable task picture must remain unavailable');
-});
-check('Alternate host selection is fixed before the information trace',()=>{
- const r=set('occ-equipment','alternate',{phase:0}),rooms=[];r.root.traverse(n=>{if(n.userData.selectedHost)rooms.push(n);});assert(rooms.length);
- for(const phase of [0,2.5,5]){set('occ-equipment','alternate',{phase});assert(rooms.every(n=>n.userData.selectedHost==='B'));}
-});
-check('Every enabled OCC motion has finite stages, outcome and duration',()=>{
- for(const [view,v]of Object.entries(data.OCC_VIEW_DATA))for(const option of v.variants.filter(v=>v.motion)){
-  const guide=option.animation||v.animation;assert(guide&&guide.duration>=8,view+'/'+option.id);
-  assert.equal(guide.steps[0].at,0);assert.equal(guide.steps.at(-1).at,1);
-  const r=set(view,option.id,{phase:0}),before=geometryDigest(r.root);set(view,option.id,{phase:5});assert.notEqual(geometryDigest(r.root),before,view+'/'+option.id+': idle sequence');
+check('Wall-mounted display panels have hardware brackets and no desktop stands',()=>{
+ const r=set('occ-workplace','shared',{cutaway:false});
+ for(const display of nodes(r,'shared-display-panel')){
+  assert(display.getObjectByName('display-wall-bracket'));assert(!display.getObjectByName('monitor-stand'));assert(display.getObjectByName('fixed-display-bezel'));assert(display.getObjectByName('display-vent-panel'));
  }
+ assert.equal(nodes(r,'shared-display-panel').length,2);
+ for(const n of nodes(r,'illustrative-screen-image')){assert(n.userData.decorativeScreen);assert(!n.userData.component,'Screen picture must inherit physical display identity');}
+});
+check('Assembled SVG display occlusion preserves inspection geometry and restores visibility after every draw',()=>{
+ const r=set('occ-workplace','task',{cutaway:false}),internals=[];
+ r.root.traverseVisible(n=>{if(n.isMesh&&n.userData.concealedWhenAssembled)internals.push(n);});assert(internals.length>10);
+ const original=geometryDigest(r.root);
+ drawWithEnclosureOcclusion(r.root,{cutaway:false,exploded:0},()=>{assert(internals.every(n=>!n.visible),'Closed electronics could paint through opaque display');for(const screen of nodes(r,'illustrative-screen-image'))assert.equal(screen.children.length,1,'Neutral display contains obsolete placeholder graphics');});
+ assert.equal(geometryDigest(r.root),original,'SVG rendering mutated the inspection model');
+ for(const state of [{cutaway:true,exploded:0},{cutaway:false,exploded:.6}])drawWithEnclosureOcclusion(r.root,state,()=>assert(internals.every(n=>n.visible),'Section or separation lost internal electronics'));
+ assert.throws(()=>drawWithEnclosureOcclusion(r.root,{cutaway:false,exploded:0},()=>{throw new Error('expected drawing failure');}),/expected drawing failure/);
+ assert.equal(geometryDigest(r.root),original,'A renderer exception left hidden inspectable parts');
 });
 check('Monitor, computing, network and UPS assemblies have independently movable internal parts',()=>{
  for(const [view,variant,names]of [

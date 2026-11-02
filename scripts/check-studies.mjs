@@ -108,7 +108,7 @@ check('A lift outage interrupts the selected route and a separate lift supplies 
 });
 check('Boarding aid fills the actual platform-to-doorway gap and extends the route',()=>{
   let r=set('accessible-journey','aid-required');assert(on(r,'boarding-gap-marker'));assert(!on(r,'assisted-boarding-route'));assert(!on(r,'level-boarding-route'));
-  const b=node(r,'access-boarding'),plate=b.children.find(n=>n.isMesh&&n.geometry.parameters.depth===1.25);assert(plate&&!visible(plate));
+  const b=node(r,'access-boarding'),plate=b.getObjectByName('boarding-bridge-plate');assert(plate?.isMesh&&!visible(plate));
   r=set('accessible-journey','aid-placed');assert(visible(plate));assert(on(r,'assisted-boarding-route'));assert(!on(r,'boarding-gap-marker'));
   const p=new THREE.Box3().setFromObject(plate),door=node(r,'vehicle-doorway'),front=door.getWorldPosition(new THREE.Vector3()).z+.8;
   assert(p.max.z>=-2.75&&p.min.z<=front,'The plate does not bridge the gap');

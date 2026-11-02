@@ -831,38 +831,46 @@ export const TOURS = [
   {
     "id": "operations-roles",
     "label": "23 · Trace an OCC request",
-    "title": "Follow request, indication and coordination",
+    "title": "Separate telecom control, acknowledgement and returned evidence",
     "domain": "operations",
     "view": "occ-supervision",
-    "component": "operations-signalling-workstation",
-    "explanation": "A workstation request, receipt at a field interface and a returned indication carry different evidence. Follow the separate outgoing and returning paths; the animation shows information exchange without making the field equipment move. Event coordination and responsibilities are examined separately in People & processes.",
-    "actionText": "Step through the request, interface receipt and returned observation in the information diagram. Select a node for its explanation; People & processes covers responsibilities and incident coordination.",
-    "actionLabel": "Trace supervision",
+    "component": "telecom-scada",
+    "explanation": "Telecom SCADA can monitor communications-equipment health and expose specifically configured maintenance requests. This example follows a named PA-amplifier reset interface. An accepted request and a fresh returned equipment condition are different evidence; neither alone establishes audible service across a station.",
+    "actionText": "Compare Telecom SCADA monitoring with monitoring plus the named request. Follow Request & feedback, then choose Outcome feedback missing. Read what is known at each step; no device is operated.",
+    "actionLabel": "Inspect the telecom point",
     "action": {
       "view": "occ-supervision",
-      "component": "operations-signalling-workstation",
+      "component": "telecom-scada",
       "variant": "traffic",
       "mode": "coasting",
       "scenario": "nominal",
-      "cutaway": true,
-      "exploded": 0
+      "cutaway": false,
+      "exploded": 0,
+      "occ": {
+        "app": "telecom",
+        "point": "pa-health",
+        "integration": "control",
+        "trace": "request",
+        "condition": "feedback-missing",
+        "step": 3
+      }
     },
-    "question": "A control request has reached the field interface, but no returned field indication is available. What is known at this point?",
+    "question": "A configured telecom-equipment request has been accepted, but its returned outcome indication is unavailable. What is known?",
     "choices": [
-      "The request reached the interface; the resulting field state has not been confirmed",
-      "The field equipment has completed the requested change",
-      "The associated operational event has been resolved"
+      "The request was accepted; its resulting equipment state and service outcome remain unconfirmed",
+      "The communications device has recovered and all passengers can hear announcements",
+      "Telecom equipment cannot have a SCADA control interface"
     ],
     "answer": 0,
     "feedback": [
-      "Receipt, returned indication and event resolution answer different questions.",
-      "A received request does not establish the field equipment’s completed state.",
-      "An event can remain open after a request or alarm has been acknowledged."
+      "Acceptance, returned equipment condition and service performance are separate observations.",
+      "Acceptance does not establish completion, and device health alone does not prove station-wide audible delivery.",
+      "Published telecom supervisory examples can include configured remote controls. The point list and permissions determine whether a particular request is available."
     ],
     "sourceConcepts": [
-      "operations-centre",
-      "operations-signalling-workstation",
-      "operations-traffic-supervision"
+      "telecom-scada",
+      "occ-supervisory-request",
+      "occ-field-indication"
     ]
   },
   {

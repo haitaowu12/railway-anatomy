@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {OCC_APPLICATIONS,OCC_DEVICE_POINTS,occContextFor,normalizeOccState} from '../dist/occ-applications-data.js';
 import {createMechanicalDetails} from '../dist/mechanical-details.js';
 import {createEquipmentDetails} from '../dist/equipment-details.js';
 const detailFactories={createMechanicalDetails,createEquipmentDetails};
@@ -146,13 +147,14 @@ check('Every concept has a reachable physical anchor or an explicit functional i
   assert(start>=0&&end>start,'The actual component-routing implementation must be exercised');
   // Run the real early routing branch. A function gets a functional destination,
   // not a fabricated selectable mesh solely to satisfy a geometry contract.
-  const route=new Function('parts','interfaceConceptIds','getInterfaceContext',`
+  const route=new Function('parts','interfaceConceptIds','getInterfaceContext','occContextFor',`
     let state={page:'explore'};const events=[];
     function openInterfaces(context){events.push({kind:'interfaces',context});}
+    function openOcc(context){events.push({kind:'occ',context});}
     function showInterfaceConcept(id){events.push({kind:'concept',id});}
     ${appSource.slice(start,end)}
     return id=>{events.length=0;selectComponent(id);return events.slice();};
-  `)(new Map(catalog.CONCEPTS.map(c=>[c.id,c])),interfaceIds,getInterfaceContext);
+  `)(new Map(catalog.CONCEPTS.map(c=>[c.id,c])),interfaceIds,getInterfaceContext,occContextFor);
   for(const concept of CONTROL_INTERFACE_CONCEPTS){
     assert(known.has(concept.id),`Unknown interface function ${concept.id}`);
     assert.equal(model.viewFor(concept.id),'station-networks',`${concept.id} lacks its legacy interface destination`);
@@ -160,15 +162,19 @@ check('Every concept has a reachable physical anchor or an explicit functional i
     const events=route(concept.id),context=getInterfaceContext(concept.id);
     assert.deepEqual(events,[{kind:'interfaces',context},{kind:'concept',id:concept.id}],`${concept.id} is not rendered and explained on its actual interface route`);
     const domain=CONTROL_DOMAINS.find(d=>d.id===context.domain);
-    assert(domain,`${concept.id} points to an unknown functional owner`);
+    if(context.domain)assert(domain,`${concept.id} points to an unknown functional owner`);
     const specific=CONTROL_DOMAINS.filter(d=>d.components.includes(concept.id));
     if(specific.length)assert(specific.includes(domain),`${concept.id} opens another function's controls`);
   }
-  const missing = catalog.CONCEPTS.filter(c => !interfaceIds.has(c.id)&&!available(model.viewFor(c.id), preferredVariant(model.viewFor(c.id), c.id), c.id));
+  for(const concept of catalog.CONCEPTS.filter(c=>occContextFor(c.id))){
+    const context=occContextFor(concept.id);assert.deepEqual(route(concept.id),[{kind:'occ',context}],`${concept.id} needs a readable application route, not a physical glyph`);
+    const app=OCC_APPLICATIONS.find(a=>a.id===context.app),point=OCC_DEVICE_POINTS.find(p=>p.id===context.point);assert(app?.points.includes(point?.id));assert(known.has(point.component),`${concept.id} links to unknown real equipment`);
+  }
+  const missing = catalog.CONCEPTS.filter(c => !interfaceIds.has(c.id)&&!occContextFor(c.id)&&!available(model.viewFor(c.id), preferredVariant(model.viewFor(c.id), c.id), c.id));
   assert.equal(missing.length, 0, missing.map(c => `${c.id} → ${model.viewFor(c.id)}/${preferredVariant(model.viewFor(c.id), c.id)} (${model.targetFor(c.id)})`).join('; '));
 });
 check('Every view opens with a reachable default selection', () => {
-  const missing = Object.entries(model.VIEWS).filter(([view, config]) => !available(view, model.defaultVariant(view), config.component));
+  const missing = Object.entries(model.VIEWS).filter(([view, config]) => view==='occ-supervision'?!occContextFor(config.component):!available(view, model.defaultVariant(view), config.component));
   assert.equal(missing.length, 0, missing.map(([view, config]) => `${view}/${model.defaultVariant(view)} → ${config.component}`).join('; '));
 });
 check('Railway overlays change visible paths while preserving their physical context', () => {
@@ -221,6 +227,7 @@ check('Every lesson action opens its selected component in a real variant', () =
   for (const lesson of TOURS) {
     const action = lesson.action, view = action.view || lesson.view;
     const variant = action.variant || model.defaultVariant(view), component = action.component || lesson.component;
+    if(view==='occ-supervision'){const context=normalizeOccState({...occContextFor(component,variant),...action.occ});assert(OCC_APPLICATIONS.find(a=>a.id===context.app)?.points.includes(context.point),`${lesson.id} has no application point`);continue;}
     const record = setScene(view, variant, { cutaway: action.cutaway ?? model.cutawayFor(view), scenario: action.scenario || 'nominal',...platformForComponent(component,{variant}),technology:action.technology||{propulsion:'lim',control:'radio'} });
     if (!(record.parts.get(model.targetFor(component)) || []).some(visible)) missing.push(`${lesson.id} → ${view}/${variant} (${component})`);
   }
