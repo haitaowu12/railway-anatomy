@@ -146,3 +146,4 @@ The site uses WebGL for 3D rendering where available, with an SVG compatibility 
 
 Project code and original content are provided under the [MIT licence](LICENSE). Referenced publications and vendored dependencies retain their own licences and rights.
 
+Built by [Tony Wu](https://haitaowu12.github.io/tony-wu-home/) · [More projects](https://haitaowu12.github.io/tony-wu-home/#work).
