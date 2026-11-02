@@ -102,3 +102,58 @@ test('closed direct-fixation concrete hides its internal reinforcing bars',async
   assert(color&&parseInt(color.slice(5,7),16)>parseInt(color.slice(1,3),16),'solid concrete must cover its internal reinforcement');
  }
 });
+
+test('exposed equipment surfaces remain visible over actual floors, ballast, roofs and walls',async()=>{
+ const {viewerHarness}=await import('./viewer-test-harness.mjs'),h=await viewerHarness({}, {width:800,height:600});
+ const cases=[
+  {view:'substation',target:'transformer',cover:n=>n.geometry.type==='BoxGeometry'&&n.geometry.parameters.width===16},
+  {view:'switch-drive',target:'track-point-machine',cover:n=>n.userData.component==='track-ballast'},
+  {view:'vehicle',target:'hvac',cover:n=>n.geometry.type==='ExtrudeGeometry'&&ancestor(n,'carbody')},
+  {view:'operations-centre',target:'occ-shared-display',cover:n=>n.geometry.type==='BoxGeometry'&&n.geometry.parameters.width===18&&n.geometry.parameters.height===3.6},
+ ];
+ function ancestor(node,id){while(node){if(node.userData.component===id)return true;node=node.parent;}return false;}
+ for(const item of cases){
+  h.viewer.setView(item.view);h.viewer.setCutaway(false);h.viewer.setSignals(false);h.draw();
+  const root=h.root(),targets=[],meshes=[];
+  root.traverseVisible(node=>{
+   if(!node.isMesh)return;
+   const target=ancestor(node,item.target),cover=item.cover(node);
+   if(!target&&!cover){node.visible=false;return;}
+   node.material=new T.MeshBasicMaterial({color:target?0xff0000:0x0000ff,side:T.DoubleSide});
+   meshes.push(node);if(target)targets.push(node);
+  });
+  assert(targets.length&&meshes.length>targets.length,`${item.view}: actual target and covering surface are present`);
+  const r=new ColorfiguresRenderer({raster:false});r.setQuality('detail');r.setSize(800,600);
+  for(const preset of ['isometric','side','top']){
+   h.viewer.setCameraPreset(preset);h.draw();const c=h.renderer.camera;
+   r.render(root,c);const svg=r.domElement.innerHTML,ray=new T.Raycaster();let exposed=0;
+   for(let y=32;y<600;y+=17)for(let x=32;x<800;x+=17){
+    ray.setFromCamera(new T.Vector2(x/400-1,1-y/300),c);
+    const hit=ray.intersectObjects(meshes,false)[0];if(!hit||!targets.includes(hit.object))continue;
+    const normal=hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+    // Probe exposed tops/fronts rather than model seams that intersect the support.
+    if(item.view==='operations-centre'?Math.abs(normal.z)<.9:normal.y<.9)continue;
+    const color=fillAt(svg,x,y);exposed++;
+    assert(color&&parseInt(color.slice(1,3),16)>parseInt(color.slice(5,7),16),`${item.view}/${preset}: equipment erased at ${x},${y}`);
+   }
+   if(preset==='isometric')assert(exposed>=5,`${item.view}: sample visible equipment rather than an empty scene`);
+  }
+  r.dispose();
+ }
+});
+
+test('approaching a face clips its near corner without dropping the visible surface or ink',()=>{
+ const scene=new T.Scene(),mesh=new T.Mesh(new T.PlaneGeometry(8,5),new T.MeshBasicMaterial({color:0xff0000,side:T.DoubleSide}));
+ mesh.rotation.y=Math.PI/3;scene.add(mesh);
+ const c=new T.PerspectiveCamera(45,4/3,.25,30);c.position.set(0,0,2);c.lookAt(0,0,0);
+ for(const raster of [false,true]){
+  const r=new ColorfiguresRenderer({raster});r.setQuality('detail');r.setSize(800,600);r.render(scene,c);
+  if(raster)assert(r.context.fills>0,'visible geometry must reach the canvas');
+  else{
+   assert(!/NaN|Infinity/.test(r.domElement.innerHTML));
+   const color=fillAt(r.domElement.innerHTML,400,300);
+   assert(color&&parseInt(color.slice(1,3),16)>0,'the surface intersected by the central ray must remain painted');
+  }
+  r.dispose();
+ }
+});
