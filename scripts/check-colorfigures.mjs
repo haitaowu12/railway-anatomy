@@ -56,18 +56,30 @@ function fillAt(svg,x,y){
  }
  return result;
 }
-test('subdivided track beds cannot paint over raised sleepers as the camera orbits',()=>{
- const scene=new T.Scene(),bed=new T.Mesh(new T.BoxGeometry(14,.25,6,24,1,10),new T.MeshBasicMaterial({color:0x0000ff}));scene.add(bed);
- for(const x of [-5,0,5]){const sleeper=new T.Mesh(new T.BoxGeometry(.3,.2,5),new T.MeshBasicMaterial({color:0xff0000}));sleeper.position.set(x,.4,0);scene.add(sleeper);}
- const shape=new T.Shape();shape.moveTo(-2.5,-.1);shape.lineTo(2.5,-.1);shape.lineTo(2.4,.075);shape.lineTo(2.23,.1);shape.lineTo(-2.23,.1);shape.lineTo(-2.4,.075);shape.closePath();
- const extrusion=new T.ExtrudeGeometry(shape,{depth:.3,bevelEnabled:false,curveSegments:1});extrusion.translate(0,0,-.15);extrusion.rotateY(Math.PI/2);extrusion.userData.localDepthTiles=true;
- for(const sleeper of scene.children.filter(object=>object!==bed))sleeper.geometry=extrusion;
- const r=new ColorfiguresRenderer({raster:false});r.setQuality('detail');r.setSize(800,600);
+test('the actual turnout bed never paints over sleeper centres or ends during orbit',async()=>{
+ const {viewerHarness}=await import('./viewer-test-harness.mjs');
+ const h=await viewerHarness();h.viewer.setView('turnout');h.draw();
+ const root=h.root(),sleepers=[];root.updateMatrixWorld(true);
+ root.traverseVisible(node=>{
+  if(!node.isMesh)return;
+  if(node.userData.component==='track-sleeper'){
+   node.material=new T.MeshBasicMaterial({color:0xff0000});sleepers.push(node);
+  }else if(node.geometry.type==='BoxGeometry'&&node.geometry.parameters.width>10&&node.geometry.parameters.height<1){
+   node.material=new T.MeshBasicMaterial({color:0x0000ff});
+  }else node.visible=false;
+ });
+ assert(sleepers.length>0,'the real turnout must contain sleepers');
+ const scene=new T.Scene();scene.add(root);const r=new ColorfiguresRenderer({raster:false});r.setQuality('detail');r.setSize(800,600);
+ const target=new T.Vector3(0,.65,1.4);
  for(const [x,y,z]of [[13,15,17],[-13,15,17],[13,15,-17],[-13,15,-17],[17,5,13],[17,30,13]]){
-  const c=new T.OrthographicCamera(-11,11,8.25,-8.25,.1,100);c.position.set(x,y,z);c.lookAt(0,0,0);r.render(scene,c);
-  for(const sleeperX of [-5,0,5])for(const sleeperZ of [-2,0,2]){
-   const point=new T.Vector3(sleeperX,.5,sleeperZ).project(c),color=fillAt(r.domElement.innerHTML,(point.x+1)*400,(1-point.y)*300);
-   assert(color&&parseInt(color.slice(1,3),16)>parseInt(color.slice(5,7),16),`raised sleeper ${sleeperX} hidden at camera ${[x,y,z]} by ${color}`);
+  const c=new T.PerspectiveCamera(36,4/3,.03,120);c.position.copy(target).add(new T.Vector3(x,y,z));c.lookAt(target);r.render(scene,c);
+  for(const sleeper of sleepers.filter((_,i)=>i%4===0)){
+   const bounds=new T.Box3().setFromObject(sleeper),centre=bounds.getCenter(new T.Vector3());
+   for(const offset of [-.3,0,.3]){
+    const point=new T.Vector3(centre.x,bounds.max.y,centre.z+offset*(bounds.max.z-bounds.min.z)).project(c);
+    const color=fillAt(r.domElement.innerHTML,(point.x+1)*400,(1-point.y)*300);
+    assert(color&&parseInt(color.slice(1,3),16)>parseInt(color.slice(5,7),16),`actual sleeper at ${centre.x}, ${offset} hidden from ${[x,y,z]} by ${color}`);
+   }
   }
  }
 });

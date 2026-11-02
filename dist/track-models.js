@@ -81,7 +81,6 @@ export function buildTrackView(id, api) {
   function rail(parent, path, { taper = null, section = profile, material = null } = {}) {
     const n = section.length;
     const geo = new THREE.BufferGeometry();
-    geo.userData.localDepthTiles = true;
     const array = new Float32Array(path.length * n * 3);
     const buckets = [[], [], []];
     const caps = THREE.ShapeUtils.triangulateShape(section.map(p => new THREE.Vector2(...p)), []);
@@ -138,8 +137,11 @@ export function buildTrackView(id, api) {
     const [x, y, z] = dimensions;
     const geometry = new THREE.BoxGeometry(x, y, z,
       Math.max(1, Math.ceil(x / .6)), 1, Math.max(1, Math.ceil(z / .6)));
-    geometry.userData.localDepthTiles = true;
-    return mesh(parent, geometry, material, position);
+    const support = mesh(parent, geometry, material, position);
+    // The atlas camera stays above the track. Foundations must paint behind
+    // raised equipment, as the viewer already does for its other decks.
+    support.renderOrder = -100;
+    return support;
   }
 
   function layer(parent, component, dimensions, position, material, { cut = false, lift = 0 } = {}) {
@@ -206,7 +208,6 @@ export function buildTrackView(id, api) {
     shape.lineTo(-length / 2 + .27, .105); shape.lineTo(-length / 2 + .10, .075); shape.closePath();
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: .36, bevelEnabled: false, curveSegments: 1 });
     geometry.translate(0, 0, -.18); geometry.rotateY(Math.PI / 2);
-    geometry.userData.localDepthTiles = true;
     mesh(s, geometry, concrete);
     if (detailed) {
       box(s, [.36, .025, length - .12], rubber, [0, -.118, 0]);
