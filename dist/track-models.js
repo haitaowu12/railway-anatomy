@@ -140,7 +140,8 @@ export function buildTrackView(id, api) {
     const support = mesh(parent, geometry, material, position);
     // The atlas camera stays above the track. Foundations must paint behind
     // raised equipment, as the viewer already does for its other decks.
-    support.renderOrder = -100;
+    support.updateWorldMatrix(true, false);
+    support.renderOrder = -100 + new THREE.Vector3(0, y / 2, 0).applyMatrix4(support.matrixWorld).y;
     return support;
   }
 
