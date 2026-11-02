@@ -3,7 +3,8 @@ export const ABOUT_HTML = `
   <section>
     <h3>Understanding how a railway fits together</h3>
     <p>Railway Anatomy is a growing public learning project about railway places, vehicles, equipment, interfaces and people. It is intended especially for graduates, newcomers and anyone exploring another railway discipline.</p>
-    <p>Start with the connected railway, enter a place or system, then inspect its parts and follow their relationships. The project grew out of the need to help new graduates entering railway work in Canada build that first picture of the system. It also aims to share railway engineering knowledge with a wider public and provide useful reading for further study.</p>
+    <p>I work in the railway industry, and I often see graduates arrive with strong engineering fundamentals but little exposure to how a railway works as a whole. Much of that picture has to be built on the job: how vehicles, track, power, signalling, communications, stations and the people around them fit together.</p>
+    <p>I built Railway Anatomy to make that picture easier to explore. You can start with a familiar place or piece of equipment, look inside it, and follow the relationships into other systems. I hope it gives young professionals a useful starting point, and helps experienced practitioners see beyond their own discipline, compare explanations and share what they know.</p>
   </section>
   <section>
     <h3>A representation for each question</h3>

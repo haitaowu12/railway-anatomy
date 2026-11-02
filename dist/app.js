@@ -257,7 +257,7 @@ function syncControls(){
   // remains on the learner's chosen stage.
   $$('#inspection-stages button').forEach((button,index)=>button.setAttribute('aria-pressed',String(current.exploded>=inspectionStages[index].end&&(index===inspectionStages.length-1||current.exploded<inspectionStages[index+1].end))));
   updateMotionGuide();
-  $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':'Information diagram'):rendererStatus==='colorfigures'?'Illustrated teaching model · Colorfigures':rendererStatus==='svg'?'Schematic teaching model · SVG':'Schematic teaching model';
+  $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':'Information diagram'):rendererStatus==='colorfigures'?'Illustrated teaching model':rendererStatus==='svg'?'Schematic teaching model · SVG':'Schematic teaching model';
   const anatomy=viewer?.getInspectionState?.();if(anatomy){if(state.instanceId)state.instanceId=anatomy.selectedInstanceId;state.functionalPath=anatomy.functionalPath;state.allInstances=anatomy.allInstances;}
   if(!depthFrame)depthFrame=requestAnimationFrame(()=>{depthFrame=0;renderDepth();});
 }

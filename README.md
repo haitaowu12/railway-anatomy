@@ -8,17 +8,19 @@ Railway Anatomy is intended especially for graduates, newcomers and people movin
 
 This is a young project. Some topics are developed further than others, and railway practice varies between systems. Feedback from learners and practitioners is welcome: a confusing explanation, a missing interface, a misleading model or a better public reference is a useful contribution. You do not need to write code to help.
 
+## Why I am building this
+
+I work in the railway industry, and I often see graduates arrive with strong engineering fundamentals but little exposure to how a railway works as a whole. Much of that picture has to be built on the job: how vehicles, track, power, signalling, communications, stations and the people around them fit together.
+
+I built Railway Anatomy to make that picture easier to explore. You can start with a familiar place or piece of equipment, look inside it, and follow the relationships into other systems. I hope it gives young professionals a useful starting point, and helps experienced practitioners see beyond their own discipline, compare explanations and share what they know.
+
 ## Illustrated spatial views
+
+The illustrated views are the main product baseline. I chose an ink-and-tone approach to make equipment relationships legible while retaining the working model, component selection and inspection controls.
 
 The physical equipment views use an adaptation of April Zhu’s [Colorfigures](https://april-zhu.com/colorfigures) ink and three-tone drawing style. Existing geometry, assembly identities, cameras, picking, cutaway/separation recipes and playback are retained. Information, electrical and process diagrams keep their existing representations.
 
 Paths are composited on a 2D canvas and reused while their geometry, camera and material stay unchanged. Three.js supplies geometry and interaction. This painter has no GPU depth buffer; intersecting surfaces remain a limit of the illustration. The complete Colorfigures MIT notice is included in the static application.
-
-## Why I am building this
-
-This project grew out of the experience of bringing graduates into railway work in Canada. People can arrive with strong engineering fundamentals and little exposure to the systems that make a metro or railway run. I want to make that first step easier: an approachable place to see the equipment, ask questions about its interfaces and find public material for the next stage of learning.
-
-It is also a way to share more railway systems knowledge beyond the people already working in the industry. The models and guided journeys are an introduction and an invitation to explore further. Additions, corrections and feedback from both newcomers and experienced practitioners are welcome.
 
 ## Explore from the railway to its parts
 
