@@ -1,7 +1,7 @@
 #!/usr/bin/env node
+import {getInterfaceContext,CONTROL_DOMAINS} from '../dist/control-interfaces-data.js';
 import {createMechanicalDetails} from '../dist/mechanical-details.js';
 import {createEquipmentDetails} from '../dist/equipment-details.js';
-import {occContextFor,OCC_APPLICATIONS,OCC_DEVICE_POINTS} from '../dist/occ-applications-data.js';
 import {drawWithEnclosureOcclusion} from '../dist/precision-geometry.js';
 const detailFactories={createMechanicalDetails,createEquipmentDetails};
 import * as electrificationHelpers from '../dist/electrification.js';
@@ -65,10 +65,7 @@ check('OCC builders, legacy routes and public references form a complete contrac
 });
 check('Every promised OCC primary/context has visible equipment or a deliberate process-context alias',()=>{
  for(const [component,contexts]of Object.entries(data.OCC_CONTEXTS))for(const [view,variants]of Object.entries(contexts))for(const variant of variants){
-  if(view==='occ-supervision'){
-   const context=occContextFor(component,variant);assert(context,component+': missing readable application route');
-   assert(OCC_APPLICATIONS.some(a=>a.id===context.app));assert(OCC_DEVICE_POINTS.some(p=>p.id===context.point));continue;
-  }
+  if(view==='station-networks'){assert(CONTROL_DOMAINS.some(d=>d.id===getInterfaceContext(component).domain),component+': missing functional owner');continue;}
   const target=data.OCC_CONTEXT_TARGETS[component]||component,r=set(view,variant,{phase:1});
   assert(r.picks.some(n=>n.userData.component===target&&visible(n)),component+' → '+view+'/'+variant+' ('+target+')');
  }
@@ -76,7 +73,7 @@ check('Every promised OCC primary/context has visible equipment or a deliberate 
 check('Equipment sidebar lists only physical equipment or places',()=>{
  for(const [view,ids]of Object.entries(data.OCC_EQUIPMENT_BY_VIEW))for(const id of ids)assert(['equipment','place'].includes(byId.get(id)?.kind),view+': '+id+' is not physical');
  for(const [view,ids]of Object.entries(data.OCC_INFORMATION_BY_VIEW))for(const id of ids)assert.equal(byId.get(id)?.kind,'information',view+': '+id);
- assert.equal(data.OCC_VIEW_DATA['occ-supervision'].defaultPresentation,'connections');
+ assert.equal(data.OCC_VIEW_DATA['occ-supervision'],undefined);
  assert(data.OCC_VIEW_DATA['occ-incident'].variants.every(v=>v.presentation==='process'));
 });
 check('OCC geometry contains physical hardware without people or software component proxies',()=>{

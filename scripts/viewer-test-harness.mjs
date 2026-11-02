@@ -18,7 +18,7 @@ export async function viewerHarness(callbacks = {}, {width=1100,height=700,foote
     setClearColor(){}setPixelRatio(){}setSize(){}dispose(){}render(scene,camera){this.scene=scene;this.camera=camera;}
   }
   class Controls{constructor(camera){this.camera=camera;this.target=new THREE.Vector3();}update(){this.camera.lookAt(this.target);this.camera.updateMatrixWorld(true);}addEventListener(){}dispose(){}}
-  Object.assign(dependencies,{OrbitControls:Controls,SVGRenderer:GeometryRenderer,window:{devicePixelRatio:1,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})},document:{hidden:false,addEventListener(){},removeEventListener(){}},getComputedStyle:node=>({position:node.position}),ResizeObserver:class{observe(){}disconnect(){}},requestAnimationFrame:fn=>{nextFrame=fn;return 1;},cancelAnimationFrame:()=>{}});
+  Object.assign(dependencies,{ColorfiguresRenderer:GeometryRenderer,OrbitControls:Controls,SVGRenderer:GeometryRenderer,window:{devicePixelRatio:1,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})},document:{hidden:false,addEventListener(){},removeEventListener(){}},getComputedStyle:node=>({position:node.position}),ResizeObserver:class{observe(){}disconnect(){}},requestAnimationFrame:fn=>{nextFrame=fn;return 1;},cancelAnimationFrame:()=>{}});
   dependencies.THREE.WebGLRenderer=GeometryRenderer;
   const code=source.replace(/^import\s+[\s\S]*?;\n/gm,'').replace('export function createViewer','function createViewer');
   const create=new Function(...Object.keys(dependencies),code+'\nreturn createViewer;')(...Object.values(dependencies));

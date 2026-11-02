@@ -1,5 +1,7 @@
 # OCC applications, communications SCADA and physical context — revision 10
 
+**Deferred experiment:** the application/device-point workspace is withdrawn from the active atlas. See [the learning roadmap](LEARNING-ROADMAP.md#deferred-occ-application-studies) for its future design scope. Routes below describe the earlier experiment.
+
 ## What the earlier implementation got wrong
 
 The earlier OCC experience mixed three different subjects: installed workplace equipment, software applications and operational activities. Small selectable traffic/power/status graphics on monitor assemblies made software appear to be physical components. The monitor teardown and an abstract request trace also received more emphasis than the equipment, point definitions and application boundaries a learner needed to understand.

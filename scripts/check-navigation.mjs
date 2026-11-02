@@ -1,4 +1,3 @@
-import {OCC_APPLICATIONS,OCC_DEVICE_POINTS,normalizeOccState,occStateFromQuery,writeOccQuery,occContextFor} from '../dist/occ-applications-data.js';
 import {representationFor} from '../dist/representation-guidance.js';
 import {CONTROL_DOMAINS,CONTROL_ARCHITECTURES,CONTROL_SCENARIOS,normalizeControlState,getInterfaceContext,evaluateControlInterface} from '../dist/control-interfaces-data.js';
 // Exercise the production URL reader/writer, not a second implementation of
@@ -42,7 +41,7 @@ function createBrowserEnvironment(){
     return processMenu;
   }};
 }
-const dependencies={OCC_APPLICATIONS,normalizeOccState,occStateFromQuery,writeOccQuery,occContextFor,PROCESS_REDIRECTS,representationFor,normalizeControlState,getInterfaceContext,processStepFor,applyAnatomyQuery,writeAnatomyQuery,normalizePlatformState,platformForComponent,createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent,normalizeTechnology};
+const dependencies={PROCESS_REDIRECTS,representationFor,normalizeControlState,getInterfaceContext,processStepFor,applyAnatomyQuery,writeAnatomyQuery,normalizePlatformState,platformForComponent,createBrowserEnvironment,DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent,PROCESS_VIEWS,PEOPLE_ROLES,processFor,DOMAINS,VIEWS,MODES,CONCEPTS,TOURS,variantFor,defaultVariant,cutawayFor,domainForView,routeState,technologyFromUrl,technologyForView,technologyForComponent,normalizeTechnology};
 const harness=new Function(...Object.keys(dependencies),`
   const {window,matchMedia,processMenu,querySelector:$}=createBrowserEnvironment();
   const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
@@ -98,7 +97,6 @@ for(const [view,config]of Object.entries(VIEWS)){
     const technology=technologyForView(technologyForComponent(base.technology,component),view,variant);
     const expected={...base,view,domain,component,variant,mode,technology,...(view==='platform-interface'?normalizePlatformState({variant}):{})};
     const result=harness.roundTrip(expected);
-    if(!processFor(view,component,variant)&&(view==='occ-supervision'||occContextFor(component))){assert.equal(result.state.page,'occ');assert.equal(result.state.occ.app,(occContextFor(component,variant)||normalizeOccState()).app);routes++;continue;}
     for(const key of ['view','domain','component','variant','mode'])assert.equal(result.state[key],expected[key],`${view}/${variant}: ${key} changed after reopening ${result.url}`);
     assert.deepEqual(result.state.technology,technology,`${view}/${variant}: technology changed after URL round trip`);
     routes++;
@@ -121,7 +119,7 @@ for(const electrification of ['third-rail-dc','fourth-rail-dc','overhead-dc','ov
 for(const [id,p]of Object.entries(PROCESS_VIEWS))for(const step of p.steps){const actual=harness.parse(`https://example.test/railway-anatomy/#processes/${id}/${step.id}`);assert.equal(actual.page,'processes');assert.equal(actual.processId,id);assert.equal(actual.processStep,step.id);processRoutes++;}
 for(const [hash,process]of [['explore/depot/change-evidence/change-baseline/installed','configuration-change'],['explore/operations/occ-incident/occ-alarm-queue/reported','incident-coordination'],['explore/operations/operations-centre/operations-centre/handover','duty-handover']]){const actual=harness.parse(`https://example.test/railway-anatomy/#${hash}`);assert.equal(actual.page,'processes','A legacy process route returned to a physical model');assert.equal(actual.processId,process);}
 for(const [legacy,profile]of [['ac','overhead-ac'],['dc','fourth-rail-dc']]){const actual=harness.parse(`https://example.test/railway-anatomy/#explore/power/electrification/supply-conversion/${legacy}`);assert.equal(actual.electrification,profile);assert.equal(actual.variant,'chain');}
-const map=harness.roundTrip({...base,domain:'communications',view:'communications-overview',component:'communications-system',variant:'supervision',presentation:'connections'}).state;assert.equal(map.presentation,'connections');
+const map=harness.roundTrip({...base,domain:'communications',view:'communications-network',component:'network-switch',variant:'station',presentation:'connections'}).state;assert.equal(map.presentation,'connections');
 for(const exploded of [.25,.65,1]){
  const expected={...base,view:'bogie',component:'bogie',technology:{propulsion:'rotary',control:'etcs2'},instanceId:'view-bogie/group:2/axlebox:1',functionalPath:'view-bogie/load-path',workspace:'maintenance',studyId:'brake-unit-to-test',allInstances:true,cutaway:false,explodeScope:'selected',exploded};
  const actual=harness.roundTrip(expected).state;
@@ -143,8 +141,6 @@ const oldDoors=harness.parse('https://example.test/railway-anatomy/#explore/stat
 assert.equal(oldDoors.platformEdge,'full-height','A legacy door bookmark silently removed the facade');
 const openEnd=harness.parse('https://example.test/railway-anatomy/?platformEdge=open#explore/station/platform-interface/platform-end-gate/platform-end');
 assert.equal(openEnd.platformEdge,'open','End access added platform doors');
-assert.equal(harness.parse('https://example.test/railway-anatomy/#explore/operations/occ-supervision/occ-supervisory-request/traffic').presentation,'connections');
-assert.equal(harness.parse('https://example.test/railway-anatomy/?presentation=equipment#explore/operations/occ-supervision/occ-supervisory-request/traffic').presentation,'connections');
 assert.equal(harness.parse('https://example.test/railway-anatomy/#explore/power/power-transformer/transformer/default').presentation,'connections');
 
 // A shared interface URL must preserve its actual connection capability and
@@ -248,18 +244,14 @@ console.log(`PASS interface bookmark contracts: ${interfaceRoutes} custom domain
 console.log(`PASS global finder: ${finderCases.length} functional acronym/task queries, complete destination integrity and exclusion of legacy process-only views`);
 
 
-// OCC application URLs carry their own semantic state and leave physical inspection behind.
-for(const p of OCC_DEVICE_POINTS)for(const integration of ['native','monitor','control']){
-  const occ=normalizeOccState({app:p.app,point:p.id,integration,condition:'feedback-missing',trace:'request',step:4,acquisition:'nms'});
-  const current={...base,page:'occ',domain:'operations',view:'occ-supervision',component:OCC_APPLICATIONS.find(a=>a.id===p.app).component,variant:'traffic',occ,instanceId:'unrelated/physical/instance',functionalPath:'old-path',cutaway:true,exploded:.6,explodeScope:'selected'};
-  const result=harness.roundTrip(current);assert.deepEqual(result.state.occ,occ);assert.equal(result.state.page,'occ');
-  const url=new URL(result.url);assert.equal(url.hash,`#occ/${p.app}/${p.id}`);for(const key of ['instance','trace','inspect','exposure'])assert(!url.searchParams.has(key),`OCC inherited physical ${key}`);
+// Removed workspaces recover to retained equipment without carrying point-study state.
+for(const route of ['#occ','#occ/traffic/track-occupation','#explore/operations/occ-supervision/occ-information-quality/traffic']){
+ const result=harness.parse('https://example.test/railway-anatomy/?occCondition=path-loss'+route);
+ assert.equal(result.page,'explore');assert.equal(result.view,'operations-centre');
 }
-const occTour=harness.lesson('operations-roles',base),reopenedOccTour=harness.roundTrip(occTour);assert.equal(reopenedOccTour.state.page,'learn');assert.deepEqual(reopenedOccTour.state.occ,occTour.occ);assert.equal(new URL(reopenedOccTour.url).hash,'#learn/operations-roles');
-for(const [component,variant,app] of [['operations-signalling-workstation','traffic','traffic'],['operations-power-control','power','power'],['operations-station-supervision','station','facilities'],['occ-information-quality','traffic','telecom']]){
- const result=harness.parse(`https://example.test/railway-anatomy/#explore/operations/occ-supervision/${component}/${variant}`);assert.equal(result.page,'occ');assert.equal(result.occ.app,app);
-}
-const noOwner=getInterfaceContext('unknown-component','unrelated-view');assert.deepEqual(noOwner,{},'Unknown context was silently assigned to a functional owner');
-for(const view of ['operations-centre','occ-workplace','occ-equipment'])assert.equal(cutawayFor(view),false,'New OCC physical context must start assembled');
-const occIndex=buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS});assert(searchNavigation(occIndex,'communications SCADA').some(x=>x.kind==='occ'&&x.id==='telecom'));
-console.log('PASS OCC navigation: all device/integration routes, legacy redirects, guided-tour conditions, no inherited physical query and searchable applications');
+const oldMap=harness.parse('https://example.test/railway-anatomy/#explore/communications/communications-overview/communications-system/supervision');
+assert.equal(oldMap.view,'communications-network');assert.equal(oldMap.component,'telecom-rack');
+const activeIndex=buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS});
+assert(!activeIndex.some(x=>x.kind==='occ'||x.id==='communications-overview'||x.id==='occ-supervision'));
+assert(!TOURS.some(t=>t.view==='occ-supervision'));
+console.log('PASS retired-workspace recovery and active search destinations');

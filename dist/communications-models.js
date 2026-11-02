@@ -3,7 +3,6 @@ import {createEquipmentDetails} from './equipment-details.js';
  * not vendor drawings. Motion illustrates relationships with invented timing;
  * it does not implement railway operating rules or equipment safety functions. */
 export const COMMUNICATIONS_VIEWS={
-  'communications-overview':{camera:[20,17,23],target:[0,1.4,0],distance:39},
   'communications-network':{camera:[11,8,14],target:[0,2,0],distance:25},
   'communications-scada':{camera:[18,12,20],target:[0,1.6,.1],distance:34},
   'communications-telephony':{camera:[16,11,19],target:[0,1.4,0],distance:31},
@@ -11,7 +10,6 @@ export const COMMUNICATIONS_VIEWS={
   'communications-security':{camera:[14,11,18],target:[0,1.4,0],distance:29},
 };
 const VARIANTS={
-  'communications-overview':['supervision','passenger','voice'],
   'communications-network':['station','onboard'],
   'communications-scada':['status','command','stale'],
   'communications-telephony':['help-point','operational-radio'],
@@ -277,19 +275,7 @@ export function buildCommunicationsView(id,api){
     const g=A.assembly(parent,'station-radio',at,scale);box(g,[1.6,.15,1.4],P.metal,[0,.1,0]);cylinder(g,.07,3.8,M.steel,[0,2,0],null,10);for(const x of [-.32,.32])box(g,[.22,1.2,.14],P.pale,[x,3.25,0]);
     box(g,[.95,1.35,.7],P.blue,[0,.82,-.3]);const inside=A.board(g,'radio-access-interface-board',.65,.85,[0,.86,.1]);separate(inside,[.5,.1,.6],'Radio-access interface board');return g;
   }
-  if(id==='communications-overview'){
-    for(const name of VARIANTS[id]){
-      const g=alt(name);const map=A.assembly(g,'communications-system');foundation(map,17.4,10.0);const train=vehicleSection(g,[-5,.1,2.5],5.3),wayside=bay(g,'wayside-location',[-5,.1,-2.8],4.6,3.8),station=bay(g,'station-location',[3,.1,2.2],6.4,4.1),head=bay(g,'head-end-location',[4.6,.1,-2.8],4.4,3.8);
-      const fibre=A.assembly(g,'fiber-backbone');link(fibre,'location-backbone',[[-5,.28,-2.3],[-1.6,.28,-2.3],[-1.6,.28,1.5],[2.1,.28,1.5],[4.6,.28,-2.3]],'optical');A.networkSwitch(station,[-1.7,.8,-.6],1.8);
-      if(name==='supervision'){
-        fieldDamper(wayside,[-1,0,0],.8);A.rtuPanel(station,[.5,0,-.4],.75);const h=headEnd(head,[0,0,0],.7);A.assembly(train,'bas-sensor',[0,.7,0]);box(train,[1,.65,.65],P.blue,[0,.7,0]);h.current.visible=true;
-      }else if(name==='passenger'){
-        A.display(train,[0,1.75,-.7],.9,'passenger-info');A.networkSwitch(train,[-1.2,.6,.2],1.2,'onboard-ethernet-gateway',true);A.display(station,[1.1,2.25,-.7],1.0);A.speaker(station,[2.1,1.0,.2],.8);A.server(head,'pis-controller',[0,0,-.3],.8);A.router(wayside,[0,1,0]);
-      }else{
-        A.cabRadio(train,[0,.3,0],.8);radioSite(wayside,[0,0,0],.8);A.helpPoint(station,[1,0,.3],.85);A.server(head,'voice-call-server',[0,0,-.5],.75);A.screenTerminal(head,'voice-call-server',[0,0,1],.65);
-      }
-    }
-  }else if(id==='communications-network'){
+  if(id==='communications-network'){
     const station=alt('station');foundation(station,7.5,5.3);A.networkCabinet(station,[0,.08,0],1);
     // Detached fibre entry and equipment spur make the terminations readable.
     const fibre=A.assembly(station,'fiber-backbone');link(fibre,'installed-fibre-entry',[[-3.3,.2,-1.4],[-2,.2,-1.4],[-1.65,4.1,-.85]],'optical');
@@ -338,6 +324,7 @@ export function buildCommunicationsView(id,api){
     link(access,'access-supervisory-interface',[[-3.6,2.1,0],[-2.7,3.5,-.6],[1.1,3.5,-.6],[3.5,1.6,.6]]);
     updates.push(s=>{const u=phase(s),release=u>=.38,opened=clamp((u-.6)/.18);door.readerState.set(u>=.2);door.command.set(release);door.relayArm.rotation.z=release?-.28:0;door.bolt.position.x=-.15+(release?.31:0);door.hinge.rotation.y=-opened*.95;door.contactState.set(opened>.08);hmi.request.set(release);hmi.display.set(u>=.84);});
   }
+  if(id==='communications-network'){const children=[...root.children],system=A.assembly(root,'communications-system');for(const child of children)system.add(child);}
   for(const a of alternatives)a.node.visible=a.name===VARIANTS[id][0];
   registerAnimator(state=>{const v=selected(state);for(const a of alternatives)a.node.visible=a.name===v;for(const update of updates)update(state);});
   for(const update of updates)update({variant:VARIANTS[id][0],phase:0,playing:false});

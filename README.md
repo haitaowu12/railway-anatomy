@@ -8,6 +8,12 @@ Railway Anatomy is intended especially for graduates, newcomers and people movin
 
 This is a young project. Some topics are developed further than others, and railway practice varies between systems. Feedback from learners and practitioners is welcome: a confusing explanation, a missing interface, a misleading model or a better public reference is a useful contribution. You do not need to write code to help.
 
+## Illustrated spatial views
+
+The physical equipment views use an adaptation of April Zhu’s [Colorfigures](https://april-zhu.com/colorfigures) ink and three-tone drawing style. Existing geometry, assembly identities, cameras, picking, cutaway/separation recipes and playback are retained. Information, electrical and process diagrams keep their existing representations.
+
+Paths are composited on a 2D canvas and reused while their geometry, camera and material stay unchanged. Three.js supplies geometry and interaction. This painter has no GPU depth buffer; intersecting surfaces remain a limit of the illustration. The complete Colorfigures MIT notice is included in the static application.
+
 ## Why I am building this
 
 This project grew out of the experience of bringing graduates into railway work in Canada. People can arrive with strong engineering fundamentals and little exposure to the systems that make a metro or railway run. I want to make that first step easier: an approachable place to see the equipment, ask questions about its interfaces and find public material for the next stage of learning.
@@ -60,7 +66,7 @@ Conventional signalling, CBTC/urban ATC and ETCS are explained as related famili
 
 At a platform, choose the **physical edge** independently of the mechanism being studied. Open, half-height and full-height arrangements remain in place when switching between applicable studies; interspace sensing requires a fitted barrier. The boarding illustration separates leaf movement, the closed contact, the lock mechanism and the returned indication. A two-landing lift study shows the relationship between the moving cabin and the fixed landing doors.
 
-The OCC equipment views cover the **room, console and technical room**, with mounted displays, accessible computing equipment, cabinet modules and physical cable routes. The separate **OCC applications** workspace follows named device points across nine application scopes: communications SCADA, train supervision, power SCADA, facilities, passenger information, video, radio, access control and network management. Choose a point, compare a condition and trace an observation or a permitted request. Roles, incident coordination and duty handover remain in People & processes.
+The control-centre equipment studies cover the **room, console and technical room**, with mounted displays, computing equipment, cabinet modules and physical cable routes. **Interfaces** explains functional ownership and permitted exchanges; **People & processes** covers roles, coordination and handover. The former OCC application workspace and Locations & connections vignette are [deferred for future development](docs/LEARNING-ROADMAP.md#deferred-occ-application-studies).
 
 ### Control, supervision and optional integration
 
@@ -138,7 +144,7 @@ Automated checks cover content references, routes, model construction and select
 | Learning and reading | `dist/tours.js`, `reading-guides.js`, `reading.html`, `scripts/generate-reading.mjs` |
 | Checks | `scripts/check-site.mjs` and the focused `scripts/check-*.mjs` suites |
 
-The site uses WebGL for 3D rendering where available, with an SVG compatibility renderer when WebGL initialization is unavailable. There is no application account or backend. Saved exploration choices and learning progress remain in the visitor's browser. External reading links open their publishers' sites.
+The site uses the Colorfigures drawing adapter for physical models, with the existing camera and geometry model retained. There is no application account or backend. Saved exploration choices and learning progress remain in the visitor's browser. External reading links open their publishers' sites.
 
 ## Publication and licence
 

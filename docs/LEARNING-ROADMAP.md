@@ -4,9 +4,17 @@
 
 ## Implemented baseline
 
-The atlas already connects a whole railway to vehicles, infrastructure, stations, control and depots. Its existing studies cover AC/DC energy chains, qualitative adhesion, infrastructure work, shared dependencies, an accessible passenger route, and configuration evidence. The current communications expansion adds six equipment/connection views: locations, network hardware, SCADA, voice, passenger information and security. It includes real removable internals and bounded examples of requests, feedback, content delivery, audio output and door state. People and processes have a separate presentation.
+The atlas already connects a whole railway to vehicles, infrastructure, stations, control and depots. Its existing studies cover AC/DC energy chains, qualitative adhesion, infrastructure work, shared dependencies, an accessible passenger route, and configuration evidence. The current communications expansion covers network hardware, SCADA, voice, passenger information and security. It includes real removable internals and bounded examples of requests, feedback, content delivery, audio output and door state. People and processes have a separate presentation.
 
 The proposals below deepen specific unanswered questions. They do not describe those existing topics as absent. Public reading links are starting points for research; a source covering equipment roles is not sufficient evidence for a numerical simulation or a railway operating rule.
+
+## Deferred OCC application studies
+
+The OCC application/device-point workspace and the **Locations & connections** vignette are withdrawn from the active atlas. Their organization and teaching sequence need a separate design pass before further development. The source remains recoverable at trial commit `c292f20`; [OCC revision 10](OCC-REVISION-10.md) records the earlier experiment.
+
+Keep the physical room, console and technical-room studies. Use the existing Interfaces workspace for functional ownership, point quality, requests and feedback. Network hardware and the focused SCADA, voice, passenger-information and security studies carry the useful endpoint context from the retired vignette.
+
+Before restoring an OCC operations workspace, settle one learning question, its entry route and the relationship between applications, people and physical equipment with the user. A future workspace must support a coherent complete scenario without duplicating Interfaces or People & processes.
 
 ## Priorities
 

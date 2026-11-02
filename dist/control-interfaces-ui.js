@@ -1,4 +1,3 @@
-import {occExampleForDomain} from './occ-applications-data.js';
 import {SOURCES} from './catalog.js';
 import {CONTROL_DOMAINS,CONTROL_ARCHITECTURES,CONTROL_SCENARIOS,CONTROL_PROJECT_EXAMPLES,CONTROL_INTERFACE_SOURCES,normalizeControlState,connectionModesFor,connectionFor,evaluateControlInterface} from './control-interfaces-data.js';
 
@@ -40,7 +39,7 @@ export function controlInterfacesMarkup(input={}){
   return `<div class="control-interfaces" data-ci-root>
     <header class="ci-intro"><p class="eyebrow">System responsibilities & interfaces</p><h2>Who controls what?</h2><p>Compare local control, supervisory requests and information sharing. These teaching patterns show possible allocations; each railway defines its own.</p></header>
     <div class="ci-function-picker"><label for="ci-domain">Choose a function<select id="ci-domain" data-ci-field="domain" aria-label="Choose a function">${CONTROL_DOMAINS.map(t=>`<option value="${t.id}" ${t.id===d.id?'selected':''}>${esc(t.label)} · ${esc(t.short)}</option>`).join('')}</select></label><details class="ci-domain-browse"><summary>Browse all ${CONTROL_DOMAINS.length} functions</summary><nav class="ci-domain-nav" aria-label="Control-system responsibilities">${CONTROL_DOMAINS.map(t=>`<button type="button" data-ci-domain="${t.id}" aria-pressed="${t.id===d.id}"><strong>${esc(t.label)}</strong><span>${esc(t.short)}</span></button>`).join('')}</nav></details></div>
-    ${occExampleForDomain(d.id)?`<div class="ci-occ-link"><button type="button" data-ci-occ="${d.id}">Inspect a named device point at the OCC →</button></div>`:''}<div class="ci-section-head"><div><h3>${esc(d.label)}</h3><p>${esc(d.role)}</p></div><button type="button" class="ci-inspect" data-ci-inspect="${esc(d.component)}">Read component details</button></div>
+    <div class="ci-section-head"><div><h3>${esc(d.label)}</h3><p>${esc(d.role)}</p></div><button type="button" class="ci-inspect" data-ci-inspect="${esc(d.component)}">Read component details</button></div>
     <div class="ci-controls">
       <label for="ci-architecture">Teaching architecture<select id="ci-architecture" data-ci-field="architecture" aria-label="Teaching architecture">${CONTROL_ARCHITECTURES.map(a=>`<option value="${a.id}" ${a.id===s.architecture?'selected':''}>${esc(a.label)}</option>`).join('')}</select></label>
       <label for="ci-connection">This function → common supervisory view<select id="ci-connection" data-ci-field="connection" aria-label="This function → common supervisory view">${connectionModesFor(d.id).map(v=>`<option value="${v}" ${mode===v?'selected':''}>${esc(modeLabel[v])}</option>`).join('')}</select></label>
@@ -64,7 +63,7 @@ export function controlInterfacesMarkup(input={}){
 }
 
 /** Keeps event ownership local. Call destroy when leaving the view. */
-export function createControlInterfaceExplorer(host,{initialState={},onInspect=()=>{},onOcc=()=>{},onStateChange=()=>{}}={}){
+export function createControlInterfaceExplorer(host,{initialState={},onInspect=()=>{},onStateChange=()=>{}}={}){
   let state=normalizeControlState(initialState),timer=null,playing=false,destroyed=false;
   const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   function pause(){if(timer!==null)clearTimeout(timer);timer=null;playing=false;}
@@ -83,7 +82,6 @@ export function createControlInterfaceExplorer(host,{initialState={},onInspect=(
   function tick(){if(!playing||destroyed)return;if(state.step===4){pause();render('[data-ci-action="play"]');return;}commit({step:state.step+1});timer=setTimeout(tick,1900);}
   function click(event){
     const target=event.target?.closest?.('button');if(!target||!host.contains(target))return;event.stopPropagation();
-    if(target.dataset.ciOcc){pause();onOcc(target.dataset.ciOcc);return;}
     if(target.dataset.ciInspect){pause();onInspect(target.dataset.ciInspect);return;}
     if(target.dataset.ciDomain){pause();const id=target.dataset.ciDomain;const browse=host.querySelector('.ci-domain-browse');if(browse)browse.open=false;commit({domain:id,step:0},'#ci-domain');host.scrollIntoView({block:'start',behavior:'instant'});return;}
     if(target.dataset.ciTrace){pause();commit({trace:target.dataset.ciTrace,step:0},`[data-ci-trace="${target.dataset.ciTrace}"]`);return;}
