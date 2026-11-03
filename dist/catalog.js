@@ -368,6 +368,14 @@ export const SOURCES = [
     "scope": "Plinth anatomy only; the case-study dimensions, tolerances and repair methods are excluded."
   },
   {
+    "id": "K21",
+    "title": "Signals and points failure",
+    "publisher": "Network Rail",
+    "url": "https://www.networkrail.co.uk/rail-travel/delays-explained/signals-and-points-failure/",
+    "description": "An infrastructure manager explains the role of points, common causes of failure and their effect on railway service.",
+    "scope": "Public British railway context and further reading. The simplified account is not a universal signalling rule, failure diagnosis or recovery procedure."
+  },
+  {
     "id": "S01",
     "title": "SelTrac and 5G train-to-ground communications",
     "publisher": "Hitachi Rail",
@@ -786,7 +794,7 @@ export const CONCEPTS = [
   {
     "id": "grounding",
     "label": "Protective bonding and return",
-    "summary": "Separate safety and energy paths.",
+    "summary": "Distinguish traction return from protective bonding.",
     "details": [
       "Return voltage and stray current need coordination. A voltage-limiting device is one available protection measure.",
       "Earth is not the illustrated normal return. Bonding and return connections must not be treated as interchangeable paths."
@@ -838,7 +846,7 @@ export const CONCEPTS = [
       "Follow the return from onboard equipment back toward the substation. The return conductor is drawn separately from the wheel-supporting rails.",
       "A return path is part of the circuit. The word “negative” does not mean the conductor is safe to touch."
     ],
-    "sources": [],
+    "sources": ["EL02", "EL07"],
     "caveat": "This dedicated-return topology is a deliberate teaching choice, not a claim that all DC railways use it."
   },
   {
@@ -1043,12 +1051,14 @@ export const CONCEPTS = [
     "label": "Where braking energy goes",
     "summary": "Energy needs a destination.",
     "details": [
-      "Electrical braking converts some motion into electrical energy. A receptive network can use it elsewhere; otherwise suitable resistors can dissipate it as heat.",
+      "Electrical braking converts some motion into electrical energy. A receptive network can use it elsewhere; otherwise suitable resistors can dissipate it as heat. Available electrical braking depends on the equipment and the energy destination; friction braking is a separate part of the train's braking system.",
       "Compare a receptive train with wayside resistor dissipation. The animation shows energy destinations, not a recovery percentage or stopping-distance prediction."
     ],
     "sources": [
-      "P12"
+      "P12",
+      "P06"
     ],
+    "related": ["brakes"],
     "caveat": "The selected diode rectifier cannot send energy backward into the AC utility. Grid regeneration needs suitable reversible equipment."
   },
   {
@@ -1762,7 +1772,8 @@ export const CONCEPTS = [
       "The model uses a generic electromechanical example: a motor and transmission move a drive rod linked to the blades. A separate lock indicator explains why reaching a position and securing it are not the same action."
     ],
     "sources": [
-      "K17"
+      "K17",
+      "K21"
     ],
     "caveat": "The cutaway is original illustrative geometry, without operating instructions.",
     "related": [
@@ -1877,7 +1888,7 @@ export const CONCEPTS = [
     "label": "Interlocking",
     "summary": "Checks and secures compatible routes through the railway.",
     "details": [
-      "An interlocking evaluates the information needed before a route can be used: track-section status, point position and the required signalling conditions. It coordinates points and signals so a route request becomes a controlled movement rather than merely a command to move switch blades.",
+      "An interlocking evaluates the information needed before a route can be used: track-section status, point position and the required signalling conditions. It coordinates route-related equipment, including points and, where provided, signals. A route request alone does not establish permission for a train to move.",
       "Electronic interlockings exchange commands and indications with field equipment, sometimes through object controllers. The model separates a requested route, a proved route and a released route. A missing point indication or uncertain section state leaves the route unproved in this example."
     ],
     "sources": [

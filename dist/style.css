@@ -469,7 +469,7 @@ main{max-width:1920px;padding:0;margin:auto}
  .topology-compact-node small{font-size:11px;color:#697995}.topology-compact-node strong{font-size:13px;line-height:1.5;font-weight:600}.topology-compact-node .node-state{font-size:12px;line-height:1.55;color:#53627d;min-height:1.55em}
  .topology-compact-node.active-step{border:2px solid #a77729;padding:11px;background:#fbf1d9}.topology-compact-node[aria-pressed=true]{outline:2px solid #244acb;outline-offset:2px}
  .topology-compact-node:focus-visible{outline:3px solid #244acb;outline-offset:3px}
- .compact-topology-paths{display:block;list-style:none;padding:0;margin:10px 0}.compact-topology-paths li{display:none;border-left:3px solid #a77729;padding:10px 12px;background:#f6eedc;font-size:13px;line-height:1.65}.compact-topology-paths li.active-step{display:block}.compact-topology-paths strong,.compact-topology-paths span{display:block}.compact-topology-paths strong{font-size:12px;margin-bottom:5px}
+ .compact-topology-paths{display:block;list-style:none;padding:0;margin:10px 0}.compact-topology-paths li{display:block;border-left:3px solid #a77729;padding:10px 12px;background:#f6eedc;font-size:13px;line-height:1.65}.compact-topology-paths:has(li.active-step) li:not(.active-step){display:none}.compact-topology-paths strong,.compact-topology-paths>li>span{display:block}.compact-topology-paths strong{font-size:12px;margin-bottom:5px}
 }
 .diagram-quick-play{display:none}
 @media(max-width:740px){.diagram-quick-play{display:inline-flex;align-items:center;background:#244acb;color:white;padding:9px 13px;min-height:44px;border-radius:3px;font-size:13px;margin:0 0 12px}}

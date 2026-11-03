@@ -1,6 +1,13 @@
 // Public-source context for an original, fictional railway composition.
-// Source records are reused from catalog.js; no operator layout is reproduced.
-export const NETWORK_SOURCES = [];
+// No operator layout is reproduced.
+export const NETWORK_SOURCES = [{
+  id: 'NET01',
+  title: 'Transit Asset Management Systems Handbook',
+  publisher: 'Federal Transit Administration',
+  url: 'https://www.transit.dot.gov/regulations-and-programs/asset-management/transit-asset-management-systems-handbook',
+  description: 'A U.S. transit agency handbook on identifying and managing systems and their assets throughout the lifecycle.',
+  scope: 'Further reading on transit systems and asset management in the U.S. context; it does not validate the fictional railway layout.'
+}];
 
 export const NETWORK_CONCEPTS = [
   {
@@ -10,7 +17,7 @@ export const NETWORK_CONCEPTS = [
       'Start with a place or asset, then open its systems and equipment. Stations, the running line, the depot and the control centre have different jobs; power and information connect across those places.',
       'The three overlays separate vehicle movement, traction energy and operational information. They are different relationships on the same fictional railway, not three different railway designs.'
     ],
-    sources: ['K01', 'P01', 'O01', 'O04'],
+    sources: ['K01', 'P01', 'O01', 'O04', 'NET01'],
     caveat: 'An authored schematic: distances, buildings, track connections and equipment quantities do not describe an installed railway.',
     related: ['network-route', 'network-station', 'network-depot', 'network-control-centre', 'network-substation', 'network-telecommunications']
   },
@@ -106,7 +113,7 @@ export const NETWORK_CONCEPTS = [
     id: 'network-substation', label: 'Traction power substation',
     summary: 'Conversion, distribution and protection connect an electrical supply to the trains.',
     details: [
-      'This atlas uses a DC traction example. A transformer and rectifier convert incoming AC, and DC switchgear distributes and protects the traction supply.',
+      'This railway overview uses a fixed DC traction example. A transformer and rectifier convert incoming AC, and DC switchgear distributes and protects the traction supply. The detailed energy study offers other supply arrangements.',
       'Choose the power overlay to distinguish outgoing and return relationships, then open the substation for the equipment and circuit.'
     ],
     sources: ['P01'],
@@ -139,7 +146,7 @@ export const NETWORK_VIEWS = {
       },
       {
         id: 'power', label: 'Traction power', title: 'The energy circuit crosses location boundaries',
-        description: 'Amber and cyan distinguish outgoing and return relationships in this DC traction example. The substation converts, distributes and protects the supply; the vehicle uses it through its own equipment. These are illustrative paths, not cable routes.',
+        description: 'This overview always shows a DC traction example, even if another supply is selected in the detailed energy study. Amber and cyan distinguish outgoing and return relationships: the substation converts, distributes and protects the supply; the vehicle uses it through its own equipment. These are illustrative paths, not cable routes.',
         nodes: ['AC supply', 'Conversion / protection', 'Traction circuit', 'Vehicle equipment'],
         sources: ['P01', 'P04'], component: 'network-substation'
       },

@@ -8,9 +8,9 @@ export const TOURS = [
     "domain": "station",
     "view": "station",
     "component": "station-pa",
-    "explanation": "Start with the passenger space, then look behind it. A speaker needs an audio path and electrical power; a display needs information; plant equipment needs local controls. The cutaway places these relationships together without claiming that they share one controller.",
-    "actionText": "Switch between the whole station and equipment emphasis.",
-    "actionLabel": "Show this arrangement",
+    "explanation": "A passenger hears an announcement and reads a display, but the equipment that supports each service may be elsewhere in the station. The speaker needs an audio path and electrical power; the display needs its own information and supply. This station cutaway places them in context without claiming that they share one controller.",
+    "actionText": "Start with Whole station. Under Station area in focus, compare Passenger circulation and Equipment room, then return to the PA / voice alarm selection.",
+    "actionLabel": "Open the station overview",
     "action": {
       "view": "station",
       "component": "station-pa",
@@ -44,9 +44,9 @@ export const TOURS = [
     "domain": "track",
     "view": "track-support",
     "component": "track-ballasted",
-    "explanation": "The running rail is one part of a support assembly. Compare ballasted, direct-fixation and embedded examples. Watch how the intermediate layers change while the need to support and restrain the rail remains. The arrows illustrate a load path, not calculated stress.",
-    "actionText": "Compare all three support presets, keeping the rail interface in view.",
-    "actionLabel": "Show this arrangement",
+    "explanation": "Below the train, the running rail is one part of the assembly that supports and guides its wheels. Compare ballasted, direct-fixation and embedded examples. The intermediate layers change, but the rail still needs support and restraint. The arrows illustrate a load path, not calculated stress.",
+    "actionText": "Compare Ballasted, Slab / direct fixation and Embedded. In each view, look for the layers and restraints that support the rail.",
+    "actionLabel": "Open the track support view",
     "action": {
       "view": "track-support",
       "component": "track-ballasted",
@@ -119,8 +119,8 @@ export const TOURS = [
     "view": "switch-drive",
     "component": "track-point-detection",
     "explanation": "Trace the switch drive, mechanical linkage and position indication separately. In the unproved example, a movement command is present but the proof condition is incomplete. The control system cannot substitute the command for confirmation of the required state.",
-    "actionText": "Compare proved and unproved indications while inspecting the linkage.",
-    "actionLabel": "Show this arrangement",
+    "actionText": "Compare Position proved with Proof incomplete while inspecting the drive and linkage. Notice the separate returned indication.",
+    "actionLabel": "Open the switch drive",
     "action": {
       "view": "switch-drive",
       "component": "track-point-detection",
@@ -155,7 +155,7 @@ export const TOURS = [
     "domain": "power",
     "view": "system",
     "component": "utility",
-    "explanation": "This lesson selects the fourth-rail DC example. Follow AC supply, wayside transformer and rectifier, separate supply and return conductors, then the onboard inverter and selected motor. The collection, conversion and return arrangement is one teaching example; it does not define every railway.",
+    "explanation": "A supported and guided train also needs energy to move. This lesson selects the fourth-rail DC example. Follow the AC supply through the wayside transformer and rectifier, then through the supply conductor to the onboard inverter and selected motor. Trace the return from the vehicle back to the substation through the separate return conductor. This is one teaching arrangement; it does not define every railway.",
     "actionText": "Follow the selected fourth-rail DC path from the substation to the vehicle and back through the separate return conductor.",
     "actionLabel": "Follow power",
     "action": {
@@ -166,17 +166,17 @@ export const TOURS = [
       "electrification": "fourth-rail-dc",
       "cutaway": true
     },
-    "question": "Which conversion belongs to the rectifier in this DC traction example?",
+    "question": "The vehicle collects power from the supply conductor. In this fourth-rail example, what completes its normal traction circuit back to the substation?",
     "choices": [
-      "AC at one voltage to AC at another voltage",
-      "DC supply to controlled AC for the traction motor",
-      "AC supply to DC for traction distribution"
+      "The train-control radio link",
+      "The LIM reaction rail",
+      "The separate return shoe and conductor"
     ],
     "answer": 2,
     "feedback": [
-      "That is the transformer role in this example.",
-      "That is the onboard traction-inverter role.",
-      "The rectifier supplies the DC side; the transformer and onboard inverter have different conversions."
+      "The radio carries information; it is not the normal traction-current return path.",
+      "In the LIM arrangement the reaction rail is the motor secondary, not this circuit's separate return conductor.",
+      "The second shoe connects the vehicle to the separate conductor, which returns the normal traction current toward the substation."
     ],
     "sourceConcepts": [
       "utility",
@@ -304,7 +304,7 @@ export const TOURS = [
     "domain": "control",
     "view": "control",
     "component": "atp",
-    "explanation": "Read three layers together: ATP supervises limits, ATO manages driving, and ATS coordinates the service. A request to improve punctuality cannot itself enlarge the permitted operating envelope.",
+    "explanation": "Alongside the equipment that moves a train, different functions protect, drive and coordinate its movement. In this example, ATP supervises limits, ATO manages driving, and ATS coordinates the service. A request to improve punctuality cannot itself enlarge the permitted operating envelope.",
     "actionText": "Follow the request, limit and vehicle response together.",
     "actionLabel": "Trace control",
     "action": {
@@ -607,7 +607,7 @@ export const TOURS = [
     "view": "communications-passenger",
     "component": "pa-amplifier",
     "explanation": "Follow the call station and PA controller into the amplifier and loudspeaker circuit. The connection diagram distinguishes network audio and control from the powered output to the speaker. The equipment view exposes the amplifier and speaker parts; its exaggerated cone motion illustrates a mechanism without predicting audibility or speech quality.",
-    "actionText": "Open Announcement. Inspect the amplifier and loudspeaker, then use Connections to identify the amplified-audio output and separate electrical supply.",
+    "actionText": "Open Announcement. Inspect the amplifier and loudspeaker, then open Responsibilities & connections to identify the amplified-audio output and separate electrical supply.",
     "actionLabel": "Show this arrangement",
     "action": {
       "view": "communications-passenger",
@@ -618,17 +618,17 @@ export const TOURS = [
       "mode": "coasting",
       "scenario": "nominal"
     },
-    "question": "Which job belongs to the speaker-driving amplifier, rather than message storage or zone selection?",
+    "question": "An announcement reaches the PA controller, but the speaker is silent. What does that observation establish about the path in this example?",
     "choices": [
-      "Choosing which platform zone receives the message",
-      "Supplying the electrical audio output that drives the speaker circuit",
-      "Storing the announcement recording for later playback"
+      "The speaker must be faulty because the message reached the controller",
+      "The message reached one stage; the amplifier, its supply and the speaker path need separate consideration",
+      "The controller receiving a message proves that amplified audio reached the speaker"
     ],
     "answer": 1,
     "feedback": [
-      "Zone selection is an audio routing/control responsibility.",
-      "Routing a message and providing speaker-driving power are different parts of the announcement path.",
-      "Storage supplies recorded content; amplification supplies the speaker-driving output."
+      "A silent speaker can have different causes. Reaching the controller alone does not identify the fault.",
+      "The amplifier, electrical supply and speaker circuit are distinct parts of the path; the observation alone does not identify the cause.",
+      "Message receipt and speaker-driving output are different stages, so one does not prove the other."
     ],
     "sourceConcepts": [
       "pa-amplifier",
@@ -660,17 +660,17 @@ export const TOURS = [
         "trace": "indication"
       }
     },
-    "question": "In the illustrated building-control loop, which element uses a measured value to determine an actuator command?",
+    "question": "A supervisory request is acknowledged in the illustrated building-control loop. What does that acknowledgement establish about the actuator?",
     "choices": [
-      "The local BAS controller",
-      "The supervisory display by itself",
-      "The network switch forwarding the messages"
+      "The request was acknowledged; the actuator's actual state still needs its own feedback",
+      "The actuator has reached the requested position",
+      "The measured condition has necessarily reached its target"
     ],
     "answer": 0,
     "feedback": [
-      "The local controller closes the illustrated control loop; the workstation and network support other roles.",
-      "Displaying a measurement does not make the screen the local controller.",
-      "Forwarding messages does not by itself implement the plant-control logic."
+      "An acknowledgement and returned field feedback answer different questions; neither alone proves that the measured condition has reached its target.",
+      "A request acknowledgement is not the same as a returned indication of actuator position.",
+      "The process condition and the actuator's actual state need their own evidence."
     ],
     "sourceConcepts": [
       "power-scada",
@@ -797,7 +797,7 @@ export const TOURS = [
   {
     "id": "platform-feedback",
     "label": "22 · Read door feedback",
-    "title": "22 · Read door feedback",
+    "title": "Read door feedback",
     "domain": "station",
     "view": "platform-interface",
     "component": "platform-door-proof",
@@ -814,17 +814,17 @@ export const TOURS = [
       "cutaway": true,
       "exploded": 0
     },
-    "question": "A close request has been issued to the platform doors. Which additional information addresses the closed-and-locked state?",
+    "question": "The animation shows the bolt engaged, but the locking indication has not yet returned. What remains unestablished at the receiving interface?",
     "choices": [
-      "The command appears in the operator’s event list",
-      "The door controller has received the request",
-      "The applicable closed-and-locked feedback from the door arrangement"
+      "Whether a close request was issued",
+      "Whether the illustration shows the bolt engaged",
+      "Whether the applicable locking indication has been received"
     ],
     "answer": 2,
     "feedback": [
-      "The event list records the request, not necessarily the resulting physical state.",
-      "Receipt of a command is separate from confirmation of the required door state.",
-      "The teaching view distinguishes request, mechanism and returned status; actual proof requirements are design-specific."
+      "The scenario already describes the later bolt-engagement stage. A request does not establish the returned indication.",
+      "The bolt is shown engaged in this stage. The receiving interface still needs its separate indication.",
+      "The physical stage and the returned indication are distinct in this illustration; actual proof requirements are design-specific."
     ],
     "sourceConcepts": [
       "platform-door-proof",
@@ -834,12 +834,12 @@ export const TOURS = [
   },
   {
     "id": "depot-journey",
-    "label": "24 · Follow the depot journey",
+    "label": "23 · Follow the depot journey",
     "title": "Follow one maintenance visit",
     "domain": "depot",
     "view": "depot-overview",
     "component": "depot-layout",
-    "explanation": "In this example, a train crosses the network boundary, reaches reception, and is assigned to the work it needs. Inspection may lead to the maintenance hall or wheel and bogie shop; cleaning and stabling are other destinations. The work record then connects maintenance release with the fleet plan for departure.",
+    "explanation": "A train can leave passenger service for inspection, maintenance or cleaning. In this example, it crosses the network boundary, reaches reception and is assigned to the work it needs. Inspection may lead to the maintenance hall or wheel and bogie shop; cleaning and stabling are other destinations. The work record then connects maintenance release with the fleet plan for departure.",
     "actionText": "Start at the whole depot. Open Arrival & yard and a maintenance area, then use People & processes to examine Maintenance release & return.",
     "actionLabel": "Explore the connected depot",
     "action": {
@@ -874,8 +874,8 @@ export const TOURS = [
   },
   {
     "id": "depot-energy",
-    "label": "25 · Separate work-zone protections",
-    "title": "25 · Separate work-zone protections",
+    "label": "24 · Separate work-zone protections",
+    "title": "Separate work-zone protections",
     "domain": "depot",
     "view": "depot-protection",
     "component": "depot-personnel-protection",
@@ -911,7 +911,7 @@ export const TOURS = [
   },
   {
     "id": "depot-water",
-    "label": "26 · Follow washing and water",
+    "label": "25 · Follow washing and water",
     "title": "Movement and water supply have different roles",
     "domain": "depot",
     "view": "depot-wash",

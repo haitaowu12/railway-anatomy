@@ -16,7 +16,7 @@ import {electricalStudy,electricalMarkup,updateElectricalDiagram} from './electr
 import {DEFAULT_ELECTRIFICATION,ELECTRIFICATION_CHOICES,normalizeElectrification,electrificationForComponent,electrificationProfile,electrificationNote,electrificationFlow} from './electrification.js';
 import {PROCESS_VIEWS,PEOPLE_ROLES,TRAIN_CONTROL_TAXONOMY} from './process-data.js';
 import {PROCESS_REDIRECTS,PROCESS_COMPONENTS,processFor,processStepFor,renderProcessPage,renderPeoplePage} from './process-ui.js';
-import {topologyMarkup} from './topology-ui.js';
+import {topologyMarkup,topologyPresentation} from './topology-ui.js';
 import {ABOUT_HTML} from './project-about.js';
 import {READING_GUIDES} from './reading-guides.js';
 import {SOURCES,CONCEPTS,ARCHITECTURES} from './catalog.js';
@@ -257,7 +257,7 @@ function syncControls(){
   // remains on the learner's chosen stage.
   $$('#inspection-stages button').forEach((button,index)=>button.setAttribute('aria-pressed',String(current.exploded>=inspectionStages[index].end&&(index===inspectionStages.length-1||current.exploded<inspectionStages[index+1].end))));
   updateMotionGuide();
-  $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':'Information diagram'):rendererStatus==='colorfigures'?'Illustrated teaching model':rendererStatus==='svg'?'Schematic teaching model · SVG':'Schematic teaching model';
+  $('#render-badge').textContent=isConnections()?(electricalStudy(state.view)?'Electrical principle':topologyPresentation(currentTopology()).badge):rendererStatus==='colorfigures'?'Illustrated teaching model':rendererStatus==='svg'?'Schematic teaching model · SVG':'Schematic teaching model';
   const anatomy=viewer?.getInspectionState?.();if(anatomy){if(state.instanceId)state.instanceId=anatomy.selectedInstanceId;state.functionalPath=anatomy.functionalPath;state.allInstances=anatomy.allInstances;}
   if(!depthFrame)depthFrame=requestAnimationFrame(()=>{depthFrame=0;renderDepth();});
 }

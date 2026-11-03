@@ -61,7 +61,7 @@ export function systemDiagram(state,definition={}) {
       node('conversion',ac?'Onboard transformer and line converter':'Onboard DC link',ac?'onboard-transformer':'dc-link','Vehicle',ac?'Isolated transformer secondary feeds line conversion':'DC supply interface'),
       node('traction','Motor inverter and load','traction-inverter','Vehicle','LIM or rotary drive selected separately'),
       node('return',fourth?'Return shoe and separate rail':'Wheelset and running-rail return',fourth?'collector-return-shoe':'running-rail-return','Collection and return',p.returnPath),
-    ],[edge('source','contact','Supply-side connection'),edge('contact','collector','Sliding electrical contact'),edge('collector','conversion','Onboard supply input'),edge('conversion','traction','DC-link energy feeds the motor inverter'),edge('conversion','return',ac?'Transformer primary return; secondary circuit remains separate':'Normal traction-return path'),edge('return','source','Return to the supply boundary')],{sources:p.sources});
+    ],[edge('source','contact','Supply-side connection'),edge('contact','collector','Sliding electrical contact'),edge('collector','conversion','Onboard supply input'),edge('conversion','traction','DC-link energy feeds the motor inverter'),edge('conversion','return',ac?'Transformer primary return; secondary circuit remains separate':'Normal traction-return path'),edge('return','source','Return to the supply boundary')],{kind:'electrical',sources:p.sources});
   }
   if(view==='control')return diagram('Protect, drive and supervise',
     'These are distinct responsibilities. Function allocation, hosting and interface details vary. Propulsion type does not select the train-control architecture.',controlNodes(),[
@@ -129,7 +129,7 @@ export function systemDiagram(state,definition={}) {
       status(edge('a','powerapp','Power information and request path; no B alternative','both'),s.pathA,s.pathA?'Path present':'Path lost'),
       status(edge('station','record','Selected recording branch'),s.recorder&&s.stationLive,s.recorder&&s.stationLive?'Fresh source path represented':'Recording or source unavailable'),
       status(edge('powerapp','record','Selected recording branch'),s.recorder&&s.powerLive,s.recorder&&s.powerLive?'Fresh source path represented':'Recording or source unavailable'),
-    ],{rows:s.rows,result:'Compare each service, request path and evidence claim separately. Dashed paths show unavailable or unconfirmed relationships.',sources:chosen?.sources||['R01','R02']});
+    ],{kind:'dependencies',rows:s.rows,result:'Compare each service, request path and evidence claim separately. Dashed paths show unavailable or unconfirmed relationships.',sources:chosen?.sources||['R01','R02']});
   }
   if(view==='accessible-journey') {
     const s=journeyState(variant);
@@ -149,7 +149,7 @@ export function systemDiagram(state,definition={}) {
       status(edge('alternate','platform','Alternative vertical connection'),s.alternate?true:null,s.alternate?'Connected':'Not assumed'),
       status(edge('platform','boarding','Platform to vehicle boarding interface'),s.boarding,s.boarding?'Connected in example':s.platform?'Gap / assistance unresolved':'Platform not reached'),
       status(edge('help','platform','Wayfinding and assistance; not a physical route'),null,'Availability separately established'),
-    ],{rows:s.rows,result:s.route,sources:chosen?.sources||['A01','A02','A03']});
+    ],{kind:'journey',rows:s.rows,result:s.route,sources:chosen?.sources||['A01','A02','A03']});
   }
   if(view==='tunnel-ventilation'&&variant==='smoke-objective')return diagram('Ventilation objective, controller and returned evidence',description,[
     node('objective','Engineered smoke objective','smoke-control','Design and operations','Depends on zone and incident'),node('controller','Tunnel ventilation controller','tvcs-controller','Local control','Owns the defined mode logic and interlocks'),

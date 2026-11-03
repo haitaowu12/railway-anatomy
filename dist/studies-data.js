@@ -164,7 +164,7 @@ export const STUDY_CONCEPTS = [
     'A change can affect interfaces and supporting records as well as the component being replaced.',
     'The second connector and cable appear with version B. The interface sheet shows two connection points, while the old test record still refers to the earlier one-channel subject until the test comparison changes.'
   ],['Q01','Q02'],['change-item','change-requirement','change-test'],['change-evidence','baseline']),
-  C('change-test','Test subject and result','A passing result for version A is not a result for version B.',[
+  C('change-test','Test subject and result','A result recorded against A supports B only where its applicability to B has been established.',[
     'The public record-package example includes test information alongside design, construction and as-built records.',
     'Test recorded replaces the old subject card and connects two channel traces to the version B record. An open issue remains. The illustrated pass marker concerns this fictional check alone, not all reliability, availability, maintainability or safety evidence.'
   ],['Q01'],['change-requirement','change-issues','depot-functional-checks'],['change-evidence','tested']),

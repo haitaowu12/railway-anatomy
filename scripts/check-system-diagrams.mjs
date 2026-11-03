@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import {systemDiagram,DIAGRAM_VIEWS,dependencyState,journeyState} from '../dist/system-diagrams.js';
-import {topologyMarkup} from '../dist/topology-ui.js';
+import {topologyMarkup,topologyPresentation} from '../dist/topology-ui.js';
 import {VIEWS} from '../dist/model.js';
 import {CONCEPTS,SOURCES} from '../dist/catalog.js';
 import {ELECTRIFICATION_CHOICES} from '../dist/electrification.js';
@@ -33,6 +33,21 @@ check('Supply diagrams distinguish overhead contact and a fourth-rail return sho
   }
 });
 
+check('Diagram labels identify electrical paths, dependencies and journeys',()=>{
+  const cases=[
+    [{view:'electrification',electrification:'overhead-ac'},'Electrical connections','Supply &amp; return connections','Electrical paths &amp; endpoints'],
+    [{view:'dependencies',variant:'network-loss'},'Dependency diagram','Locations &amp; dependencies','Dependencies &amp; endpoints'],
+    [{view:'accessible-journey',variant:'aid-required'},'Journey diagram','Journey connections','Journey connections &amp; endpoints']
+  ];
+  for(const [state,badge,heading,summary] of cases){
+    const d=systemDiagram(state,VIEWS[state.view]),html=topologyMarkup(d,null);
+    assert.equal(topologyPresentation(d).badge,badge);
+    assert(html.includes(`<p class="eyebrow">${heading}</p>`));
+    assert(html.includes(`<summary>${summary}</summary>`));
+    assert(!html.includes('Message paths & endpoints'));
+  }
+});
+
 check('Automatic driving does not hide protection intervention behind a universal TCMS route',()=>{
   const d=systemDiagram({view:'control'},VIEWS.control);
   assert(d.edges.some(e=>e.from==='protection'&&e.to==='vehicle'));
@@ -41,6 +56,21 @@ check('Automatic driving does not hide protection intervention behind a universa
   assert(d.sources.includes('CI13'));
   const c=systemDiagram({view:'communications'},VIEWS.communications);
   assert(!c.edges.some(e=>['radio','train'].includes(e.from)&&['network','vehicle','passenger'].includes(e.to)),'No undeclared convergence of train-control and service networks');
+});
+
+check('Compact communications paths show two-way exchanges and one-way information',()=>{
+  const d=systemDiagram({view:'communications'},VIEWS.communications);
+  const compact=topologyMarkup(d,null).split('<ul class="compact-topology-paths">')[1].split('</ul>')[0];
+  const paths=[...compact.matchAll(/<li\b[^>]*>(.*?)<\/li>/gs)].map(m=>m[1]);
+  assert.match(paths[0],/aria-label="exchanges with">↔<\/span>/);
+  assert.match(paths[1],/aria-label="exchanges with">↔<\/span>/);
+  assert.match(paths[2],/aria-label="to">→<\/span>/);
+});
+
+check('Diagram roles retain important qualifications in the visible drawing',()=>{
+  const d=systemDiagram({view:'control'},VIEWS.control);
+  const svg=topologyMarkup(d,null).split('<svg class="topology-diagram"')[1].split('</svg>')[0];
+  assert.match(svg,/Defined vehicle interfaces; TCMS<\/text><text class="node-role"[^>]*>allocation varies<\/text>/);
 });
 
 check('Loss of path A changes power requests while retaining the declared station alternative',()=>{
