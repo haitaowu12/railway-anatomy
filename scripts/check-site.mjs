@@ -404,7 +404,7 @@ function runSuite(script) {
   const result=spawnSync(process.execPath,[path.join(repo,'scripts',script)],{cwd:repo,stdio:'inherit'});
   assert.equal(result.status,0,`${script}: ${result.error?.message||result.signal||'checks failed'}`);
 }
-for(const script of ["check-colorfigures.mjs", "check-technology.mjs", "check-navigation.mjs", "check-depot.mjs", "check-occ.mjs", "check-exploration.mjs", "check-comparisons.mjs", "check-studies.mjs", "check-processes.mjs", "check-electrification.mjs", "check-communications.mjs", "check-station-platform.mjs", "check-interactions.mjs", "check-motion.mjs", "check-depth-mechanics.mjs", "check-domain-depth.mjs", "check-workspaces.mjs", "check-physical-labs.mjs", "check-evidence-labs.mjs", "check-component-motion.mjs", "check-system-diagrams.mjs", "check-control-interfaces.mjs", "check-learning-surfaces.mjs", "check-reading.mjs"]) {
+for(const script of ["check-colorfigures.mjs", "check-technology.mjs", "check-navigation.mjs", "check-depot.mjs", "check-occ.mjs", "check-exploration.mjs", "check-comparisons.mjs", "check-studies.mjs", "check-processes.mjs", "check-electrification.mjs", "check-communications.mjs", "check-station-platform.mjs", "check-interactions.mjs", "check-motion.mjs", "check-point-machine.mjs", "check-depth-mechanics.mjs", "check-domain-depth.mjs", "check-workspaces.mjs", "check-physical-labs.mjs", "check-evidence-labs.mjs", "check-component-motion.mjs", "check-system-diagrams.mjs", "check-control-interfaces.mjs", "check-learning-surfaces.mjs", "check-reading.mjs"]) {
   await check(`Independent suite: ${script}`,async()=>runSuite(script));
 }
 console.log(`\n${passed} checks passed; ${failures.length} failed.`);

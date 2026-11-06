@@ -4,10 +4,10 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;
 const normalized=text=>String(text||'').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 export function buildNavigationIndex({views,concepts,tours,processes,domains}){
  const result=[];
- for(const [id,v]of Object.entries(views))if(!PROCESS_REDIRECTS[id])result.push({kind:'view',id,title:v.label,subtitle:domains.find(d=>d.views.includes(id))?.label||'Railway',search:[id,v.label,v.title,v.note,...(v.variants||[]).map(x=>x.label)].join(' ')});
+ for(const [id,v]of Object.entries(views))if(!PROCESS_REDIRECTS[id])result.push({kind:'view',id,title:v.label,subtitle:domains.find(d=>d.views.includes(id))?.label||'Railway',search:[id,v.label,v.title,v.note,...(v.searchTerms||[]),...(v.variants||[]).map(x=>x.label)].join(' ')});
  for(const c of concepts)result.push({kind:'component',id:c.id,title:c.label,subtitle:'Component or function',search:[c.label,c.id,c.summary].join(' ')});
  for(const [id,p]of Object.entries(processes))result.push({kind:'process',id,title:p.title,subtitle:'People, decisions and evidence',search:[id,p.title,p.summary,p.question].join(' ')});
- for(const [index,t]of tours.entries())result.push({kind:'tour',id:String(index),title:t.label,subtitle:'Guided tour',search:[t.label,t.question,t.title].join(' ')});
+ for(const [index,t]of tours.entries())result.push({kind:'tour',id:String(index),title:t.label,subtitle:'Guided tour',search:[t.label,t.question,t.title,...(t.searchTerms||[])].join(' ')});
  for(const d of CONTROL_DOMAINS)result.push({kind:'interface',id:d.id,title:d.label,subtitle:'Control responsibilities and optional interfaces',search:[d.label,d.short,d.local,d.supervisor,d.role,...d.monitor,...d.components].join(' ')});
  return result.map(e=>({...e,normalized:normalized(e.search),normalizedTitle:normalized(e.title)}));
 }

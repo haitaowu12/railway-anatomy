@@ -6,7 +6,7 @@ export const COMPARISON_LABELS = {
   'track-support':'Track construction',
   'rail-fastening':'Rail fastening arrangement',
   turnout:'Track connection and route',
-  'switch-drive':'Position indication',
+  'switch-drive':'Throw outcome',
   crossing:'Crossing geometry',
   'cbtc-network':'Control responsibilities',
   signalling:'Track-section state',

@@ -80,13 +80,13 @@ export function applyMotionGuides(views){
   }
   for(const id of ['proved','unproved']){
     const incomplete=id==='unproved';
-    enable('switch-drive',id,incomplete?'A throw without the target end indication':'Drive, lock and separate position indication',[
-      step(0,'Initial end','The drive begins at one end. The phase control illustrates a mechanism, not a point-operating instruction.'),
-      step(.15,'Lock withdrawn','The illustrative lock withdraws before the output linkage moves.'),
-      step(.45,'Linked movement','The gear, output rod, stretcher and switch blades move together; the position-reference link follows the blades.'),
-      step(.72,incomplete?'Incomplete travel':'Target end reached',incomplete?'The illustrated throw stops part-way. No fault cause or bypass is inferred.':'The blades reach the target end before the target indication is shown.'),
-      step(.9,incomplete?'No target proof':'Lock and indication',incomplete?'The lock remains withdrawn and the target-end indication remains absent.':'The lock is engaged and the separate target-end indication appears. A command alone did not create that evidence.'),
-      step(1,'Compare the result',incomplete?'Inspect the remaining blade gap and absent target proof. The mechanism does not hunt indefinitely.':'Inspect the final blade position, linkage and detector as distinct parts of the arrangement.')
+    enable('switch-drive',id,'Move, lock and read the indication',[
+      step(0,'Start at end A','The blades start at end A with the lock engaged. The requested destination is end B.'),
+      step(.15,'Release the lock','The lock has withdrawn. The blades have not started to move.'),
+      step(.45,'Move the blades','The motor and pinion drive the rack and blade linkage. The separate detector link follows the blades.'),
+      step(.72,incomplete?'Stop short':'Reach end B',incomplete?'Travel has stopped between the two ends. The blades have not reached end B.':'The blades have reached end B. The lock is still released.'),
+      step(.9,incomplete?'Lock stays released':'Lock at end B',incomplete?'The incomplete throw leaves the lock released and the end-B indication absent.':'The lock has engaged at end B. The end-B indication has not yet returned.'),
+      step(1,incomplete?'No end-B indication':'Return the indication',incomplete?'The detector has no end-B condition to report. Follow the missing indication to the interlocking.':'The end-B indication is now returned. Follow this input to the interlocking, where it joins the other route conditions.')
     ],12);
   }
   for(const id of ['frog','diamond'])enable('crossing',id,'Wheel support and flange guidance at a crossing',[

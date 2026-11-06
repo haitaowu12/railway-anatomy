@@ -1,4 +1,5 @@
 import { createMechanicalDetails } from './mechanical-details.js';
+import { pointMachineState } from './point-machine.js';
 /*
  * Original, dimensionless teaching geometry for Railway Anatomy.
  * Rail profiles and mechanism proportions are illustrative, not product CAD.
@@ -9,7 +10,7 @@ export const TRACK_VIEWS = {
   'track-support': { camera: [9.5, 7.8, 10.5], target: [0, .9, 0], distance: 22 },
   'rail-fastening': { camera: [4.8, 4.4, 5.4], target: [0, 1, 0], distance: 12 },
   turnout: { camera: [13, 15, 17], target: [0, .65, 1.2], distance: 34 },
-  'switch-drive': { camera: [6.5, 6.8, 7.6], target: [-.3, .8, -.25], distance: 19 },
+  'switch-drive': { camera: [-6.5, 6, -7.6], target: [-.5, .8, -.4], distance: 19 },
   crossing: { camera: [8.2, 8.6, 10], target: [0, .85, .7], distance: 23 },
 };
 
@@ -629,10 +630,7 @@ export function buildTrackView(id, api) {
     const openDot = mesh(contactCue, new THREE.SphereGeometry(.055, 10, 6), warningMaterial, [-2.64, 1.20, .68]);
     let last = -1;
     registerAnimator(state => {
-      const unproved = state.variant === 'unproved';
-      const p=studyProgress(state),travel=smooth(clamp((p-.18)/.54)),movement=travel*(unproved?.52:1);
-      const lockFraction=p<.15?1-clamp(p/.15):!unproved&&p>.76?clamp((p-.76)/.14):0;
-      const proof=!unproved&&p>=.9;
+      const {movement, lock:lockFraction, proof}=pointMachineState(studyProgress(state),state.variant);
       if (Math.abs(movement - last) > .0001) {
         bladeMeshes.forEach((b, i) => b.update(bladePath(i ? 1 : -1, movement)));
         bar.position.z = mix(.106, -.106, movement) * .8464; last = movement;

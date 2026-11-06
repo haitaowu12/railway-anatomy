@@ -88,6 +88,20 @@ for(const [id,process,step]of [['depot-energy','work-protection','movement'],['i
   assert.equal(lesson.page,'learn');assert.equal(lesson.processId,process);assert.equal(lesson.processStep,step,`${id} retained an unrelated earlier process step`);
   const parsed=harness.roundTrip(lesson).state;assert.equal(parsed.processStep,step);assert.equal(parsed.page,'learn');
 }
+const pointLesson=harness.lesson('point-proof',base);
+assert.equal(pointLesson.view,'switch-drive');assert.equal(pointLesson.variant,'proved');assert.equal(pointLesson.pointPhase,0);
+for(const view of ['switch-drive','interlocking'])for(const variant of ['proved','unproved']){
+  const expected={...pointLesson,view,variant,domain:view==='interlocking'?'control':'track',component:view==='interlocking'?'interlocking':'track-point-machine',presentation:view==='interlocking'?'connections':'spatial',pointPhase:view==='interlocking'?1:.9};
+  const reopened=harness.roundTrip(expected);
+  for(const key of ['page','view','variant','pointPhase'])assert.equal(reopened.state[key],expected[key],`Point journey lost ${key} after reopening ${reopened.url}`);
+  const saved=routeState(expected),restored=harness.restore(reopened.url,saved,base);
+  assert.equal(restored.pointPhase,expected.pointPhase,'History lost the mechanism stage');assert.equal(restored.variant,variant);assert.equal(restored.view,view);
+}
+for(const [value,phase]of [['-4',0],['4',1],['bad',0]])assert.equal(harness.parse(`https://example.test/?pointPhase=${value}#learn/point-proof`).pointPhase,phase);
+const pointExit=harness.roundTrip({...base,pointPhase:.9});
+assert(!new URL(pointExit.url).searchParams.has('pointPhase'),'A different study retained point-machine state');
+console.log('PASS point-machine bookmarks: chapter, outcome, stage, history restoration, malformed phases and exit cleanup');
+
 let routes=0,processRoutes=0,interfaceRoutes=0;
 for(const [view,config]of Object.entries(VIEWS)){
   const domain=domainForView(view,DOMAINS)?.id;assert(domain,`No area owns ${view}`);
@@ -227,7 +241,7 @@ for(const [width,open]of [[390,false],[740,false],[741,true],[1280,true]]){
 // fields and returned no result for "BMS". Verify actual terms and destinations,
 // including that process discovery does not resurrect a legacy 3D workflow.
 const navigationIndex=buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS});
-const finderCases=[[' BMS ','interface','building'],['TVCS','interface','tunnel'],['pump level','interface','drainage'],['ATP','interface','signalling'],['duty handover','process','duty-handover']];
+const finderCases=[['point drive','view','switch-drive'],['switch machine','view','switch-drive'],['turnout motor','tour',String(TOURS.findIndex(t=>t.id==='point-proof'))],[' BMS ','interface','building'],['TVCS','interface','tunnel'],['pump level','interface','drainage'],['ATP','interface','signalling'],['duty handover','process','duty-handover']];
 for(const [query,kind,id]of finderCases)assert(searchNavigation(navigationIndex,query).some(item=>item.kind===kind&&item.id===id),`Finder cannot reach ${kind}/${id} using ${query}`);
 assert.equal(searchNavigation(navigationIndex,' BMS ')[0].id,'building','An exact acronym should find the correct owner, not a similarly labelled system');
 assert.equal(searchNavigation(navigationIndex,'duty handover')[0].kind,'process','The decision/evidence destination should precede a physical proxy');

@@ -1,0 +1,80 @@
+.point-journey #intro-copy,
+.point-journey .scene-toolbar,
+.point-journey #representation-summary,
+.point-journey #render-badge,
+.point-journey #scene-index,
+.point-journey #presentation-switch,
+.point-journey .scenario-panel,
+.point-journey #anatomy-panel,
+.point-journey #quick-play,
+.point-journey #motion-previous,
+.point-journey #motion-next,
+.point-journey #motion-caption,
+.point-journey #motion-title { display: none; }
+.point-journey .tour-bar { background: none; border: 0; padding: 0; margin: 8px 0 18px; }
+.point-journey .tour-bar > span { display: none; }
+.point-journey .workspace-heading { margin-bottom: 12px; }
+.point-journey #scene-title { font-size: clamp(25px, 3vw, 34px); line-height: 1.2; }
+#point-journey nav { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.point-journey #point-journey { display: inline-block; width: 58%; vertical-align: top; }
+#point-journey button { min-height: 44px; padding: 8px 12px; border-bottom: 3px solid transparent; font-size: 14px; color: var(--muted); }
+#point-journey button[aria-current] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.point-journey .comparison-panel { display: inline-block; width: 41%; vertical-align: top; margin: 0 0 12px; padding: 0; }
+.point-journey .arrangement-bar { justify-content: flex-end; }
+.point-journey #arrangement-label { display: none; }
+.point-current { margin: 0 0 14px; max-width: 84ch; }
+.point-step-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.point-step-heading strong { font-size: 16px; }
+.point-step-heading > div { display: flex; gap: 6px; }
+.point-step-heading button { width: 42px; min-height: 42px; border: 1px solid var(--line); border-radius: 4px; font-size: 19px; }
+.point-current p { margin: 5px 0 0; font-size: 14px; line-height: 1.6; min-height: 3.2em; }
+.point-journey .model-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 22px; align-items: start; }
+.point-journey .connections-mode .model-workspace { display: block; }
+.point-journey .topology-heading > .eyebrow,
+.point-journey .topology-heading > h2,
+.point-journey .topology-status-legend { display: none; }
+.point-journey #viewer { height: clamp(320px, 43dvh, 510px); }
+.point-journey .sequence-panel { border-top: 0; padding-top: 0; }
+.point-journey .sequence-actions { gap: 12px; flex-wrap: wrap; }
+.point-journey .sequence-position { flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.point-journey #phase { width: 100%; }
+.point-journey #motion-steps { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.point-journey #motion-steps button { text-align: left; padding: 11px 10px; min-height: 44px; border-left: 3px solid transparent; border-bottom: 0; white-space: normal; font-size: 14px; }
+.point-journey #motion-steps button.active { border-left-color: var(--accent); background: var(--accent-soft); }
+.point-state { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 13px 16px; margin: 0; border-top: 1px solid var(--line); background: var(--surface); }
+.point-state dt { font-size: 12px; color: var(--muted); }
+.point-state dd { margin: 4px 0 0; font-size: 14px; font-weight: 600; }
+.point-state.is-proved [data-point-state="indication"] { color: var(--accent); }
+.point-journey .stage-footer { position: static; }
+.point-journey .stage-footer > span,
+.point-journey .selection-tools,
+.point-journey #larger-model { display: none; }
+.point-journey .parts-key { margin-top: 20px; }
+.point-journey .point-check { max-width: 850px; border-top: 1px solid var(--line); padding-top: 22px; }
+.point-check h2 { font-size: 22px; margin-bottom: 12px; }
+.point-check h3 { font-size: 17px; line-height: 1.5; }
+.point-start { color: var(--accent); min-height: 44px; font-weight: 600; }
+@media (max-width: 1100px) {
+  .point-journey .model-workspace { grid-template-columns: minmax(0, 1fr) 190px; gap: 14px; }
+  .point-journey #point-journey,
+  .point-journey .comparison-panel { display: block; width: 100%; }
+  .point-journey .arrangement-bar { justify-content: flex-start; }
+}
+@media (max-width: 740px) {
+  .point-current { scroll-margin-top: 135px; }
+  .point-journey .tour-bar,
+  .point-journey #location-trail { display: none; }
+  .point-journey .tour-bar { margin-bottom: 12px; }
+  .point-journey .tour-bar label { width: auto; }
+  #point-journey nav { gap: 0; }
+  #point-journey button { flex: 1; text-align: left; padding: 7px; font-size: 13px; }
+  .point-current p { font-size: 13px; }
+  .point-journey .model-workspace { display: block; }
+  .point-journey #viewer { height: clamp(245px, 37dvh, 320px); }
+  .point-journey #quick-play { display: inline-flex; }
+  .point-journey .sequence-panel { margin-top: 16px; }
+  .point-journey #motion-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .point-state { gap: 8px; padding: 10px; }
+  .point-state dt { font-size: 12px; }
+  .point-state dd { font-size: 13px; }
+}

@@ -113,21 +113,22 @@ export const TOURS = [
   },
   {
     "id": "point-proof",
-    "label": "04 · Separate movement from proof",
-    "title": "A switch command is not a position indication",
+    "label": "04 \u00b7 Follow a point machine",
+    "title": "How a point machine moves and proves a turnout",
     "domain": "track",
     "view": "switch-drive",
-    "component": "track-point-detection",
-    "explanation": "Trace the switch drive, mechanical linkage and position indication separately. In the unproved example, a movement command is present but the proof condition is incomplete. The control system cannot substitute the command for confirmation of the required state.",
-    "actionText": "Compare Position proved with Proof incomplete while inspecting the drive and linkage. Notice the separate returned indication.",
-    "actionLabel": "Open the switch drive",
+    "component": "track-point-machine",
+    "explanation": "The motor moves the switch blades through a linkage. Locking holds the end position; detection returns an indication of the required condition. Follow the complete throw, then compare a throw that stops short.",
+    "actionText": "Step through the mechanism, then follow the returned indication to the interlocking.",
+    "actionLabel": "Restart the point-machine journey",
     "action": {
       "view": "switch-drive",
-      "component": "track-point-detection",
-      "variant": "unproved",
+      "component": "track-point-machine",
+      "variant": "proved",
       "exploded": 0,
       "mode": "coasting",
-      "scenario": "nominal"
+      "scenario": "nominal",
+      "cutaway": true
     },
     "question": "A switch drive has received a movement command, but the required position indication is absent. What has been established?",
     "choices": [
@@ -137,15 +138,21 @@ export const TOURS = [
     ],
     "answer": 1,
     "feedback": [
-      "The command and returned position indication are separate information.",
-      "The model deliberately keeps a request separate from the evidence of the resulting state.",
-      "A route depends on more conditions than receipt of a switch command."
+      "The required end-position indication is missing, so that position has not been proved.",
+      "Movement has been requested. The required position still needs its returned indication.",
+      "A movement command alone does not establish the route conditions."
     ],
     "sourceConcepts": [
       "track-point-machine",
       "track-stretcher",
       "track-point-detection",
       "interlocking"
+    ],
+    "searchTerms": [
+      "point drive",
+      "switch machine",
+      "turnout motor",
+      "point motor"
     ]
   },
   {

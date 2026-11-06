@@ -47,6 +47,12 @@ The railway also has systems that cross physical boundaries. Power supply reache
 
 The models cover track and guideway, vehicles and propulsion, traction power, train control, communications, station plant, control-centre equipment, and depot and maintenance facilities. Connected studies explore wheel–rail behaviour, infrastructure maintenance, accessibility and shared system dependencies.
 
+### Follow a point machine
+
+Choose **Guided tours → Follow a point machine**, or open `#learn/point-proof` on a local preview. **Move, lock & detect** follows six stages from the initial locked position to the returned end-B indication. The blade, lock and indication readouts follow the same state as the illustrated mechanism. Use the stage buttons, previous/next controls or playback to inspect the throw.
+
+Compare **Complete throw** with **Stopped short**, then choose **Follow the indication** to trace the same outcome into the interlocking. The diagram shows the point condition alongside the other required route inputs. Switching chapters keeps the selected case; copied links retain the chapter, case and mechanism stage. The sequence illustrates one schematic arrangement; its playback timing is not an equipment specification.
+
 ### Collection, supply and return
 
 Four electrification examples distinguish the collection equipment, conversion stages and normal traction return path:

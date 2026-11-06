@@ -9,6 +9,8 @@ import {systemDiagram} from '../dist/system-diagrams.js';
 import {electricalStudy} from '../dist/electrical-explainers.js';
 import {representationFor} from '../dist/representation-guidance.js';
 import {processFor} from '../dist/process-ui.js';
+import {TOURS} from '../dist/tours.js';
+import {pointIndicationDiagram} from '../dist/point-machine.js';
 
 // The renderer and DOM are the only substitutes. All scene construction,
 // animation, selection, masking and camera code below is the shipping viewer.
@@ -203,9 +205,10 @@ const interfaceStart=appSource.indexOf('function isInterfaceTour()'),interfaceEn
 const motionStart=appSource.indexOf('const isProcessPage='),motionEnd=appSource.indexOf('const preferredPresentation=',motionStart);
 
 assert(motionStart>=0&&motionEnd>motionStart,'Production motion/route helpers changed');
-const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', 'animationFor', 'platformAnimationFor','systemDiagram','electricalStudy','representationFor','processFor', `
+const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', 'animationFor', 'platformAnimationFor','systemDiagram','electricalStudy','representationFor','processFor','TOURS','pointIndicationDiagram', `
   let state, lastExplorationContext = '', lastSequenceKey = '', lastTopologyStep = '';
   ${appSource.slice(motionStart,motionEnd)}
+  ${appSource.slice(appSource.indexOf('function isPointJourney(){'),appSource.indexOf('function readHash(){'))}
   ${appSource.slice(interfaceStart,interfaceEnd)}
   function syncControls() {}
   ${appSource.slice(syncStart, syncEnd)}
@@ -215,7 +218,7 @@ const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', '
     syncViewer(true);
     return structuredClone(state);
   };
-`)(synchronizationViewer, VIEWS, targetFor, canAnimate, animationFor, platformAnimationFor,systemDiagram,electricalStudy,representationFor,processFor);
+`)(synchronizationViewer, VIEWS, targetFor, canAnimate, animationFor, platformAnimationFor,systemDiagram,electricalStudy,representationFor,processFor,TOURS,pointIndicationDiagram);
 const savedController = { view: 'station-networks', domain: 'station', component: 'bas-controller', variant: 'building',
   technology: { propulsion: 'lim', control: 'loop' }, mode: 'coasting', scenario: 'nominal', sink: 'train',
   cutaway: false, exploded: .6, explodeScope: 'selected', playing: false };
@@ -290,6 +293,13 @@ const backdrop=renderer.scene.children.find(n=>n.isMesh&&n.geometry.type==='Plan
 assert(backdrop.position.y<exploration.visibleBounds(activeRoot()).min.y,'The WebGL backdrop occludes the below-datum earthwork and culvert');
 viewer.setView('system');
 assert.equal(backdrop.position.y,-.27,'The infrastructure backdrop offset leaked into another scene');
+const pointJourney={...savedController,page:'learn',lesson:TOURS.findIndex(t=>t.id==='point-proof'),view:'switch-drive',domain:'track',component:'track-point-machine',variant:'proved',presentation:'equipment',pointPhase:.9,exploded:0,explodeScope:'all'};
+synchronize(pointJourney,true);
+assert.equal(viewer.getPhase(),4.5,'Restoring the point journey lost its selected stage');
+synchronize({...pointJourney,pointPhase:0},true);
+assert.equal(viewer.getPhase(),0,'Restarting the same point-machine tour retained its previous stage');
+synchronize({...pointJourney,variant:'unproved',pointPhase:1},true);
+assert.equal(viewer.getPhase(),5,'Changing the throw outcome lost the mechanism stage');
 viewer.dispose();
 console.log('PASS exploration: actual selected-assembly geometry, isolation/technology visibility, production restore order, phase composition, stale-state resets, visible bounds, duplicate-instance tags, 12 perspective fits and below-datum backdrop clearance');
 

@@ -410,17 +410,18 @@ export const NEW_VIEWS = {
     ]
   },
   "switch-drive": {
-    "label": "Switch mechanism",
-    "title": "Movement, retention and proof",
+    "label": "Point machine",
+    "searchTerms": ["point drive", "switch machine", "turnout motor", "switch mechanism"],
+    "title": "How a point machine moves a turnout",
     "component": "track-point-machine",
     "level": "Assembly",
-    "note": "The drive, linkage and indication are separate teaching objects. Their physical design and safety logic vary.",
+    "note": "Follow the motor, blade linkage, lock and returned end-position indication in this schematic point machine.",
     "variants": [
       {
         "id": "proved",
-        "label": "Position proved",
-        "title": "Movement alone is not proof",
-        "description": "The drive moves the switch through a linkage. The selected indication represents a confirmed end condition, distinct from the command that asked for movement.",
+        "label": "Complete throw",
+        "title": "Move, lock and return the indication",
+        "description": "The motor moves the blades to end B through the linkage. The lock engages, then the detector returns the end-B indication.",
         "nodes": [
           "Drive command",
           "Physical movement",
@@ -434,13 +435,13 @@ export const NEW_VIEWS = {
       },
       {
         "id": "unproved",
-        "label": "Proof incomplete",
-        "title": "A command cannot substitute for feedback",
-        "description": "The selected example withholds proved indication. The graphic does not invent a fault diagnosis or a bypass; it distinguishes commanded position from confirmed state.",
+        "label": "Stopped short",
+        "title": "Travel stops before end B",
+        "description": "The blades stop between the ends. The lock remains released and no end-B indication returns to the interlocking.",
         "nodes": [
           "Command present",
           "Proof incomplete",
-          "No proved-route claim"
+          "End-B indication missing"
         ],
         "sources": [
           "K16",

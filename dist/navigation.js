@@ -41,7 +41,7 @@ export function viewTrail(view, views) {
 export function routeState(state) {
   return {controlInterface:state.controlInterface?structuredClone(state.controlInterface):null,page:state.page,domain:state.domain,view:state.view,component:state.component,variant:state.variant,
     technology:{...state.technology},electrification:state.electrification,platformEdge:state.platformEdge||'open',platformSensor:state.platformSensor||'lidar',presentation:state.presentation,processId:state.processId,processStep:state.processStep,roleId:state.roleId,mode:state.mode,scenario:state.scenario,sink:state.sink,
-    cutaway:state.cutaway,exploded:state.exploded,explodeScope:state.explodeScope||'all',playing:false,labels:state.labels,labelMode:state.labelMode||(state.labels===false?'off':'nearby'),lesson:state.lesson,
+    cutaway:state.cutaway,exploded:state.exploded,explodeScope:state.explodeScope||'all',playing:false,pointPhase:state.pointPhase||0,labels:state.labels,labelMode:state.labelMode||(state.labels===false?'off':'nearby'),lesson:state.lesson,
     instanceId:state.instanceId||null,functionalPath:state.functionalPath||null,allInstances:Boolean(state.allInstances),workspace:state.workspace||null,studyId:state.studyId||null};
 }
 

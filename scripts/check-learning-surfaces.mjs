@@ -27,7 +27,7 @@ const harness=new Function(...Object.keys(dependencies),`
   const parts=new Map(CONCEPTS.map(c=>[c.id,c])),lessonAnswers={},quizSelections={},lessonAttempts={};
   const nodes=new Map(),node=selector=>{if(!nodes.has(selector))nodes.set(selector,{hidden:false,innerHTML:'',textContent:'',replaceChildren(){this.innerHTML='';},insertAdjacentHTML(where,value){this.innerHTML=where==='afterbegin'?value+this.innerHTML:this.innerHTML+value;}});return nodes.get(selector);};
   const $=selector=>node(selector),$$=selector=>selector==='#lesson-detail,#process-lesson,#interface-lesson'?['#lesson-detail','#process-lesson','#interface-lesson'].map(node):[];
-  const document={activeElement:null};const safe=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  const document={activeElement:null,body:{classList:{toggle(){}}}};const safe=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
   function sourceChips(){return '';}
   function writeHash(){writes.push(structuredClone(state));}
   function renderNavigation(){node('#explorer-page').hidden=isInterfacePage()||isProcessPage();node('#interfaces-page').hidden=!isInterfacePage();node('#processes-page').hidden=!isProcessPage();}
@@ -46,6 +46,7 @@ const harness=new Function(...Object.keys(dependencies),`
   ${between('const isProcessPage=','const preferredPresentation=')}
   ${between('const preferredPresentation=','function syncPlatform(')}
 
+  ${between('function isPointJourney(){','function readHash(){')}
   ${between('function isInterfaceTour()','function routeLabel(')}
   ${between('function tourNavigationMarkup(','function renderNavigation(')}
   ${between('function renderLesson(){','function showFeedback(')}

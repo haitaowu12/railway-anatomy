@@ -1,4 +1,5 @@
 import {representationFor} from './representation-guidance.js';
+import {pointMachineState,pointIndicationDiagram} from './point-machine.js';
 import {systemDiagram,DIAGRAM_VIEWS} from './system-diagrams.js';
 import {createControlInterfaceExplorer} from './control-interfaces-ui.js';
 import {CONTROL_DOMAINS,CONTROL_INTERFACE_CONCEPTS,getInterfaceContext,normalizeControlState} from './control-interfaces-data.js';
@@ -49,7 +50,7 @@ const searchPanel=$('#equipment-search-panel');if(searchPanel){searchPanel.open=
 const labelElements=new Map();
 let labelLayoutKey='',lastSequenceKey='',lastTopologyStep='';
 const isProcessPage=()=>state.page==='processes'||state.page==='people'||state.page==='learn'&&Boolean(processFor(state.view,state.component,state.variant));
-const currentTopology=()=>VIEWS[state.view]?.variants?.find(v=>v.id===state.variant)?.topology||systemDiagram(state,VIEWS[state.view])||null;
+const currentTopology=()=>isPointJourney()&&state.view==='interlocking'?pointIndicationDiagram(state.variant):VIEWS[state.view]?.variants?.find(v=>v.id===state.variant)?.topology||systemDiagram(state,VIEWS[state.view])||null;
 const isConnections=()=>state.presentation==='connections'&&Boolean(currentTopology()||electricalStudy(state.view));
 const guideForState=()=>state.view==='platform-interface'?platformAnimationFor(state):animationFor(VIEWS[state.view],state.variant,state.component);
 const doorClosureComparison=()=>state.scenario==='door-open'&&['vehicle','services'].includes(state.view)&&guideForState()===VIEWS[state.view]?.componentAnimations?.doors;
@@ -73,7 +74,7 @@ const flowFor=()=>{
 const modelNote=()=>electrificationNote(state)||technologyNote(state,VIEWS[state.view].note);
 
 
-function sourceChips(ids){return `<div class="source-chips">${[...new Set(ids)].filter(id=>sources.has(id)).map(id=>`<button data-source="${id}" title="${safe(sources.get(id).title)}">${safe(sources.get(id).publisher)} ↗</button>`).join('')}</div>`;}
+function sourceChips(ids,withTitles=false){return `<div class="source-chips">${[...new Set(ids)].filter(id=>sources.has(id)).map(id=>`<button data-source="${id}" title="${safe(sources.get(id).title)}">${safe(withTitles?sources.get(id).title:sources.get(id).publisher)} ↗</button>`).join('')}</div>`;}
 function announce(text){$('#announce').textContent=text;}
 function focusVisible(selector){const node=$$(selector).find(el=>!el.closest('[hidden]')&&el.getClientRects().length);if(node){node.focus({preventScroll:true});return;}const heading=$$('h1').find(el=>!el.closest('[hidden]')&&el.getClientRects().length);if(heading){heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});}}
 function rememberCurrentEntry(){history.replaceState({railway:routeState(state),returnContext},'',location.href);}
@@ -83,6 +84,12 @@ function writeHash(){
   if(state.presentation!==preferredPresentation(state.view,state.variant))url.searchParams.set('presentation',state.presentation);else url.searchParams.delete('presentation');
   for(const key of ['platformEdge','platformSensor']){if(state.view==='platform-interface'||state[key]!==({platformEdge:'open',platformSensor:'lidar'})[key])url.searchParams.set(key,state[key]);else url.searchParams.delete(key);}
   url.hash=value;writeAnatomyQuery(url,state,cutawayFor(state.view));
+  for(const key of ['pointChapter','pointCase','pointPhase'])url.searchParams.delete(key);
+  if(isPointJourney()){
+    if(state.view==='interlocking')url.searchParams.set('pointChapter','interlocking');
+    if(state.variant==='unproved')url.searchParams.set('pointCase','unproved');
+    if(state.pointPhase>0)url.searchParams.set('pointPhase',String(Math.round(state.pointPhase*100)/100));
+  }
   for(const key of ['ciDomain','ciArchitecture','ciScenario','ciTrace','ciStep','ciLinks'])url.searchParams.delete(key);
   if(isInterfacePage()){
     const ci=normalizeControlState(state.controlInterface);
@@ -102,6 +109,7 @@ function writeHash(){
   historyMode='replace';lastReadUrl=location.href;
   try{localStorage.setItem('railway-anatomy-technology-v1',JSON.stringify(state.technology));}catch{}
 }
+function isPointJourney(){return state.page==='learn'&&TOURS[state.lesson]?.id==='point-proof'&&['switch-drive','interlocking'].includes(state.view);}
 function readHash(){
   const [page,a,b,c,v]=location.hash.slice(1).split('/');
   state.technology=technologyFromUrl(location.search,savedTechnology);
@@ -119,6 +127,12 @@ function readHash(){
   else if(page==='reference'){state.page='reference';}
   else if(page==='learn'){
     state.page='learn';state.lesson=Math.max(0,TOURS.findIndex(t=>t.id===a));applyLesson(false);
+    if(a==='point-proof'){
+      const interlocking=query.get('pointChapter')==='interlocking',phase=Number(query.get('pointPhase'));
+      state.view=interlocking?'interlocking':'switch-drive';state.domain=interlocking?'control':'track';
+      state.component=interlocking?'interlocking':'track-point-machine';state.variant=query.get('pointCase')==='unproved'?'unproved':'proved';
+      state.pointPhase=interlocking?1:Number.isFinite(phase)?Math.max(0,Math.min(1,phase)):0;
+    }
     if(isInterfaceTour()){
       const connections=Object.fromEntries((query.get('ciLinks')||'').split(',').filter(x=>x.includes(':')).map(x=>x.split(':')));
       state.controlInterface=normalizeControlState({domain:query.get('ciDomain')||state.controlInterface.domain,architecture:query.get('ciArchitecture')||state.controlInterface.architecture,scenario:query.get('ciScenario'),trace:query.get('ciTrace'),step:query.get('ciStep'),connections});
@@ -160,6 +174,7 @@ function learningViewSequence(){
   return [...new Set([...(workspace?workspace.groups.flatMap(g=>g.views):activeDomain().views),state.view])].filter(id=>VIEWS[id]);
 }
 function renderRepresentationSummary(){
+  if(state.view==='switch-drive'&&state.page==='explore'){$('#representation-summary').innerHTML='<button class="point-start" data-point-start>Follow a point machine, from movement to indication →</button>';return;}
   const rep=representationFor(state.view,state.variant),guide=guideForState();
   const mechanical=canAnimateState()&&!isConnections();
   let title=isConnections()?rep.label:'Equipment anatomy';
@@ -208,9 +223,10 @@ function syncViewer(changedView=false){
   if(requestedScope==='selected'&&state.explodeScope!=='selected')state.exploded=0;
   viewer.setExploded(state.explodeScope==='selected'?requestedExposure:state.exploded);viewer.setSignals(['track','control','communications','station','operations','depot'].includes(state.domain));
   const sequenceKey=[state.view,state.variant,state.component,state.platformEdge,state.platformSensor].join('/');
-  if(sequenceKey!==lastSequenceKey){state.playing=false;state.loop=Boolean(guideForState()?.loop);viewer.setPhase(0);lastSequenceKey=sequenceKey;lastTopologyStep='';}
+  if(sequenceKey!==lastSequenceKey||changedView&&isPointJourney()){state.playing=false;state.loop=Boolean(guideForState()?.loop);viewer.setPhase(isPointJourney()&&state.view==='switch-drive'?(state.pointPhase||0)*5:0);lastSequenceKey=sequenceKey;lastTopologyStep='';}
   viewer.setPlayback({duration:guideForState()?.duration||12,loop:state.loop});
   state.playing=viewer.setPlaying(state.playing);if(state.functionalPath)state.functionalPath=viewer.setFunctionalPath?.(state.functionalPath)||null;syncControls();
+  if(changedView&&isPointJourney()&&state.view==='switch-drive')viewer.focusComponent('track-point-machine');
 }
 function syncControls(){
   const presentation=viewer?.getExplorationState?.();
@@ -394,9 +410,11 @@ function renderScenario(){
   $('#sensor-lab').hidden=!(state.domain==='control'&&(state.scenario==='wheel-slip'||['tachometer','accelerometer','balise'].includes(state.component)));
 }
 function updateMotionGuide(){
+  if(isPointJourney()&&!viewer)return;
   const guide=canAnimateState()?guideForState():null,phase=viewer?.getPhase?.()||0;
   const fraction=phaseFraction(phase);
-  const playing=viewer?.getPlaying?.()||false;
+  const playing=viewer?.getPlaying?.()||false,stopped=state.playing&&!playing;
+  if(isPointJourney()&&state.view==='switch-drive'){state.pointPhase=fraction;updatePointState(fraction);if(stopped)writeHash();}
   if(state.playing!==playing){state.playing=playing;$('#play').textContent=playing?'Ⅱ Pause':phase>=5?'↻ Replay':'▶ Play sequence';$('#play').setAttribute('aria-pressed',String(playing));for(const quick of $$('#quick-play,#diagram-quick-play')){quick.textContent=$('#play').textContent;quick.setAttribute('aria-pressed',String(playing));}}
   if(document.activeElement!==$('#phase'))$('#phase').value=String(fraction);
   $('#phase-value').value=`${Math.round(fraction*100)}%`;
@@ -412,12 +430,18 @@ function updateMotionGuide(){
   }
   $$('#motion-steps button').forEach((b,i)=>{b.classList.toggle('active',i===index);b.setAttribute('aria-pressed',String(i===index));});
   $('#motion-caption').textContent=steps[index]?.description||'';
+  if(isPointJourney()&&state.view==='switch-drive'){
+    const label=$('#point-current-label'),caption=$('#point-current-caption');
+    if(label)label.textContent=`${index+1} / ${steps.length} · ${steps[index]?.label||''}`;
+    if(caption)caption.textContent=steps[index]?.description||'';
+    const previous=$('#point-previous'),next=$('#point-next');if(previous)previous.disabled=fraction<=0;if(next)next.disabled=fraction>=1;
+  }
   if($('#motion-previous'))$('#motion-previous').disabled=fraction<=0;
   if($('#motion-next'))$('#motion-next').disabled=fraction>=1;
   if(isConnections()&&currentTopology())updateTopologyStep(steps[index],`${key}/${index}`);
   if(electricalStudy(state.view))updateElectricalDiagram($('#connections-view'),state.view,fraction);
 }
-function seekSequence(fraction){if(!canAnimateState())return;if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Math.max(0,Math.min(1,fraction))*5);syncControls();updateLabels();}
+function seekSequence(fraction){if(!canAnimateState())return;if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=false;viewer?.setPlaying(false);viewer?.setPhase(Math.max(0,Math.min(1,fraction))*5);syncControls();updateLabels();if(isPointJourney()){state.pointPhase=Math.max(0,Math.min(1,fraction));writeHash();updateMotionGuide();}}
 function stepSequence(direction){const guide=guideForState(),fraction=phaseFraction(viewer?.getPhase?.()||0),steps=guide?.steps||[];
   const next=direction>0?steps.find(s=>s.at>fraction+.001):[...steps].reverse().find(s=>s.at<fraction-.001);seekSequence(next?.at??(direction>0?1:0));}
 function updateTopologyStep(step,key){
@@ -427,11 +451,41 @@ function updateTopologyStep(step,key){
   $$('#connections-view [data-topology-edge]').forEach(edge=>edge.classList.toggle('active-step',edges.has(Number(edge.dataset.topologyEdge))));
   const out=$('#connection-state');if(out){out.textContent=step.description;out.hidden=false;}
 }
+function updatePointState(fraction){
+  const current=pointMachineState(fraction,state.variant);
+  for(const key of ['position','locking','indication']){const node=$(`[data-point-state="${key}"]`);if(node&&node.textContent!==current[key])node.textContent=current[key];}
+  $('#point-state').classList.toggle('is-proved',current.proof);
+}
+function renderPointJourney(){
+  const active=isPointJourney(),physical=state.view==='switch-drive';
+  $('#point-journey').hidden=!active;$('#point-current').hidden=!active||!physical;$('#point-state').hidden=!active||!physical;
+  if(!active)return;
+  $('#scene-title').textContent=physical?'How a point machine moves a turnout':'Where the point indication goes';
+  $('#point-journey').innerHTML=`<nav aria-label="Point-machine journey"><button data-point-chapter="mechanism" ${physical?'aria-current="step"':''}>1 · Move, lock & detect</button><button data-point-chapter="interlocking" ${!physical?'aria-current="step"':''}>2 · Follow the indication →</button></nav>`;
+  $('#arrangement-label').textContent='Throw outcome';
+  for(const button of $$('#scenario-buttons button'))button.textContent=button.dataset.variant==='unproved'?'Stopped short':'Complete throw';
+  if(physical){
+    $('#point-current').innerHTML='<div class="point-step-heading"><strong id="point-current-label"></strong><div><button id="point-previous" aria-label="Previous point-machine stage">←</button><button id="point-next" aria-label="Next point-machine stage">→</button></div></div><p id="point-current-caption"></p>';
+    updatePointState(viewer?phaseFraction(viewer.getPhase()):state.pointPhase||0);updateMotionGuide();
+  }
+}
+function openPointChapter(chapter){
+  const physical=chapter!=='interlocking';
+  if(!physical)state.pointPhase=1;
+  state.playing=false;state.view=physical?'switch-drive':'interlocking';state.component=physical?'track-point-machine':'interlocking';
+  state.domain=physical?'track':'control';state.presentation=physical?'equipment':'connections';state.cutaway=true;state.exploded=0;state.explodeScope='all';
+  state.instanceId=null;state.functionalPath=null;state.studyId=null;viewer?.setPlaying(false);render(true);
+  requestAnimationFrame(()=>{viewer?.resize();$('#scene-title').focus({preventScroll:true});$('#workspace').scrollIntoView({block:'start',behavior:'instant'});});
+}
 function renderLesson(){
   if(state.page!=='learn')return;
   const t=TOURS[state.lesson];
   const lessonHost=isInterfaceTour()?$('#interface-lesson'):isProcessPage()?$('#process-lesson'):$('#lesson-detail');if(!lessonHost)return;
   for(const host of $$('#lesson-detail,#process-lesson,#interface-lesson'))if(host!==lessonHost)host.replaceChildren();
+  if(isPointJourney()){
+    lessonHost.innerHTML=`<div class="lesson-body point-check"><h2>Check your understanding</h2><div class="question"><h3 id="quiz-title">${safe(t.question)}</h3><fieldset aria-labelledby="quiz-title">${t.choices.map((v,i)=>`<label class="answer-choice"><input type="radio" name="quiz-answer" value="${i}" ${quizSelections[t.id]===i?'checked':''}><span>${safe(v)}</span></label>`).join('')}</fieldset><button class="check-answer" id="check-answer">Check understanding</button><div id="quiz-feedback" role="status" tabindex="-1" hidden></div></div>${sourceChips([...new Set(t.sourceConcepts.flatMap(id=>parts.get(id).sources))],true)}</div>`;
+    if(quizSelections[t.id]!==undefined)showFeedback(quizSelections[t.id]===t.answer);return;
+  }
   const actionContext=isInterfaceTour()?'Explore the interfaces':isProcessPage()?'Explore the process':isConnections()?'Explore the diagram':'Try it in the model';
   lessonHost.innerHTML=`<div class="lesson-body"><button class="back-guide" data-explore-component="${state.component}">← Explore freely</button><p class="part-kicker">Guided tour ${state.lesson+1} / ${TOURS.length}</p><h3 tabindex="-1">${safe(t.title)}</h3><p>${safe(t.explanation)}</p>${state.component!==t.component?`<div class="selected-in-tour"><strong>${safe(parts.get(state.component).label)}</strong><p>${safe(parts.get(state.component).summary)}</p><button data-explore-component="${state.component}">Open component explanation →</button></div>`:''}<div class="try-action"><strong>${actionContext}</strong>${safe(t.actionText)}<button id="lesson-action">${safe(t.actionLabel)} ↗</button></div><div class="question"><h4 id="quiz-title">${safe(t.question)}</h4><fieldset aria-labelledby="quiz-title">${t.choices.map((v,i)=>`<label class="answer-choice"><input type="radio" name="quiz-answer" value="${i}" ${quizSelections[t.id]===i?'checked':''}><span>${safe(v)}</span></label>`).join('')}</fieldset><button class="check-answer" id="check-answer">Check understanding</button><div id="quiz-feedback" role="status" tabindex="-1" hidden></div><p class="practice-note">Optional self-check. Retry or move on at any time. Progress stays on this device.</p></div>${sourceChips([...new Set(t.sourceConcepts.flatMap(id=>parts.get(id).sources))])}<div class="lesson-nav"><button id="previous-lesson" ${state.lesson===0?'disabled':''}>← Previous</button><button id="next-lesson">${state.lesson===TOURS.length-1?'Finish & explore':'Next tour →'}</button></div></div>`;
   if(quizSelections[t.id]!==undefined)showFeedback(quizSelections[t.id]===t.answer);
@@ -476,7 +530,7 @@ function renderConnections(){
   if(show){
     const chosen=VIEWS[state.view].variants?.find(v=>v.id===state.variant);
     const rows=topology?.rows;
-    $('#connections-view').innerHTML='<button id="diagram-quick-play" class="diagram-quick-play" aria-pressed="false" hidden>Play sequence</button>'+(electrical?electricalMarkup(state.view):topologyMarkup(topology,state.component))+(topology?.result?`<p class="diagram-result">${safe(topology.result)}</p>`:'')+(rows?`<section class="diagram-outcomes"><h3>What the selected case establishes</h3><table><thead><tr><th>Interface or claim</th><th>Selected condition</th><th>Meaning and limit</th></tr></thead><tbody>${rows.map(row=>`<tr><th>${safe(row[0])}</th><td>${safe(row[1])}</td><td>${safe(row[2])}</td></tr>`).join('')}</tbody></table></section>`:'')+sourceChips(topology?.sources||chosen?.sources||flowFor().sources||[])+(hasInterfaceContext(state.component)||topology?.interfaceDomain?`<div class="context-jump"><button data-open-interfaces="${safe(topology?.interfaceDomain||getInterfaceContext(state.component,state.view,state.variant).domain)}">Compare control responsibilities & optional interfaces →</button></div>`:'');
+    $('#connections-view').innerHTML='<button id="diagram-quick-play" class="diagram-quick-play" aria-pressed="false" hidden>Play sequence</button>'+(electrical?electricalMarkup(state.view):topologyMarkup(topology,state.component))+(topology?.result?`<p class="diagram-result">${safe(topology.result)}</p>`:'')+(rows?`<section class="diagram-outcomes"><h3>What the selected case establishes</h3><table><thead><tr><th>Interface or claim</th><th>Selected condition</th><th>Meaning and limit</th></tr></thead><tbody>${rows.map(row=>`<tr><th>${safe(row[0])}</th><td>${safe(row[1])}</td><td>${safe(row[2])}</td></tr>`).join('')}</tbody></table></section>`:'')+sourceChips(topology?.sources||chosen?.sources||flowFor().sources||[],isPointJourney())+(hasInterfaceContext(state.component)||topology?.interfaceDomain?`<div class="context-jump"><button data-open-interfaces="${safe(topology?.interfaceDomain||getInterfaceContext(state.component,state.view,state.variant).domain)}">Compare control responsibilities & optional interfaces →</button></div>`:'');
     lastTopologyStep='';
   }
   for(const selector of ['.stage','.selection-tools','.model-tools','.model-notes','#exploration-note','.model-parts-key']){
@@ -485,6 +539,7 @@ function renderConnections(){
   syncControls();
 }
 function render(changedView=false){
+  document.body.classList.toggle('point-journey',isPointJourney());
   if(state.page==='explore'){
     if(state.view==='station-networks'){state.page='interfaces';state.controlInterface=normalizeControlState({...state.controlInterface,...getInterfaceContext(state.component,state.view,state.variant)});}
     else{const process=processFor(state.view,state.component,state.variant);if(process){state.page='processes';state.processId=process;state.processStep=processStepFor(state.view,state.variant)||PROCESS_VIEWS[process].steps[0].id;}}
@@ -516,7 +571,7 @@ function render(changedView=false){
   // A hidden canvas has no usable viewport. Expose it before any camera fit;
   // then fit once more after layout when returning from a functional surface.
   if(state.page!=='reference')$('#explorer-page').hidden=false;
-  $('#processes-page').innerHTML='';if(!viewer&&!loadingViewer&&state.page!=='reference')queueMicrotask(startViewer);syncViewer(changedView);chooseVisibleRepresentative();renderNavigation();renderDetail();renderScenario();renderLesson();renderSystemContext();if(state.page==='reference')renderReference();syncControls();renderConnections();rebuildLabels();writeHash();
+  $('#processes-page').innerHTML='';if(!viewer&&!loadingViewer&&state.page!=='reference')queueMicrotask(startViewer);syncViewer(changedView);chooseVisibleRepresentative();renderNavigation();renderDetail();renderScenario();renderLesson();renderSystemContext();if(state.page==='reference')renderReference();syncControls();renderConnections();renderPointJourney();rebuildLabels();writeHash();
   if(returningToPhysical){const openedView=state.view;requestAnimationFrame(()=>{if(viewer&&state.view===openedView&&!isInterfacePage()&&!isProcessPage()&&state.page!=='reference'){viewer.resize();viewer.frameModel?.();updateLabels();}});}
   restoreFocus();
 }
@@ -536,6 +591,7 @@ function setDomain(id){
 }
 function setView(id){
   if(!VIEWS[id])return;
+  if(isPointJourney())state.page='explore';
   if(id!==state.view){state.instanceId=null;state.functionalPath=null;state.studyId=null;state.allInstances=false;state.exploded=0;state.explodeScope='all';}
   if(id==='station-networks'){openInterfaces({domain:'building'});return;}if(PROCESS_REDIRECTS[id]){openProcess(PROCESS_REDIRECTS[id]);return;}state.page=state.page==='learn'?'learn':'explore';
   state.domain=domainForView(id,DOMAINS,state.domain)?.id||state.domain;allComponents=false;configurationEffect='';
@@ -579,6 +635,7 @@ function selectComponent(id,{explore=state.page!=='learn',focus=false,primary=fa
 }
 function applyLesson(doRender=true){
   const t=TOURS[state.lesson],a=t.action;
+  if(t.id==='point-proof')state.pointPhase=0;
   state={...state,presentation:a.presentation||preferredPresentation(a.view||t.view,a.variant||defaultVariant(a.view||t.view)),page:'learn',domain:t.domain,view:a.view||t.view,component:a.component||t.component,mode:a.mode||'motoring',scenario:a.scenario||'nominal',cutaway:a.cutaway??cutawayFor(t.view),variant:a.variant||defaultVariant(a.view||t.view),exploded:typeof a.exploded==='number'?a.exploded:a.exploded ? 0.35 : 0};
   if(a.platformEdge)state.platformEdge=a.platformEdge;if(a.platformSensor)state.platformSensor=a.platformSensor;syncPlatform({fromComponent:true});
   state.technology=technologyForView(technologyForComponent(normalizeTechnology(a.technology||{},state.technology),state.component),state.view,state.variant);
@@ -617,7 +674,7 @@ function openSources(sourceId){
   $('#about-dialog').showModal();$('#dialog-body').scrollTop=0;
 }
 
-function pinIds(){return viewer?.getComponentIds(state.view).filter(id=>parts.has(id)&&equipmentInView(id)&&!['network-overview','depot-layout','operations-centre'].includes(id))||[];}
+function pinIds(){if(isPointJourney()&&state.view==='switch-drive')return ['track-point-machine','track-stretcher','track-switch-rail','track-point-detection'];return viewer?.getComponentIds(state.view).filter(id=>parts.has(id)&&equipmentInView(id)&&!['network-overview','depot-layout','operations-centre'].includes(id))||[];}
 function modelNumber(id){const index=pinIds().indexOf(targetFor(id));return index<0?'·':String(index+1).padStart(2,'0');}
 
 // Label nodes remain stable between frames so keyboard focus survives camera motion.
@@ -673,10 +730,14 @@ document.addEventListener('click',event=>{
   const diagramNode=event.target.closest('[data-topology-component]');if(diagramNode){const nodeId=diagramNode.dataset.topologyNode;rememberCurrentEntry();historyMode='push';selectComponent(diagramNode.dataset.topologyComponent);focusVisible(`[data-topology-node="${nodeId}"]`);return;}
   const b=event.target.closest('button');if(!b)return;
   rememberCurrentEntry();
-  historyMode=b.matches('[data-open-interfaces],[data-return-explore],#interface-context-return,#previous-view,#next-view,[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-workspace],[data-workspace-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
+  historyMode=b.matches('[data-point-chapter],[data-point-start],[data-open-interfaces],[data-return-explore],#interface-context-return,#previous-view,#next-view,[data-process],[data-process-step],[data-role],[data-people],[data-presentation],[data-page],[data-domain],[data-view],[data-workspace],[data-workspace-view],[data-inspect-view],[data-variant],[data-component],[data-explore-component],[data-reference],[data-reading-guide],[data-lesson],[data-experiment],[data-sink],[data-destination],#return-context,#inspect-propulsion,#inspect-control,#lesson-action,#previous-lesson,#next-lesson')?'push':'replace';
   if(b.matches('[data-domain],[data-view],[data-workspace],[data-workspace-view]')){$('.railway-navigation').classList.remove('is-open');$('#navigator-toggle').setAttribute('aria-expanded','false');$('#view-search').value='';searchViews();}
   if(b.id==='open-navigator'||b.id==='sidebar-find'){navigationSearch.open();}
   else if(b.hasAttribute('data-tour-lesson')){const heading=$('#interface-lesson h3');heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});}
+  else if(b.hasAttribute('data-point-start')){state.lesson=TOURS.findIndex(t=>t.id==='point-proof');applyLesson();}
+  else if(b.dataset.pointChapter){openPointChapter(b.dataset.pointChapter);}
+  else if(b.id==='point-previous')stepSequence(-1);
+  else if(b.id==='point-next')stepSequence(1);
   else if(b.dataset.openInterfaces){openInterfaces({domain:b.dataset.openInterfaces});}
   else if(b.id==='interface-context-return'||b.hasAttribute('data-return-explore')){returnToContext();}
   else if(b.id==='previous-view'||b.id==='next-view'){const sequence=learningViewSequence(),i=sequence.indexOf(state.view),next=sequence[i+(b.id==='next-view'?1:-1)];if(next)setView(next);}
@@ -703,11 +764,11 @@ document.addEventListener('click',event=>{
   else if(b.dataset.domain)setDomain(b.dataset.domain);
   else if(b.dataset.view)setView(b.dataset.view);
   else if(b.dataset.inspectView){const origin=routeState(state),selected=state.component;setView(b.dataset.inspectView);returnContext=origin;if(viewer?.getComponentIds(state.view).includes(targetFor(selected)))selectComponent(selected,{explore:state.page!=='learn'});else render();}
-  else if(b.dataset.variant){const process=processFor(state.view,null,b.dataset.variant);if(process){openProcess(process,processStepFor(state.view,b.dataset.variant));return;}if((state.view==='operations-centre'||state.view==='occ-workplace')&&b.dataset.variant==='handover'){openProcess('duty-handover');return;}if(state.view==='operations-centre'&&b.dataset.variant==='incident'){openProcess('incident-coordination');return;}configurationEffect='';state.variant=b.dataset.variant;syncPlatform();const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();viewer?.frameVariant?.();}
+  else if(b.dataset.variant){const process=processFor(state.view,null,b.dataset.variant);if(process){openProcess(process,processStepFor(state.view,b.dataset.variant));return;}if((state.view==='operations-centre'||state.view==='occ-workplace')&&b.dataset.variant==='handover'){openProcess('duty-handover');return;}if(state.view==='operations-centre'&&b.dataset.variant==='incident'){openProcess('incident-coordination');return;}configurationEffect='';if(isPointJourney()&&state.view==='switch-drive')state.pointPhase=phaseFraction(viewer?.getPhase?.()||0);state.variant=b.dataset.variant;syncPlatform();const representative=VIEWS[state.view].variants?.find(x=>x.id===state.variant)?.component;if(parts.has(representative))state.component=representative;state.technology=technologyForView(state.technology,state.view,state.variant);state.scenario='nominal';viewer?.setTechnology(state.technology);viewer?.setVariant(state.variant);chooseVisibleRepresentative();render();viewer?.frameVariant?.();}
   else if(b.dataset.component){const nodeId=b.dataset.connectionNode;selectComponent(b.dataset.component,{primary:Boolean(b.closest('#search-results'))});if(nodeId)focusVisible(`[data-connection-node="${nodeId}"]`);}
   else if(b.dataset.source)openSources(b.dataset.source);
   else if(b.dataset.camera){labelLayoutKey='';viewer?.setCameraPreset(b.dataset.camera);syncControls();updateLabels();}
-  else if(b.dataset.motionPhase!==undefined)seekSequence(Number(b.dataset.motionPhase));
+  else if(b.dataset.motionPhase!==undefined){seekSequence(Number(b.dataset.motionPhase));if(isPointJourney()&&matchMedia('(max-width:740px)').matches)$('#point-current').scrollIntoView({block:'start',behavior:'instant'});}
   else if(b.id==='motion-previous')stepSequence(-1);
   else if(b.id==='motion-next')stepSequence(1);
   else if(b.dataset.focus){if(state.presentation==='connections'){state.presentation='equipment';render();requestAnimationFrame(()=>{viewer?.resize();viewer?.focusComponent(b.dataset.focus);syncControls();labelLayoutKey='';updateLabels();});}else{viewer?.focusComponent(b.dataset.focus);syncControls();labelLayoutKey='';updateLabels();}}
@@ -727,7 +788,7 @@ document.addEventListener('click',event=>{
     if(correct)lessonAnswers[t.id]=true;saveProgress();showFeedback(correct,choice);$('#quiz-feedback').focus();renderNavigation();
   }else if(b.id==='previous-lesson'){state.lesson=Math.max(0,state.lesson-1);applyLesson();}
   else if(b.id==='next-lesson'){if(state.lesson<TOURS.length-1){state.lesson++;applyLesson();}else setPage('explore');}
-  else if(b.id==='play'||b.id==='quick-play'||b.id==='diagram-quick-play'){if(!canAnimateState())return;if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();}
+  else if(b.id==='play'||b.id==='quick-play'||b.id==='diagram-quick-play'){if(!canAnimateState())return;if(electricalStudy(state.view)&&!isConnections()){state.presentation='connections';render();}state.playing=viewer?.setPlaying(!state.playing)||false;syncControls();if(isPointJourney())writeHash();}
   else if(b.id==='reset-scene'){labelLayoutKey='';viewer?.resetCamera();syncControls();}
   else if(b.id==='about-button')openSources();
   else if(b.id==='close-dialog')$('#about-dialog').close();
