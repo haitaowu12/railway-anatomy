@@ -78,15 +78,15 @@ export function applyMotionGuides(views){
       step(1,'Passage complete','This illustrates wheel guidance and geometry. It does not grant a route, set a permitted speed or simulate an interlocking.')
     ],14);
   }
-  for(const id of ['proved','unproved']){
-    const incomplete=id==='unproved';
-    enable('switch-drive',id,'Move, lock and read the indication',[
-      step(0,'Start at end A','The blades start at end A with the lock engaged. The requested destination is end B.'),
-      step(.15,'Release the lock','The lock has withdrawn. The blades have not started to move.'),
-      step(.45,'Move the blades','The motor and pinion drive the rack and blade linkage. The separate detector link follows the blades.'),
-      step(.72,incomplete?'Stop short':'Reach end B',incomplete?'Travel has stopped between the two ends. The blades have not reached end B.':'The blades have reached end B. The lock is still released.'),
-      step(.9,incomplete?'Lock stays released':'Lock at end B',incomplete?'The incomplete throw leaves the lock released and the end-B indication absent.':'The lock has engaged at end B. The end-B indication has not yet returned.'),
-      step(1,incomplete?'No end-B indication':'Return the indication',incomplete?'The detector has no end-B condition to report. Follow the missing indication to the interlocking.':'The end-B indication is now returned. Follow this input to the interlocking, where it joins the other route conditions.')
+  for(const id of ['proved','unproved','detector-missing']){
+    const incomplete=id==='unproved',missing=id==='detector-missing';
+    enable('switch-drive',id,'Move, lock and detect both blades',[
+      step(0,'Start at end A',missing?'The near blade is open and the far blade closed, with both locks engaged. The far detector input is unavailable, so neither end is indicated.':'The near (machine-side) blade is open and the far blade closed. Both locks are engaged and A is indicated.'),
+      step(.15,'Release the locks','The locks withdraw before blade movement. Neither end is indicated while the locks are released.'),
+      step(.45,'Move both blades','Two operating rods move the blades. Two separate detector rods follow them: one short connection to the near blade and one long connection to the far blade.'),
+      step(.72,incomplete?'Stop short':'Reach end B',incomplete?'The blades stop between the ends. Both locks remain released and neither end is indicated.':'The near blade has closed against its stock rail; the far blade is open. The locks are still released.'),
+      step(.9,incomplete?'Locks stay released':missing?'Locked, input missing':'Lock and detect B',incomplete?'The incomplete throw cannot establish either locked end.':missing?'Both locks engage at B, but the far-blade detector input is unavailable. B is not indicated.':'Both locks engage. With the closed blade, open blade and lock conditions satisfied, B is indicated.'),
+      step(1,'Follow the indication',incomplete||missing?'Neither end is indicated. Follow the missing B input to the interlocking.':'B is indicated. Follow this input to the interlocking, alongside the other route conditions.')
     ],12);
   }
   for(const id of ['frog','diamond'])enable('crossing',id,'Wheel support and flange guidance at a crossing',[

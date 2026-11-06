@@ -1,5 +1,6 @@
 import { createMechanicalDetails } from './mechanical-details.js';
 import { pointMachineState } from './point-machine.js';
+import { buildPointMachine } from './point-machine-model.js';
 /*
  * Original, dimensionless teaching geometry for Railway Anatomy.
  * Rail profiles and mechanism proportions are illustrative, not product CAD.
@@ -10,7 +11,7 @@ export const TRACK_VIEWS = {
   'track-support': { camera: [9.5, 7.8, 10.5], target: [0, .9, 0], distance: 22 },
   'rail-fastening': { camera: [4.8, 4.4, 5.4], target: [0, 1, 0], distance: 12 },
   turnout: { camera: [13, 15, 17], target: [0, .65, 1.2], distance: 34 },
-  'switch-drive': { camera: [-6.5, 6, -7.6], target: [-.5, .8, -.4], distance: 19 },
+  'switch-drive': { camera: [-5.5, 10, -5.8], target: [-.5, .8, -.4], distance: 19 },
   crossing: { camera: [8.2, 8.6, 10], target: [0, .85, .7], distance: 23 },
 };
 
@@ -425,7 +426,7 @@ export function buildTrackView(id, api) {
     for (let x = -6.4; x < 6.7; x += small ? 1.05 : .8) {
       const upper = offsetAtWorldX(x, diverge, gauge, railY, x0, x1);
       const d = upper.point[2] - gauge, length = d + 2.72, middle = d / 2;
-      sleeper(turnout, x, railY - .04, length, middle, false);
+      if(!drive||Math.abs(x+3.92)>.65)sleeper(turnout, x, railY - .04, length, middle, false);
       if (!small && Math.round((x + 6.4) / .8) % 2 === 0) {
         seat(turnout, x, -gauge, railY, { detailed: false, lifted: false });
         const upperSeat = seat(turnout, x, upper.point[2], railY, { detailed: false, lifted: false });
@@ -448,7 +449,7 @@ export function buildTrackView(id, api) {
     let mechanism = null;
     if (drive) {
       layer(turnout, 'track-plinth', [1.3, .10, .95], [-3.92, .29, -2.0], concrete);
-      mechanism = pointMachine(turnout, [-3.92, .47, -2.0]);
+      mechanism = buildPointMachine(turnout,api,{position:[-3.92,.47,-2.0],railY,bladeAt:(side,x,movement)=>{if(side<0){const at=offsetAtWorldX(x,diverge,-gauge,railY,toe,heel),fade=(1-clamp((at.parameter-toe)/(heel-toe)))**2;at.point[2]+=mix(.29,.078,movement)*fade;return at.point;}const fade=(1-clamp((x-toe)/(heel-toe)))**2;return [x,railY,gauge-mix(.078,.29,movement)*fade];}});
     }
     let lastMovement = -1;
     function update(movement, state) {
@@ -458,79 +459,9 @@ export function buildTrackView(id, api) {
         stretch.position.z = mix(.106, -.106, movement) * fade;
         lastMovement = movement;
       }
-      if (mechanism) mechanism.update(movement, state, stretch.position.z);
+      if (mechanism) mechanism.update(movement, {...state,pointIndication:movement<.001?'A':movement>.999?'B':'Neither'}, stretch.position.z);
     }
     return { root: turnout, update, railY, diverge, crossingX, x0, x1, toe, heel };
-  }
-
-  function pointMachine(parent, position) {
-    const machine = part(parent, 'track-point-machine', position);
-    D.mark(machine,'Point machine, mechanical output and lock',{sources:['K17'],function:'An original rack-drive example separates motion transmission, retention and independent position feedback.'});
-    box(machine, [1.25, .12, .87], concreteEdge, [0, -.12, 0]);
-    box(machine, [1.12, .055, .75], M.core, [0, -.035, 0]);
-    for (const x of [-.48, .48]) for (const z of [-.30, .30]) bolt(machine, [x, .012, z], .032, true);
-    const housing = group(machine, 'removable-machine-housing'); shell(housing);
-    D.mark(housing,'Machine enclosure',{sources:['K17']});D.move(housing, [0, .85, 0],'Open the enclosure',[0,.3]);
-    box(housing, [1.12, .045, .76], M.teal, [0, .39, 0]);
-    for (const side of [-1, 1]) box(housing, [1.12, .37, .04], M.teal, [0, .195, side * .36]);
-    box(housing, [.04, .37, .72], M.teal, [-.54, .195, 0]);
-    box(housing, [.04, .37, .72], M.teal, [.54, .195, 0]);
-    box(housing, [.58, .018, .30], M.white, [0, .424, 0]);
-    const motor=D.piece(machine,'point-drive-motor','Drive motor',[-.27,.19,-.08],{sources:['K17'],interfaces:['Electrical supply','Coaxial pinion shaft']});
-    cylinder(motor, .145, .43, M.aluminum, [0,0,0], [0, 0, Math.PI / 2], 20);
-    for (const x of [-.16, -.06, .04, .14]) cylinder(motor, .157, .017, M.core, [x,0,0], [0, 0, Math.PI / 2], 16);
-    const gear = D.piece(machine, 'illustrative-drive-gear','Drive pinion', [.24, .19, -.08],{sources:['K17','MD03'],function:'A schematic pinion converts shaft rotation into rack travel. The authored pitch radius relates angle to displacement.'});
-    const pitchRadius=.13,toothPitch=2*Math.PI*pitchRadius/12;
-    Object.assign(gear.userData,{gearPitchRadius:pitchRadius,gearToothCount:12,rackPitch:toothPitch,gearProfile:'schematic, not involute'});
-    cylinder(gear, .113, .065, M.copper, [0, 0, 0], [0, 0, Math.PI / 2], 24);
-    for (let i = 0; i < 12; i++) {
-      const a = i / 12 * Math.PI * 2;
-      box(gear, [.078, .038, toothPitch*.43], M.steel, [0, Math.cos(a) * pitchRadius, Math.sin(a) * pitchRadius], [a, 0, 0]);
-    }
-    cylinder(machine, .025, .50, M.steel, [0, .19, -.08], [0, 0, Math.PI / 2], 10);
-    const output = group(machine, 'linear-output-rod', [0, .23, .25]);
-    D.mark(output,'Drive rack and output rod',{sources:['K17','MD03'],function:'The sliding rack moves the output rod; guide blocks react transverse force while allowing longitudinal travel.'});
-    cylinder(output, .038, 2.45, M.aluminum, [0, 0, 1.06], [Math.PI / 2, 0, 0], 10);
-    box(output, [.16, .10, .18], M.core, [0, 0, .08]);
-    const rack=D.piece(output,'point-drive-rack','Linear drive rack',[.24,-.197,-.25],{sources:['K17','MD03'],interfaces:['Drive pinion teeth','Output rod carrier']});
-    box(rack,[.075,.025,1.05],M.steel);for(let i=-7;i<=7;i++)box(rack,[.075,.036,toothPitch*.43],M.aluminum,[0,.03,i*toothPitch-.08]);
-    box(output,[.28,.06,.15],M.core,[.12,-.15,0]);box(output,[.08,.18,.15],M.core,[0,-.06,0]);
-    const guides=D.piece(machine,'point-rack-guide-blocks','Rack guide blocks',undefined,{sources:['K17'],function:'Stationary side guides support the moving rack without filling its travel passage.'});
-    for(const z of [-.34,.30])for(const x of [.17,.31])box(guides,[.035,.10,.10],M.core,[x,.055,z]);
-    for(const x of [.08,.41]){const b=D.piece(machine,'point-drive-shaft-support','Drive shaft bearing',[x,.19,-.08],{sources:['MD04']});const r=D.ring(b,.028,.05,.045,M.steel);r.rotation.set(0,0,Math.PI/2);box(b,[.07,.12,.1],M.core,[0,-.105,0]);}
-    const lock = group(machine, 'illustrative-lock');
-    D.mark(lock,'Mechanical locking element',{sources:['K17'],function:'Retention is modeled separately from movement and from position detection.'});
-    box(lock, [.20, .12, .11], M.yellow, [.12, .24, .26]);
-    const detection = part(parent, 'track-point-detection', [position[0] + .43, position[1] + .15, position[2] + .49]);
-    D.mark(detection,'Independent blade-position detection',{sources:['K17'],function:'A separate reference link represents physical position feedback; the drive command alone is not proof.'});
-    box(detection, [.28, .19, .35], M.signal, [0, 0, 0]);
-    const detectorRod = group(detection, 'blade-reference-link');
-    D.mark(detectorRod,'Blade reference link',{sources:['K17']});
-    cylinder(detectorRod, .019, .72, M.steel, [0, .02, .48], [Math.PI / 2, 0, 0], 8);
-    box(detectorRod, [.10, .16, .08], M.core, [0, .07, .84]);
-    const indicator = mesh(detection, new THREE.SphereGeometry(.064, 10, 6), cueMaterial, [0, .15, 0]);
-    const cues = group(parent, 'request-and-position-feedback');
-    const requestGroup=group(cues,'finite-drive-request'),feedbackGroup=group(cues,'finite-position-feedback');
-    const request = animatedPath(requestGroup, [[position[0] - .9, .36, position[2] - .75], [position[0] -.5, .36, position[2] -.55], [position[0], .57, position[2] -.4]], C.signal, { radius: .018, beads: 1 });
-    const feedback = animatedPath(feedbackGroup, [[position[0] + .43, .78, position[2] + .49], [position[0] + .85, .45, position[2] + .12], [position[0] + .9, .36, position[2] -.75]], C.service, { radius: .018, beads: 1 });
-    D.move(motor,[0,.4,-.3],'Locate drive and support',[.3,.6]);D.move(gear,[.25,.35,0],'Inspect motion transmission',[.6,1]);D.move(lock,[-.3,.3,0],'Inspect motion transmission',[.6,1]);
-    machine.userData.functionalPaths=[{id:'point-drive',label:'Drive, retain and prove',description:'Motor → pinion → rack/output rod → blades. The lock and independent position feedback are different functions. This is a qualitative mechanism, not signalling logic or an operating procedure.',steps:[{label:'Drive motor',nodeName:'point-drive-motor'},{label:'Pinion',nodeName:'illustrative-drive-gear'},{label:'Rack and output',nodeName:'linear-output-rod'},{label:'Switch blades',conceptId:'track-switch-rail'},{label:'Lock',nodeName:'illustrative-lock'},{label:'Position feedback',conceptId:'track-point-detection'}],sources:['K17','MD03']}];
-    return {
-      update(movement, state, shift) {
-        const proved = state.pointProof ?? (state.variant !== 'unproved');
-        output.position.z = .25 + shift;
-        detectorRod.position.z = .75 * shift - .03;
-        gear.rotation.x = Math.PI/12-shift/pitchRadius;
-        const lockFraction=state.pointLockFraction ?? (proved?1:0);
-        lock.position.x = .12*(1-lockFraction);
-        indicator.material = proved ? cueMaterial : warningMaterial;
-        const p=studyProgress(state);
-        cues.visible = id==='switch-drive'&&Boolean(state.signals)&&(state.exploded||0)<.15;
-        requestGroup.visible=p<.18;feedbackGroup.visible=proved&&p>=.9;
-        request(Math.min(.9999,p/.18)*4);feedback(Math.max(0,Math.min(.9999,(p-.9)/.1))*4);
-        machine.userData.targetProved=proved;machine.userData.lockEngaged=lockFraction>=.999;
-      },
-    };
   }
 
   function turnoutView() {
@@ -598,7 +529,7 @@ export function buildTrackView(id, api) {
     rail(stock, offsetPoints(-3.3, 3.3, centerline, gauge, railY, 28));
     for (let x = -3.05; x < 3.3; x += .75) {
       const upper = outer(x), d = upper.point[2] - gauge;
-      sleeper(root, x, .80, 2.8 + d, d / 2, false);
+      if(Math.abs(x+2.35)>.65)sleeper(root, x, .80, 2.8 + d, d / 2, false);
       if (x > -.4) {
         seat(root, x, -gauge, railY, { detailed: false, lifted: false });
         const upperSeat = seat(root, x, upper.point[2], railY, { detailed: false, lifted: false });
@@ -610,36 +541,23 @@ export function buildTrackView(id, api) {
       const x = mix(toe, 3.3, i / 28);
       const t = clamp((x - toe) / (heel - toe)), f = (1 - t) ** 2;
       if (side < 0) {
-        const p = offsetPoint(x, centerline, -gauge, railY); p[2] += mix(.29, .078, movement) * f;
+        const p = offsetPoint(x, centerline, -gauge, railY); p[2] += mix(.29, .07455, movement) * f;
         return p;
       }
-      return [x, railY, gauge - mix(.078, .29, movement) * f];
+      return [x, railY, gauge - mix(.07455, .29, movement) * f];
     });
     const taper = t => .065 + .935 * Math.min(1, t * 3);
     const bladeMeshes = [-1, 1].map(side => rail(blades, bladePath(side, 1), { taper }));
-    const bar = part(root, 'track-stretcher', [-2.35, railY + .005, 0]);
-    box(bar, [.11, .065, 1.5], M.core, [0, -.035, 0]);
-    box(bar, [.145, .08, .18], insulator, [0, -.035, 0]);
-    for (const side of [-1, 1]) {
-      box(bar, [.18, .12, .14], M.steel, [0, -.005, side * .73]);
-      bolt(bar, [0, .072, side * .73], .033);
-    }
-    const machine = pointMachine(root, [-2.35, .59, -2.05]);
-    const contactCue = group(root, 'blade-contact-markers');
-    const closedDot = mesh(contactCue, new THREE.SphereGeometry(.055, 10, 6), cueMaterial, [-2.64, 1.20, -.82]);
-    const openDot = mesh(contactCue, new THREE.SphereGeometry(.055, 10, 6), warningMaterial, [-2.64, 1.20, .68]);
+    const bladeAt=(side,x,movement)=>{if(side<0){const at=offsetAtWorldX(x,centerline,-gauge,railY,toe,3.3),fade=(1-clamp((at.parameter-toe)/(heel-toe)))**2;at.point[2]+=mix(.29,.07455,movement)*fade;return at.point;}const fade=(1-clamp((x-toe)/(heel-toe)))**2;return [x,railY,gauge-mix(.07455,.29,movement)*fade];};
+    const machine=buildPointMachine(root,api,{position:[-2.35,.59,-2.05],railY,bladeAt});
     let last = -1;
     registerAnimator(state => {
-      const {movement, lock:lockFraction, proof}=pointMachineState(studyProgress(state),state.variant);
+      const {movement, lock:lockFraction, indication}=pointMachineState(studyProgress(state),state.variant);
       if (Math.abs(movement - last) > .0001) {
         bladeMeshes.forEach((b, i) => b.update(bladePath(i ? 1 : -1, movement)));
-        bar.position.z = mix(.106, -.106, movement) * .8464; last = movement;
+        last = movement;
       }
-      machine.update(movement, {...state,pointProof:proof,pointLockFraction:lockFraction}, bar.position.z);
-      contactCue.visible = Boolean(state.signals);
-      closedDot.material = proof ? cueMaterial : warningMaterial;
-      closedDot.position.z = -gauge + mix(.29, .078, movement);
-      openDot.position.z = gauge - mix(.078, .29, movement);
+      machine.update(movement, {...state,pointLockFraction:lockFraction,pointIndication:indication});
     });
   }
 

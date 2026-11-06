@@ -10,6 +10,7 @@ import { TRACK_VIEWS, buildTrackView } from '../dist/track-models.js';
 import { SIGNALLING_VIEWS, buildSignallingView } from '../dist/signalling-models.js';
 import { PLATFORM_VIEWS, buildPlatformView } from '../dist/platform-models.js';
 import { VIEWS } from '../dist/model.js';
+import {topologyMarkup} from '../dist/topology-ui.js';
 import {normalizeTechnology,technologyFromUrl,technologyForView,technologyForComponent,controlRoute,technologyFlow,technologyNote} from '../dist/technology.js';
 assert.deepEqual(normalizeTechnology(),{propulsion:'lim',control:'loop'});
 assert.deepEqual(technologyFromUrl('?propulsion=rotary&control=loop',{propulsion:'lim',control:'radio'}),{propulsion:'rotary',control:'loop'});
@@ -104,11 +105,11 @@ for(const view of [...Object.keys(TRACK_VIEWS),...Object.keys(SIGNALLING_VIEWS),
   const variants=VIEWS[view]?.variants||[];
   if(variants.length<2)continue;
   for(const cutaway of [false,true]){
-    const signatures=variants.map(v=>fingerprint(scene(view,v.id,{propulsion:'lim',control:'loop'},cutaway)));
+    const signatures=variants.map(v=>v.defaultPresentation==='connections'?topologyMarkup(v.topology,v.component):fingerprint(scene(view,v.id,{propulsion:'lim',control:'loop'},cutaway)));
     assert.equal(new Set(signatures).size,variants.length,`${view}: a variant is a visual no-op with cutaway=${cutaway}`);
   }
   compared+=variants.length;
 }
-console.log(`PASS actual geometry: 60 independent technology scenes, 10 architecture/propulsion combinations, ${compared} track/signalling/platform variants in assembled and cutaway states`);
+console.log(`PASS actual geometry: 60 independent technology scenes, 10 architecture/propulsion combinations, ${compared} track/signalling/platform variants in their physical or declared connection representation`);
 
 

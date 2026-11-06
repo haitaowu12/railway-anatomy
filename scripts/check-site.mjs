@@ -122,7 +122,7 @@ if (catalog && model && tours && atlas) {
 
   await check('Expanded concepts and source records have complete, public content', async () => {
     assert.equal(CONCEPTS.length, 330, 'Update the published content count when the release scope changes');
-    assert.equal(SOURCES.length, 229, 'Update the published source count when the release scope changes');
+    assert.equal(SOURCES.length, 233, 'Update the published source count when the release scope changes');
     unique(CONCEPTS.map(item => item.id), 'Concepts');
     unique(SOURCES.map(item => item.id), 'Sources');
     for (const source of SOURCES) {

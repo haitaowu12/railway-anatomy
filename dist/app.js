@@ -50,7 +50,7 @@ const searchPanel=$('#equipment-search-panel');if(searchPanel){searchPanel.open=
 const labelElements=new Map();
 let labelLayoutKey='',lastSequenceKey='',lastTopologyStep='';
 const isProcessPage=()=>state.page==='processes'||state.page==='people'||state.page==='learn'&&Boolean(processFor(state.view,state.component,state.variant));
-const currentTopology=()=>isPointJourney()&&state.view==='interlocking'?pointIndicationDiagram(state.variant):VIEWS[state.view]?.variants?.find(v=>v.id===state.variant)?.topology||systemDiagram(state,VIEWS[state.view])||null;
+const currentTopology=()=>(isPointJourney()||state.variant==='detector-missing')&&state.view==='interlocking'?pointIndicationDiagram(state.variant):VIEWS[state.view]?.variants?.find(v=>v.id===state.variant)?.topology||systemDiagram(state,VIEWS[state.view])||null;
 const isConnections=()=>state.presentation==='connections'&&Boolean(currentTopology()||electricalStudy(state.view));
 const guideForState=()=>state.view==='platform-interface'?platformAnimationFor(state):animationFor(VIEWS[state.view],state.variant,state.component);
 const doorClosureComparison=()=>state.scenario==='door-open'&&['vehicle','services'].includes(state.view)&&guideForState()===VIEWS[state.view]?.componentAnimations?.doors;
@@ -87,7 +87,7 @@ function writeHash(){
   for(const key of ['pointChapter','pointCase','pointPhase'])url.searchParams.delete(key);
   if(isPointJourney()){
     if(state.view==='interlocking')url.searchParams.set('pointChapter','interlocking');
-    if(state.variant==='unproved')url.searchParams.set('pointCase','unproved');
+    if(state.variant!=='proved')url.searchParams.set('pointCase',state.variant);
     if(state.pointPhase>0)url.searchParams.set('pointPhase',String(Math.round(state.pointPhase*100)/100));
   }
   for(const key of ['ciDomain','ciArchitecture','ciScenario','ciTrace','ciStep','ciLinks'])url.searchParams.delete(key);
@@ -130,7 +130,7 @@ function readHash(){
     if(a==='point-proof'){
       const interlocking=query.get('pointChapter')==='interlocking',phase=Number(query.get('pointPhase'));
       state.view=interlocking?'interlocking':'switch-drive';state.domain=interlocking?'control':'track';
-      state.component=interlocking?'interlocking':'track-point-machine';state.variant=query.get('pointCase')==='unproved'?'unproved':'proved';
+      state.component=interlocking?'interlocking':'track-point-machine';state.variant=['unproved','detector-missing'].includes(query.get('pointCase'))?query.get('pointCase'):'proved';
       state.pointPhase=interlocking?1:Number.isFinite(phase)?Math.max(0,Math.min(1,phase)):0;
     }
     if(isInterfaceTour()){
@@ -453,17 +453,17 @@ function updateTopologyStep(step,key){
 }
 function updatePointState(fraction){
   const current=pointMachineState(fraction,state.variant);
-  for(const key of ['position','locking','indication']){const node=$(`[data-point-state="${key}"]`);if(node&&node.textContent!==current[key])node.textContent=current[key];}
-  $('#point-state').classList.toggle('is-proved',current.proof);
+  for(const key of ['nearPosition','farPosition','locking','indication']){const node=$(`[data-point-state="${key}"]`);if(node&&node.textContent!==current[key])node.textContent=current[key];}
+  $('#point-state').classList.toggle('is-proved',current.indication!=='Neither');
 }
 function renderPointJourney(){
   const active=isPointJourney(),physical=state.view==='switch-drive';
   $('#point-journey').hidden=!active;$('#point-current').hidden=!active||!physical;$('#point-state').hidden=!active||!physical;
   if(!active)return;
   $('#scene-title').textContent=physical?'How a point machine moves a turnout':'Where the point indication goes';
-  $('#point-journey').innerHTML=`<nav aria-label="Point-machine journey"><button data-point-chapter="mechanism" ${physical?'aria-current="step"':''}>1 · Move, lock & detect</button><button data-point-chapter="interlocking" ${!physical?'aria-current="step"':''}>2 · Follow the indication →</button></nav>`;
+  $('#point-journey').innerHTML=`<nav aria-label="Point-machine journey"><button data-point-chapter="mechanism" ${physical?'aria-current="step"':''}>1 · Move, lock & detect</button><button data-point-chapter="interlocking" ${!physical?'aria-current="step"':''}>2 · Follow the indication →</button></nav>${physical?'<p class="point-arrangement">Four rods: 2 operating + 2 detector. Internal functions shown schematically.</p>':''}`;
   $('#arrangement-label').textContent='Throw outcome';
-  for(const button of $$('#scenario-buttons button'))button.textContent=button.dataset.variant==='unproved'?'Stopped short':'Complete throw';
+  for(const button of $$('#scenario-buttons button'))button.textContent=VIEWS['switch-drive'].variants.find(v=>v.id===button.dataset.variant)?.label||button.textContent;
   if(physical){
     $('#point-current').innerHTML='<div class="point-step-heading"><strong id="point-current-label"></strong><div><button id="point-previous" aria-label="Previous point-machine stage">←</button><button id="point-next" aria-label="Next point-machine stage">→</button></div></div><p id="point-current-caption"></p>';
     updatePointState(viewer?phaseFraction(viewer.getPhase()):state.pointPhase||0);updateMotionGuide();
@@ -674,7 +674,7 @@ function openSources(sourceId){
   $('#about-dialog').showModal();$('#dialog-body').scrollTop=0;
 }
 
-function pinIds(){if(isPointJourney()&&state.view==='switch-drive')return ['track-point-machine','track-stretcher','track-switch-rail','track-point-detection'];return viewer?.getComponentIds(state.view).filter(id=>parts.has(id)&&equipmentInView(id)&&!['network-overview','depot-layout','operations-centre'].includes(id))||[];}
+function pinIds(){if(isPointJourney()&&state.view==='switch-drive')return ['track-point-machine','track-switch-rail','track-point-detection','track-stock-rail'];return viewer?.getComponentIds(state.view).filter(id=>parts.has(id)&&equipmentInView(id)&&!['network-overview','depot-layout','operations-centre'].includes(id))||[];}
 function modelNumber(id){const index=pinIds().indexOf(targetFor(id));return index<0?'·':String(index+1).padStart(2,'0');}
 
 // Label nodes remain stable between frames so keyboard focus survives camera motion.

@@ -1,3 +1,4 @@
+import {pointIndicationDiagram} from './point-machine.js';
 import {CONTROL_INTERFACE_CONCEPTS} from './control-interfaces-data.js';
 import {applyDepotConfig} from './depot-data.js';
 import {applyOccConfig} from './occ-data.js';
@@ -411,25 +412,32 @@ export const NEW_VIEWS = {
   },
   "switch-drive": {
     "label": "Point machine",
-    "searchTerms": ["point drive", "switch machine", "turnout motor", "switch mechanism"],
+    "searchTerms": [
+      "point drive",
+      "switch machine",
+      "turnout motor",
+      "switch mechanism"
+    ],
     "title": "How a point machine moves a turnout",
     "component": "track-point-machine",
     "level": "Assembly",
-    "note": "Follow the motor, blade linkage, lock and returned end-position indication in this schematic point machine.",
+    "note": "Four-rod arrangement: two operating rods and two detector rods. The internal actuator, locks and contacts are shown functionally.",
     "variants": [
       {
         "id": "proved",
         "label": "Complete throw",
-        "title": "Move, lock and return the indication",
-        "description": "The motor moves the blades to end B through the linkage. The lock engages, then the detector returns the end-B indication.",
+        "title": "Move, lock and indicate B",
+        "description": "Each blade has its own operating and detector rod. At B, the near blade is closed, the far blade is open and both locks engage. The B indication requires all of these conditions.",
         "nodes": [
           "Drive command",
           "Physical movement",
           "Position indication"
         ],
         "sources": [
-          "K16",
-          "K17"
+          "PM01",
+          "PM02",
+          "PM03",
+          "PM04"
         ],
         "component": "track-point-machine"
       },
@@ -437,15 +445,32 @@ export const NEW_VIEWS = {
         "id": "unproved",
         "label": "Stopped short",
         "title": "Travel stops before end B",
-        "description": "The blades stop between the ends. The lock remains released and no end-B indication returns to the interlocking.",
+        "description": "The blades stop between the ends. Both locks stay released; neither A nor B is indicated.",
         "nodes": [
           "Command present",
           "Proof incomplete",
           "End-B indication missing"
         ],
         "sources": [
-          "K16",
-          "K17"
+          "PM01",
+          "PM03"
+        ],
+        "component": "track-point-detection"
+      },
+      {
+        "id": "detector-missing",
+        "label": "One detector missing",
+        "title": "Locked at B, indication unavailable",
+        "description": "Both blades reach B and both locks engage, but the far-blade detector input is unavailable. Neither end is indicated.",
+        "nodes": [
+          "Both blades at B",
+          "Locks engaged",
+          "Detector input missing",
+          "No B indication"
+        ],
+        "sources": [
+          "PM01",
+          "PM03"
         ],
         "component": "track-point-detection"
       }
@@ -703,6 +728,23 @@ export const NEW_VIEWS = {
           "S11"
         ],
         "component": "point-machine"
+      },
+      {
+        "id": "detector-missing",
+        "label": "One detector missing",
+        "title": "Locked at B, indication unavailable",
+        "description": "Both blades reach B and both locks engage, but the far-blade detector input is unavailable. Neither end is indicated.",
+        "nodes": [
+          "Both blades at B",
+          "Locks engaged",
+          "Detector input missing",
+          "No B indication"
+        ],
+        "sources": [
+          "PM01",
+          "PM03"
+        ],
+        "component": "interlocking"
       }
     ]
   },
@@ -4124,3 +4166,11 @@ NEW_VIEWS['station-networks'].note='Open the interface explorer to compare power
 NEW_VIEWS['infrastructure-assets']={label:'Structures & drainage',title:'Follow structural support and the drainage opening',component:'route-formation',domain:'track',parent:'track-support',motion:false,note:'Original physical section. Bridge deck, girders, bearings and abutments show a load path; the open culvert shows a water passage. No capacity, inspection result or release is inferred.',variants:[{id:'assets',label:'Physical section',title:'Structures and drainage',description:'Inspect the support and passage interfaces, then open the separate maintenance process for observations and decisions.',component:'route-formation',nodes:['Rail and sleeper','Formation / bridge deck','Bearings and abutments','Culvert and outfall'],sources:['I01','I02','I03']}]};
 const trackDomain=SYSTEMS.find(d=>d.id==='track');trackDomain.views.splice(trackDomain.views.indexOf('infrastructure-care'),0,'infrastructure-assets');
 for(const id of ['route-formation','route-drainage','route-bridge']){PART_VIEWS[id]='infrastructure-assets';PART_VARIANTS[id]='assets';PART_CONTEXTS[id]=['infrastructure-assets'];PART_VIEW_VARIANTS[id]={'infrastructure-assets':['assets']};}
+
+PART_VIEWS['track-stretcher']='turnout';PART_VARIANTS['track-stretcher']='straight';
+PART_CONTEXTS['track-stretcher']=PART_CONTEXTS['track-stretcher'].filter(view=>view!=='switch-drive');
+delete PART_VIEW_VARIANTS['track-stretcher']['switch-drive'];
+for(const contexts of Object.values(PART_VIEW_VARIANTS))for(const view of ['switch-drive','interlocking']){
+ const variants=contexts[view];if(variants?.includes('proved')&&variants.includes('unproved'))variants.push('detector-missing');
+}
+Object.assign(NEW_VIEWS.interlocking.variants.find(v=>v.id==='detector-missing'),{defaultPresentation:'connections',topology:pointIndicationDiagram('detector-missing')});

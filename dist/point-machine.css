@@ -15,12 +15,13 @@
 .point-journey .tour-bar > span { display: none; }
 .point-journey .workspace-heading { margin-bottom: 12px; }
 .point-journey #scene-title { font-size: clamp(25px, 3vw, 34px); line-height: 1.2; }
-#point-journey nav { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
-.point-journey #point-journey { display: inline-block; width: 58%; vertical-align: top; }
+#point-journey nav { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+.point-journey #point-journey { display: inline-block; width: 55%; vertical-align: top; }
+.point-arrangement { margin: 0 0 16px; font-size: 13px; color: var(--muted); }
 #point-journey button { min-height: 44px; padding: 8px 12px; border-bottom: 3px solid transparent; font-size: 14px; color: var(--muted); }
 #point-journey button[aria-current] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.point-journey .comparison-panel { display: inline-block; width: 41%; vertical-align: top; margin: 0 0 12px; padding: 0; }
-.point-journey .arrangement-bar { justify-content: flex-end; }
+.point-journey .comparison-panel { display: inline-block; width: 44%; vertical-align: top; margin: 0 0 16px; padding: 0; }
+.point-journey .arrangement-bar { justify-content: flex-start; }
 .point-journey #arrangement-label { display: none; }
 .point-current { margin: 0 0 14px; max-width: 84ch; }
 .point-step-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -41,7 +42,7 @@
 .point-journey #motion-steps { display: grid; grid-template-columns: 1fr; gap: 4px; }
 .point-journey #motion-steps button { text-align: left; padding: 11px 10px; min-height: 44px; border-left: 3px solid transparent; border-bottom: 0; white-space: normal; font-size: 14px; }
 .point-journey #motion-steps button.active { border-left-color: var(--accent); background: var(--accent-soft); }
-.point-state { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 13px 16px; margin: 0; border-top: 1px solid var(--line); background: var(--surface); }
+.point-state { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 13px 16px; margin: 0; border-top: 1px solid var(--line); background: var(--surface); }
 .point-state dt { font-size: 12px; color: var(--muted); }
 .point-state dd { margin: 4px 0 0; font-size: 14px; font-weight: 600; }
 .point-state.is-proved [data-point-state="indication"] { color: var(--accent); }
@@ -74,7 +75,7 @@
   .point-journey #quick-play { display: inline-flex; }
   .point-journey .sequence-panel { margin-top: 16px; }
   .point-journey #motion-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .point-state { gap: 8px; padding: 10px; }
+  .point-state { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; }
   .point-state dt { font-size: 12px; }
   .point-state dd { font-size: 13px; }
 }

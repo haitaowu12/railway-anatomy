@@ -118,7 +118,7 @@ export const TOURS = [
     "domain": "track",
     "view": "switch-drive",
     "component": "track-point-machine",
-    "explanation": "The motor moves the switch blades through a linkage. Locking holds the end position; detection returns an indication of the required condition. Follow the complete throw, then compare a throw that stops short.",
+    "explanation": "Follow two operating rods, two blade detector rods and positive locking. Compare a complete throw, stopped travel and a missing detector input, then trace the B indication to the interlocking.",
     "actionText": "Step through the mechanism, then follow the returned indication to the interlocking.",
     "actionLabel": "Restart the point-machine journey",
     "action": {

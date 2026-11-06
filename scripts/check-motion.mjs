@@ -55,7 +55,7 @@ signalling.buildSignallingView('train-detection',api);
 for(const id of ['depot-maintenance','depot-workshop'])operations.buildOperationsView(id,api);
 const failures=[];let passed=0;
 function check(name,fn){try{fn();passed++;console.log('PASS '+name);}catch(e){failures.push(name);console.error('FAIL '+name+': '+e.message);}}
-const variants={turnout:['straight','diverging','crossover'],'switch-drive':['proved','unproved'],crossing:['frog','diamond'],'train-detection':['track-circuit','axle-counter','balise'],'depot-maintenance':['lifting','jacks','wheel-lathe'],'depot-workshop':['lathe']};
+const variants={turnout:['straight','diverging','crossover'],'switch-drive':['proved','unproved','detector-missing'],crossing:['frog','diamond'],'train-detection':['track-circuit','axle-counter','balise'],'depot-maintenance':['lifting','jacks','wheel-lathe'],'depot-workshop':['lathe']};
 check('Every new mechanical sequence has finite captions aligned with the player range',()=>{
  for(const [view,options]of Object.entries(variants))for(const id of options){
   const option=application.VIEWS[view].variants.find(v=>v.id===id),guide=option.animation||application.VIEWS[view].animation;
@@ -92,16 +92,15 @@ check('Fixed-crossing examples move the wheelset without moving a switch',()=>{
   set('crossing',variant,{phase:5});assert.equal(train.position.x,2.8);assert.equal(train.position.y,height);
  }
 });
-check('Point drive separates unlock, blade movement and target position proof',()=>{
- for(const variant of ['proved','unproved']){
-  const r=set('switch-drive',variant,{phase:0}),machine=(r.parts.get('track-point-machine')||[]).find(visible),gear=one(r,'illustrative-drive-gear'),rod=one(r,'linear-output-rod');
-  const initialAngle=gear.rotation.x,initialTravel=rod.position.z;
-  assert.equal(machine.userData.lockEngaged,true);assert.equal(machine.userData.targetProved,false);
-  set('switch-drive',variant,{phase:.5});assert.equal(gear.rotation.x,initialAngle,'The pinion moved during the unlock interval');assert.equal(rod.position.z,initialTravel);
-  set('switch-drive',variant,{phase:2.5});assert.equal(machine.userData.lockEngaged,false);assert.equal(machine.userData.targetProved,false);assert(gear.rotation.x>initialAngle);
-  set('switch-drive',variant,{phase:5});assert.equal(machine.userData.lockEngaged,variant==='proved');assert.equal(machine.userData.targetProved,variant==='proved');
-  assert(Math.abs(rod.position.z-initialTravel+gear.userData.gearPitchRadius*(gear.rotation.x-initialAngle))<1e-8,'Pinion rotation does not agree with rack travel');
-  const atEnd=geometryDigest(r.root);set('switch-drive',variant,{phase:9});assert.equal(geometryDigest(r.root),atEnd,'Unproved example must not hunt');
+check('Point drive separates locks, blade travel and A/B correspondence',()=>{
+ for(const variant of ['proved','unproved','detector-missing']){
+  const r=set('switch-drive',variant,{phase:0}),machine=(r.parts.get('track-point-machine')||[]).find(visible),rod=one(r,'point-operating-rod-near');
+  const initialTravel=rod.position.z;
+  assert.equal(machine.userData.lockEngaged,true);assert.equal(machine.userData.indication,variant==='detector-missing'?'Neither':'A');
+  set('switch-drive',variant,{phase:.5});assert.equal(rod.position.z,initialTravel,'Blade drive moved before locks withdrew');assert.equal(machine.userData.indication,'Neither');
+  set('switch-drive',variant,{phase:2.5});assert.equal(machine.userData.lockEngaged,false);assert.equal(machine.userData.targetProved,false);assert(rod.position.z<initialTravel);
+  set('switch-drive',variant,{phase:5});assert.equal(machine.userData.lockEngaged,variant!=='unproved');assert.equal(machine.userData.targetProved,variant==='proved');
+  const atEnd=geometryDigest(r.root);set('switch-drive',variant,{phase:9});assert.equal(geometryDigest(r.root),atEnd,'A completed or interrupted throw must not hunt');
  }
 });
 check('Track circuit responds to wheelset shunt and retains occupation until the rear axle clears',()=>{

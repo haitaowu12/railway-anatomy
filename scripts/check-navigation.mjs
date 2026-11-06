@@ -90,7 +90,7 @@ for(const [id,process,step]of [['depot-energy','work-protection','movement'],['i
 }
 const pointLesson=harness.lesson('point-proof',base);
 assert.equal(pointLesson.view,'switch-drive');assert.equal(pointLesson.variant,'proved');assert.equal(pointLesson.pointPhase,0);
-for(const view of ['switch-drive','interlocking'])for(const variant of ['proved','unproved']){
+for(const view of ['switch-drive','interlocking'])for(const variant of ['proved','unproved','detector-missing']){
   const expected={...pointLesson,view,variant,domain:view==='interlocking'?'control':'track',component:view==='interlocking'?'interlocking':'track-point-machine',presentation:view==='interlocking'?'connections':'spatial',pointPhase:view==='interlocking'?1:.9};
   const reopened=harness.roundTrip(expected);
   for(const key of ['page','view','variant','pointPhase'])assert.equal(reopened.state[key],expected[key],`Point journey lost ${key} after reopening ${reopened.url}`);

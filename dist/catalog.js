@@ -15,6 +15,10 @@ import {DEPTH_SOURCES} from './depth-content.js';
 import {MECHANICAL_SOURCES} from './mechanical-content.js';
 // Public-source educational content. Geometry and selected arrangements are illustrative.
 export const SOURCES = [
+  {id:'PM01',title:'P80 Point Machine — December 2015 brochure',publisher:'Alstom',url:'https://pdfcoffee.com/alstom-p80-pdf-free.html',description:'Two independent operating rods, two detector rods and locking of the open and closed blades.',scope:'Alstom P80 Point Machine/EN/12.2015, General description and Key technical features. Public text mirror of the original brochure; supports the four-rod arrangement, not a reproduction of its internals.'},
+  {id:'PM02',title:'UNISTAR HR point-setting system',publisher:'voestalpine Railway Systems',url:'https://www.voestalpine.com/railway-systems/en/products/unistar-hr-point-machine/',description:'Split power and drive/locking/detection modules, internal prism locking and installations with or without stretcher bars.',scope:'Manufacturer product page, Technical description and Technical characteristics. An alternative electro-hydraulic family; its arrangement and ratings do not define all point machines.'},
+  {id:'PM03',title:'UNISTAR ELP end-position detector',publisher:'voestalpine Railway Systems',url:'https://www.voestalpine.com/railway-systems/en/products/unistar-elp-end-position-detector/',description:'Two detector rods monitor the open and closed switch point.',scope:'Manufacturer product description. Supports detecting both blades and the distinction between detector and operating rods.'},
+  {id:'PM04',title:'MCEM91 point machine',publisher:'Vossloh',url:'https://www.vossloh.com/en/products/mcem91-point-machine',description:'Electromechanical actuation, internal locking and end-position detection.',scope:'Manufacturer product page, Electromechanical operation and Operation. Supports an alternative internally locked point-machine family; no universal rod count or internal transmission is inferred.'},
   {
     "id": "P01",
     "title": "DC traction power supply system",
@@ -1769,12 +1773,9 @@ export const CONCEPTS = [
     "summary": "A point-operating system moves the switch rails and provides the required locking function.",
     "details": [
       "Point systems combine a drive with a locking arrangement; detection may be integrated or separate. Movement, retention and position reporting remain distinct functions.",
-      "The model uses a generic electromechanical example: a motor and transmission move a drive rod linked to the blades. A separate lock indicator explains why reaching a position and securing it are not the same action."
+      "The four-rod study gives each blade its own operating rod and detector rod. Two illustrated positive locks secure the operating slides. The exposed drive and lock layout is functional, rather than a reproduction of a supplier’s internal mechanism."
     ],
-    "sources": [
-      "K17",
-      "K21"
-    ],
+    "sources": ["PM01","PM02","PM03","PM04","K17"],
     "caveat": "The cutaway is original illustrative geometry, without operating instructions.",
     "related": [
       "track-switch-rail",
@@ -1788,12 +1789,10 @@ export const CONCEPTS = [
     "label": "Point-position detection",
     "summary": "Feedback reports the physical switch state rather than merely repeating the requested route.",
     "details": [
-      "Point detectors check switch-rail positions and can form part of the locking and proving arrangement. Their task differs from the drive that moves the rails.",
+      "Detector rods follow the switch blades independently of the operating rods. The four-rod study checks the closed blade, the open blade and the locks before returning an end indication.",
       "The teaching model separates a requested route from confirmed position. A command or a stopped motor alone is not treated as proof that the blades and locking arrangement have reached the required state."
     ],
-    "sources": [
-      "K17"
-    ],
+    "sources": ["PM01","PM02","PM03","PM04","K17"],
     "caveat": "This functional explanation supplies no signalling circuit, bypass or recovery sequence.",
     "related": [
       "track-point-machine",

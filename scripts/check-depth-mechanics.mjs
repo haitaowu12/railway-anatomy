@@ -169,11 +169,33 @@ check('Fastening inspection removes springs while retaining shoulders on the rai
   assert(v.getInspectionState().stages.some(s=>s.label==='Expose the insulating interfaces'));v.restoreExploration();
 });
 
-check('Point-drive rack travel and pinion rotation share pitch, while lock and proof retain independent states',()=>{
-  let r=sh.set('switch-drive','normal',0),gear=node('illustrative-drive-gear',r.root),rack=node('point-drive-rack',r.root),output=node('linear-output-rod',r.root);
-  const z=output.position.z,a=gear.rotation.x;sh.set('switch-drive','normal',3.2);assert(Math.abs(output.position.z-z)>.01);assert(Math.abs(output.position.z-z+gear.userData.gearPitchRadius*(gear.rotation.x-a))<1e-9);
-  assert(Math.abs(gear.userData.rackPitch-2*Math.PI*gear.userData.gearPitchRadius/12)<1e-12);assert(rack.children.length>=14);
-  r=sh.set('switch-drive','unproved',5);const machine=(r.parts.get('track-point-machine')||[])[0];assert.equal(machine.userData.targetProved,false);assert.equal(machine.userData.lockEngaged,false);
+check('Four point rods remain attached to their own blades and locks engage real openings',()=>{
+ for(const variant of ['proved','unproved','detector-missing'])for(const phase of [0,.5,2.25,3.6,4.5,5]){
+  const r=sh.set('switch-drive',variant,phase),machine=(r.parts.get('track-point-machine')||[])[0],rods=[];
+  r.root.traverse(n=>{if(n.userData.rodKind)rods.push(n);});assert.equal(rods.length,4);assert.equal(rods.filter(n=>n.userData.rodKind==='operating').length,2);
+  const blades=(r.parts.get('track-switch-rail')||[]).flatMap(n=>n.children.filter(c=>c.isMesh));
+  for(const rod of rods){
+    const endpoint=rod.children.find(n=>n.name.startsWith('point-'+rod.userData.rodKind+'-attachment-')),at=world(endpoint);
+    const ray=new THREE.Raycaster(new THREE.Vector3(at.x,2,at.z),new THREE.Vector3(0,-1,0));
+    assert(ray.intersectObjects([blades[rod.userData.bladeSide<0?0:1]],false).length,rod.name+' clevis does not reach a blade');
+    const body=rod.children.find(n=>n.isMesh);assert(body.geometry.attributes.position.count>0);
+  }
+  for(const side of ['near','far']){
+    const bolt=node('point-lock-'+side,r.root),slide=node(bolt.userData.slide,r.root);
+    const aligned=bolt.userData.notches.some(z=>Math.abs(z+slide.position.z-bolt.position.z)<1e-6);
+    if(machine.userData.lockEngaged){assert(aligned,'Lock entered solid slide material');assert(Math.abs(bolt.position.y-bolt.userData.engagedY)<1e-9);}
+    else if(phase>=.75&&phase<=3.6)assert(Math.abs(bolt.position.y-bolt.userData.clearY)<1e-9,'A lock intersects the slide during travel');
+  }
+ }
+ for(const [phase,closedIndex]of [[0,1],[5,0]]){
+   const r=sh.set('switch-drive','proved',phase),meshes=r.parts.get('track-switch-rail')[0].children.filter(n=>n.isMesh);
+   const toe=meshes.map(mesh=>{const p=mesh.geometry.attributes.position;const head=Array.from({length:14},(_,i)=>new THREE.Vector3().fromBufferAttribute(p,i)).filter(v=>v.y>.84+.22);return {min:Math.min(...head.map(p=>p.z)),max:Math.max(...head.map(p=>p.z))};});
+   const gapNear=toe[0].min-(-.9+.07),gapFar=(.9-.07)-toe[1].max;
+   assert(Math.abs([gapNear,gapFar][closedIndex])<1e-4,'Closed toe does not meet the stock-rail gauge face');
+   assert([gapNear,gapFar][1-closedIndex]>.15,'Opposite blade has no visible open clearance');
+ }
+ const r=sh.set('switch-drive','detector-missing',5),machine=(r.parts.get('track-point-machine')||[])[0];
+ assert(machine.userData.lockEngaged);assert(!machine.userData.targetProved,'Physical locking substituted for a missing blade input');
 });
 
 check('Every new authored lesson resolves its explicit primary references',()=>{

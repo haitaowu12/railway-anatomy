@@ -49,9 +49,11 @@ The models cover track and guideway, vehicles and propulsion, traction power, tr
 
 ### Follow a point machine
 
-Choose **Guided tours → Follow a point machine**, or open `#learn/point-proof` on a local preview. **Move, lock & detect** follows six stages from the initial locked position to the returned end-B indication. The blade, lock and indication readouts follow the same state as the illustrated mechanism. Use the stage buttons, previous/next controls or playback to inspect the throw.
+Choose **Guided tours → Follow a point machine**, or [open the journey](https://haitaowu12.github.io/railway-anatomy/#learn/point-proof). **Move, lock & detect** follows six stages through two operating rods, two blade detector rods and positive locking. The near blade, far blade, locks and A/B/neither indication readouts follow the illustrated mechanism. Use the stage buttons, previous/next controls or playback.
 
-Compare **Complete throw** with **Stopped short**, then choose **Follow the indication** to trace the same outcome into the interlocking. The diagram shows the point condition alongside the other required route inputs. Switching chapters keeps the selected case; copied links retain the chapter, case and mechanism stage. The sequence illustrates one schematic arrangement; its playback timing is not an equipment specification.
+Compare **Complete throw**, **Stopped short** and **One detector missing**, then choose **Follow the indication** to trace the same outcome into the interlocking. The point condition appears alongside the other required route inputs. Links and history retain the chapter, case and stage.
+
+The [point-machine study notes](docs/POINT-MACHINE-STUDY.md) distinguish this four-rod arrangement from other families, explain the functional internal layout and link the Alstom, voestalpine, Vossloh and Siemens references. The [field guide](https://haitaowu12.github.io/railway-anatomy/reading.html#guide-point-machine) covers the same connections and cases.
 
 ### Collection, supply and return
 
