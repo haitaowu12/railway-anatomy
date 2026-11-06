@@ -7,3 +7,5 @@ Firebase Hosting is the primary destination for future releases at https://railw
 - For Firebase, use `firebase deploy --only hosting --project tony-wu-projects`. The checked-in configuration pins the `railway-anatomy` site.
 - Keep the shared Firebase project on its no-cost Spark plan; billing and paid services are outside this deployment.
 - Exercise an equipment journey and its reading-page link on the published Firebase address. Retain the existing hosts unless a migration is explicitly requested.
+
+The `Firebase Hosting` workflow packages and publishes successful `main` revisions. Pull requests only run checks. Google federation and the two repository variables must be configured before automated publication is active.
