@@ -4,7 +4,7 @@ A growing public reference for understanding how a railway fits together: its pl
 
 Railway Anatomy is intended especially for graduates, newcomers and people moving into another railway discipline. It connects familiar things—a train, a platform, a control room—with the less visible systems behind them. The aim is to make those relationships easier to explore, discuss and learn, and to point readers toward useful public material for further study.
 
-**[Explore Railway Anatomy](https://haitaowu12.github.io/railway-anatomy/)** · [Firebase](https://tony-railway-anatomy.web.app/) · [GPT Sites](https://rail-systems-atlas.techiesea.chatgpt.site) · [Read the guides and sources](https://haitaowu12.github.io/railway-anatomy/reading.html) · [Suggest a correction or addition](https://github.com/haitaowu12/railway-anatomy/issues/new/choose)
+**[Explore Railway Anatomy](https://railway-anatomy.web.app/)** · [GitHub Pages](https://haitaowu12.github.io/railway-anatomy/) · [GPT Sites](https://rail-systems-atlas.techiesea.chatgpt.site) · [Read the guides and sources](https://railway-anatomy.web.app/reading.html) · [Suggest a correction or addition](https://github.com/haitaowu12/railway-anatomy/issues/new/choose)
 
 This is a young project. Some topics are developed further than others, and railway practice varies between systems. Feedback from learners and practitioners is welcome: a confusing explanation, a missing interface, a misleading model or a better public reference is a useful contribution. You do not need to write code to help.
 
@@ -168,9 +168,9 @@ The site uses the Colorfigures drawing adapter for physical models, with the exi
 
 ## Publication and licence
 
-[GitHub Pages](https://haitaowu12.github.io/railway-anatomy/) is the primary published destination. The repository's Pages workflow checks the source, builds and deploys `build/`. The existing [GPT Site](https://rail-systems-atlas.techiesea.chatgpt.site) receives the same application build through its separate source/version workflow. Both hosts expose `release.json` so matching application versions can be verified; a GitHub commit alone does not update the second host.
+[Firebase Hosting](https://railway-anatomy.web.app/) is the primary destination for future releases. [GitHub Pages](https://haitaowu12.github.io/railway-anatomy/) remains available. The repository's Pages workflow checks the source, builds and deploys `build/`. The existing [GPT Site](https://rail-systems-atlas.techiesea.chatgpt.site) receives the same application build through its separate source/version workflow. Both hosts expose `release.json` so matching application versions can be verified; a GitHub commit alone does not update the second host.
 
-The [Firebase site](https://tony-railway-anatomy.web.app/) is an additional host. Publish the same checked `build/` artifact with:
+Publish the checked `build/` artifact to Firebase with:
 
 ```sh
 npm run check
@@ -179,7 +179,7 @@ npm run check:release
 firebase deploy --only hosting --project tony-wu-projects
 ```
 
-The Firebase configuration pins the `tony-railway-anatomy` site on the shared Spark project. The existing Pages workflow and GPT Site remain in service.
+The Firebase configuration pins the `railway-anatomy` site on the shared Spark project. The existing Pages workflow and GPT Site remain in service.
 
 Project code and original content are provided under the [MIT licence](LICENSE). Referenced publications and vendored dependencies retain their own licences and rights.
 
