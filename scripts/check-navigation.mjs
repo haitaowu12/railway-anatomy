@@ -8,6 +8,7 @@ import {normalizePlatformState,platformForComponent} from '../dist/platform-conf
 import {DOMAINS,VIEWS,MODES,variantFor,defaultVariant,cutawayFor} from '../dist/model.js';
 import {CONCEPTS} from '../dist/catalog.js';
 import {TOURS} from '../dist/tours.js';
+import {READING_GUIDES} from '../dist/reading-guides.js';
 import {turnoutGuide} from '../dist/turnout-journey.js';
 import {motionStep} from '../dist/interaction-state.js';
 import {domainForView,routeState,viewTrail} from '../dist/navigation.js';
@@ -253,8 +254,8 @@ for(const [width,open]of [[390,false],[740,false],[741,true],[1280,true]]){
 // Real discovery regressions: the first finder indexed nonexistent interface
 // fields and returned no result for "BMS". Verify actual terms and destinations,
 // including that process discovery does not resurrect a legacy 3D workflow.
-const navigationIndex=buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS});
-const finderCases=[['point drive','view','switch-drive'],['switch machine','view','switch-drive'],['turnout motor','tour',String(TOURS.findIndex(t=>t.id==='point-proof'))],[' BMS ','interface','building'],['TVCS','interface','tunnel'],['pump level','interface','drainage'],['ATP','interface','signalling'],['duty handover','process','duty-handover']];
+const navigationIndex=buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS,roles:PEOPLE_ROLES,guides:READING_GUIDES});
+const finderCases=[['onboard driving','role','onboard-operator'],['both wheels','guide','turnout-wheels'],['point drive','view','switch-drive'],['switch machine','view','switch-drive'],['turnout motor','tour',String(TOURS.findIndex(t=>t.id==='point-proof'))],[' BMS ','interface','building'],['TVCS','interface','tunnel'],['pump level','interface','drainage'],['ATP','interface','signalling'],['duty handover','process','duty-handover']];
 for(const [query,kind,id]of finderCases)assert(searchNavigation(navigationIndex,query).some(item=>item.kind===kind&&item.id===id),`Finder cannot reach ${kind}/${id} using ${query}`);
 assert.equal(searchNavigation(navigationIndex,' BMS ')[0].id,'building','An exact acronym should find the correct owner, not a similarly labelled system');
 assert.equal(searchNavigation(navigationIndex,'duty handover')[0].kind,'process','The decision/evidence destination should precede a physical proxy');
@@ -262,7 +263,7 @@ assert.deepEqual(searchNavigation(navigationIndex,'BMS nonexistentzz'),[],'Multi
 assert.deepEqual(searchNavigation(navigationIndex,'  '),[]);
 assert(!navigationIndex.some(item=>item.kind==='view'&&PROCESS_REDIRECTS[item.id]),'Finder exposes a legacy process-only 3D destination');
 for(const item of navigationIndex){
-  const known=item.kind==='view'?Boolean(VIEWS[item.id]):item.kind==='component'?CONCEPTS.some(c=>c.id===item.id):item.kind==='process'?Boolean(PROCESS_VIEWS[item.id]):item.kind==='interface'?CONTROL_DOMAINS.some(d=>d.id===item.id):item.kind==='tour'?Boolean(TOURS[Number(item.id)]):item.kind==='occ'?OCC_APPLICATIONS.some(a=>a.id===item.id):false;
+  const known=item.kind==='view'?Boolean(VIEWS[item.id]):item.kind==='component'?CONCEPTS.some(c=>c.id===item.id):item.kind==='process'?Boolean(PROCESS_VIEWS[item.id]):item.kind==='interface'?CONTROL_DOMAINS.some(d=>d.id===item.id):item.kind==='tour'?Boolean(TOURS[Number(item.id)]):item.kind==='role'?PEOPLE_ROLES.some(r=>r.id===item.id):item.kind==='guide'?READING_GUIDES.some(g=>g.id===item.id):false;
   assert(known,`Finder points to a missing destination: ${item.kind}/${item.id}`);
 }
 console.log(`PASS production route round trips: ${routes} view/variant/mode routes, 40 independent vehicle configurations, 8 electrical/propulsion bookmarks, ${processRoutes} process-step routes across ${Object.keys(PROCESS_VIEWS).length} processes, legacy process/electrification redirects, connection-mode bookmarks, ETCS radio bookmarks, 6 history/context presentation combinations, malformed-route fallback, parent trails and process-menu resize events`);
@@ -278,7 +279,7 @@ for(const route of ['#occ','#occ/traffic/track-occupation','#explore/operations/
 }
 const oldMap=harness.parse('https://example.test/railway-anatomy/#explore/communications/communications-overview/communications-system/supervision');
 assert.equal(oldMap.view,'communications-network');assert.equal(oldMap.component,'telecom-rack');
-const activeIndex=buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS});
+const activeIndex=buildNavigationIndex({views:VIEWS,concepts:CONCEPTS,tours:TOURS,processes:PROCESS_VIEWS,domains:DOMAINS,roles:PEOPLE_ROLES,guides:READING_GUIDES});
 assert(!activeIndex.some(x=>x.kind==='occ'||x.id==='communications-overview'||x.id==='occ-supervision'));
 assert(!TOURS.some(t=>t.view==='occ-supervision'));
 console.log('PASS retired-workspace recovery and active search destinations');

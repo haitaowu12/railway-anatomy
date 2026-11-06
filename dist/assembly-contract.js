@@ -3,7 +3,7 @@ import { nodeVisible, within } from './exploration.js';
 // A catalogue concept is reusable; an instance is one physical occurrence in
 // one authored scene. Paths are stable across reloads and never use THREE.uuid.
 const slug = value => String(value || 'part').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'part';
-const readable = value => String(value || 'Assembly').replace(/^view-/, '').split('-').map(word => word ? word[0].toUpperCase() + word.slice(1) : '').join(' ');
+const readable = value => String(value || 'Assembly').replace(/^view-/, '').replace(/([a-z0-9])([A-Z])/g, '$1 $2').split('-').map(word => word ? word[0].toUpperCase() + word.slice(1) : '').join(' ');
 
 export function buildAssemblyIndex(record) {
   if (!record) return new Map();

@@ -33,7 +33,7 @@ export function solveElectricalSections(values={}) {
 
 function electricalResult(values) {
   const s=solveElectricalSections(values);
-  const snapshot=s.telemetry==='stale'?solveElectricalSections({...values,condition:s.feederAOpen?'fault':s.condition}):s;
+  const snapshot=s.telemetry==='stale'?solveElectricalSections({arrangement:'separated',condition:'fault',resistance:.12}):s;
   const scan=Array.from({length:101},(_,i)=>solveElectricalSections({...values,resistance:.02+i*.98/100}));
   return {
     summary:s.feederAOpen?(s.arrangement==='coupled'?'The local feeder is open, while the connected section still supplies the fault from source B in this ideal circuit.':'The separated boundary prevents source B feeding section A after the assumed local opening.'):'The physical boundary determines which source contributes to the section-A circuit. A supervisory snapshot is a separate observation.',
@@ -46,7 +46,7 @@ function electricalResult(values) {
       {label:'Source B → feeder B → section B',status:'Connected branch',detail:`Physical current ${round(s.currentB)} p.u.; section voltage ${round(s.voltageB)} p.u.`},
       {label:'Section boundary',status:s.arrangement==='coupled'?'Electrically coupled':'Separated',detail:s.arrangement==='coupled'?`The tie carries ${round(s.tieCurrent)} p.u. from B toward A.`:'The ideal positive-conductor gap carries zero current between the sections.'},
       {label:'Return reference',status:'Common 0 reference',detail:'Both source returns, the two resistive loads and the optional fault shunt connect to the explicit common return in this simplified circuit.'},
-      {label:'Supervisory record',status:s.telemetry==='stale'?'Stale snapshot':'Current snapshot',detail:`Reported A feeder: ${snapshot.feederAOpen?'open':'closed'}; reported A voltage ${round(snapshot.voltageA)} p.u. Changing record freshness does not change the solved electrical circuit.`},
+      {label:'Supervisory record',status:s.telemetry==='stale'?'Stale snapshot':'Current snapshot',detail:`Reported A feeder: ${snapshot.feederAOpen?'open':'closed'}; reported A voltage ${round(snapshot.voltageA)} p.u. ${s.telemetry==='stale'?'Retained earlier observation: separated sections, fault resistance 0.12 p.u. Its recorded configuration and values stay fixed.':'Current physical configuration.'}`},
     ],
     explanation:'Kirchhoff current balance solves two node voltages, then I=(E−V)/R gives each branch current. All values use synthetic bases: E=1, feeder R=0.1, coupling R=0.2 and each load R=4 p.u.; no physical voltage/current base is assigned. The resistance slider changes the optional fault shunt only. The graph scans resistance at the selected topology; in the normal case the fault branch is absent, so the resistance does not affect the circuit. No capacitance, inductance, arc, moving collector, protection threshold, trip time or safe-to-work determination is modeled.',
   };

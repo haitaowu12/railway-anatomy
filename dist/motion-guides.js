@@ -41,7 +41,8 @@ export function applyMotionGuides(views){
     [.8,'Release movement','The pads move away from the friction faces while the caliper carrier remains fixed to the frame.'],
     [1,'Clearance restored','Compare the rotating-disc interface with the stationary reaction path. The sequence is a mechanism illustration, not a brake test or an isolation procedure.'],
   ]);
-  const componentAnimations={doors:door,'door-control':door,hvac:air,compressor,brakes:brake,'parking-brake':brake,'brake-control':brake,bogie:rolling,tachometer:rolling,'rotary-traction-motor':rolling,'traction-gearbox':rolling};
+  const parking={...brake,label:'Parking function: pad contact and clearance',steps:brake.steps.map((s,i)=>i===1?{...s,description:'The carriers bring the pads to disc contact. The input that applies or releases the parking function depends on the brake architecture.'}:s)};
+  const componentAnimations={doors:door,'door-control':door,hvac:air,compressor,brakes:brake,'parking-brake':parking,'brake-control':brake,bogie:rolling,tachometer:rolling,'rotary-traction-motor':rolling,'traction-gearbox':rolling};
   for(const id of ['vehicle','services','bogie'])views[id].componentAnimations={...componentAnimations};
   views.bogie.motion=true;views.bogie.animation=rolling;
   views.services.motion=true;views.services.animation=door;
@@ -91,10 +92,10 @@ export function applyMotionGuides(views){
       step(1,'Follow the indication',incomplete||missing?'Neither end is indicated. Follow the missing B input to the interlocking.':'B is indicated. Follow this input to the interlocking, alongside the other route conditions.')
     ],12);
   }
-  for(const id of ['frog','diamond'])enable('crossing',id,'Wheel support and flange guidance at a crossing',[
+  enable('crossing','frog','Wheel support and flange guidance at a crossing',[
     step(0,'Approach','The wheelset starts before the crossing region and rolls along the selected through alignment.'),
     step(.35,'Entering the crossing','Inspect the running surface, intersecting flangeway and the wheel on the opposite rail.'),
-    step(.5,'Crossing region',id==='frog'?'The tread and wheel-back cues identify different contact relationships around the fixed crossing and check rail.':'The wheelset follows one through alignment across the fixed diamond. There is no moving switch in this example.'),
+    step(.5,'Crossing region','The tread and wheel-back cues identify different contact relationships around the fixed crossing and check rail.'),
     step(.75,'Leaving the crossing','The wheelset continues on the same selected rail pair.'),
     step(1,'Passage complete','The animation illustrates geometry and guidance, without calculating impact force, wear, permissible speed or flange-clearance limits.')
   ],12);

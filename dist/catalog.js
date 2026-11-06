@@ -1079,10 +1079,10 @@ export const CONCEPTS = [
   },
   {
     "id": "control-battery",
-    "label": "Illustrative station control battery",
+    "label": "Illustrative substation control battery",
     "summary": "A separate stored-energy branch for the model.",
     "details": [
-      "This model includes a station auxiliary battery to distinguish control power from traction power.",
+      "This model includes a substation auxiliary battery to distinguish control power from traction power.",
       "Its actual loads, charger arrangement, capacity and endurance are deliberately unspecified."
     ],
     "sources": [],
@@ -3075,3 +3075,11 @@ CONCEPTS.push(
  {id:'track-wing-rail',label:'Wing rails',summary:'The rails beside the crossing nose provide tread support and define the flange passages.',details:['Follow the crossing wheel from a wing rail towards the nose. Which wing rail it uses depends on the selected route.','The opposite check rail provides a different guidance relationship through the other wheel’s flange back. A wing rail is not the opposite check rail.'],sources:['TW01','TW02','K14'],related:['track-crossing-nose','track-check-rail','track-frog','track-wheelset']}
 );
 CONCEPTS.find(c=>c.id==='track-frog').related.push('track-crossing-nose','track-wing-rail');
+
+SOURCES.push(
+ {id:'TW04',title:'Report 34/2007 v2: Derailment at Epsom — Appendix B',publisher:'Rail Accident Investigation Branch',url:'https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/411913/070913_R342007_Epsom.pdf',description:'Appendix B, page 32, distinguishes a diamond’s two common and two obtuse crossings.',scope:'Historical report used for crossing anatomy and terminology. Incident findings, inspection practices and operating requirements are not transferred.'},
+ {id:'TW05',title:'Wheel and Rail Profile Development',publisher:'RISSB',url:'https://www.ariso.org.au/wp-content/uploads/2019/03/GL_Wheel-and-Rail-Profile-Development_Final.pdf',description:'Appendix A, A.2.1, page 47, Figure A7 and adjacent text explain wheel-tread support transfer between the wing rail and crossing nose.',scope:'Used for the support relationship in a conventional fixed common crossing. No profile dimensions, contact patch, impact load or operating limit is reproduced.'}
+);
+CONCEPTS.find(c=>c.id==='track-diamond-crossing').sources.push('TW04');
+CONCEPTS.find(c=>c.id==='track-diamond-crossing').details.push('A fixed diamond has two common crossings and two obtuse crossings. Its layout view marks these regions without animating a wheel-contact passage.');
+for(const id of ['track-wheelset','track-frog','track-wing-rail','track-crossing-nose'])CONCEPTS.find(c=>c.id===id).sources.push('TW05');

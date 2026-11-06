@@ -634,18 +634,10 @@ export function buildTrackView(id, api) {
       const ends = [-gauge, gauge].map(za => (za - side * gauge * normal) / slope);
       interruptedRail(main, -2.35, 2.35, z, railY, ends);
     }
-    const frogs = part(diamond, 'track-frog');
-    const guards = part(diamond, 'track-check-rail');
-    explode(frogs, [0, .50, 0]); explode(guards, [0, .35, 0]);
-    for (const [x, z] of intersections) {
-      box(frogs, [.70, .07, .68], M.core, [x, railY - .02, z]);
-      // Small tapered noses expose four distinct rail-intersection regions.
-      // The gaps remain real voids rather than overlapping solid rail meshes.
-      const n = group(frogs, 'diamond-crossing-nose', [x + .09, railY, z]);
-      n.scale.set(.36, 1, .65); nose(n, .60, .35);
-      for (const side of [-1, 1]) {
-        rail(guards, [[x - .48, railY, z + side * .25], [x - .26, railY, z + side * .19], [x + .36, railY, z + side * .19]], { section: profile.map(([a, b]) => [a * .45, b * .92]) });
-      }
+    for (const [index,[x,z]] of intersections.entries()) {
+      const common=Math.abs(x)>1;
+      const region=group(diamond,`${common?'Common':'Obtuse'} crossing region ${index+1}`,[x,railY-.02,z]);
+      box(region,[.72,.045,.66],common?M.yellow:M.teal);
     }
     for (let x = -3.4; x < 3.5; x += .85) for (const z of [-gauge, gauge]) {
       if (intersections.some(([ix, iz]) => Math.abs(x - ix) < .55 && Math.abs(z - iz) < .1)) continue;
@@ -659,17 +651,14 @@ export function buildTrackView(id, api) {
       layer(support, 'track-plinth', [.60, .37, .84], [0, .535, 0], concrete);
       seat(support, 0, 0, railY, { direct: true, detailed: false, lifted: false });
     }
-    const diamondWheel = wheelset(diamond, [-.24, railY + railHeight + .42, 0], { detail: false });
-    diamondWheel.root.name='diamond-running-wheelset';
-    explode(diamondWheel.root, [0, .85, 0]);
     const through = group(diamond, 'separate-through-alignments');
     tube(through, points(-3.5, 3.5, 0, railY + .37, 2), .023, cueMaterial, { segments: 10 });
     tube(through, points(-2.35, 2.35, x => slope * x, railY + .37, 2), .023, M.signal, { segments: 10 });
     registerAnimator(state => {
       const active = applyVariants(variants, state.variant, 'frog');
       const x = -2.8 + studyProgress(state)*5.6;
-      train.root.position.x = x; diamondWheel.root.position.x = x;
-      for (const w of [...train.wheels, ...diamondWheel.wheels]) w.rotation.z = -x / .42;
+      train.root.position.x = x;
+      for (const w of train.wheels) w.rotation.z = -x / .42;
       tread.position.x = x; back.position.x = x;
       contact.visible = Boolean(state.signals) && active === 'frog' && Math.abs(x) < 1.3 && state.exploded < .15;
       through.visible = Boolean(state.signals) && state.exploded < .15;

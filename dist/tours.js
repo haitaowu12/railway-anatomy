@@ -765,7 +765,7 @@ export const TOURS = [
   {
     "id": "platform-zones",
     "label": "21 · Compare platform protection",
-    "title": "21 · Compare platform protection",
+    "title": "Compare platform protection",
     "domain": "station",
     "view": "platform-interface",
     "component": "platform-intrusion",

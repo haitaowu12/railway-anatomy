@@ -4188,3 +4188,14 @@ for(const id of ['track-crossing-nose','track-wing-rail']){
  PART_CONTEXTS[id]=['turnout','crossing'];PART_VIEW_VARIANTS[id]={turnout:['straight','diverging','crossover'],crossing:['frog']};
  PART_RELATIONS[id]=['track-frog','track-wheelset','track-check-rail'];
 }
+
+PART_RELATIONS['scada-rtu']=[...new Set([...PART_RELATIONS['scada-rtu'],'local-plant-controller','interface-contract'])];
+
+const diamondLayout=NEW_VIEWS.crossing.variants.find(v=>v.id==='diamond');
+Object.assign(diamondLayout,{title:'Two through tracks, four crossing regions',description:'A diamond has two common crossings and two obtuse crossings. The coloured regions locate them in this layout; they do not reproduce local wheel-contact geometry.',motion:false});
+delete diamondLayout.animation;
+
+Object.assign(SYSTEMS.find(d=>d.id==='control'),{view:'control',component:'atp'});
+
+diamondLayout.sources=['TW04','K19'];
+NEW_VIEWS.turnout.variants.find(v=>v.id==='crossover').sources=['K18'];

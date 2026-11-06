@@ -932,7 +932,7 @@ export const OCC_VIEW_DATA = {
         "id": "incident",
         "label": "Incident coordination",
         "title": "Open the coordination study",
-        "description": "This legacy link opens People & processes. The room remains a physical context.",
+        "description": "Follow event coordination in People & processes, alongside the control-room equipment.",
         "nodes": [
           "People & processes"
         ],
@@ -947,7 +947,7 @@ export const OCC_VIEW_DATA = {
         "id": "handover",
         "label": "Duty handover",
         "title": "Open the handover study",
-        "description": "This legacy link opens People & processes without adding records or role figures to the room.",
+        "description": "Follow duty handover, its incoming and outgoing roles, and the information they exchange.",
         "nodes": [
           "People & processes"
         ],

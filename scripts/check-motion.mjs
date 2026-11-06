@@ -55,7 +55,7 @@ signalling.buildSignallingView('train-detection',api);
 for(const id of ['depot-maintenance','depot-workshop'])operations.buildOperationsView(id,api);
 const failures=[];let passed=0;
 function check(name,fn){try{fn();passed++;console.log('PASS '+name);}catch(e){failures.push(name);console.error('FAIL '+name+': '+e.message);}}
-const variants={turnout:['straight','diverging','crossover'],'switch-drive':['proved','unproved','detector-missing'],crossing:['frog','diamond'],'train-detection':['track-circuit','axle-counter','balise'],'depot-maintenance':['lifting','jacks','wheel-lathe'],'depot-workshop':['lathe']};
+const variants={turnout:['straight','diverging','crossover'],'switch-drive':['proved','unproved','detector-missing'],crossing:['frog'],'train-detection':['track-circuit','axle-counter','balise'],'depot-maintenance':['lifting','jacks','wheel-lathe'],'depot-workshop':['lathe']};
 check('Every new mechanical sequence has finite captions aligned with the player range',()=>{
  for(const [view,options]of Object.entries(variants))for(const id of options){
   const option=application.VIEWS[view].variants.find(v=>v.id===id),guide=option.animation||application.VIEWS[view].animation;
@@ -86,11 +86,20 @@ check('Selected turnout routes carry one wheelset along the corresponding alignm
  }
 });
 check('Fixed-crossing examples move the wheelset without moving a switch',()=>{
- for(const [variant,name]of [['frog','crossing-running-wheelset'],['diamond','diamond-running-wheelset']]){
+ for(const [variant,name]of [['frog','crossing-running-wheelset']]){
   const r=set('crossing',variant,{phase:0}),train=one(r,name),height=train.position.y;
   assert.equal(train.position.x,-2.8);set('crossing',variant,{phase:2.5});assert(Math.abs(train.position.x)<1e-8);
   set('crossing',variant,{phase:5});assert.equal(train.position.x,2.8);assert.equal(train.position.y,height);
  }
+});
+check('Diamond layout separates common and obtuse regions without claiming a wheel passage',()=>{
+ const option=application.VIEWS.crossing.variants.find(v=>v.id==='diamond');assert.equal(option.motion,false);assert.equal(option.animation,undefined);
+ const r=set('crossing','diamond',{phase:0}),start=geometryDigest(r.root);
+ assert.equal(r.root.getObjectByName('diamond-running-wheelset'),undefined);
+ const regions=[];r.root.traverse(n=>{if(/^(Common|Obtuse) crossing region/.test(n.name))regions.push(n);});
+ assert.equal(regions.filter(n=>n.name.startsWith('Common')).length,2);assert.equal(regions.filter(n=>n.name.startsWith('Obtuse')).length,2);
+ assert(regions.filter(n=>n.name.startsWith('Common')).every(n=>Math.abs(n.position.x)>1));
+ set('crossing','diamond',{phase:5});assert.equal(geometryDigest(r.root),start);
 });
 check('Point drive separates locks, blade travel and A/B correspondence',()=>{
  for(const variant of ['proved','unproved','detector-missing']){

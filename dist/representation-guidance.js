@@ -25,6 +25,7 @@ entries['occ-equipment']={kind:'equipment',label:'Technical equipment anatomy',r
 for(const id of ['control','communications','signalling','cbtc-network','etcs','seltrac','occ-supervision','station-networks','communications-scada'])entries[id].equipmentContext=false;
 
 const overrides = {
+  'crossing/diamond':{label:'Diamond crossing layout',motionKind:'static'},
   'station/passenger':{motionKind:'mechanism'},
   'station-plant/air':{motionKind:'mechanism'},
   'station-plant/water':{motionKind:'mechanism'},

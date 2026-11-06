@@ -3,6 +3,7 @@
 // state machine is run: this suite cannot approve a change or authorize work.
 import assert from 'node:assert/strict';
 import {CONCEPTS,SOURCES} from '../dist/catalog.js';
+import {renderPeoplePage} from '../dist/process-ui.js';
 import {VIEWS} from '../dist/model.js';
 import {PUBLIC_PROCESS_SOURCES,PROCESS_VIEWS,PEOPLE_ROLES,GOA_COMPARISON,TRAIN_CONTROL_TAXONOMY,PROCESS_READING_GUIDES} from '../dist/process-data.js';
 
@@ -99,6 +100,15 @@ check('GoA distinguishes onboard operating allocation without inferring station 
  assert(GOA_COMPARISON.continuingResponsibilities.some(d=>d.roles.includes('maintenance-work')),'Field responsibilities disappear at GoA4');
 });
 
+check('Rendered roles retain their authored equipment links, related processes and continuing GoA responsibilities',()=>{
+ const parts=new Map(CONCEPTS.map(c=>[c.id,c]));
+ for(const role of PEOPLE_ROLES){
+  const host={};renderPeoplePage(host,{roleId:role.id},{sourceChips:()=>'',parts});
+  for(const id of role.links)assert(host.innerHTML.includes(`data-reference="${id}"`),`${role.id} lost equipment ${id}`);
+  for(const process of Object.values(PROCESS_VIEWS).filter(p=>p.steps.some(s=>s.owner===role.id||s.participants?.includes(role.id))))assert(host.innerHTML.includes(`data-process="${process.id}"`));
+  for(const duty of GOA_COMPARISON.continuingResponsibilities)assert(host.innerHTML.includes(duty.title));
+ }
+});
 check('Train-control routes separate families, functions, devices and current supplier examples',()=>{
  const t=TRAIN_CONTROL_TAXONOMY,families=new Set(t.families.map(f=>f.id));
  assert.equal(families.size,t.families.length);

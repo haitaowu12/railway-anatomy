@@ -1,6 +1,6 @@
 # Content and navigation review
 
-Reviewed 6 November 2026 against public version 10.1.0, commit `70aaac0ed190177e7907822b091ff2acbcf8669a`. The turnout work described below belongs to the local 10.2.0 increment.
+Reviewed 6 November 2026 against public version 10.1.0, commit `70aaac0ed190177e7907822b091ff2acbcf8669a`. The resulting corrections are included in version 10.2.0.
 
 ## Coverage and limits
 
@@ -19,63 +19,56 @@ The broad passes checked internal consistency, engineering meaning, usefulness a
 | The independent four-rod turnout also showed an extra stretcher bar. | The selected independent-drive arrangement omits that bar; the separate crossover representation remains a different layout. |
 | Process navigation captured the origin after changing page, and role pages lacked a return action. | A process retains its originating study. A role returns to the selected process stage, then to the originating route, scale and position. This path was exercised in the browser. |
 | Rounded sequence positions could restore just before a selected stage. | Turnout links retain the full normalized position. |
-| The point-machine guide's study action opened equipment rather than its described guided journey. | Point-machine and turnout guide actions now have explicit guided-tour destinations. Static destination checks cover both routes; final-build browser verification remains open. |
+| The point-machine guide's study action opened equipment rather than its described guided journey. | Point-machine and turnout guide actions now have explicit guided-tour destinations. Both guide routes open their described journey; the turnout guide entry was exercised in the browser. |
 | Several related-topic targets were less useful than their local alternatives. | Station assistance points to the station help point; lift landing doors point to the lift drive; wayside point equipment points to interlocking. These are topic-target refinements, not corrections to a claimed physical connection. |
 | An OCC explanation described migration history. | It now explains the reader's coordination task directly. |
 
 The [turnout study](TURNOUT-STUDY.md) records the primary reference basis, geometry scope and route relationships. The field guide and generated reading page follow the same journey.
 
-## Next targeted corrections
+## Review findings addressed in 10.2.0
 
-### 1. Preserve the reader's location across representations
+| Finding | Final behavior |
+|---|---|
+| A workspace or inspector redirect could be cancelled by selecting the previous component afterward. | Follow-up selection runs only when the destination remains an equipment view. Process and interface actions retain their own representation. |
+| Final related lists omitted curated PLC/RTU links and supplied unrelated default equipment. | The RTU retains its local-controller and interface-contract links. Missing curated lists fall back to the concept's own relations, rather than arbitrary intake equipment. |
+| Role equipment links and continuing automation responsibilities were authored but never rendered. | Role pages show their connected concepts and derive related processes from actual stage ownership and contribution. The three continuing-responsibility sections are visible. |
+| Previous/next equipment views included process/interface redirects. | Equipment sequences omit those redirect destinations. Explicit workspace actions still open them, with return context. |
+| The global finder omitted roles and reading guides. | Typed role and guide results open their destinations directly. “Onboard driving” reaches the operating role; “both wheels” reaches the turnout guide and tour. |
+| A physical journey lacked a local route back to other tours. | Point-machine and turnout journeys include “Find another tour”; their direct connection remains prominent. |
+| Field-guide excursions lost the origin or inherited an unrelated filter. | Guide/concept entry clears irrelevant filters and shows a named return. A role → evidence → role → process → turnout walkthrough retains the selected stage. |
+| The infrastructure guide targeted a redirect view; process/people guides had no contextual entries. | The infrastructure guide opens the physical asset view. Process and role pages link to their relevant reading guides. |
+| OCC information concepts could be replaced by equipment representatives. | An explicitly selected information concept remains selected; physical equipment and optional interface actions remain separate. |
+| The diamond repeated one nose at all four intersections and reused common-crossing motion. | The static layout marks two common and two obtuse crossing regions. Unverified nose/check-rail geometry and wheel travel are removed. The detailed fixed-common-crossing journey remains separate. |
+| A stale electrical record changed as current resistance or boundary inputs changed. | The retained observation has a fixed, stated configuration: separated sections and fault resistance 0.12 p.u. Its values remain fixed while the current circuit changes. The current solution is unaffected by record freshness. |
+| An observation inspector was gated by retired OCC view IDs. | It is available in the actual operations-centre, workplace and equipment contexts. |
+| The maintenance study's first stage did not name its return view. | Observation → removed wheelset → inspection fixture → observation has explicit destinations. |
+| Process/people field-guide filters showed an equipment “no match” message beneath useful guides. | These filters show their guides without the irrelevant equipment count and empty state. |
+| Infrastructure rework could read as a records-only correction. | The branch explicitly includes completing or rectifying scoped work before recording the actual end state and matching evidence. |
+| “Accelerate” was used as the motoring-mode name. | “Supply traction” describes the mode without asserting acceleration. |
+| Optional BAS relationships combined status and requests under one direction label. | Pump and vertical-transport labels distinguish status toward BAS from permitted requests toward local control. |
+| The generic parking-function view reused a pneumatic service-brake caption. | Its caption describes pad contact and leaves the applying/releasing input with the selected architecture. No universal spring-applied arrangement is inferred. |
+| The discipline entry opened a named legacy supplier example. | Train control starts at the generic control architecture. SelTrac remains a separately named family example. |
+| Several labels exposed internal names, migration history or a misplaced context. | CamelCase assembly names are split into readable words; legacy-link narration and the duplicated tour number are removed; the battery is identified as a substation example. |
+| Crossing references were placed inconsistently. | The crossover uses its crossover reference. The diamond uses RAIB's common/obtuse anatomy; the tread-transfer explanation adds RISSB Appendix A, A.2.1 and Figure A7. |
+| The selected AC/DC examples could suggest resistor location is determined by supply type. | The comparison explicitly allows either onboard or wayside sinks according to equipment and receptivity. |
 
-| Location | Demonstrated issue or remaining candidate | Next action and acceptance |
-|---|---|---|
-| `app.js`, workspace view and inspector handlers | **Source-supported candidate:** `setView()` can redirect to a process or interface page, after which a follow-up component selection can reopen equipment. | Reproduce a workspace-to-process and workspace-to-interface transition. Only select the old component if the destination is still an equipment view. Each transition must retain a useful return destination. |
-| `app.js`, `RELATED` and catalogue `related` fields | **Confirmed:** the physical `scada-rtu` inspector drops authored links to `local-plant-controller` and `interface-contract`. `station-scada` and `bas-controller` also have different lists, but their working interface redirects narrow the practical impact. | Define one maintained relationship policy, preserving useful equipment and responsibility links. Check the actual rendered destinations rather than merging every link indiscriminately. |
-| `process-ui.js`, people and automation views | **Confirmed by rendering:** role `links` and the three authored continuing-responsibility blocks are omitted. The renderer asks for role interface/process fields that the role records do not supply. | Show connected equipment and derive relevant process stages from their recorded owners/contributors. Restore the authored continuing responsibilities with concise labels. |
-| `app.js`, previous/next views | **Source-supported candidate:** a view sequence includes process/interface redirects; following “Next view” can change representation and remove that toolbar. | Make the destination type clear before the transition and retain an explicit return. Check station, track, maintenance and communications sequences. |
-| `navigation-search.js`, global finder | **Confirmed index gap:** roles and reading guides have no direct result entries, although the finder promises broad railway discovery. | Add visibly typed role and guide results with direct destinations. Check “onboard driving” and a guide title alongside equipment queries. |
-| `app.js`, physical guided studies | **Confirmed design gap:** point-machine studies replace the generic tour footer; the full tour picker remains available, but the local onward route is less obvious. | Choose the useful next task for each journey. Preserve the point → turnout connection; provide a clear way to resume the tour collection without repeating the page heading or explanatory copy. |
-| Anatomy tree and navigation controls | **Observed usability gap:** repeated fastening instances and internal assembly names compete with the switch, drive and crossing. Workspace, system, view and component navigation also overlap. | Keep one primary hierarchy, a global finder and contextual part selection. Group repeated supports and name instances by location or function. Inspect a complete turnout-to-crossing action before changing other families. |
-| `READING_GUIDES`, `app.js`, `process-ui.js` | **Source-supported candidate:** the infrastructure guide is associated with a redirect view; three process/people guides have no contextual entry from their working pages. | Open each guide from its relevant task and return to the same context. Distinguish inspecting the physical asset from examining its work/evidence process. |
-| OCC information concepts, `chooseVisibleRepresentative()` | **Source-supported candidate:** information concepts can be replaced with an equipment representative when their view opens. | Reproduce “Read component details → Locate” for `telecom-scada` and another OCC information concept; retain the requested topic in a suitable representation. |
+The diamond correction follows [RAIB's Epsom report, Appendix B, page 32](https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/411913/070913_R342007_Epsom.pdf). Its incident findings and historical operating practices are not transferred. The support relationship follows [RISSB, Wheel and Rail Profile Development, Appendix A A.2.1 and Figure A7](https://www.ariso.org.au/wp-content/uploads/2019/03/GL_Wheel-and-Rail-Profile-Development_Final.pdf). Neither source turns the original geometry into a contact-force calculation.
 
-### 2. Correct the next track family before extending its story
+## Remaining model and evidence work
 
-The fixed diamond in `track-models.js` repeats one tapered nose at all four rail intersections. It does not distinguish the common and obtuse crossing regions. Its animation also reuses the single-common-crossing stage descriptions. Correct geometry and sequence together before presenting a wheel passage through the diamond. [RAIB's Epsom report, Appendix B, page 32](https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/411913/070913_R342007_Epsom.pdf) identifies two common and two obtuse crossings; the historical report supplies anatomy, not current inspection or operating requirements. Use the [Bane NOR turnout/crossing reference](https://oppslagsverk.banenor.no/jernbanekompetanse/overbygning/sporets-komponenter/sporveksler/) to compare the arrangements and inspect the wheel paths in both intersecting routes.
-
-The crossover retains a separate simplified blade/stretcher arrangement. Inspect its connections and both turnouts together before expanding it into another guided journey. The corrected single turnout does not qualify that separate model.
-
-### 3. Keep observations and physical states distinct in labs and studies
-
-| Location | Finding | Next action and acceptance |
-|---|---|---|
-| `physical-labs.js`, `electrical-sections` | **Confirmed by execution:** under `condition:'fault', telemetry:'stale'`, changing resistance from 0.04 to 0.8 changes the supposedly stale reported voltage from 0.344 to 0.894 p.u. The retained record is recomputed from current inputs. | Define the earlier observation explicitly, retain its value/time/configuration separately and show how it differs from the current physical solution. Test observation retention while resistance and boundary state change. |
-| `depth-ui.js`, `showPoint` | **Confirmed source mismatch:** the observation-record inspector is gated by retired `occ-supervision` and redirect `station-networks` IDs. The OCC equipment diagram directs readers towards that inspector. | Bind the inspector to the actual relevant OCC views and verify the diagram-to-record path. |
-| `depth-content.js`, `maintenance-condition-evidence` | **Source-supported candidate:** the study crosses from `depot-condition` to `depot-workshop`, while component selection can clear `studyId`; its first stage has no explicit return view. | Exercise observation → removed wheelset → inspection fixture → observation. Preserve the study and use explicit stage destinations. |
-| `app.js`, field-guide filters | **Confirmed source mismatch:** process/people filters have guides but no equipment-domain entries, leaving an equipment “0 concepts / no match” message below useful guides. | Render the relevant process/role results or omit the irrelevant equipment empty state. |
-
-### 4. Resolve family scope and process wording with evidence
-
-These are targeted review questions, not established universal corrections:
-
-- **Legacy loop train control:** reconcile the named SelTrac loop family, its pickup/interface components and the generic wayside-controller concept. Verify the position-reference role of cable transpositions against a primary family-specific source before extending the explanation.
-- **ETCS comparisons:** distinguish a list of information relationships from a temporal process. If presented as a sequence, establish the relationship between balise references, odometry, position reports, movement authority and onboard supervision using the applicable ETCS sources.
-- **Braking-energy destinations:** confirm that the selected AC/onboard and DC/wayside examples cannot be read as a rule assigning resistor location by supply type. Keep any clarification beside the comparison.
-- **Parking-brake animation:** its reused pneumatic service-brake caption needs to match the selected spring-applied mechanism before that journey is expanded.
-- **Process rework:** when work or tests remain incomplete, show the return to physical rectification or further verification as well as record reconciliation. Keep maintenance release, fleet readiness, worksite handback, asset acceptance and duty handover distinct.
-- **Train-control orientation and duplicate labels:** make the family overview easy to reach from the selected legacy example, and distinguish equipment inspection from a system comparison when two records share a label.
-- **Reference usability:** verify suspect or language-specific URLs before changing them. A misspelling in a live publisher URL is not by itself a broken link; repeated URLs can legitimately have distinct use scopes.
-- **Motoring label:** `MODES/motoring` says “Accelerate.” Motoring can also balance resistance at constant speed; use “Supply traction” for the mode and reserve acceleration for a calculated motion result.
-- **Interface arrow labels:** `drainage-bas` and `vertical-bas` combine status and permitted requests under a single upward arrow. Show the two information directions explicitly, following the existing main interface model.
-- **Historical source status:** `OC10` identifies the 2016 Metrolinx LRT manual but omits its archived/reference-only status. The [Metrolinx amendment bulletin](https://assets.metrolinx.com/image/upload/v1743532269/Documents/Engineering/LRT_Design_Criteria_Manual_DCM_Bulletin_LRT-001_REV00.pdf) is the source to reconcile before using that reference for a new example.
-- **Crossing support source:** [RISSB, Wheel and Rail Profile Development, Appendix A §A.2.1, Figure A7](https://www.ariso.org.au/wp-content/uploads/2019/03/GL_Wheel-and-Rail-Profile-Development_Final.pdf) supports wing-to-nose tread transfer. Use it in the next contact/profile study; an authored cue is not a calculated contact patch.
+- **Diamond contact and movable-nose mechanisms:** the diamond is now explicitly a layout. A contact passage or movable-nose alternative requires its own geometry, selected state, checking arrangement and verification. The fixed turnout does not imply a crossing actuator.
+- **Crossover linkage and repeated supports:** inspect the two-turnout linkage before extending its mechanism story. Further grouping of repeated physical instances should preserve existing instance bookmarks. The guided turnout already uses a concise contextual part list; the broader anatomy tree remains available for detailed inspection.
+- **Legacy loop localization:** verify the cable-transposition position-reference role against a primary family-specific source before adding it. The named legacy architecture must not borrow another supplier's implementation without qualification.
+- **ETCS information relationships:** the catalogue architecture lists are not a temporal process shown by the current application. A future sequence must distinguish balise references, odometry, reports, movement authority and supervision using its applicable sources.
+- **Reference status and access:** the 2016 Metrolinx manual remains a historical example. The review identified its [later amendment bulletin](https://assets.metrolinx.com/image/upload/v1743532269/Documents/Engineering/LRT_Design_Criteria_Manual_DCM_Bulletin_LRT-001_REV00.pdf) for current-status reconciliation. Publisher full-text access limits and a disclosed P80 brochure mirror remain evidence limitations; no supplier mechanism is invented to fill them. Suspect URL spelling and language paths need publisher confirmation before substitution.
+- **Source granularity:** shared URLs can support distinct scopes. Guide-level references remain valid where section-level references are absent; additions should identify the actual supported passage rather than copy a bibliography into every section.
 
 ## Findings not carried forward
 
 The ideal six-diode electrical bridge and generic mechanical diode stack are separately scoped representations. The final runtime supports four supply arrangements; it is not restricted to the older default scene. Missing caveat fields, background references without direct concept citations and repeated source URLs are not errors by themselves. Related-topic links do not assert wiring or mechanical coupling. Supplier-specific emergency-brake, isolation, platform-egress and locking arrangements must not become universal statements.
 
-## Working order
+## Verification and next use
 
-Finish the turnout's final browser check, then address the location/relationship defects as one connected journey: equipment → interface or process → responsible role → original equipment. Correct the diamond before adding a diamond wheel-path lesson. Use the lab/state and family-scope findings when their respective models are next updated. Each update should close its own finding with a source or reproduced behavior and a usable return path.
+Source, geometry, navigation, role rendering, static reading and release-artifact checks cover the changed behavior. Browser walkthroughs exercise both turnout routes and scales, point-to-route continuity, missing detector input, guide entry, role discovery, nested returns and phone layout. A passing synthetic geometry check does not establish vehicle dynamics or dimensional design validity.
+
+Use the remaining questions when the relevant model is next extended. Reproduce a reported access problem before changing navigation again; retain the working point → turnout → crossing and evidence → role → process → original study paths.

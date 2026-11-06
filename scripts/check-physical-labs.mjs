@@ -56,6 +56,13 @@ check('Stale supervisory data changes the record while leaving the physical circ
   assert.deepEqual(a.diagram,{type:'dc-sections',coupled:true,feederAOpen:true,faultAtA:true});
 });
 
+check('A retained electrical observation keeps its values and recorded configuration as physical inputs change',()=>{
+ const records=[];
+ for(const condition of ['normal','fault','local-open'])for(const arrangement of ['separated','coupled'])for(const resistance of [.04,.8]){
+  records.push(lab('electrical-sections').evaluate({condition,arrangement,resistance,telemetry:'stale'}).rows.find(r=>r.label==='Supervisory record'));
+ }
+ assert(records.every(r=>r.detail===records[0].detail));assert.match(records[0].detail,/separated sections, fault resistance 0.12/);
+});
 check('Fan working point balances all component losses and responds to each selected resistance',()=>{
   for(const speed of [.4,1,1.2])for(const filter of [20,200])for(const damper of [10,300])for(const coil of [20,150]){
     const s=solveFanWorkingPoint({speed,filter,damper,coil});close(s.shutoff-s.fanSlope*s.flow**2,s.pressure,1e-8);close(Object.values(s.losses).reduce((a,b)=>a+b,0),s.pressure,1e-8);close(s.airPower,s.flow*s.pressure);assert(s.flow>0&&s.flow<s.freeFlow);

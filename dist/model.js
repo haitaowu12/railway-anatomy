@@ -49,7 +49,7 @@ export const RELATED = {
 
 Object.assign(RELATED,PART_RELATIONS);
 
-export const MODES = [{id:'motoring',label:'Accelerate'},{id:'regeneration',label:'Regenerate'},{id:'coasting',label:'Coast & supply loads'},{id:'isolated',label:'Line supply removed'}];
+export const MODES = [{id:'motoring',label:'Supply traction'},{id:'regeneration',label:'Regenerate'},{id:'coasting',label:'Coast & supply loads'},{id:'isolated',label:'Line supply removed'}];
 export const EXPERIMENTS = {
   control:[{id:'nominal',label:'Normal information flow'},{id:'door-open',label:'Door closure not confirmed'},{id:'wheel-slip',label:'Wheel-slide cue'}],
   communications:[{id:'nominal',label:'Messages flowing'},{id:'radio-loss',label:'Hold control radio'}],
