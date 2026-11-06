@@ -1,0 +1,15 @@
+{
+  "hosting": {
+    "site": "tony-railway-anatomy",
+    "public": "build",
+    "ignore": ["**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        ]
+      }
+    ]
+  }
+}
