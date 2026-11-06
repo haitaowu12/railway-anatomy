@@ -208,7 +208,7 @@ assert(motionStart>=0&&motionEnd>motionStart,'Production motion/route helpers ch
 const synchronize = new Function('viewer', 'VIEWS', 'targetFor', 'canAnimate', 'animationFor', 'platformAnimationFor','systemDiagram','electricalStudy','representationFor','processFor','TOURS','pointIndicationDiagram', `
   let state, lastExplorationContext = '', lastSequenceKey = '', lastTopologyStep = '';
   ${appSource.slice(motionStart,motionEnd)}
-  ${appSource.slice(appSource.indexOf('function isPointJourney(){'),appSource.indexOf('function readHash(){'))}
+  ${appSource.slice(appSource.indexOf('function isTurnoutJourney(){'),appSource.indexOf('function readHash(){'))}
   ${appSource.slice(interfaceStart,interfaceEnd)}
   function syncControls() {}
   ${appSource.slice(syncStart, syncEnd)}

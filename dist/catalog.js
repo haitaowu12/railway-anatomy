@@ -1781,7 +1781,7 @@ export const CONCEPTS = [
       "track-switch-rail",
       "track-stretcher",
       "track-point-detection",
-      "train-control"
+      "interlocking"
     ]
   },
   {
@@ -1798,7 +1798,7 @@ export const CONCEPTS = [
       "track-point-machine",
       "track-switch-rail",
       "track-stretcher",
-      "train-control",
+      "interlocking",
       "atp"
     ]
   },
@@ -3056,3 +3056,22 @@ SOURCES.push(...DEPTH_SOURCES,...MECHANICAL_SOURCES,...PHYSICAL_LAB_SOURCES,...E
 
 
 applyControlInterfacesCatalog(SOURCES,CONCEPTS);
+
+SOURCES.push(
+  {id:'TW01',title:'Sporveksler — turnout components',publisher:'Bane NOR',url:'https://oppslagsverk.banenor.no/jernbanekompetanse/overbygning/sporets-komponenter/sporveksler/',description:'Switch, closure and crossing panels, fixed/movable crossings and opposite check rails.',scope:'Jernbanekompetanse, updated 4 February 2025; sections 3, 3.1 and 3.2, figures 10 and 25. Used for component relationships only; Norwegian dimensions, speeds and maintenance rules are not adopted.'},
+  {id:'TW02',title:'Turnout Components',publisher:'Vossloh',url:'https://www.vossloh.com/en/products/turnout-components',description:'Fixed and swing-nose crossing families, forged tongues, slide chairs and check-rail supports.',scope:'Manufacturer component overview. Supports distinguishing construction and function; no performance or universal arrangement is inferred.'},
+  {id:'TW03',title:'Crossing with movable point EHZ HBS-HB',publisher:'voestalpine Railway Systems',url:'https://www.voestalpine.com/railway-systems/en/products/crossing-with-movable-point-ehz-hbs-hb/',description:'A movable crossing nose closes the running-edge interruption for the selected route, with its own setting and locking arrangement.',scope:'Manufacturer product page, Crossing vee, Wing rails and Setting and locking. An alternative to this study’s fixed crossing; its geometry and performance claims are not transferred.'}
+);
+CONCEPTS.push({id:'track-wheelset',label:'Wheelset: two wheels and one axle',summary:'Two wheels connected by an axle follow the two running rails through the turnout.',details:['Keep both wheels visible at the crossing. One wheel passes the crossing nose while the check rail beside the opposite running rail can guide the back of the other wheel flange.','In this tread-bearing example, the wheel tread carries vertical load on the rail head. The flange passes through the flangeway; its back face can provide lateral guidance against the check rail.','The wheelset follows a prescribed geometric path. The illustration does not solve contact forces, steering, differential rolling radii or vehicle dynamics.'],sources:['TW01','K15','MD01'],related:['track-turnout','track-switch-rail','track-frog','track-check-rail','bogie']});
+for(const id of ['track-turnout','track-stock-rail','track-switch-rail','track-closure-rail','track-frog','track-check-rail']){
+  const c=CONCEPTS.find(c=>c.id===id);c.sources=[...new Set([...c.sources,'TW01','TW02'])];
+}
+CONCEPTS.find(c=>c.id==='track-frog').sources.push('TW03');
+
+CONCEPTS.find(c=>c.id==='track-frog').details.push('Some fixed frogs are self-guarded. Their raised casting features replace the guidance supplied by separate opposite check rails in this selected example.');
+
+CONCEPTS.push(
+ {id:'track-crossing-nose',label:'Crossing nose or vee',summary:'The pointed part of a common crossing carries the tread as support transfers from the wing rail.',details:['The nose and its adjoining rails form the vee. The flange passage beside it allows the wheel on the intersecting route to pass.','This nose is fixed. A movable-nose crossing is a different arrangement with its own setting, locking and detection needs.'],sources:['TW01','TW02','K14','TW03'],related:['track-frog','track-wing-rail','track-check-rail','track-wheelset']},
+ {id:'track-wing-rail',label:'Wing rails',summary:'The rails beside the crossing nose provide tread support and define the flange passages.',details:['Follow the crossing wheel from a wing rail towards the nose. Which wing rail it uses depends on the selected route.','The opposite check rail provides a different guidance relationship through the other wheel’s flange back. A wing rail is not the opposite check rail.'],sources:['TW01','TW02','K14'],related:['track-crossing-nose','track-check-rail','track-frog','track-wheelset']}
+);
+CONCEPTS.find(c=>c.id==='track-frog').related.push('track-crossing-nose','track-wing-rail');

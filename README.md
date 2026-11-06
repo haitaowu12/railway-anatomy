@@ -55,6 +55,14 @@ Compare **Complete throw**, **Stopped short** and **One detector missing**, then
 
 The [point-machine study notes](docs/POINT-MACHINE-STUDY.md) distinguish this four-rod arrangement from other families, explain the functional internal layout and link the Alstom, voestalpine, Vossloh and Siemens references. The [field guide](https://haitaowu12.github.io/railway-anatomy/reading.html#guide-point-machine) covers the same connections and cases.
 
+### Follow wheels through a turnout
+
+Continue from the point-machine journey with **Follow wheels**, or choose **Guided tours → Follow wheels through a turnout**. End A connects to the straight route and end B to the diverging route. The selected blades remain locked while the two wheels pass through the switch, closure rails and crossing. Changing the route returns the wheelset to its approach.
+
+**Whole turnout** keeps the route in context. **Crossing close-up** follows the same selected route through the wing rails and crossing nose, with the opposite check rail visible beside the other wheel. The tread-support and flange-back guidance relationships are distinct. The nose, wing rails and wheelset can be selected individually.
+
+The [turnout study notes](docs/TURNOUT-STUDY.md) explain the original fixed-crossing geometry and compare Bane NOR, Vossloh and voestalpine references, including movable-nose and self-guarded alternatives. The field guide covers the same routes and connections.
+
 ### Collection, supply and return
 
 Four electrification examples distinguish the collection equipment, conversion stages and normal traction return path:
@@ -138,6 +146,8 @@ Automated checks cover content references, routes, model construction and select
 
 ## Where the code lives
 
+The [content and navigation review](docs/CONTENT-REVIEW.md) records confirmed defects, resolved turnout findings and the next targeted source and journey checks.
+
 | Area | Files |
 |---|---|
 | Application and navigation | `dist/index.html`, `style.css`, `depth.css`, `app.js`, `navigation.js`, `navigation-search.js`, `navigation.css`, `learning-workspaces.js` |
@@ -149,7 +159,7 @@ Automated checks cover content references, routes, model construction and select
 | Control responsibilities and optional connections | `dist/control-interfaces-data.js`, `control-interfaces-ui.js`, `control-interfaces.css` |
 | Representation choices and dependency diagrams | `dist/representation-guidance.js`, `system-diagrams.js`, `topology-status.css` |
 | Information and electrical diagrams | `dist/communications-data.js`, `topology-ui.js`, `electrical-explainers.js` |
-| Playback and pins | `dist/interaction-state.js`, `motion-guides.js` |
+| Playback and pins | `dist/interaction-state.js`, `motion-guides.js`, `turnout-journey.js` |
 | People and process diagrams | `dist/process-data.js`, `process-extensions.js`, `process-ui.js` |
 | Learning and reading | `dist/tours.js`, `reading-guides.js`, `reading.html`, `scripts/generate-reading.mjs` |
 | Checks | `scripts/check-site.mjs` and the focused `scripts/check-*.mjs` suites |

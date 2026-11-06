@@ -20,7 +20,7 @@ export const STATION_PLATFORM_CONCEPTS = [
   concept('station-lift-landing-doors','Lift landing doors and contacts','A fixed door assembly bounds the shaft at each landing.',[
     'Landing doors are distinct from the doors on the car. Their position and locking interfaces belong to the lift system.',
     'In the model only the doors beside the aligned cabin open. Both landings stay closed during travel. The enlarged contact targets explain relative position, not a complete interlock circuit.'
-  ],['station-lift','station-lift-car','access-controller']),
+  ],['station-lift','station-lift-car','station-lift-drive']),
   concept('station-lift-drive','Lift traction machine and suspension','A selected traction arrangement moves the cabin and counterweight.',[
     'A traction sheave and suspension connect the drive with the moving masses. Other lift arrangements exist.',
     'The sheave turns with cabin travel and the counterweight moves in the opposite direction. Inspect the separate machine and sheave; the original geometry supplies no suspension, braking or load calculation.'

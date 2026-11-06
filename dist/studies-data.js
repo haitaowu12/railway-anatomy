@@ -142,7 +142,7 @@ export const STUDY_CONCEPTS = [
   C('access-assistance','Passenger assistance interface','A help point connects a passenger need with a person or service.',[
     'Operator guidance connects station assistance with information about the facilities available for a journey.',
     'The help point has a distinct communications path to an assistance position. Choosing lift outage exposes that path without pretending that a displayed message or button press guarantees assistance has arrived.'
-  ],['A02','A03'],['pa-intercom','access-lift','access-boarding'],['accessible-journey','outage']),
+  ],['A02','A03'],['emergency-intercom','access-lift','access-boarding'],['accessible-journey','outage']),
   C('access-boarding','Platform-to-vehicle boarding','Reaching the platform does not finish the boarding interface.',[
     'The platform edge, vehicle doorway and any boarding aid form another interface in the journey.',
     'Compare the available route with boarding aid required. The latter retains a visible gap and stops the route at the platform. Aid in place adds a bridging plate and extends the path into the doorway. No slope, gap tolerance, capacity or evacuation result is calculated.'

@@ -1,6 +1,7 @@
 import { createMechanicalDetails } from './mechanical-details.js';
 import { pointMachineState } from './point-machine.js';
 import { buildPointMachine } from './point-machine-model.js';
+import { TURNOUT, branchCentre, turnoutPosition } from './turnout-journey.js';
 /*
  * Original, dimensionless teaching geometry for Railway Anatomy.
  * Rail profiles and mechanism proportions are illustrative, not product CAD.
@@ -10,7 +11,7 @@ import { buildPointMachine } from './point-machine-model.js';
 export const TRACK_VIEWS = {
   'track-support': { camera: [9.5, 7.8, 10.5], target: [0, .9, 0], distance: 22 },
   'rail-fastening': { camera: [4.8, 4.4, 5.4], target: [0, 1, 0], distance: 12 },
-  turnout: { camera: [13, 15, 17], target: [0, .65, 1.2], distance: 34 },
+  turnout: { camera: [10, 16, -17], target: [0, .65, 1.2], distance: 34 },
   'switch-drive': { camera: [-5.5, 10, -5.8], target: [-.5, .8, -.4], distance: 19 },
   crossing: { camera: [8.2, 8.6, 10], target: [0, .85, .7], distance: 23 },
 };
@@ -222,13 +223,13 @@ export function buildTrackView(id, api) {
   }
 
   function wheelset(parent, position, { radius = .42, halfGauge = gauge, detail = true } = {}) {
-    const p = part(parent, 'bogie', position);
+    const p = part(parent, 'track-wheelset', position);
     cylinder(p, .075, halfGauge * 2 + .31, M.core, [0, 0, 0], [Math.PI / 2, 0, 0], 12);
     const wheels = [];
     for (const side of [-1, 1]) {
       const w = group(p, 'wheel', [0, 0, side * halfGauge]);
-      cylinder(w, radius, .145, M.steel, [0, 0, 0], [Math.PI / 2, 0, 0], 24);
-      cylinder(w, radius + .045, .026, M.aluminum, [0, 0, -side * .076], [Math.PI / 2, 0, 0], 24);
+      cylinder(w, radius, .24, M.steel, [0, 0, side*.04], [Math.PI / 2, 0, 0], 24);
+      cylinder(w, radius + .045, .026, M.aluminum, [0, 0, -side * .09], [Math.PI / 2, 0, 0], 24);
       cylinder(w, radius * .70, .151, M.core, [0, 0, 0], [Math.PI / 2, 0, 0], 18);
       cylinder(w, .12, .22, M.aluminum, [0, 0, side * .04], [Math.PI / 2, 0, 0], 12);
       if (detail) for (let a = 0; a < 6; a++) {
@@ -373,14 +374,15 @@ export function buildTrackView(id, api) {
     const g = part(parent, 'track-frog', at);
     const slope = Math.tan(Math.atan(angle) / 2);
     g.rotation.y = -Math.atan(slope);
-    const n = group(g, 'tapered-vee');
+    const n = part(g, 'track-crossing-nose');n.name='tapered-vee';n.userData.labelAnchor=[.65,railHeight,0];
     nose(n, .65, slope);
+    const vee=group(n,'crossing-vee-rails'),wings=part(g,'track-wing-rail');wings.name='crossing-wing-rails';wings.userData.labelAnchor=[-.4,railHeight,.4*slope+.07];
     for (const side of [-1, 1]) {
-      rail(g, points(.56, span, x => side * slope * x, 0, 3));
-      rail(g, [
+      rail(vee, points(.56, span, x => side * slope * x, 0, 3));
+      rail(wings, [
         [-span, 0, side * slope * span], [-.40, 0, side * (.40 * slope + .07)],
-        [-.05, 0, side * .14], [.47, 0, side * (.47 * slope + .13)],
-        [.83, 0, side * (.83 * slope + .13)],
+        [-.05, 0, side * .18], [.47, 0, side * (.47 * slope + .18)],
+        [.83, 0, side * (.83 * slope + .18)],
       ]);
     }
     box(g, [span * 1.9, .045, .79], M.core, [0, -.026, 0]);
@@ -389,8 +391,8 @@ export function buildTrackView(id, api) {
   }
 
   function makeSwitch(parent, { small = false, drive = false } = {}) {
-    const railY = .72, x0 = -6.8, x1 = 6.8, toe = -4.4, heel = -.8, offset = 3.1;
-    const diverge = x => offset * smooth((x - toe) / (x1 - toe));
+    const railY = .72, x0 = -6.8, x1 = TURNOUT.end, toe = TURNOUT.toe, heel = TURNOUT.heel;
+    const diverge = branchCentre;
     let lo = toe, hi = x1;
     for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (offsetPoint(m, diverge, -gauge, railY)[2] < gauge) lo = m; else hi = m; }
     const crossingParameter = (lo + hi) / 2;
@@ -416,10 +418,10 @@ export function buildTrackView(id, api) {
       const t = i / 22, x = mix(toe, heel, t), fade = (1 - t) ** 2;
       if (side < 0) {
         const p = offsetPoint(x, diverge, -gauge, railY);
-        p[2] += mix(.29, .078, movement) * fade;
+        p[2] += mix(.29, .07455, movement) * fade;
         return p;
       }
-      return [x, railY, gauge - mix(.078, .29, movement) * fade];
+      return [x, railY, gauge - mix(.07455, .29, movement) * fade];
     });
     const taper = t => .07 + .93 * Math.min(1, t * 3.2);
     const blades = [-1, 1].map(side => rail(bladeGroup, bladePath(side, 0), { taper }));
@@ -434,11 +436,18 @@ export function buildTrackView(id, api) {
       }
     }
     crossingCore(turnout, [crossingX, railY, gauge], { angle: slope, span: frogSpan });
-    const guard = part(turnout, 'track-check-rail');
+    const guard = part(turnout, 'track-check-rail');guard.name='straight-route-check-rail';guard.userData.labelAnchor=[crossingX-.75,railY+.303,-gauge+.146];
     rail(guard, [
-      [crossingX - 1.3, railY, -gauge + .25], [crossingX - .9, railY, -gauge + .144],
-      [crossingX + .9, railY, -gauge + .144], [crossingX + 1.3, railY, -gauge + .25],
+      [crossingX - 1.3, railY, -gauge + .25], [crossingX - .9, railY, -gauge + .146],
+      [crossingX + .9, railY, -gauge + .146], [crossingX + 1.3, railY, -gauge + .25],
     ], { section: checkSection });
+    const branchGuard = part(turnout,'track-check-rail');branchGuard.name='diverging-route-check-rail';branchGuard.userData.labelAnchor=offsetPoint(crossingParameter-.75,diverge,gauge-.146,railY+.303);
+    const guardPath = Array.from({length:17},(_,i)=>{
+      const t=i/16,x=mix(crossingParameter-1.3,crossingParameter+1.3,t);
+      const flare=Math.max(0,Math.abs(t-.5)-.35)/.15;
+      return offsetPoint(x,diverge,gauge-mix(.146,.25,clamp(flare)),railY);
+    });
+    rail(branchGuard,guardPath,{section:checkSection.map(([z,y])=>[-z,y]).reverse()});
     const stretch = part(turnout, 'track-stretcher', [-3.92, railY + .015, 0]);
     box(stretch, [.095, .055, 1.53], M.core, [0, -.025, 0]);
     box(stretch, [.12, .07, .16], insulator, [0, -.025, 0]);
@@ -446,10 +455,11 @@ export function buildTrackView(id, api) {
       box(stretch, [.15, .11, .10], M.steel, [0, .002, side * .72]);
       bolt(stretch, [0, .066, side * .72], .025);
     }
+    stretch.visible=!drive;
     let mechanism = null;
     if (drive) {
       layer(turnout, 'track-plinth', [1.3, .10, .95], [-3.92, .29, -2.0], concrete);
-      mechanism = buildPointMachine(turnout,api,{position:[-3.92,.47,-2.0],railY,bladeAt:(side,x,movement)=>{if(side<0){const at=offsetAtWorldX(x,diverge,-gauge,railY,toe,heel),fade=(1-clamp((at.parameter-toe)/(heel-toe)))**2;at.point[2]+=mix(.29,.078,movement)*fade;return at.point;}const fade=(1-clamp((x-toe)/(heel-toe)))**2;return [x,railY,gauge-mix(.078,.29,movement)*fade];}});
+      mechanism = buildPointMachine(turnout,api,{position:[-3.92,.47,-2.0],railY,bladeAt:(side,x,movement)=>{if(side<0){const at=offsetAtWorldX(x,diverge,-gauge,railY,toe,heel),fade=(1-clamp((at.parameter-toe)/(heel-toe)))**2;at.point[2]+=mix(.29,.07455,movement)*fade;return at.point;}const fade=(1-clamp((x-toe)/(heel-toe)))**2;return [x,railY,gauge-mix(.07455,.29,movement)*fade];}});
     }
     let lastMovement = -1;
     function update(movement, state) {
@@ -504,11 +514,10 @@ export function buildTrackView(id, api) {
       routes.visible = Boolean(state.signals) && state.exploded < .2;
       straightCue.visible = !divergent; divergingCue.visible = divergent;
       linkCue.visible = Boolean(state.signals);
-      const progress=studyProgress(state),x=-5.7+progress*11.4;
-      train.root.position.x = x; train.root.position.z = divergent ? assembly.diverge(x) : 0;
-      const tangent = divergent ? (assembly.diverge(x + .015) - assembly.diverge(x - .015)) / .03 : 0;
-      train.root.rotation.y = -Math.atan(tangent);
-      train.wheels.forEach(w => { w.rotation.z = -x / train.radius; });
+      const progress=studyProgress(state),pose=turnoutPosition(progress,divergent?'diverging':'straight',Boolean(state.turnoutDetail));
+      train.root.position.x=pose.x;train.root.position.z=pose.z;
+      train.root.rotation.y=pose.yaw;
+      train.wheels.forEach(w=>{w.rotation.z=-pose.distance/train.radius;});
       const p=crossCurve.getPointAt(progress),t=crossCurve.getTangentAt(progress);
       crossTrain.root.position.set(p.x,assembly.railY+railHeight+crossTrain.radius,p.z);
       crossTrain.root.rotation.y=-Math.atan2(t.z,t.x);
@@ -587,7 +596,7 @@ export function buildTrackView(id, api) {
     const core = crossingCore(frog, [0, railY, gauge], { angle: k, span });
     explode(core, [0, .50, 0]);
     const check = part(frog, 'track-check-rail');
-    rail(check, [[-1.62, railY, -.65], [-1.17, railY, -.756], [1.17, railY, -.756], [1.62, railY, -.65]], { section: checkSection });
+    rail(check, [[-1.62, railY, -.65], [-1.17, railY, -.754], [1.17, railY, -.754], [1.62, railY, -.65]], { section: checkSection });
     for (const x of [-1.08, 0, 1.08]) {
       box(check, [.18, .09, .23], M.core, [x, railY + .035, -.79]);
       bolt(check, [x, railY + .10, -.70], .03);

@@ -79,3 +79,16 @@
   .point-state dt { font-size: 12px; }
   .point-state dd { font-size: 13px; }
 }
+.turnout-journey #point-journey { width: 60%; }
+.turnout-journey .comparison-panel { width: 39%; }
+.turnout-journey #study-orientation { display: none; }
+.turnout-journey .point-arrangement { max-width: 65ch; }
+.journey-connections { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
+.journey-connections button { color: var(--accent); min-height: 44px; text-align: left; }
+@media (max-width:1100px){
+  .turnout-journey #point-journey,.turnout-journey .comparison-panel { width:100%; }
+}
+
+.turnout-journey .tour-bar { display:none; }
+
+.turnout-journey .model-pin { width:auto;min-width:50px;height:30px;border-radius:4px;padding:0 7px;font-size:12px; }

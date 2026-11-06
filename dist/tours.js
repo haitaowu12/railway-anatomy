@@ -956,3 +956,14 @@ export const TOURS = [
   }
 ];
 TOURS.push(...STUDY_TOURS);
+
+TOURS.push({
+  id:'turnout-wheels',label:'32 · Follow wheels through a turnout',title:'Both wheels explain the crossing',domain:'track',view:'turnout',component:'track-wheelset',
+  explanation:'Follow the two wheel paths through a selected, locked turnout, then inspect the fixed crossing and its opposite check rail.',
+  actionText:'Compare the straight and diverging routes. Open Crossing close-up to keep the crossing wheel and its opposite check rail together.',actionLabel:'Follow the wheelset',
+  action:{view:'turnout',component:'track-wheelset',variant:'straight',exploded:0,mode:'coasting',scenario:'nominal'},
+  question:'At this fixed, tread-bearing crossing, what does the opposite check rail guide?',
+  choices:['The back of the other wheel flange, helping position the wheelset','The underside of the crossing wheel tread, carrying its normal load','The point-machine operating rod'],answer:0,
+  feedback:['The check rail can act on the back of the opposite wheel flange. The axle connects that guidance to the wheel passing the crossing nose.','The wheel tread carries vertical load on the wing rail and crossing nose. The opposite check rail provides lateral guidance.','The operating rod moves the blade before passage. The check rail guides a wheel flange’s back face.'],
+  sourceConcepts:['track-turnout','track-wheelset','track-frog','track-check-rail']
+});

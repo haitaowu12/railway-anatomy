@@ -5,6 +5,7 @@ import {CONCEPTS,SOURCES} from '../dist/catalog.js';
 import {DOMAINS,VIEWS} from '../dist/model.js';
 import {PROCESS_VIEWS,PEOPLE_ROLES} from '../dist/process-data.js';
 import {CONTROL_DOMAINS,CONTROL_ARCHITECTURES} from '../dist/control-interfaces-data.js';
+import {TOURS} from '../dist/tours.js';
 
 // Read the committed artifact. Importing the generator would silently repair a
 // stale directory and hide the defect this check is meant to catch.
@@ -27,7 +28,7 @@ const destination=id=>{
 let passed=0;const failures=[];
 function check(name,fn){try{fn();passed++;console.log(`PASS ${name}`);}catch(e){failures.push(name);console.error(`FAIL ${name}: ${e.message}`);}}
 
-check('Every static-reading app destination names a real view, function, role or process stage',()=>{
+check('Every static-reading app destination names a real study, view, function, role or process stage',()=>{
   assert(links.length>=CONCEPTS.length,'The directory lost its exploration links');
   for(const href of links){
     const url=new URL(href,'https://example.org/railway-anatomy/reading.html');
@@ -45,6 +46,9 @@ check('Every static-reading app destination names a real view, function, role or
     }else if(page==='interfaces'){
       assert(CONTROL_DOMAINS.some(x=>x.id===a),`Unknown interface function in ${href}`);
       assert(CONTROL_ARCHITECTURES.some(x=>x.id===b),`Unknown architecture in ${href}`);
+    }else if(page==='learn'){
+      assert(TOURS.some(t=>t.id===a),`Unknown guided study in ${href}`);
+      assert(!b&&!c&&!d,`Unexpected guided study segments in ${href}`);
     }else if(page==='people'){
       assert(roles.has(a),`Unknown role in ${href}`);
     }else assert.fail(`Unrecognized reading destination: ${href}`);

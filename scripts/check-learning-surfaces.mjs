@@ -46,7 +46,7 @@ const harness=new Function(...Object.keys(dependencies),`
   ${between('const isProcessPage=','const preferredPresentation=')}
   ${between('const preferredPresentation=','function syncPlatform(')}
 
-  ${between('function isPointJourney(){','function readHash(){')}
+  ${between('function isTurnoutJourney(){','function readHash(){')}
   ${between('function isInterfaceTour()','function routeLabel(')}
   ${between('function tourNavigationMarkup(','function renderNavigation(')}
   ${between('function renderLesson(){','function showFeedback(')}

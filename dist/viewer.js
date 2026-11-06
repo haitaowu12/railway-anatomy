@@ -1681,13 +1681,24 @@ export function createViewer(container, callbacks = {}) {
     state.explodeScope = next;
     animateModel(); fitToView(); controls.update(); requestRender(); return state.explodeScope;
   }
+  function turnoutFrameRoots(){
+    const record=models.get(state.view);
+    return ['track-frog','track-check-rail','track-wheelset'].flatMap(id=>assemblyRoots(record,id,state)).filter(nodeVisible);
+  }
+  function frameTurnout(detail=false){
+    state.focused=null;state.focusedInstanceId=null;
+    const record=models.get(state.view);
+    if(!detail){camera.position.copy(controls.target).add(new THREE.Vector3(.001,18,12));const single=record.root.getObjectByName('single-turnout');const fitted=fitToView(single?[single]:null);controls.update();requestRender();return fitted;}
+    camera.position.copy(controls.target).add(new THREE.Vector3(3,11,10));
+    const fitted=fitToView(turnoutFrameRoots());controls.update();requestRender();return fitted;
+  }
   function setCameraPreset(id = 'isometric') {
-    if (id === 'isometric') return resetCamera();
+    if (id === 'isometric') return state.view==='turnout'&&state.turnoutDetail?frameTurnout(true):resetCamera();
     const config = VIEW[state.view], target = new THREE.Vector3(...config.target);
     const d = new THREE.Vector3(...config.camera).distanceTo(target);
     controls.target.copy(target);
     camera.position.copy(target).add(id === 'top' ? new THREE.Vector3(.001, d, .001) : new THREE.Vector3(0, d * .17, d));
-    fitToView(); controls.update(); requestRender();
+    fitToView(state.view==='turnout'&&state.turnoutDetail?turnoutFrameRoots():undefined); controls.update(); requestRender();
   }
   function frameVariant() {
     if (!['station', 'platform-interface'].includes(state.view)) return false;
@@ -1831,16 +1842,23 @@ export function createViewer(container, callbacks = {}) {
       if (changed) { clearStructuralExploration(); state.phase = 0; state.playing = false; }
       state.variant = variant; animateModel(); if (changed) { if (!frameVariant()) { fitToView(); controls.update(); } } requestRender();
     },
+    setTurnoutDetail(value){const next=Boolean(value);if(next!==Boolean(state.turnoutDetail)){state.turnoutDetail=next;animateModel();requestRender();}},
+    frameTurnout,
     setScenario(value) { state.scenario=typeof value==='string'?value:'nominal'; animateModel(); updateSelection(); requestRender(); },
     setSignals(value) { state.signals=Boolean(value);animateModel();requestRender(); },
     focusComponent: frameSelection,
     setCameraPreset,
-    resetCamera,
+    resetCamera(){return state.view==='turnout'&&state.turnoutDetail?frameTurnout(true):resetCamera();},
     resize,
     dispose,
     getComponentScreenPositions() {
       if (!cachedComponentBounds) cachedComponentBounds = componentBounds(models.get(state.view));
       const record = models.get(state.view), positions = screenPositions(cachedComponentBounds, camera, labelAnchorInstances);
+      if(state.view==='turnout'){
+        const guard=record.root.getObjectByName(state.variant==='diverging'?'diverging-route-check-rail':'straight-route-check-rail');
+        const point=positions.find(p=>p.id==='track-check-rail');
+        if(guard&&point){const anchor=new THREE.Vector3(...guard.userData.labelAnchor).applyMatrix4(guard.matrixWorld).project(camera);point.x=(anchor.x+1)/2;point.y=(1-anchor.y)/2;}
+      }
       const visible = [];record.root.traverse(node => { if (node.isMesh && nodeVisible(node) && (!node.material?.transparent || node.material.opacity > .4)) visible.push(node); });
       for (const p of positions) {
         raycaster.setFromCamera(new THREE.Vector2(p.x * 2 - 1, 1 - p.y * 2), camera);

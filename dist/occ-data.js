@@ -753,7 +753,7 @@ export const OCC_CONCEPTS = [
     "summary": "A video view is one source of contextual information.",
     "details": [
       "Station-management products can integrate video with other operator information.",
-      "The legacy incident link now opens a process study. Its equipment context is an on-screen tile and the physical camera, network and recorder in the communications area.",
+      "Incident coordination is examined in People & processes. The equipment view connects the console tile with the camera, network and recorder.",
       "A camera view is not proof of isolation, track clearance or a safe route."
     ],
     "sources": [

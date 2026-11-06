@@ -35,3 +35,7 @@ The six stage buttons pause these functions for explanation. The last stage foll
 - **One detector missing:** the blades reach B and both locks engage, but the far-blade detector input is unavailable. B is not indicated. The rods still show the physical blade positions; an absent input is not represented as an incorrectly positioned blade.
 
 The contact symbols express these correspondence conditions, not a complete signalling circuit. The interlocking diagram treats the B indication as one required input alongside train detection and conflicting-route checks. It does not infer a clear signal from point indication alone.
+
+## Continue through the complete turnout
+
+**Follow wheels** opens the selected complete route: A is straight and B diverges. The wheelset study keeps that blade setting locked during passage. **Inspect the selected point setting** returns to the corresponding A or B physical endpoint. For an incomplete indication, **Compare wheel routes** opens a separate complete-route example. See [the turnout study](TURNOUT-STUDY.md) for the crossing and opposite check-rail relationships.

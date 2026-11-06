@@ -3758,13 +3758,13 @@ export const PART_RELATIONS = {
     "track-switch-rail",
     "track-stretcher",
     "track-point-detection",
-    "train-control"
+    "interlocking"
   ],
   "track-point-detection": [
     "track-point-machine",
     "track-switch-rail",
     "track-stretcher",
-    "train-control",
+    "interlocking",
     "atp"
   ],
   "track-crossover": [
@@ -4174,3 +4174,17 @@ for(const contexts of Object.values(PART_VIEW_VARIANTS))for(const view of ['swit
  const variants=contexts[view];if(variants?.includes('proved')&&variants.includes('unproved'))variants.push('detector-missing');
 }
 Object.assign(NEW_VIEWS.interlocking.variants.find(v=>v.id==='detector-missing'),{defaultPresentation:'connections',topology:pointIndicationDiagram('detector-missing')});
+
+SYSTEMS.find(d=>d.id==='track').parts.push('track-wheelset');
+PART_VIEWS['track-wheelset']='turnout';PART_VARIANTS['track-wheelset']='straight';
+PART_CONTEXTS['track-wheelset']=['track-support','turnout','crossing'];
+PART_VIEW_VARIANTS['track-wheelset']={'track-support':['ballasted','slab','embedded'],turnout:['straight','diverging','crossover'],crossing:['frog','diamond']};
+PART_RELATIONS['track-wheelset']=['track-turnout','track-frog','track-check-rail','bogie'];
+
+PART_VIEWS['track-stretcher']='turnout';PART_VARIANTS['track-stretcher']='crossover';PART_VIEW_VARIANTS['track-stretcher']={turnout:['crossover']};
+
+for(const id of ['track-crossing-nose','track-wing-rail']){
+ SYSTEMS.find(d=>d.id==='track').parts.push(id);PART_VIEWS[id]='crossing';PART_VARIANTS[id]='frog';
+ PART_CONTEXTS[id]=['turnout','crossing'];PART_VIEW_VARIANTS[id]={turnout:['straight','diverging','crossover'],crossing:['frog']};
+ PART_RELATIONS[id]=['track-frog','track-wheelset','track-check-rail'];
+}

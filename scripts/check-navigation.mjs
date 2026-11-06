@@ -8,6 +8,8 @@ import {normalizePlatformState,platformForComponent} from '../dist/platform-conf
 import {DOMAINS,VIEWS,MODES,variantFor,defaultVariant,cutawayFor} from '../dist/model.js';
 import {CONCEPTS} from '../dist/catalog.js';
 import {TOURS} from '../dist/tours.js';
+import {turnoutGuide} from '../dist/turnout-journey.js';
+import {motionStep} from '../dist/interaction-state.js';
 import {domainForView,routeState,viewTrail} from '../dist/navigation.js';
 import {DEFAULT_ELECTRIFICATION,normalizeElectrification,electrificationForComponent} from '../dist/electrification.js';
 import {PROCESS_VIEWS,PEOPLE_ROLES} from '../dist/process-data.js';
@@ -101,6 +103,17 @@ for(const [value,phase]of [['-4',0],['4',1],['bad',0]])assert.equal(harness.pars
 const pointExit=harness.roundTrip({...base,pointPhase:.9});
 assert(!new URL(pointExit.url).searchParams.has('pointPhase'),'A different study retained point-machine state');
 console.log('PASS point-machine bookmarks: chapter, outcome, stage, history restoration, malformed phases and exit cleanup');
+
+const turnoutLesson=harness.lesson('turnout-wheels',base);
+for(const variant of ['straight','diverging'])for(const turnoutDetail of [false,true]){
+  const guide=turnoutGuide(variant,turnoutDetail);
+  for(const [index,step] of guide.steps.entries()){
+    const reopened=harness.roundTrip({...turnoutLesson,variant,turnoutDetail,turnoutPhase:step.at});
+    assert.equal(reopened.state.variant,variant);assert.equal(reopened.state.turnoutDetail,turnoutDetail);
+    assert.equal(motionStep(guide.steps,reopened.state.turnoutPhase),index,'Reopening a selected turnout stage moved it to the preceding stage');
+  }
+}
+console.log('PASS turnout bookmarks retain every selected stage in both routes and scales');
 
 let routes=0,processRoutes=0,interfaceRoutes=0;
 for(const [view,config]of Object.entries(VIEWS)){

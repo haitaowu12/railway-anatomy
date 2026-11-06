@@ -1,3 +1,4 @@
+import {turnoutGuide} from './turnout-journey.js';
 // Enable playback only where motion explains an authored mechanism. These
 // captions describe the illustration, not a real railway operating sequence.
 export function applyMotionGuides(views){
@@ -78,6 +79,7 @@ export function applyMotionGuides(views){
       step(1,'Passage complete','This illustrates wheel guidance and geometry. It does not grant a route, set a permitted speed or simulate an interlocking.')
     ],14);
   }
+  for(const route of ['straight','diverging'])views.turnout.variants.find(v=>v.id===route).animation=turnoutGuide(route);
   for(const id of ['proved','unproved','detector-missing']){
     const incomplete=id==='unproved',missing=id==='detector-missing';
     enable('switch-drive',id,'Move, lock and detect both blades',[

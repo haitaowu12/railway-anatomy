@@ -121,8 +121,8 @@ if (catalog && model && tours && atlas) {
   };
 
   await check('Expanded concepts and source records have complete, public content', async () => {
-    assert.equal(CONCEPTS.length, 330, 'Update the published content count when the release scope changes');
-    assert.equal(SOURCES.length, 233, 'Update the published source count when the release scope changes');
+    assert.equal(CONCEPTS.length, 333, 'Update the published content count when the release scope changes');
+    assert.equal(SOURCES.length, 236, 'Update the published source count when the release scope changes');
     unique(CONCEPTS.map(item => item.id), 'Concepts');
     unique(SOURCES.map(item => item.id), 'Sources');
     for (const source of SOURCES) {
@@ -235,7 +235,7 @@ if (catalog && model && tours && atlas) {
   });
 
   await check('Guided tours have valid domains, actions, evidence and answer feedback', async () => {
-    assert.equal(tours.length, 31);
+    assert.equal(tours.length, 32);
     unique(tours.map(item => item.id), 'Lessons');
     tours.forEach((tour, index) => {
       assert.equal(Number(tour.label.match(/^(\d+) · /)?.[1]), index + 1, `${tour.id} has an out-of-sequence label`);
@@ -404,7 +404,7 @@ function runSuite(script) {
   const result=spawnSync(process.execPath,[path.join(repo,'scripts',script)],{cwd:repo,stdio:'inherit'});
   assert.equal(result.status,0,`${script}: ${result.error?.message||result.signal||'checks failed'}`);
 }
-for(const script of ["check-colorfigures.mjs", "check-technology.mjs", "check-navigation.mjs", "check-depot.mjs", "check-occ.mjs", "check-exploration.mjs", "check-comparisons.mjs", "check-studies.mjs", "check-processes.mjs", "check-electrification.mjs", "check-communications.mjs", "check-station-platform.mjs", "check-interactions.mjs", "check-motion.mjs", "check-point-machine.mjs", "check-depth-mechanics.mjs", "check-domain-depth.mjs", "check-workspaces.mjs", "check-physical-labs.mjs", "check-evidence-labs.mjs", "check-component-motion.mjs", "check-system-diagrams.mjs", "check-control-interfaces.mjs", "check-learning-surfaces.mjs", "check-reading.mjs"]) {
+for(const script of ["check-colorfigures.mjs", "check-technology.mjs", "check-navigation.mjs", "check-depot.mjs", "check-occ.mjs", "check-exploration.mjs", "check-comparisons.mjs", "check-studies.mjs", "check-processes.mjs", "check-electrification.mjs", "check-communications.mjs", "check-station-platform.mjs", "check-interactions.mjs", "check-motion.mjs", "check-point-machine.mjs", "check-turnout-journey.mjs", "check-depth-mechanics.mjs", "check-domain-depth.mjs", "check-workspaces.mjs", "check-physical-labs.mjs", "check-evidence-labs.mjs", "check-component-motion.mjs", "check-system-diagrams.mjs", "check-control-interfaces.mjs", "check-learning-surfaces.mjs", "check-reading.mjs"]) {
   await check(`Independent suite: ${script}`,async()=>runSuite(script));
 }
 console.log(`\n${passed} checks passed; ${failures.length} failed.`);
