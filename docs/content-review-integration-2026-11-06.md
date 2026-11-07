@@ -60,3 +60,7 @@ The previous depot-guide test required 600–900 words. That editorial length co
 ## Integrated release result
 
 Railway Anatomy 10.3.0 passes the full `npm run check` gate: 39 top-level checks and all invoked model, route, process, numerical and reading suites, with zero failures. The final reading directory contains 333 concepts, 239 source records and 353 application destinations. `npm run build` and `npm run check:release` pass for build `8b086b50436fdb83`, including 150 version-consistent local dependencies and release identity metadata.
+
+## Published browser follow-up
+
+The published 10.3.0 application was checked in Chrome: global search opened the turnout, Back restored the overview, process navigation opened the intended work-protection study, and the 320 px document stayed within its viewport. The phone header still required sideways scrolling to reach all primary sections. Version 10.3.1 changes that navigation to two columns, retaining 48 px minimum targets and allowing long labels to wrap. The existing header becomes non-sticky at this width, so it scrolls away with the page. This follow-up changes layout only; the 39/39 behavioral result remains applicable.
