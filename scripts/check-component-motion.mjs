@@ -86,7 +86,7 @@ check('Brake study applies opposed pads at rest and restores the release gap',()
 check('Plant pump shaft and impeller move together while enclosure and control conclusions remain fixed',()=>{
   state('station-plant','fire-pump',0,'water');const shaft=one('pump-drive-shaft'),impeller=one('pump-impeller'),casing=one('pump-hydraulic-section'),datum=world(casing);
   for(const phase of [1,2.7,5]){v.setPhase(phase);h.draw();close(shaft.rotation.x,impeller.rotation.x);close(shaft.rotation.x,phase/5*Math.PI*4);assert(world(casing).distanceTo(datum)<1e-9);}
-  assert(canAnimate(VIEWS['fire-systems'],'water'));assert.match(animationFor(VIEWS['fire-systems'],'water').steps[3].description,/has not started/);
+  assert(canAnimate(VIEWS['fire-systems'],'water'));assert.match(animationFor(VIEWS['fire-systems'],'water').steps[3].description,/Pump starting and sprinkler operation have separate controls/);
 });
 check('Lift suspension wraps the sheave and preserves total car-to-counterweight rope length',()=>{
   state('station','station-lift',0,'passenger');const lift=one('station-lift'),car=one('lift-carriage',lift),weight=one('lift-counterweight',lift),sheave=one('lift-traction-sheave',lift);

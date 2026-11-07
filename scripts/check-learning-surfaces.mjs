@@ -86,7 +86,7 @@ assert.match(current.html['#processes-page'],/Examine the movement-protection in
 assert.doesNotMatch(current.html['#process-lesson'],/Trainway sensing|Platform edge/);
 current=harness.enter('infrastructure-follow-up');
 assert.equal(current.state.processStep,'review');assert.equal(current.state.processId,'infrastructure-maintenance');
-assert.match(current.html['#process-lesson'],/Review evidence and continuing actions/);
+assert.match(current.html['#process-lesson'],/Review the work evidence/);
 assert.doesNotMatch(current.html['#process-lesson'],/bearing marker|Work complete with Check recorded/);
 current=harness.enter('supervisory-boundaries');
 assert.equal(current.mounts,2);assert.equal(current.destroys,1);

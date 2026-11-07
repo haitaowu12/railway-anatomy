@@ -3,13 +3,13 @@
 export const DEFAULT_PLATFORM_EDGE = 'open';
 export const DEFAULT_PLATFORM_SENSOR = 'lidar';
 export const PLATFORM_EDGES = [
-  { id: 'open', label: 'Open edge', description: 'An open boarding edge, with no platform-door facade.' },
-  { id: 'half-height', label: 'Half-height doors', description: 'A lower barrier with sliding boarding openings.' },
-  { id: 'full-height', label: 'Full-height doors', description: 'A tall facade with sliding boarding openings.' },
+  { id: 'open', label: 'Open edge', description: 'An open boarding edge with no platform-door barrier.' },
+  { id: 'half-height', label: 'Half-height doors', description: 'A lower barrier with sliding boarding doors.' },
+  { id: 'full-height', label: 'Full-height doors', description: 'A full-height barrier with sliding boarding doors.' },
 ];
 export const PLATFORM_SENSORS = [
-  { id: 'lidar', label: 'LiDAR', description: 'An illustrative ranging sensor and sampled track volume.' },
-  { id: 'radar', label: 'Paired radar', description: 'An illustrative transmitter and receiver across the track.' },
+  { id: 'lidar', label: 'LiDAR', description: 'A laser sensor measures distances across a selected track area.' },
+  { id: 'radar', label: 'Paired radar', description: 'A transmitter and receiver monitor a path across the track.' },
 ];
 export const PLATFORM_VARIANTS = ['open-platform', 'platform-doors', 'interspace', 'platform-end'];
 export const normalizePlatformEdge = value => PLATFORM_EDGES.some(x => x.id === value) ? value : DEFAULT_PLATFORM_EDGE;
@@ -23,7 +23,7 @@ export function normalizePlatformState(input = {}) {
   let notice = '';
   if (!platformVariantAvailable(variant, platformEdge)) {
     variant = 'open-platform';
-    notice = 'The open edge has no space between a train and platform doors. The view now shows trainway sensing.';
+    notice = 'Interspace sensing needs platform doors. The open-edge view shows trainway sensing.';
   }
   return { platformEdge, platformSensor: normalizePlatformSensor(input.platformSensor), variant, notice };
 }

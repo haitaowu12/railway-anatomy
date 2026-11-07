@@ -15,8 +15,8 @@ export function dependencyState(variant='normal') {
   return {supply,pathA,pathB:true,stationLive,powerLive,identity,configuration,recorder,historyGap,
     stationRequests,powerRequests,requests:stationRequests&&powerRequests,
     rows:[
-      ['Station live information',stationLive?'Available via '+(pathA?'A or B':'B'):'Unavailable','The fictional station application has two communication paths but one common application supply.'],
-      ['Power live information',powerLive?'Available via A':'Unavailable','This fictional power application has only path A. A station alternate path is not its alternate.'],
+      ['Station live information',stationLive?'Available via '+(pathA?'A or B':'B'):'Unavailable','The example station application has two communication paths but one common application supply.'],
+      ['Power live information',powerLive?'Available via A':'Unavailable','This example power application has only path A. A station alternate path is not its alternate.'],
       ['New station request',!stationLive?'No communication / application path':!identity?'Identity unavailable':!configuration?'Configuration unconfirmed':'Prerequisites represented','The station path and application, identity and consistent configuration are separate prerequisites. Permission and execution are not inferred.'],
       ['New power request',!powerLive?'No communication / application path':!identity?'Identity unavailable':!configuration?'Configuration unconfirmed':'Prerequisites represented','Station path B does not provide a request path for the power application.'],
       ['Recording infrastructure',recorder?'Recorder available':'Recording interrupted','An available recorder does not establish receipt of fresh source data.'],
@@ -34,7 +34,7 @@ export function journeyState(variant='available') {
     rows:[
       ['Entrance and gate','Connected','A wide gate is one part of a complete usable route.'],
       ['Near lift',mainLift?'Available':'Unavailable','Stairs do not replace this step-free connection.'],
-      ['Alternative lift',alternate?'Selected and connected':'Not assumed available','Only the explicitly selected fictional alternative creates this second route.'],
+      ['Alternative lift',alternate?'Selected and connected':'Not assumed available','The second route becomes available when the alternative lift and its connecting paths are selected.'],
       ['Platform',platform?'Reachable':'No demonstrated step-free route','Check the whole route, including approach and destination.'],
       ['Vehicle boarding',!platform?'Not reached':variant==='aid-required'?'Aid/assistance still required':variant==='aid-placed'?'Illustrated bridging plate in place':'Connected in the selected example','Platform access and the vehicle gap are distinct interfaces. A drawn plate does not prove a usable or compliant deployment.'],
       ['Information and assistance','Separate service','Wayfinding, audible/visual information and assistance remain relevant even where the physical route is usable.'],
@@ -50,7 +50,7 @@ const controlNodes=()=>[
 ];
 
 export function systemDiagram(state,definition={}) {
-  const {view,variant='default'}=state,chosen=definition.variants?.find(v=>v.id===variant);
+  const {view,variant='default'}=state,chosen=definition.variants?.find(v=>v.id===variant),pointUnproved=['unproved','detector-missing'].includes(variant);
   const description=chosen?.description||definition.note||'';
   if(view==='electrification') {
     const p=electrificationProfile(state.electrification),ac=p.supply==='AC',overhead=p.id.startsWith('overhead'),fourth=p.id==='fourth-rail-dc';
@@ -76,11 +76,11 @@ export function systemDiagram(state,definition={}) {
   ],[edge('localization','onboard','Position information with its defined confidence'),edge('onboard','radio','Train reports and received movement information','both'),edge('radio','wayside','Control-message exchange; transport is not the decision','both'),edge('routes','wayside','Route conditions through the selected interface')]);
   if(view==='signalling'||view==='interlocking')return diagram(view==='interlocking'?'Request, physical movement, proof and route output':'Detection and route protection',description,[
     node('request','Route request','ats','Operating interface','A request, not proved conditions'),
-    node('logic','Interlocking','interlocking','Route protection',variant==='unproved'?'Proof incomplete':'Evaluates relevant conditions'),
+    node('logic','Interlocking','interlocking','Route protection',pointUnproved?'Proof incomplete':'Evaluates relevant conditions'),
     node('points','Point mechanism','point-machine','Field equipment','Movement is distinct from indication'),
     node('detection','Train detection','train-detection','Field equipment',variant==='occupied'?'Occupied example':'Defined detection input'),
     node('output','Signal / route output','lineside-signal','Operating interface','Meaning depends on the signalling design'),
-  ],[edge('request','logic','Request is evaluated against route conditions'),edge('logic','points','Point movement command'),edge('points','logic',variant==='unproved'?'Required position/locking proof is absent':'Separate position and locking proof'),edge('detection','logic','Defined occupancy or clear indication'),edge('logic','output',variant==='unproved'||variant==='occupied'?'The selected example withholds the permissive condition':'Only the selected conditions are illustrated; no complete interlocking is implemented')]);
+  ],[edge('request','logic','Request is evaluated against route conditions'),edge('logic','points','Point movement command'),edge('points','logic',pointUnproved?'Required position/locking proof is absent':'Separate position and locking proof'),edge('detection','logic','Defined occupancy or clear indication'),edge('logic','output',pointUnproved||variant==='occupied'?'The selected example withholds the permissive condition':'The interlocking evaluates the represented route conditions')]);
   if(view==='etcs') {
     if(variant==='level-2')return diagram('ETCS Level 2: radio and reference are different paths',description,[
       node('route','Interlocking','interlocking','Infrastructure','Relevant route information'),node('rbc','Radio Block Centre','rbc','Infrastructure','Generates defined movement information'),
@@ -93,15 +93,15 @@ export function systemDiagram(state,definition={}) {
   }
   if(view==='seltrac') {
     const loop=variant==='loop';
-    return diagram(loop?'Legacy SelTrac loop: information, not traction power':variant==='g9'?'SelTrac G9: logical functions and hosting':'SelTrac: radio transport',description,[
+    return diagram(loop?'Legacy SelTrac: inductive-loop communication':variant==='g9'?'SelTrac G9: logical functions and hosting':'SelTrac: radio transport',description,[
       node('onboard','Onboard control','train-control','Train','Protection and driving responsibilities'),
       node('interface',loop?'Under-car loop pickup':'Train radio',loop?'loop-pickup':'train-radio','Train','Communication interface'),
       node('bearer',loop?'Inductive data loop':'Wayside communications',loop?'seltrac-loop':'wayside-radio','Communications','Selected information transport'),
       node('wayside',variant==='g9'?'Hosted control functions':'Wayside control functions',variant==='g9'?'seltrac-g9':'zone-controller','Wayside functions','Allocation is supplier/generation dependent'),
-    ],[edge('onboard','interface','Defined onboard interface','both'),edge('interface','bearer','Train–wayside message exchange','both'),edge('bearer','wayside','Control messages; no universal cabinet allocation','both')]);
+    ],[edge('onboard','interface','Defined onboard interface','both'),edge('interface','bearer','Train–wayside message exchange','both'),edge('bearer','wayside','Messages to and from the control functions','both')]);
   }
   if(view==='communications')return diagram('Separate the onboard information services',
-    'A shared physical network may carry several services, but convergence and cross-service gateways require an explicit design. This map shows no assumed bridge between train-control radio and the onboard service network.',[
+    'A physical network can carry several services through designed interfaces. This example shows train-control radio and the onboard service network as separate paths.',[
       node('train','Train-control function','train-control','Control service','Control messages'),node('radio','Train–wayside radio','train-radio','Communications','Selected transport'),
       node('network','Onboard data network','train-network','Communications','Defined service interfaces'),node('vehicle','Vehicle management','tcms','Vehicle services','Equipment status and requests'),
       node('passenger','Passenger information','passenger-info','Vehicle services','Passenger messages'),
@@ -151,10 +151,10 @@ export function systemDiagram(state,definition={}) {
       status(edge('help','platform','Wayfinding and assistance; not a physical route'),null,'Availability separately established'),
     ],{kind:'journey',rows:s.rows,result:s.route,sources:chosen?.sources||['A01','A02','A03']});
   }
-  if(view==='tunnel-ventilation'&&variant==='smoke-objective')return diagram('Ventilation objective, controller and returned evidence',description,[
+  if(view==='tunnel-ventilation'&&variant==='smoke-objective')return diagram('Ventilation objective, control and feedback',description,[
     node('objective','Engineered smoke objective','smoke-control','Design and operations','Depends on zone and incident'),node('controller','Tunnel ventilation controller','tvcs-controller','Local control','Owns the defined mode logic and interlocks'),
     node('fan','Fan equipment','tunnel-fan','Plant','Command and measured state differ'),node('damper','Damper equipment','tunnel-damper','Plant','Returned position is a separate input'),node('supervision','Supervisory interface','station-scada','Design and operations','Optional status / permitted mode requests'),
-  ],[edge('objective','controller','Approved control design defines eligible modes; the diagram gives no fan recipe'),edge('controller','fan','Defined commands and returned plant feedback','both'),edge('controller','damper','Defined commands and separate position evidence','both'),edge('controller','supervision','Selected monitoring / request interface if provided','both')],{interfaceDomain:'tunnel'});
+  ],[edge('objective','controller','The engineered control design defines the available modes'),edge('controller','fan','Defined commands and returned plant feedback','both'),edge('controller','damper','Defined commands and separate position evidence','both'),edge('controller','supervision','Selected monitoring / request interface if provided','both')],{interfaceDomain:'tunnel'});
   if(view==='occ-equipment')return diagram('Physical equipment and the functions it supports',description,[
     node('service','Compute host','occ-application-service','Computing','One physical host can run multiple services; an application can span hosts'),
     node('network','Network / interface hardware','occ-supervisory-network','Communications','Carries defined exchanges; device management and service payloads differ'),
@@ -168,10 +168,10 @@ export function systemDiagram(state,definition={}) {
     edge('power','service','Illustrative supported electrical supply'),
     edge('power','network','Illustrative supported electrical supply'),
   ],{sources:['OC16','OC08','OC09'],rows:[['Hardware and function','Different subjects','A rack or host is equipment. An application is a software function with an allocated scope.'],['Deployment','Illustrative arrangement','Additional hosts do not establish redundancy, synchronization or failover.'],['Availability','Not inferred from this layout','Use the OCC application inspector to compare an actual point path, quality and returned evidence.']],result:'Physical connections and software responsibilities are related, but they do not have a one-to-one deployment rule.'});
-  if(view==='depot-testing')return diagram('A test fixture and a test conclusion are different',description,[
+  if(view==='depot-testing')return diagram('From test equipment to a recorded result',description,[
     node('subject','Identified vehicle / item','depot-functional-checks','Test definition','Configuration and work scope'),node('conditions','Declared test conditions','depot-diagnostics','Test definition',variant==='movement'?'Defined movement-test boundary':'Defined stationary-test boundary'),
     node('observe','Stimulus and observation','depot-functional-checks','Evidence','Expected and observed response'),node('record','Result and limitations','change-test','Evidence','Traceable to the subject'),node('decision','Maintenance release interface','depot-maintenance-release','Review','A separate responsible decision'),
-  ],[edge('subject','conditions','Match the test to the item and configuration'),edge('conditions','observe','Define what can be observed under these conditions'),edge('observe','record','Retain response, timing, exceptions and limitations'),edge('record','decision','Evidence supports only its declared scope; animation cannot issue a release')],{rows:[['Subject','Identified','Vehicle/item, configuration and relevant work are traceable.'],['Conditions',variant==='movement'?'Movement':'Stationary','No speeds, stopping limits or depot operating instructions are prescribed.'],['Observation','Retained','Expected response is compared with the actual observation, including an unsuccessful result.'],['Conclusion','Bounded','A component check does not establish every vehicle function or movement permission.']],result:'Use the physical test arrangement as context; examine evidence here.'});
+  ],[edge('subject','conditions','Match the test to the item and configuration'),edge('conditions','observe','Define what can be observed under these conditions'),edge('observe','record','Retain response, timing, exceptions and limitations'),edge('record','decision','The responsible reviewer assesses the results against the work and release requirements')],{rows:[['Subject','Identified','Vehicle/item, configuration and relevant work are traceable.'],['Conditions',variant==='movement'?'Movement':'Stationary','No speeds, stopping limits or depot operating instructions are prescribed.'],['Observation','Retained','Expected response is compared with the actual observation, including an unsuccessful result.'],['Conclusion','Bounded','A component check does not establish every vehicle function or movement permission.']],result:'Use the physical test arrangement as context; examine evidence here.'});
   return null;
 }
 

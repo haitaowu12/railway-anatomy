@@ -250,13 +250,13 @@ export const NEW_VIEWS = {
     "title": "Different foundations, the same wheel load",
     "component": "track-ballasted",
     "level": "Installation",
-    "note": "Original track sections show mechanical support layers. Load cues are qualitative; dimensions, stiffness and drainage performance are not calculated.",
+    "note": "Follow the load from the wheels through rails, supports and the ground. Compare ballasted, slab and embedded track.",
     "variants": [
       {
         "id": "ballasted",
         "label": "Ballasted",
         "title": "A distributed load path",
-        "description": "The rail bridges supports; sleepers spread load into ballast and the layers below. Ballast also provides restraint and a drainage path. The moving cue illustrates load transfer, not a computed pressure field.",
+        "description": "Rails spread wheel loads along the track. Sleepers transfer them into the ballast and formation below. Ballast also holds the sleepers in position and lets water drain.",
         "nodes": [
           "Wheel / rail contact",
           "Rail seat + sleeper",
@@ -275,7 +275,7 @@ export const NEW_VIEWS = {
         "id": "slab",
         "label": "Slab / direct fixation",
         "title": "Resilience is still needed",
-        "description": "A slab or plinth can replace the ballast support arrangement. The fastening system still controls the rail interface; direct fixation is not a rigid rail glued to concrete. The displayed assembly is one selected example.",
+        "description": "A concrete slab or plinth supports the rail instead of ballast. Resilient pads in the fastening system cushion the rail and control how loads enter that support.",
         "nodes": [
           "Rail",
           "Resilient seat + fastener",
@@ -293,7 +293,7 @@ export const NEW_VIEWS = {
         "id": "embedded",
         "label": "Embedded",
         "title": "Support can surround the rail",
-        "description": "Embedded track integrates the rail into a surrounding system. The selected continuous-support illustration differs from discrete embedded support blocks; neither should be treated as the definition of every slab track.",
+        "description": "In this example, resilient material supports the rail continuously within the surrounding structure. Other embedded systems use discrete supports; compare where each arrangement carries the load.",
         "nodes": [
           "Rail",
           "Resilient embedding",
@@ -311,7 +311,7 @@ export const NEW_VIEWS = {
     "title": "Small components, several interfaces",
     "component": "track-rail-clip",
     "level": "Component",
-    "note": "Separate the stack to inspect contact, restraint and insulation. The clip shape and layer arrangement are original schematic geometry.",
+    "note": "Open the rail seat to find the parts that hold the rail, cushion its load and provide electrical insulation.",
     "variants": [
       {
         "id": "sleeper",
@@ -355,7 +355,7 @@ export const NEW_VIEWS = {
     "title": "A route is a complete pair of rail paths",
     "component": "track-turnout",
     "level": "Installation",
-    "note": "Moving blades, fixed rails, connecting rails and a crossing are distinct parts. Route colours illustrate geometry; they are not operating permission.",
+    "note": "Find the moving switch blades, fixed stock rails, connecting rails and crossing. The colours trace routes through the track.",
     "variants": [
       {
         "id": "straight",
@@ -379,7 +379,7 @@ export const NEW_VIEWS = {
         "id": "diverging",
         "label": "Diverging route",
         "title": "A branch changes wheel guidance",
-        "description": "The alternate blade position connects the branch path. The crossing and check rails still guide the wheelset through their selected geometry. No speed or turnout number is inferred.",
+        "description": "The alternative blade position leads the wheelset onto the branch. Follow both rails through the connecting section and crossing to see how the wheels remain guided.",
         "nodes": [
           "Moved blades",
           "Branch closure rails",
@@ -481,7 +481,7 @@ export const NEW_VIEWS = {
     "title": "Guide a wheelset through the gap",
     "component": "track-frog",
     "level": "Component",
-    "note": "The fixed crossing, wing rails and check rail are schematic. This is not a contact-stress or derailment simulation.",
+    "note": "Follow a wheelset across a fixed crossing. The wing and check rails help guide it past the gap in the running surface.",
     "variants": [
       {
         "id": "frog",
@@ -502,8 +502,8 @@ export const NEW_VIEWS = {
       {
         "id": "diamond",
         "label": "Diamond crossing",
-        "title": "Intersecting tracks do not automatically create a turnout",
-        "description": "A diamond lets two tracks intersect. Compare the intersecting running paths and crossing regions; no moving switch is implied by the crossing alone.",
+        "title": "Where two tracks cross",
+        "description": "A diamond crossing lets two tracks intersect. Its running rails and crossing gaps provide intersecting paths; a turnout adds movable switches to choose between routes.",
         "nodes": [
           "Intersecting track A",
           "Crossing regions",
@@ -522,7 +522,7 @@ export const NEW_VIEWS = {
     "title": "Estimate, communicate, protect, drive",
     "component": "cbtc",
     "level": "System",
-    "note": "One radio-CBTC arrangement. Boxes represent functions; their physical allocation varies among suppliers and generations.",
+    "note": "Follow a radio-based communications-based train control (CBTC) system. The boxes group functions; suppliers may combine them in different equipment.",
     "variants": [
       {
         "id": "normal",
@@ -550,13 +550,13 @@ export const NEW_VIEWS = {
     "title": "Detection and route protection",
     "component": "fixed-block",
     "level": "System",
-    "note": "A conventional fixed-block example. Signal colours are abstract indications, not a national aspect code.",
+    "note": "Explore a conventional railway divided into fixed detection sections. Signal colours show the example’s states rather than a country’s aspect code.",
     "variants": [
       {
         "id": "clear",
         "label": "Clear section",
         "title": "A section indication is one input",
-        "description": "Track occupancy information and point proof support route protection. An apparently clear section alone is not a complete permission to proceed.",
+        "description": "Track detection reports whether a section is occupied. The interlocking combines that information with point position, locking and other route conditions before allowing the relevant signal indication.",
         "nodes": [
           "Detection",
           "Interlocking + route proof",
@@ -574,7 +574,7 @@ export const NEW_VIEWS = {
         "id": "occupied",
         "label": "Occupied section",
         "title": "Known occupancy changes the protected route",
-        "description": "The occupied section is marked separately from the train’s geometric position. The demonstration illustrates a protection dependency, not a complete signalling rulebook.",
+        "description": "The occupied section changes which route can be protected. The highlighted detection section represents the reported state; its boundary can extend beyond the visible train.",
         "nodes": [
           "Occupied section",
           "Interlocking constraint",
@@ -595,7 +595,7 @@ export const NEW_VIEWS = {
     "title": "Different communication paths, continuous supervision",
     "component": "etcs-level-1",
     "level": "System",
-    "note": "ETCS level, block principle and automation grade are separate choices. These scenes are selected Level 1 and Level 2 examples.",
+    "note": "Compare European Train Control System (ETCS) Levels 1 and 2. A level describes how track and train exchange information; it does not set the degree of automation.",
     "variants": [
       {
         "id": "level-1",
@@ -618,7 +618,7 @@ export const NEW_VIEWS = {
         "id": "level-2",
         "label": "Level 2",
         "title": "Radio exchange with a Radio Block Centre",
-        "description": "The RBC uses relevant infrastructure information and exchanges movement information with onboard equipment by radio. Balises support location reference. Detection and integrity arrangements still require an explicit design.",
+        "description": "The Radio Block Centre (RBC) uses signalling information to send movement authorities to the train by radio. Balises provide position references. Current Level 2 includes arrangements with different trackside detection and train-integrity provisions, including those formerly called Level 3.",
         "nodes": [
           "Interlocking + RBC",
           "Radio exchange",
@@ -639,13 +639,13 @@ export const NEW_VIEWS = {
     "title": "One product family, different generations",
     "component": "seltrac",
     "level": "Architecture",
-    "note": "Historical arrangements and current public product descriptions are shown separately. This is not an installed-system cabinet map.",
+    "note": "Compare the older inductive-loop arrangement with radio communication and the newer G9 computing architecture.",
     "variants": [
       {
         "id": "loop",
         "label": "Legacy loop",
         "title": "An inductive communication example",
-        "description": "The legacy loop view separates the train–wayside communication medium from the protection and operation functions. The drawn loop is an original functional illustration, not a cable-installation drawing.",
+        "description": "An inductive loop carries information between the train and wayside equipment. Follow the loop pickup to the train-control functions that use those messages.",
         "nodes": [
           "Onboard interface",
           "Inductive data loop",
@@ -660,8 +660,8 @@ export const NEW_VIEWS = {
       {
         "id": "radio",
         "label": "Radio communications",
-        "title": "Transport changes; responsibilities remain identifiable",
-        "description": "Hitachi publishes radio-based SelTrac communications options. The antenna and radio carry information; they do not replace the need to explain localization, protection and driving responsibilities.",
+        "title": "Radio carries the control messages",
+        "description": "Radio carries information between the train and wayside equipment in this SelTrac arrangement. Location estimation, train protection and automatic driving remain separate functions that use the information.",
         "nodes": [
           "Train radio",
           "Wayside communications",
@@ -676,7 +676,7 @@ export const NEW_VIEWS = {
         "id": "g9",
         "label": "G9 publication",
         "title": "Logical functions and their hosting environment",
-        "description": "Hitachi’s 2026 publication describes virtualized signalling safety functions for SelTrac G9. The model separates function from hosting; it makes no claim about a particular deployment, interface or certification.",
+        "description": "Hitachi’s 2026 description of SelTrac G9 places virtualized signalling safety functions in a private-cloud environment. Compare the logical functions with the computing equipment that hosts them.",
         "nodes": [
           "Communication interface",
           "Hosted control functions",
@@ -694,13 +694,13 @@ export const NEW_VIEWS = {
     "title": "A route request needs proved conditions",
     "component": "interlocking",
     "level": "Assembly",
-    "note": "A bounded relationship example connects physical points, detection and route logic. It does not implement a complete interlocking.",
+    "note": "An interlocking checks route conditions and prevents conflicting permissions. Compare the point movement, returned indication and route logic.",
     "variants": [
       {
         "id": "proved",
         "label": "Conditions proved",
         "title": "Command, feedback and permission are different",
-        "description": "The point mechanism moves, position is indicated, and the relevant route inputs are shown together. Permission is represented as a separate output of the selected logic.",
+        "description": "The point machine moves the blades, locks them and returns an indication. The interlocking combines that indication with the other route conditions before permitting the route.",
         "nodes": [
           "Route request",
           "Point command",
@@ -716,8 +716,8 @@ export const NEW_VIEWS = {
       {
         "id": "unproved",
         "label": "Proof incomplete",
-        "title": "Do not infer position from a command",
-        "description": "With the proof condition incomplete, the model does not present the route as proved. A mechanism’s appearance is also not a substitute for the selected detection interface.",
+        "title": "A command still needs a returned indication",
+        "description": "The movement command has been issued, but the required position and locking indication is incomplete. The route therefore remains unproved in this example.",
         "nodes": [
           "Command",
           "Missing indication",
@@ -753,13 +753,13 @@ export const NEW_VIEWS = {
     "title": "Three devices, three information roles",
     "component": "train-detection",
     "level": "Component",
-    "note": "Occupancy detection and a location reference answer different questions. No detector availability or accuracy is calculated.",
+    "note": "Compare detection of a train within a section with a position reference received as the train passes a known point.",
     "variants": [
       {
         "id": "track-circuit",
         "label": "Track circuit",
         "title": "An electrical section detects occupancy",
-        "description": "The rail circuit, its feed and its receiver form the selected detection example. A wheelset changes the circuit condition; this is separate from a traction return or a LIM secondary.",
+        "description": "A feed and receiver use the running rails as an electrical detection circuit. A wheelset bridges the rails and changes what the receiver detects. The same running rails may also carry traction return current; detection and power return have different functions and must be electrically compatible.",
         "nodes": [
           "Circuit feed",
           "Rail section",
@@ -775,7 +775,7 @@ export const NEW_VIEWS = {
         "id": "axle-counter",
         "label": "Axle counter",
         "title": "Count at the section boundaries",
-        "description": "Wheel sensors report axle passages to evaluation equipment. The selected model compares entry and exit counts; it does not show reset procedures or claim that a counter proves train integrity universally.",
+        "description": "Wheel sensors count axles entering and leaving a section. Evaluation equipment uses those counts and system status to report occupation. A clear count is section information; proving the complete train requires the relevant train-integrity arrangement.",
         "nodes": [
           "Entry sensor",
           "Evaluation",
@@ -791,7 +791,7 @@ export const NEW_VIEWS = {
         "id": "balise",
         "label": "Balise",
         "title": "A passing reference is not an occupancy section",
-        "description": "The onboard reader and track-mounted transponder exchange information at a passing point. A balise can support a location reference; it does not perform the same job as a track circuit.",
+        "description": "A track-mounted balise sends a telegram to an onboard reader as the train passes. Its known location can provide a position reference. Track circuits and axle counters instead report section occupation.",
         "nodes": [
           "Track transponder",
           "Passing reader",
@@ -810,7 +810,7 @@ export const NEW_VIEWS = {
     "title": "Public spaces, hidden supporting systems",
     "component": "station-pa",
     "level": "Installation",
-    "note": "A fictional station cutaway connects concourse, platform, equipment spaces and tunnel interfaces. It is not a building or evacuation design.",
+    "note": "Explore a station cutaway, from the concourse and platform to equipment rooms and tunnel connections.",
     "variants": [
       {
         "id": "all",
@@ -834,7 +834,7 @@ export const NEW_VIEWS = {
         "id": "passenger",
         "label": "Passenger systems",
         "title": "Information, assistance and situational awareness",
-        "description": "Displays, loudspeakers, help points, cameras and lighting serve different passenger and operational needs. Their co-location does not make them one control system.",
+        "description": "Displays give journey information, loudspeakers carry announcements, help points connect passengers to assistance, and cameras support observation. Each device depends on its own power, communication and control connections.",
         "nodes": [
           "Displays + announcements",
           "Help points",
@@ -852,7 +852,7 @@ export const NEW_VIEWS = {
         "id": "equipment",
         "label": "Equipment spaces",
         "title": "Look behind the public-facing device",
-        "description": "The equipment emphasis reveals the supply, network and control interfaces behind the platform devices. The illustrated rooms and mounting locations are compositional choices.",
+        "description": "Look behind the platform devices to find their power supplies, network links and control equipment. Select a device to follow those connections into the equipment spaces.",
         "nodes": [
           "Device",
           "Local equipment",
@@ -872,13 +872,13 @@ export const NEW_VIEWS = {
     "title": "What keeps the station operating",
     "component": "station-ups",
     "level": "Assembly",
-    "note": "Electrical, air and fire-water equipment are separate cutaway bays; they are not a proposed shared plant-room arrangement.",
+    "note": "Inspect electrical supply, air handling and fire-water equipment in separate cutaway views.",
     "variants": [
       {
         "id": "electrical",
         "label": "Electrical",
         "title": "Convert, distribute and support selected loads",
-        "description": "The station supply, switchboard and UPS are distinct parts of the auxiliary distribution. A UPS supports an engineered load set; it does not imply unlimited backup of every station system.",
+        "description": "Switchboards distribute power to station loads. An uninterruptible power supply (UPS) keeps selected equipment supplied during a supply interruption, for the duration supported by its stored energy.",
         "nodes": [
           "Station supply",
           "Switchboard",
@@ -912,7 +912,7 @@ export const NEW_VIEWS = {
         "id": "water",
         "label": "Fire-water",
         "title": "Pressure and flow are physical requirements",
-        "description": "The fire pump and pipework are physical plant serving a selected protection arrangement. A supervisory indication is distinct from the pump’s local control and the hydraulic performance of a system.",
+        "description": "The pump and pipework deliver water at the flow and pressure needed by the protection system. Local controls operate the pump; supervisory equipment reports its condition and any alarms.",
         "nodes": [
           "Water supply",
           "Pump + local control",
@@ -931,13 +931,13 @@ export const NEW_VIEWS = {
     "title": "Fans, shafts and dampers form an air path",
     "component": "tunnel-fan",
     "level": "Installation",
-    "note": "Air particles are qualitative cues. The model does not calculate flow, tenability, heat release, pressure or an emergency fan sequence.",
+    "note": "Follow fans, shafts and dampers through a tunnel ventilation system. The moving markers show air paths qualitatively.",
     "variants": [
       {
         "id": "normal",
         "label": "Normal objective",
         "title": "Exchange air and manage the environment",
-        "description": "Normal ventilation addresses the selected environmental objectives. Fan, shaft and damper relationships must be understood together; visible rotation alone does not establish delivered airflow.",
+        "description": "Fans move air through the tunnel and shafts, while dampers open or restrict paths. Delivered airflow depends on the fans and resistance of the complete route.",
         "nodes": [
           "Tunnel",
           "Fan / air path",
@@ -954,7 +954,7 @@ export const NEW_VIEWS = {
         "id": "smoke-objective",
         "label": "Smoke-management objective",
         "title": "A different objective requires an engineered strategy",
-        "description": "A smoke-management objective considers air movement and the protected environment. The graphic highlights the relevant interfaces only; it does not prescribe fan directions, damper positions or an evacuation response.",
+        "description": "Smoke management uses planned airflow to support the fire strategy. Fan direction, damper positions and operating sequences depend on the tunnel, fire location and protected routes; this view locates the equipment involved.",
         "nodes": [
           "Defined incident scenario",
           "Engineered ventilation objective",
@@ -976,13 +976,13 @@ export const NEW_VIEWS = {
     "title": "Inspect the mechanism inside the enclosure",
     "component": "tunnel-fan",
     "level": "Component",
-    "note": "Component cutaways explain mechanics. They do not substitute for a fan curve, damper rating, control design or fire-resistance qualification.",
+    "note": "Open a fan, damper or air-handling unit to connect moving parts with the air path.",
     "variants": [
       {
         "id": "fan",
         "label": "Axial fan",
         "title": "A rotating impeller adds energy to the air",
-        "description": "The motor, shaft, impeller and casing form a mechanical assembly. Actual duty depends on the fan characteristic and the connected air system, not just the direction of the rendered arrows.",
+        "description": "The motor turns a shaft and impeller, adding energy to the air. The fan characteristic and resistance of the connected ductwork determine the resulting airflow.",
         "nodes": [
           "Motor",
           "Shaft + impeller",
@@ -1032,13 +1032,13 @@ export const NEW_VIEWS = {
     "title": "Supervision connects systems without erasing their boundaries",
     "component": "station-scada",
     "level": "System",
-    "note": "Coloured traces are logical interfaces. Shared visualization does not imply common controllers, network security zones or a universal command priority.",
+    "note": "Follow measurements and commands between local equipment and supervisory systems. The coloured lines show logical connections.",
     "variants": [
       {
         "id": "power",
         "label": "Power SCADA",
         "title": "Electrical equipment has its own local interfaces",
-        "description": "Power SCADA presents measurements, equipment states and authorized control interfaces for electrical infrastructure. Protection and local equipment control remain distinct functions.",
+        "description": "Power supervisory control and data acquisition (SCADA) brings electrical measurements, equipment status and permitted controls to operators. Local protection still detects faults and trips the relevant equipment.",
         "nodes": [
           "Electrical equipment",
           "Local interface / RTU",
@@ -1054,7 +1054,7 @@ export const NEW_VIEWS = {
         "id": "station",
         "label": "Station supervision",
         "title": "A shared view can cover different subsystems",
-        "description": "Station supervision can integrate status and permitted controls across infrastructure and communications. The detailed functions and authority boundaries are project-specific.",
+        "description": "Station supervision brings selected status, alarms and controls from several systems into one view. Each connected subsystem retains its defined responsibilities and permissions.",
         "nodes": [
           "Local subsystem",
           "Communications network",
@@ -1071,7 +1071,7 @@ export const NEW_VIEWS = {
         "id": "building",
         "label": "Building automation",
         "title": "Sensors, controllers and actuators close local loops",
-        "description": "BAS controls building plant using measurements, algorithms and actuator outputs. A supervisory screen is not the physical control loop or a substitute for a fire-system interface design.",
+        "description": "A building automation system (BAS) reads sensors, compares conditions with targets and commands plant actuators. A supervisory display lets operators monitor and adjust those local control loops.",
         "nodes": [
           "Sensor",
           "BAS controller",
@@ -1091,13 +1091,13 @@ export const NEW_VIEWS = {
     "title": "Detection, notification, protection and egress",
     "component": "flss",
     "level": "System",
-    "note": "Related fire and life safety functions are shown together, without claiming a complete cause-and-effect matrix, standard compliance or emergency operating sequence.",
+    "note": "Explore detection, notification, escape-route support and water supply as related parts of fire and life safety.",
     "variants": [
       {
         "id": "detect",
         "label": "Detect and indicate",
         "title": "Separate a detector from the panel that supervises it",
-        "description": "Detectors and monitored circuits provide inputs to the fire-alarm system. The panel processes and presents conditions; other equipment interfaces require an explicit design.",
+        "description": "Detectors send conditions over monitored circuits to a fire-alarm panel. The panel identifies and presents alarm and fault states, then communicates with other systems through the designed interfaces.",
         "nodes": [
           "Detector / circuit",
           "Fire panel",
@@ -1113,7 +1113,7 @@ export const NEW_VIEWS = {
         "id": "notify",
         "label": "Communicate and support egress",
         "title": "People need information and usable routes",
-        "description": "Notification, emergency communications, lighting and the physical escape route have different roles. Their relationship is an engineered station design, not a single generic alarm-output chain.",
+        "description": "Alarms and announcements inform people; emergency lighting and usable escape routes help them leave. A station’s fire strategy coordinates these functions for the building and its occupants.",
         "nodes": [
           "Notification",
           "Emergency communication",
@@ -1132,8 +1132,8 @@ export const NEW_VIEWS = {
       {
         "id": "water",
         "label": "Water-based protection",
-        "title": "Sprinklers and pumps are not generic alarm-operated taps",
-        "description": "In a conventional thermal sprinkler, heat operates the individual sprinkler element. The water supply and pump arrangement provide separate supporting functions. The model does not imply that every detector opens every sprinkler.",
+        "title": "Heat opens a conventional sprinkler",
+        "description": "Heat opens the thermal element in an individual conventional sprinkler. The water supply and pump arrangement support the required flow and pressure. Detection and alarm equipment monitor and coordinate related functions.",
         "nodes": [
           "Thermal sprinkler element",
           "Pipework",
@@ -4128,7 +4128,7 @@ PART_VARIANTS.tcms='default';
 PART_CONTEXTS.tcms=['control','communications','services','vehicle'];
 PART_VIEW_VARIANTS.tcms={control:['default'],communications:['default'],services:['default'],vehicle:['default']};
 NEW_VIEWS.seltrac.variants[0].title='Inductive loops carry train-control messages';
-NEW_VIEWS.seltrac.variants[0].description='This loop-based SelTrac example exchanges control messages through the track cable and under-car equipment. The cable is separate from traction conductors and the LIM reaction rail. Loop communication can accompany LIM or rotary traction; the boxes do not specify a universal cabinet allocation.';
+NEW_VIEWS.seltrac.variants[0].description='This loop-based SelTrac example exchanges control messages through the track cable and under-car pickup. The cable carries information, while separate conductors carry traction power. Either a LIM or rotary motor can propel the train.';
 NEW_VIEWS.seltrac.variants[0].sources=['S02','S03','X01'];
 
 SYSTEMS.find(x=>x.id==='vehicle').label='Vehicles & propulsion';
@@ -4163,7 +4163,7 @@ NEW_VIEWS['station-networks'].label='Plant control interfaces';
 NEW_VIEWS['station-networks'].title='Separate local control from supervisory interfaces';
 NEW_VIEWS['station-networks'].note='Open the interface explorer to compare power SCADA, station building automation and tunnel-ventilation responsibilities. Connections and command rights are explicit choices.';
 
-NEW_VIEWS['infrastructure-assets']={label:'Structures & drainage',title:'Follow structural support and the drainage opening',component:'route-formation',domain:'track',parent:'track-support',motion:false,note:'Original physical section. Bridge deck, girders, bearings and abutments show a load path; the open culvert shows a water passage. No capacity, inspection result or release is inferred.',variants:[{id:'assets',label:'Physical section',title:'Structures and drainage',description:'Inspect the support and passage interfaces, then open the separate maintenance process for observations and decisions.',component:'route-formation',nodes:['Rail and sleeper','Formation / bridge deck','Bearings and abutments','Culvert and outfall'],sources:['I01','I02','I03']}]};
+NEW_VIEWS['infrastructure-assets']={label:'Structures & drainage',title:'Follow structural support and the drainage opening',component:'route-formation',domain:'track',parent:'track-support',motion:false,note:'Follow the load through the bridge deck, girders, bearings and abutments. Then inspect the culvert that carries water beneath the railway.',variants:[{id:'assets',label:'Physical section',title:'Structures and drainage',description:'Inspect the support and passage interfaces, then open the separate maintenance process for observations and decisions.',component:'route-formation',nodes:['Rail and sleeper','Formation / bridge deck','Bearings and abutments','Culvert and outfall'],sources:['I01','I02','I03']}]};
 const trackDomain=SYSTEMS.find(d=>d.id==='track');trackDomain.views.splice(trackDomain.views.indexOf('infrastructure-care'),0,'infrastructure-assets');
 for(const id of ['route-formation','route-drainage','route-bridge']){PART_VIEWS[id]='infrastructure-assets';PART_VARIANTS[id]='assets';PART_CONTEXTS[id]=['infrastructure-assets'];PART_VIEW_VARIANTS[id]={'infrastructure-assets':['assets']};}
 

@@ -1,118 +1,982 @@
 import { ELECTRIFICATION_CHOICES } from './electrification.js';
 
-export const ELECTRIFICATION_SOURCES=[
-  {id:'EL01',title:'Third rail',publisher:'Network Rail',url:'https://www.networkrail.co.uk/our-work/looking-after-the-railway/track/third-rail/',description:'Public infrastructure explanation of conductor rails, collector shoes, substations and regenerated energy.',scope:'General architecture only. No track access instruction, installation dimension or supply rating is adopted.'},
-  {id:'EL02',title:'Understanding Track Engineering — Chapter 3, section 3.12',publisher:'Railway Engineering Institution (formerly PWI)',url:'https://www.railei.org/wp-content/uploads/2022/04/UTE-Chapter-03.pdf',description:'The electrification section distinguishes third-rail running-rail return from fourth-rail separate return, and describes alternative collector contact faces.',scope:'The atlas uses these circuit distinctions. Its paired side-contact fourth-rail geometry is an original teaching arrangement, not a London Underground layout.'},
-  {id:'EL03',title:'Contact lines',publisher:'Siemens Mobility',url:'https://www.mobility.siemens.com/global/en/portfolio/rail-infrastructure/electrification/contact-lines.html',description:'Separate DC and AC overhead-line sections establish that overhead collection does not determine the electrical supply type.',scope:'Public equipment overview. No supplier geometry, clearance, tension, voltage or performance figure is reproduced.'},
-  {id:'EL04',title:'Signalling considerations for electrification of the Auckland metropolitan rail network',publisher:'IRSE Australasia',url:'https://irse.org.au/resource/2008-nov-skilton-clendon-signalling-considerations-for-electrification-of-the-auckland-metropolitan-rail-network/',description:'The public 2008 abstract introduces electrification interfaces with signalling, train detection and electromagnetic compatibility.',scope:'Historical interface reading. The full paper may require access; the atlas uses only the public abstract and makes no claim about the present railway.'},
-  {id:'EL06',title:'High-speed DC circuit breakers for fixed installations — type UR',publisher:'Sécheron',url:'https://www.secheron.com/wp-content/uploads/2024/12/SG101001BEN_F27_Brochure_Circuit-breaker-DC_UR26-80S_12.24.pdf',description:'Public supplier brochure identifies the DC interruption device, operating mechanism and removable arc-chute assembly.',scope:'Component roles only. No supplier dimensions, device ratings, installation instructions or maintenance sequence are adopted.'},
-  {id:'EL05',title:'Traction Decarbonisation Network Strategy — interim programme business case',publisher:'Network Rail',url:'https://www.networkrail.co.uk/wp-content/uploads/2020/09/Traction-Decarbonisation-Network-Strategy-Interim-Programme-Business-Case.pdf',description:'The public 2020 technical appendices explain overhead and conductor-rail traction architectures, including wheel and running-rail return.',scope:'Architecture background only. The dated strategy is not used as a current network programme, project commitment or equipment specification.'},
-  {id:'EL07',title:'Electrical Modelling of a DC Railway System with Multiple Trains',publisher:'Alnuman, Gladwin and Foster · Energies (2018)',url:'https://www.mdpi.com/1996-1073/11/11/3211',description:'Sections 1–2 describe conductor-rail return and a multi-train DC power study, including braking energy.',scope:'Further reading on an authored electrical study. Its network, parameters and numerical results are not reproduced or validated by the atlas.'},
-];
-const C=(id,label,summary,details,sources,related,primary,domain='power')=>({id,label,summary,details,sources,related,primary,domain});
-export const ELECTRIFICATION_CONCEPTS=[
-  C('transformer-core','Transformer magnetic core','Magnetic flux couples electrically separate windings.',[
-    'The laminated core guides alternating magnetic flux. Primary and secondary windings share that magnetic circuit while remaining separate electrical circuits.',
-    'Separate the core, winding groups, tank and terminals to examine their relationships. The geometry is qualitative: it represents neither a field solution nor a transformer design.'
-  ],['P01','E02'],['transformer','transformer-primary-winding','transformer-secondary-winding'],['power-transformer','default']),
-  C('transformer-primary-winding','Transformer primary winding','The source circuit connects to the primary winding.',[
-    'An alternating voltage applied to the primary produces magnetic flux in the core. The secondary is connected to its own circuit; no illustrated cable bridges the two winding groups.',
-    'Amber winding groups separate to one side while the copper secondary groups separate to the other. Their spacing and turn counts are explanatory, not electrical ratings.'
-  ],['P01','E02'],['transformer-core','transformer-secondary-winding','transformer-bushing'],['power-transformer','default']),
-  C('transformer-secondary-winding','Transformer secondary winding','A separate winding supplies the downstream circuit.',[
-    'The secondary receives energy through magnetic coupling. In the selected DC substation it supplies the rectifier; in the conventional AC train it supplies the line converter.',
-    'Inspect both sets of terminals before following the next cable. A shared core does not make the primary and secondary one conducting loop.'
-  ],['P01','E02'],['transformer-primary-winding','rectifier','line-converter'],['power-transformer','default']),
-  C('transformer-tank','Transformer tank and cooling surfaces','The enclosure and thermal path surround the active assembly.',[
-    'A tank or enclosure contains and protects the active transformer assembly, with cooling arrangements appropriate to its design. The fins here identify a heat-transfer surface.',
-    'Open the front and lid or separate the tank from the core and windings. Fluid systems, insulation clearances and cooling performance are outside this illustration.'
-  ],['P01','E02'],['transformer-core','transformer-bushing'],['power-transformer','default']),
-  C('transformer-bushing','Insulated transformer terminals','A terminal passes a conductor through an insulating boundary.',[
-    'Bushings and other insulated terminations connect winding leads to external equipment while maintaining the designed insulation boundary.',
-    'The two rows identify different winding connections. Their geometry and spacing are schematic; the drawing provides no clearance or insulation coordination result.'
-  ],['P01','E02'],['transformer-primary-winding','transformer-secondary-winding'],['power-transformer','default']),
-  C('rectifier-diode-stack','Rectifier semiconductor stack','Diodes create the selected one-way AC-to-DC conversion.',[
-    'The chosen wayside rectifier uses semiconductor diodes. It supplies the DC traction network without providing an active grid-export path for regenerated energy.',
-    'Separate the clamped disc devices from their heat sinks and busbars. This mechanical arrangement does not specify bridge connections, pulse number or protection ratings.'
-  ],['P01'],['rectifier','rectifier-cooling','rectifier-busbar','regeneration'],['power-rectifier','default']),
-  C('rectifier-cooling','Rectifier heat sinks','Semiconductor losses need a path to the environment.',[
-    'Heat from conducting semiconductor devices passes into the cooling assembly. Finned surfaces indicate the thermal role; they do not represent a temperature or a verified cooling capacity.',
-    'Separating the heat-sink banks reveals the device packages and their clamping structure. The busbars retain a separate electrical role.'
-  ],['P01'],['rectifier-diode-stack','rectifier-busbar'],['power-rectifier','default']),
-  C('rectifier-busbar','Rectifier terminals and busbars','Conductors connect the conversion devices with external circuits.',[
-    'The AC input connections and DC output connections are different interfaces of the rectifier. Busbars carry current between the devices and those interfaces.',
-    'Amber and cyan identify the two DC poles. The separated copper connections show their physical function without prescribing an installed rectifier circuit.'
-  ],['P01'],['rectifier','dc-switchgear','supply-return-terminal'],['power-rectifier','default']),
-  C('switchgear-pole','Switchgear interrupter pole','The interrupting element makes or breaks the designed circuit.',[
-    'An interrupter pole belongs to the power circuit. Its insulation, current interruption mechanism and operating duty depend on whether the equipment serves an AC or DC system.',
-    'The AC detail exposes three illustrative poles; the DC detail exposes one feeder pole and an arc chute. These are selected equipment arrangements, not a universal pole count.'
-  ],['P01','E01'],['switchgear-drive','switchgear-busbar','breaker-arc-chute'],['power-switchgear','dc']),
-  C('switchgear-busbar','Switchgear main busbars','The busbar connects incoming supply with the switching elements.',[
-    'Busbars distribute electrical power within switchgear. The operating mechanism beside them transmits mechanical action rather than traction current.',
-    'Separate the main busbar, pole assembly and operating drive to distinguish the electrical and mechanical interfaces. No protection selectivity or short-circuit capability is implied.'
-  ],['P01','E01'],['switchgear-pole','switchgear-drive'],['power-switchgear','dc']),
-  C('switchgear-drive','Switchgear operating mechanism','The drive transmits motion to the switching contacts.',[
-    'The mechanism connects stored or supplied mechanical energy with the moving contacts. A command and a proven contact position remain different pieces of information.',
-    'The shaft and links separate from the interrupter poles. The open-contact state is illustrative and is not proof of an electrically safe work condition.'
-  ],['P01','E01'],['switchgear-pole','substation-control'],['power-switchgear','dc']),
-  C('breaker-arc-chute','DC breaker arc chute','A DC interrupting device must manage its interruption arc.',[
-    'The selected air-break DC device includes an arc-management assembly above the moving contact. Actual interruption arrangements depend on the breaker design.',
-    'The plate stack separates from the operating pole and drive. The model does not simulate an arc, an interruption time or a permitted fault duty.'
-  ],['EL06','P01'],['breaker','switchgear-pole','switchgear-drive'],['power-switchgear','dc']),
-  C('overhead-contact-wire','Overhead contact wire and catenary','A continuous contact surface supplies the pantograph.',[
-    'The lower wire is the current-collection surface. The supporting catenary and droppers hold its intended geometry; support structures and insulators connect it to the infrastructure.',
-    'Both overhead DC and overhead AC use this collection method in the atlas. Supply conversion and onboard equipment determine which electrical architecture is selected.'
-  ],['EL03'],['pantograph','overhead-support','running-rail-return'],['guideway','default']),
-  C('overhead-support','Overhead supports and insulation','Mechanical support and electrical insulation perform separate jobs.',[
-    'Masts, cantilevers and droppers support the contact-line geometry. Insulators separate live conductors from the supporting structure according to the designed electrical system.',
-    'The schematic has no sectioning, tensioning, neutral-section or electrical-clearance design. Inspect the collector and return circuit alongside the support hardware.'
-  ],['EL03'],['overhead-contact-wire','pantograph','grounding'],['guideway','default']),
-  C('pantograph','Pantograph','A roof collector maintains contact with the overhead wire.',[
-    'The base, articulated arms and contact head connect the vehicle electrically with the contact wire. Their mechanical purpose is distinct from voltage transformation and power conversion.',
-    'Open the selected assembly to separate those parts. The same collection principle serves the overhead DC and AC examples; only AC adds the conventional onboard transformer shown here.'
-  ],['EL03','E02'],['pantograph-base','pantograph-arms','pantograph-head','onboard-transformer'],['vehicle','default'],'vehicle'),
-  C('pantograph-base','Pantograph base and insulators','The roof interface supports and insulates the collector.',['The base anchors the pantograph mechanism and separates its current-carrying parts from the vehicle structure through designed insulation.','The removable base is shown independently from the articulated arms and contact strips. No roof rating or clearance is defined.'],['EL03'],['pantograph','pantograph-arms'],['vehicle','default'],'vehicle'),
-  C('pantograph-arms','Pantograph articulated arms','Articulation accommodates the contact-line geometry.', ['The arms support the contact head and permit its vertical movement relative to the roof. Contact force, suspension and aerodynamics require a designed collector system.','The static geometry and assembly separation do not simulate pantograph dynamics, wire uplift or loss of contact.'],['EL03'],['pantograph-base','pantograph-head'],['vehicle','default'],'vehicle'),
-  C('pantograph-head','Pantograph head and contact strips','The strips form the sliding electrical interface.', ['Contact strips slide along the underside of the contact wire. Wear and mechanical condition affect the collection interface.','The head separates from the arms so its collection surface can be inspected. Strip materials, forces and replacement limits are not specified.'],['EL03'],['pantograph','overhead-contact-wire'],['vehicle','default'],'vehicle'),
-  C('collector-positive-shoe','Supply collector shoe','The shoe contacts the selected supply conductor.', ['The supply shoe makes sliding contact with a conductor rail. Top, side and bottom contact arrangements exist; the atlas uses a generic side-contact example.','Third rail retains one supply shoe. Fourth rail adds a separate return shoe. Both disappear when overhead collection is selected.'],['P11','EL02'],['collector','positive-rail','collector-return-shoe'],['bogie','default'],'vehicle'),
-  C('collector-return-shoe','Separate-return collector shoe','A fourth-rail arrangement provides a distinct return interface.', ['The normal traction return in this fourth-rail example uses a second shoe and conductor instead of the running rails. This separation does not remove the need for an engineered bonding and protection scheme.','The supply and return conductors are paired on one side for legibility and compatibility with the central LIM study. This is not a reproduction of London Underground rail positions.'],['EL02'],['collector','negative-rail','grounding'],['bogie','default'],'vehicle'),
-  C('wheel-return','Wheelset traction-return connection','A designed return connection carries current toward the wheel and rail.', ['Third-rail and both overhead examples return traction current through wheelsets and running rails. Designed return connections keep that electrical role distinct from incidental bearings or vehicle structure.','The visible axle-end connection is a qualitative interface marker. It does not define brushgear, axle bonding, insulation or monitoring requirements.'],['EL02','EL05','E03'],['running-rail-return','study-return','bogie'],['bogie','default'],'vehicle'),
-  C('running-rail-return','Running-rail traction return','Bonded running rails form part of the selected traction circuit.', ['In the third-rail and overhead examples, the running rails have both a mechanical role and an electrical return role. The fourth-rail example uses a separate normal return conductor.','The cyan bond indicates the return connection toward the supply. Track-circuit compatibility, impedance bonds, stray current and protective bonding require separate engineering.'],['EL02','EL04','EL05'],['wheel-return','grounding','track-circuit','supply-return-terminal'],['guideway','default']),
-  C('onboard-transformer','Onboard traction transformer','The conventional AC vehicle transforms the collected supply.', ['The AC example has a transformer between the pantograph circuit and the onboard line converter. Its primary return uses the wheel and running-rail network; its secondary supplies a separate converter circuit.','All three DC profiles omit this transformer. The compact underframe position is illustrative and is not a real fleet equipment layout.'],['E02','E03'],['pantograph','line-converter','transformer-core'],['vehicle','default'],'vehicle'),
-  C('line-converter','Onboard AC line converter','The transformer secondary feeds the DC intermediate link.', ['The selected conventional AC chain uses a line converter between the transformer secondary and DC link. The motor inverter remains a distinct stage downstream.','Overhead DC changes the roof collection without adding this AC conversion stage. Regeneration depends on the capability and receptivity of the complete selected chain.'],['E02','P04'],['onboard-transformer','dc-link','traction-inverter'],['vehicle','default'],'vehicle'),
-  C('line-converter-module','Line-converter semiconductor modules','Power modules control the AC-to-DC interface onboard.', ['Semiconductor modules belong to the line converter and exchange energy between its AC input and DC intermediate link. Their control and protection are outside the mechanical illustration.','Remove the cover or separate the modules to distinguish them from the motor-inverter modules downstream.'],['E02','P04'],['line-converter','inverter-power-module'],['vehicle','default'],'vehicle'),
-  C('dc-link','Onboard DC link','An intermediate DC circuit connects conversion stages.', ['A DC link supplies the motor inverter in all four teaching profiles. DC line supply enters the selected DC path; AC line supply reaches it through a transformer and line converter.','The capacitor bank is a physical cue for the intermediate circuit. Stored energy, voltage limits and discharge arrangements are not simulated.'],['E02','P04'],['traction-inverter','line-converter','inverter-power-module'],['vehicle','default'],'vehicle'),
-  C('inverter-power-module','Motor-inverter power modules','The inverter controls the motor-side electrical output.', ['The motor inverter supplies controlled electrical power to the selected LIM or rotary machine. Its existence does not determine whether current was collected from a rail or an overhead wire.','The modules separate from the DC-link capacitor bank and enclosure. Switching waveforms, control loops and semiconductor performance are outside this study.'],['P04','E02'],['traction-inverter','dc-link','lim-primary','rotary-traction-motor'],['vehicle','default'],'vehicle'),
-  C('onboard-braking-resistor','Onboard braking resistor','A selected train-side sink dissipates braking energy as heat.', ['When the AC example has limited network receptivity, its selected chopper and resistor path absorbs DC-link energy onboard. This is a designed alternative to exchanging that energy with a receiving network.','The AC profile removes the wayside DC resistor and shows this separate roof-mounted heat destination. Resistor location is a selected comparison: onboard and wayside sinks can serve AC or DC railways, depending on their equipment and network receptivity.'],['P12','P04'],['regeneration','dc-link','wayside-resistor'],['vehicle','default'],'vehicle'),
-  C('ac-feeder-switchgear','AC traction feeder switchgear','AC feeder equipment connects the source with the contact line.', ['The selected AC substation connects its transformer to AC feeder switchgear and the overhead circuit. It has no wayside DC rectifier or DC feeder bank in that chain.','The source-side transformer and the vehicle transformer are separate assemblies. Inspect the return terminal as well as the outgoing feeder.'],['E01'],['transformer','switchgear-pole','supply-return-terminal'],['substation','default']),
-  C('supply-return-terminal','Traction return terminal','The normal return circuit must connect back to its source.', ['The terminal represents the supply-side connection of the normal traction return. The selected profile determines whether that return arrives from a separate conductor or the running-rail network.','Protective earthing and bonding have a different role. No universal connection between a traction pole and earth is implied.'],['P01','E01','EL02'],['running-rail-return','negative-rail','grounding'],['substation','default']),
+export const ELECTRIFICATION_SOURCES = [
+  {
+    "id": "EL01",
+    "title": "Third rail",
+    "publisher": "Network Rail",
+    "url": "https://www.networkrail.co.uk/our-work/looking-after-the-railway/track/third-rail/",
+    "description": "Public infrastructure explanation of conductor rails, collector shoes, substations and regenerated energy.",
+    "scope": "Conductor-rail supply, collection and braking-energy use on the railway."
+  },
+  {
+    "id": "EL02",
+    "title": "Understanding Track Engineering — Chapter 3, section 3.12",
+    "publisher": "Railway Engineering Institution (formerly PWI)",
+    "url": "https://www.railei.org/wp-content/uploads/2022/04/UTE-Chapter-03.pdf",
+    "description": "The electrification section distinguishes third-rail running-rail return from fourth-rail separate return, and describes alternative collector contact faces.",
+    "scope": "Section 3.12 explains conductor-rail circuits. The atlas arranges the two fourth-rail conductors side by side to show the separate supply and return paths."
+  },
+  {
+    "id": "EL03",
+    "title": "Contact lines",
+    "publisher": "Siemens Mobility",
+    "url": "https://www.mobility.siemens.com/global/en/portfolio/rail-infrastructure/electrification/contact-lines.html",
+    "description": "Separate DC and AC overhead-line sections establish that overhead collection does not determine the electrical supply type.",
+    "scope": "An overview of overhead equipment for both AC and DC electrification."
+  },
+  {
+    "id": "EL04",
+    "title": "Signalling considerations for electrification of the Auckland metropolitan rail network",
+    "publisher": "IRSE Australasia",
+    "url": "https://irse.org.au/resource/2008-nov-skilton-clendon-signalling-considerations-for-electrification-of-the-auckland-metropolitan-rail-network/",
+    "description": "The public 2008 abstract introduces electrification interfaces with signalling, train detection and electromagnetic compatibility.",
+    "scope": "The public abstract of a 2008 paper, used for the interface between electrification and signalling."
+  },
+  {
+    "id": "EL06",
+    "title": "High-speed DC circuit breakers for fixed installations — type UR",
+    "publisher": "Sécheron",
+    "url": "https://www.secheron.com/wp-content/uploads/2024/12/SG101001BEN_F27_Brochure_Circuit-breaker-DC_UR26-80S_12.24.pdf",
+    "description": "Public supplier brochure identifies the DC interruption device, operating mechanism and removable arc-chute assembly.",
+    "scope": "December 2024 brochure; the DC breaker, operating mechanism and removable arc chute illustrate distinct component roles."
+  },
+  {
+    "id": "EL05",
+    "title": "Traction Decarbonisation Network Strategy — interim programme business case",
+    "publisher": "Network Rail",
+    "url": "https://www.networkrail.co.uk/wp-content/uploads/2020/09/Traction-Decarbonisation-Network-Strategy-Interim-Programme-Business-Case.pdf",
+    "description": "The public 2020 technical appendices explain overhead and conductor-rail traction architectures, including wheel and running-rail return.",
+    "scope": "The 2020 technical appendices provide background on traction supply and return circuits."
+  },
+  {
+    "id": "EL07",
+    "title": "Electrical Modelling of a DC Railway System with Multiple Trains",
+    "publisher": "Alnuman, Gladwin and Foster · Energies (2018)",
+    "url": "https://www.mdpi.com/1996-1073/11/11/3211",
+    "description": "The paper examines how train movement, power demand and regenerative braking interact with a DC railway network.",
+    "scope": "A 2018 research paper explaining a multi-train DC electrical model and its braking-energy calculations."
+  }
 ];
 
-const chainVariant={id:'chain',label:'Complete chain',title:'Trace the selected collection and return',description:'Choose an electrification arrangement to replace the physical supply, collection, conversion and return hardware together. Propulsion remains an independent selection.',nodes:['Wayside supply','Current collection','Onboard conversion','Traction return'],sources:['EL01','EL02','EL03','E01','E02'],component:'supply-conversion'};
-const detail=(id,label,title,component,description,sources)=>({label,title,component,domain:'power',parent:'substation',motion:false,note:description,variants:[{id:'default',label:'Assembly',title,description,nodes:['Enclosure','Internal assembly','Electrical / mechanical interfaces'],sources,component}]});
-export const ELECTRIFICATION_VIEW_DATA={
-  electrification:{label:'Electrification chain',title:'Collection, conversion and return',component:'supply-conversion',domain:'power',parent:'system',motion:false,note:'Four generic supply architectures share the same independently selected propulsion. Static amber and cyan paths explain the supply and return; copper identifies a transformer secondary. The model does not simulate instantaneous AC current, protection or electrical work.',variants:[chainVariant]},
-  'power-transformer':detail('power-transformer','Transformer assembly','Inspect the magnetic and electrical interfaces','transformer','Separate the core, primary and secondary winding groups, tank, cover and insulated terminals. This is a qualitative mechanical assembly with two electrically distinct winding circuits.',['P01','E02']),
-  'power-rectifier':detail('power-rectifier','Rectifier assembly','Inspect a diode rectifier','rectifier','Separate semiconductor stacks, heat-sink banks, busbars and enclosure. This dedicated DC-equipment study remains available when the railway uses a different supply profile.',['P01']),
-  'power-switchgear':{label:'Switchgear assembly',title:'Inspect the interruption mechanism',component:'dc-switchgear',domain:'power',parent:'substation',motion:false,note:'The busbar, interrupter pole, operating drive and enclosure have different roles. Open contacts are not proof of a safe-to-work condition.',variants:[
-    {id:'dc',label:'DC feeder',title:'Separate the DC interruption assembly',description:'The selected DC feeder has one illustrative pole, a distinct operating mechanism and an arc-chute plate stack.',nodes:['Main busbar','DC pole','Arc chute','Operating mechanism'],sources:['P01'],component:'dc-switchgear'},
-    {id:'ac',label:'AC switchgear',title:'Separate the AC pole assembly',description:'The selected AC detail has three illustrative interrupter poles with a shared drive. It does not contain the DC arc-chute assembly.',nodes:['Main busbars','AC poles','Insulation','Operating mechanism'],sources:['E01'],component:'ac-switchgear'},
-  ]},
+export const ELECTRIFICATION_CONCEPTS = [
+  {
+    "id": "transformer-core",
+    "label": "Transformer magnetic core",
+    "summary": "A magnetic core links the primary and secondary windings.",
+    "details": [
+      "Alternating magnetic flux in the core transfers energy between the two winding circuits. The thin layers of a laminated core reduce losses caused by currents circulating within the core material.",
+      "Separate the core, winding groups, tank and terminals. Follow each winding to its own terminals: the shared magnetic path does not join the two electrical circuits."
+    ],
+    "sources": [
+      "P01",
+      "E02"
+    ],
+    "related": [
+      "transformer",
+      "transformer-primary-winding",
+      "transformer-secondary-winding"
+    ],
+    "primary": [
+      "power-transformer",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "transformer-primary-winding",
+    "label": "Transformer primary winding",
+    "summary": "The primary winding receives the alternating supply.",
+    "details": [
+      "An AC voltage across the primary establishes changing magnetic flux in the core. That flux induces a voltage in the secondary winding.",
+      "Amber identifies the primary winding groups. Compare them with the copper secondary groups and their separate terminals."
+    ],
+    "sources": [
+      "P01",
+      "E02"
+    ],
+    "related": [
+      "transformer-core",
+      "transformer-secondary-winding",
+      "transformer-bushing"
+    ],
+    "primary": [
+      "power-transformer",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "transformer-secondary-winding",
+    "label": "Transformer secondary winding",
+    "summary": "The secondary winding supplies the next electrical stage.",
+    "details": [
+      "Magnetic coupling induces a voltage in this winding. In the DC substation it supplies the rectifier; on the conventional AC train it supplies the line converter.",
+      "Trace the secondary terminals to the downstream equipment. The separate winding circuit is electrically isolated from the primary in this two-winding transformer."
+    ],
+    "sources": [
+      "P01",
+      "E02"
+    ],
+    "related": [
+      "transformer-primary-winding",
+      "rectifier",
+      "line-converter"
+    ],
+    "primary": [
+      "power-transformer",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "transformer-tank",
+    "label": "Transformer tank and cooling surfaces",
+    "summary": "The tank surrounds the active assembly and supports its cooling arrangement.",
+    "details": [
+      "The enclosure contains the core and windings. Cooling carries away heat produced by electrical and magnetic losses; the fins provide more surface area for heat transfer.",
+      "Open the cover or separate the tank from the core and windings to see how the enclosure fits around them."
+    ],
+    "sources": [
+      "P01",
+      "E02"
+    ],
+    "related": [
+      "transformer-core",
+      "transformer-bushing"
+    ],
+    "primary": [
+      "power-transformer",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "transformer-bushing",
+    "label": "Transformer bushings and terminals",
+    "summary": "An insulated terminal carries a winding connection through the enclosure.",
+    "details": [
+      "A bushing allows a conductor to pass through the tank while insulating it from the surrounding metal.",
+      "The two terminal rows connect to different winding groups. Follow the primary and secondary connections separately."
+    ],
+    "sources": [
+      "P01",
+      "E02"
+    ],
+    "related": [
+      "transformer-primary-winding",
+      "transformer-secondary-winding"
+    ],
+    "primary": [
+      "power-transformer",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "rectifier-diode-stack",
+    "label": "Rectifier semiconductor stack",
+    "summary": "Diodes direct current to produce a DC output from an AC input.",
+    "details": [
+      "The wayside diode rectifier supplies the DC traction network. Its one-way arrangement does not return regenerated energy to the AC supply grid.",
+      "Separate the clamped disc-shaped devices, heat sinks and busbars. These parts provide the conversion, cooling and electrical connections."
+    ],
+    "sources": [
+      "P01"
+    ],
+    "related": [
+      "rectifier",
+      "rectifier-cooling",
+      "rectifier-busbar",
+      "regeneration"
+    ],
+    "primary": [
+      "power-rectifier",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "rectifier-cooling",
+    "label": "Rectifier heat sinks",
+    "summary": "Heat sinks carry losses from the rectifier devices into the cooling path.",
+    "details": [
+      "Conducting diodes produce heat. Their cooling assembly transfers it away, and fins increase the area available for heat exchange.",
+      "Separate the heat-sink banks to see the device packages and clamping structure. Compare that thermal path with the current path through the busbars."
+    ],
+    "sources": [
+      "P01"
+    ],
+    "related": [
+      "rectifier-diode-stack",
+      "rectifier-busbar"
+    ],
+    "primary": [
+      "power-rectifier",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "rectifier-busbar",
+    "label": "Rectifier terminals and busbars",
+    "summary": "Busbars are conductors that connect the rectifier devices and external circuits.",
+    "details": [
+      "The rectifier receives AC at one set of terminals and supplies DC at another. The busbars carry current between those interfaces and the semiconductor devices.",
+      "Amber and cyan distinguish the two DC poles. Inspect the connections alongside the heat sinks to separate the electrical and cooling functions."
+    ],
+    "sources": [
+      "P01"
+    ],
+    "related": [
+      "rectifier",
+      "dc-switchgear",
+      "supply-return-terminal"
+    ],
+    "primary": [
+      "power-rectifier",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "switchgear-pole",
+    "label": "Switchgear interrupter pole",
+    "summary": "A pole is the part of a switch or breaker that controls one circuit conductor.",
+    "details": [
+      "Moving contacts make or interrupt the current path. Their interruption method and insulation depend on the type of circuit and equipment.",
+      "The DC feeder close-up has one pole and an arc chute. The AC close-up shows three-phase supply-side switchgear with three poles. The single-phase traction feeder shown in the AC substation is a different arrangement."
+    ],
+    "sources": [
+      "P01",
+      "E01"
+    ],
+    "related": [
+      "switchgear-drive",
+      "switchgear-busbar",
+      "breaker-arc-chute"
+    ],
+    "primary": [
+      "power-switchgear",
+      "dc"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "switchgear-busbar",
+    "label": "Switchgear main busbars",
+    "summary": "Busbars distribute incoming power to the switching poles.",
+    "details": [
+      "A busbar is a substantial conductor that connects several parts of a power circuit. Its electrical role is separate from the mechanism that moves the contacts.",
+      "Separate the main busbar, pole assembly and operating drive. Follow the electrical connections and the mechanical links as two different paths."
+    ],
+    "sources": [
+      "P01",
+      "E01"
+    ],
+    "related": [
+      "switchgear-pole",
+      "switchgear-drive"
+    ],
+    "primary": [
+      "power-switchgear",
+      "dc"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "switchgear-drive",
+    "label": "Switchgear operating mechanism",
+    "summary": "The operating mechanism moves the switching contacts.",
+    "details": [
+      "A drive and its links transmit mechanical force to the moving contacts. A command starts that action; position feedback reports the resulting state.",
+      "Separate the shaft and links from the interrupter poles to see how one mechanism operates the selected contacts."
+    ],
+    "sources": [
+      "P01",
+      "E01"
+    ],
+    "related": [
+      "switchgear-pole",
+      "substation-control"
+    ],
+    "primary": [
+      "power-switchgear",
+      "dc"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "breaker-arc-chute",
+    "label": "DC breaker arc chute",
+    "summary": "The arc chute helps interrupt current when the DC contacts separate.",
+    "details": [
+      "An electric arc can continue carrying current across opening contacts. The selected air-break DC breaker uses an arc chute above the contact to help control and extinguish that arc.",
+      "Separate the plate stack, switching pole and drive. Their positions show the relationship between the current path and the mechanism that opens it."
+    ],
+    "sources": [
+      "EL06",
+      "P01"
+    ],
+    "related": [
+      "breaker",
+      "switchgear-pole",
+      "switchgear-drive"
+    ],
+    "primary": [
+      "power-switchgear",
+      "dc"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "overhead-contact-wire",
+    "label": "Overhead contact wire and catenary",
+    "summary": "The contact wire provides the sliding surface for the pantograph.",
+    "details": [
+      "In this catenary arrangement, short vertical droppers suspend the lower contact wire from the upper supporting wire. Masts and insulated supports hold the assembly above the track.",
+      "The same collection method appears in the overhead DC and AC examples. The supply and conversion equipment determines which electrical arrangement is selected."
+    ],
+    "sources": [
+      "EL03"
+    ],
+    "related": [
+      "pantograph",
+      "overhead-support",
+      "running-rail-return"
+    ],
+    "primary": [
+      "guideway",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "overhead-support",
+    "label": "Overhead supports and insulation",
+    "summary": "The supports hold the wires; the insulators separate live parts from the structure.",
+    "details": [
+      "Masts and cantilevers support the overhead line. Droppers suspend the contact wire from the supporting wire, while insulators interrupt unwanted conducting paths to the structure.",
+      "Inspect the supports alongside the pantograph to see how the contact surface is held in position above the vehicle."
+    ],
+    "sources": [
+      "EL03"
+    ],
+    "related": [
+      "overhead-contact-wire",
+      "pantograph",
+      "grounding"
+    ],
+    "primary": [
+      "guideway",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "pantograph",
+    "label": "Pantograph",
+    "summary": "A roof-mounted collector maintains sliding contact with the overhead wire.",
+    "details": [
+      "The base supports articulated arms and a contact head. Together they provide a moving electrical connection between the train and the contact wire.",
+      "Separate the base, arms and head. Both overhead DC and AC use a pantograph here; the conventional AC example also carries a transformer and line converter."
+    ],
+    "sources": [
+      "EL03",
+      "E02"
+    ],
+    "related": [
+      "pantograph-base",
+      "pantograph-arms",
+      "pantograph-head",
+      "onboard-transformer"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "pantograph-base",
+    "label": "Pantograph base and insulators",
+    "summary": "The base anchors the collector and insulates it from the roof.",
+    "details": [
+      "The base provides the mounting points for the mechanism. Its insulators separate the current-carrying assembly from the vehicle structure.",
+      "Inspect the base below the articulated arms, then follow the collector up to the contact strips."
+    ],
+    "sources": [
+      "EL03"
+    ],
+    "related": [
+      "pantograph",
+      "pantograph-arms"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "pantograph-arms",
+    "label": "Pantograph articulated arms",
+    "summary": "Jointed arms let the contact head move vertically above the roof.",
+    "details": [
+      "The arms support the head while accommodating changes in wire height and vehicle position. The complete collector controls contact force so the strips can remain against the wire.",
+      "Separate the arm assembly from the base and head to identify its pivots and supporting links. The close-up shows their arrangement in a fixed position."
+    ],
+    "sources": [
+      "EL03"
+    ],
+    "related": [
+      "pantograph-base",
+      "pantograph-head"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "pantograph-head",
+    "label": "Pantograph head and contact strips",
+    "summary": "The contact strips slide along the underside of the wire.",
+    "details": [
+      "The head supports the strips that collect current from the moving contact. Their surface and condition affect the electrical and mechanical contact with the wire.",
+      "Separate the head from the arms and inspect the contact surface at the top of the collector."
+    ],
+    "sources": [
+      "EL03"
+    ],
+    "related": [
+      "pantograph",
+      "overhead-contact-wire"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "collector-positive-shoe",
+    "label": "Supply collector shoe",
+    "summary": "A collector shoe provides sliding contact with the supply rail.",
+    "details": [
+      "Conductor-rail systems can use top, side or bottom contact. This model uses side contact so the shoe and its conductor are visible together.",
+      "Third rail has a supply shoe. Fourth rail adds a separate return shoe. Overhead collection replaces the supply shoe with a pantograph."
+    ],
+    "sources": [
+      "P11",
+      "EL02"
+    ],
+    "related": [
+      "collector",
+      "positive-rail",
+      "collector-return-shoe"
+    ],
+    "primary": [
+      "bogie",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "collector-return-shoe",
+    "label": "Separate-return collector shoe",
+    "summary": "A fourth-rail train has a separate shoe for the normal traction return.",
+    "details": [
+      "The return shoe contacts a second conductor rail, completing the traction circuit separately from the running rails.",
+      "The model places the supply and return conductors together on one side, leaving the centre available for the LIM reaction rail. This teaching layout shows the circuit distinction; rail positions vary between installations."
+    ],
+    "sources": [
+      "EL02"
+    ],
+    "related": [
+      "collector",
+      "negative-rail",
+      "grounding"
+    ],
+    "primary": [
+      "bogie",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "wheel-return",
+    "label": "Wheelset traction-return connection",
+    "summary": "An electrical connection carries return current from the train to its wheelsets.",
+    "details": [
+      "The third-rail and both overhead examples use the wheelsets and running rails in the return circuit. Designed return connections provide that path instead of relying on incidental contact through bearings.",
+      "Find the axle-end return marker, then follow the running rails toward the supply-side return terminal."
+    ],
+    "sources": [
+      "EL02",
+      "EL05",
+      "E03"
+    ],
+    "related": [
+      "running-rail-return",
+      "study-return",
+      "bogie"
+    ],
+    "primary": [
+      "bogie",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "running-rail-return",
+    "label": "Running-rail traction return",
+    "summary": "Running rails can support the train and carry traction return current.",
+    "details": [
+      "The third-rail and overhead examples use electrically connected running rails in the return circuit. The fourth-rail example has a separate normal return conductor.",
+      "Follow the cyan connection toward the supply. Traction return also has interfaces with train-detection circuits, protective bonding and control of stray current."
+    ],
+    "sources": [
+      "EL02",
+      "EL04",
+      "EL05"
+    ],
+    "related": [
+      "wheel-return",
+      "grounding",
+      "track-circuit",
+      "supply-return-terminal"
+    ],
+    "primary": [
+      "guideway",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "onboard-transformer",
+    "label": "Onboard traction transformer",
+    "summary": "The conventional AC train transforms the collected supply before line conversion.",
+    "details": [
+      "The pantograph feeds the primary winding, whose return uses wheelsets and running rails. The secondary winding feeds the separate line-converter circuit.",
+      "The transformer appears under the vehicle in this teaching layout. It is omitted from all three DC supply examples."
+    ],
+    "sources": [
+      "E02",
+      "E03"
+    ],
+    "related": [
+      "pantograph",
+      "line-converter",
+      "transformer-core"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "line-converter",
+    "label": "Onboard AC line converter",
+    "summary": "The AC line converter controls power between the transformer and the DC link.",
+    "details": [
+      "In the conventional AC chain, it converts the transformer’s AC output for the DC intermediate circuit. The motor inverter is a separate stage that supplies the motor.",
+      "Overhead DC changes the collection method without adding this AC conversion stage. Returning braking energy through the line converter also requires the supply network to accept it."
+    ],
+    "sources": [
+      "E02",
+      "P04"
+    ],
+    "related": [
+      "onboard-transformer",
+      "dc-link",
+      "traction-inverter"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "line-converter-module",
+    "label": "Line-converter semiconductor modules",
+    "summary": "Semiconductor modules perform the line converter’s power switching.",
+    "details": [
+      "The modules control the exchange of energy between the transformer’s AC circuit and the DC link.",
+      "Remove the cover or separate the modules. Compare their place in the chain with the motor-inverter modules downstream."
+    ],
+    "sources": [
+      "E02",
+      "P04"
+    ],
+    "related": [
+      "line-converter",
+      "inverter-power-module"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "dc-link",
+    "label": "Onboard DC link",
+    "summary": "The DC link is the intermediate circuit feeding the motor inverter.",
+    "details": [
+      "All four supply examples include a DC link. AC reaches it through the transformer and line converter; the DC examples feed it from the collected DC supply.",
+      "The capacitor bank stores electrical energy and helps smooth voltage changes. Inspect it separately from the power modules that switch current in the converters."
+    ],
+    "sources": [
+      "E02",
+      "P04"
+    ],
+    "related": [
+      "traction-inverter",
+      "line-converter",
+      "inverter-power-module"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "inverter-power-module",
+    "label": "Motor-inverter power modules",
+    "summary": "The motor inverter turns DC-link power into controlled motor power.",
+    "details": [
+      "Its switching modules produce the electrical output needed by the selected rotary motor or LIM. The inverter’s motor-side role is the same whether the train collects power from a rail or an overhead wire.",
+      "Separate the modules from the capacitor bank and enclosure to follow the DC input and motor output."
+    ],
+    "sources": [
+      "P04",
+      "E02"
+    ],
+    "related": [
+      "traction-inverter",
+      "dc-link",
+      "lim-primary",
+      "rotary-traction-motor"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "onboard-braking-resistor",
+    "label": "Onboard braking resistor",
+    "summary": "A braking resistor turns electrical braking energy into heat on the train.",
+    "details": [
+      "When the network cannot accept the available braking energy, a chopper can direct DC-link energy into the resistor. The chopper controls that connection.",
+      "The selected AC comparison places the resistor on the train; the selected DC comparison uses a wayside resistor. Location is a feature of these examples, not a rule that separates AC and DC trains."
+    ],
+    "sources": [
+      "P12",
+      "P04"
+    ],
+    "related": [
+      "regeneration",
+      "dc-link",
+      "wayside-resistor"
+    ],
+    "primary": [
+      "vehicle",
+      "default"
+    ],
+    "domain": "vehicle"
+  },
+  {
+    "id": "ac-feeder-switchgear",
+    "label": "AC traction feeder switchgear",
+    "summary": "The traction feeder connects the AC substation to the overhead line.",
+    "details": [
+      "This conventional single-phase arrangement uses a single feeder pole between the traction transformer and contact line. Other systems, including autotransformer arrangements, can use two-pole equipment.",
+      "The three-pole AC equipment close-up illustrates three-phase supply-side switchgear. At the traction feeder, follow the outgoing line and the separate return to see the single-phase circuit."
+    ],
+    "sources": [
+      "E01"
+    ],
+    "related": [
+      "transformer",
+      "switchgear-pole",
+      "supply-return-terminal"
+    ],
+    "primary": [
+      "substation",
+      "default"
+    ],
+    "domain": "power"
+  },
+  {
+    "id": "supply-return-terminal",
+    "label": "Traction return terminal",
+    "summary": "The return terminal connects the traction circuit back to its source.",
+    "details": [
+      "The chosen profile brings return current from either a separate conductor rail or the running-rail network.",
+      "Follow the cyan return connection alongside the outgoing feeder. Normal traction return and protective earthing have different functions, even where their engineered bonding arrangements meet."
+    ],
+    "sources": [
+      "P01",
+      "E01",
+      "EL02"
+    ],
+    "related": [
+      "running-rail-return",
+      "negative-rail",
+      "grounding"
+    ],
+    "primary": [
+      "substation",
+      "default"
+    ],
+    "domain": "power"
+  }
+];
+
+export const ELECTRIFICATION_VIEW_DATA = {
+  "electrification": {
+    "label": "Electrification chain",
+    "title": "Collection, conversion and return",
+    "component": "supply-conversion",
+    "domain": "power",
+    "parent": "system",
+    "motion": false,
+    "note": "Four supply arrangements share the independently selected propulsion. Amber marks the supply, cyan the return and copper the transformer secondary. These static traces show connections, not the changing direction of AC current.",
+    "variants": [
+      {
+        "id": "chain",
+        "label": "Complete chain",
+        "title": "Trace the selected collection and return",
+        "description": "Choose the supply arrangement to change the substation, collector, onboard conversion and return together. Your propulsion choice stays selected.",
+        "nodes": [
+          "Wayside supply",
+          "Current collection",
+          "Onboard conversion",
+          "Traction return"
+        ],
+        "sources": [
+          "EL01",
+          "EL02",
+          "EL03",
+          "E01",
+          "E02"
+        ],
+        "component": "supply-conversion"
+      }
+    ]
+  },
+  "power-transformer": {
+    "label": "Transformer assembly",
+    "title": "Inspect the magnetic and electrical interfaces",
+    "component": "transformer",
+    "domain": "power",
+    "parent": "substation",
+    "motion": false,
+    "note": "Separate the core, primary and secondary windings, tank, cover and insulated terminals. Magnetic coupling links the two winding circuits; the dimensions and winding counts are schematic.",
+    "variants": [
+      {
+        "id": "default",
+        "label": "Assembly",
+        "title": "Inspect the magnetic and electrical interfaces",
+        "description": "Separate the core, primary and secondary windings, tank, cover and insulated terminals. Magnetic coupling links the two winding circuits; the dimensions and winding counts are schematic.",
+        "nodes": [
+          "Enclosure",
+          "Internal assembly",
+          "Electrical / mechanical interfaces"
+        ],
+        "sources": [
+          "P01",
+          "E02"
+        ],
+        "component": "transformer"
+      }
+    ]
+  },
+  "power-rectifier": {
+    "label": "Rectifier assembly",
+    "title": "Inspect a diode rectifier",
+    "component": "rectifier",
+    "domain": "power",
+    "parent": "substation",
+    "motion": false,
+    "note": "Separate the semiconductor stacks, heat sinks, busbars and enclosure. The close-up shows how conversion, cooling and electrical connections fit together.",
+    "variants": [
+      {
+        "id": "default",
+        "label": "Assembly",
+        "title": "Inspect a diode rectifier",
+        "description": "Separate the semiconductor stacks, heat sinks, busbars and enclosure. The close-up shows how conversion, cooling and electrical connections fit together.",
+        "nodes": [
+          "Enclosure",
+          "Internal assembly",
+          "Electrical / mechanical interfaces"
+        ],
+        "sources": [
+          "P01"
+        ],
+        "component": "rectifier"
+      }
+    ]
+  },
+  "power-switchgear": {
+    "label": "Switchgear assembly",
+    "title": "Inspect the interruption mechanism",
+    "component": "dc-switchgear",
+    "domain": "power",
+    "parent": "substation",
+    "motion": false,
+    "note": "Separate the current path from the mechanism that moves the contacts. The AC close-up shows three-phase supply-side equipment; the AC traction feeder is single-phase. Open contacts alone do not establish an isolated worksite.",
+    "variants": [
+      {
+        "id": "dc",
+        "label": "DC feeder",
+        "title": "Separate the DC interruption assembly",
+        "description": "The DC feeder has one switching pole, an operating mechanism and an arc chute that helps extinguish the arc when the contacts open.",
+        "nodes": [
+          "Main busbar",
+          "DC pole",
+          "Arc chute",
+          "Operating mechanism"
+        ],
+        "sources": [
+          "P01"
+        ],
+        "component": "dc-switchgear"
+      },
+      {
+        "id": "ac",
+        "label": "Three-phase AC",
+        "title": "Inspect three-phase supply-side switchgear",
+        "description": "Three interrupter poles share an operating drive, one pole for each phase. This supply-side close-up differs from the single-phase traction feeder shown in the AC substation.",
+        "nodes": [
+          "Three-phase busbars",
+          "Three AC poles",
+          "Insulation",
+          "Operating mechanism"
+        ],
+        "sources": [
+          "E01"
+        ],
+        "component": "ac-switchgear"
+      }
+    ]
+  }
 };
 
 export function applyElectrificationCatalog(sources,concepts){
   for(const source of ELECTRIFICATION_SOURCES)if(!sources.some(item=>item.id===source.id))sources.push(source);
   for(const {primary,domain,...concept}of ELECTRIFICATION_CONCEPTS){const existing=concepts.find(item=>item.id===concept.id);if(existing)Object.assign(existing,concept);else concepts.push(concept);}
   const patches={
-    'supply-conversion':{label:'Supply conversion',summary:'Compare four complete supply and return architectures.',details:['Third rail DC uses a supply shoe and running-rail return; fourth rail DC adds a separate return conductor and shoe. Both overhead examples use a pantograph and running-rail return.','Overhead collection can carry AC or DC. The conventional AC chain adds an onboard transformer and line converter and removes the wayside diode rectifier; the chosen propulsion remains independent.'],sources:['EL01','EL02','EL03','E01','E02']},
-    'study-collector':{summary:'Choose the physical collection interface independently of propulsion.',details:['Conductor-rail profiles use shoes; overhead profiles use a pantograph. A fourth-rail circuit has a distinct return shoe, whereas the other three profiles return through the wheels and running rails.','The same shared equipment appears in the vehicle, bogie and guideway views. The roof-level context in the bogie study identifies a vehicle-mounted collector, not a pantograph mounted on a bogie.'],sources:['EL02','EL03','P11']},
-    'study-onboard-transformer':{summary:'The conventional AC example has separate primary and secondary circuits.',details:['The transformer appears in overhead AC and disappears in all three DC profiles. Primary current returns through the wheel and running-rail network.','Copper secondary traces connect the isolated winding circuit with the line converter. They do not join directly to the pantograph circuit.'],sources:['E02','E03']},
-    'study-converter':{summary:'Follow the DC link and motor inverter, with an AC line converter when required.',details:['The three DC profiles feed the illustrated onboard DC circuit without the conventional AC transformer and line-converter stages. AC adds those stages before the DC link.','The physical capacitor bank and separate power modules can be inspected through their covers and assembly separation. Their position and connections are qualitative.'],sources:['E02','P04']},
-    'study-drive':{label:'Motor conversion and propulsion',summary:'The selected motor stays independent of collection and supply.',details:['The motor inverter feeds the selected propulsion. Rotary motors transmit torque to wheelsets; LIM primaries interact with a passive reaction rail.','Changing between third rail, fourth rail and overhead collection does not silently change this propulsion selection. The teaching combinations do not claim a particular commissioned installation.'],sources:['P04','P02','P03']},
-    'study-return':{summary:'Trace the normal traction return back to the source.',details:['Fourth rail uses a separate return conductor and shoe in this atlas. Third rail, overhead DC and overhead AC use wheelsets and running rails as part of their normal return circuit.','Normal traction return, protective bonding and signalling interfaces must be distinguished. Cyan marks the selected return topology; it is not an earthing design or a safe-work indication.'],sources:['EL02','EL04','EL05','E02']},
-    transformer:{summary:'Inspect the core, separate winding circuits, tank and insulated terminals.',details:['A traction transformer transfers energy through a magnetic core between its winding circuits. Its place in the chain depends on the supply architecture: the DC substation feeds a rectifier, while a conventional AC train also has an onboard transformer.','The close-up separates actual internal assemblies. A primary winding, secondary winding, tank and bushing are different physical parts; the model provides no transformer rating or insulation design.'],sources:['P01','E01','E02']},
-    rectifier:{summary:'A wayside diode rectifier supplies the selected DC profiles.',details:['The selected DC substation converts the transformer output into a DC traction supply. This diode arrangement is one-way; regenerated energy is received elsewhere on the DC network or by the chosen resistor.','The dedicated assembly view separates clamped semiconductor devices, heat sinks, busbars and enclosure. The AC supply chain removes this wayside rectifier.'],sources:['P01','P12']},
-  };
+  "supply-conversion": {
+    "label": "Supply conversion",
+    "summary": "Compare where four supply arrangements collect, convert and return electrical power.",
+    "details": [
+      "Third rail DC uses a supply shoe and running-rail return. Fourth rail DC adds a separate return conductor and shoe. Overhead DC and AC use a pantograph and running-rail return.",
+      "The DC examples rectify AC at the substation. The conventional overhead AC example adds an onboard transformer and line converter. The motor inverter then supplies the independently selected propulsion."
+    ],
+    "sources": [
+      "EL01",
+      "EL02",
+      "EL03",
+      "E01",
+      "E02"
+    ]
+  },
+  "study-collector": {
+    "label": "Current collection interface",
+    "summary": "Shoes contact conductor rails; a pantograph contacts overhead wire.",
+    "details": [
+      "The collector provides a moving electrical contact between the train and its supply. Either AC or DC can be collected overhead.",
+      "Fourth rail adds a separate return shoe. The other three examples return traction current through the wheelsets and running rails."
+    ],
+    "sources": [
+      "EL02",
+      "EL03",
+      "P11"
+    ]
+  },
+  "study-onboard-transformer": {
+    "label": "Onboard traction transformer",
+    "summary": "The conventional AC train changes voltage through two separate winding circuits.",
+    "details": [
+      "The pantograph supplies the primary winding. Magnetic coupling transfers energy to the secondary winding, which feeds the line converter.",
+      "The primary return runs through wheelsets and rails. Copper traces show the separate secondary circuit. This transformer appears only in the overhead AC example."
+    ],
+    "sources": [
+      "E02",
+      "E03"
+    ]
+  },
+  "study-converter": {
+    "label": "Line converter and DC link",
+    "summary": "A DC link connects the supply conversion to the motor inverter.",
+    "details": [
+      "In the conventional AC example, the transformer and line converter feed the DC link. The three DC examples feed the onboard DC circuit without those AC stages.",
+      "The capacitor bank stores electrical energy and helps smooth the DC-link voltage. Open the enclosure to distinguish it from the line-converter and motor-inverter modules."
+    ],
+    "sources": [
+      "E02",
+      "P04"
+    ]
+  },
+  "study-drive": {
+    "label": "Motor conversion and propulsion",
+    "summary": "The motor inverter supplies the selected propulsion in every supply arrangement.",
+    "details": [
+      "Rotary motors turn wheelsets through a mechanical drive. A linear induction motor (LIM) instead develops thrust by interacting with a reaction rail.",
+      "Changing between conductor rail and overhead collection keeps the propulsion choice. Follow the inverter output to see which motor receives the controlled electrical power."
+    ],
+    "sources": [
+      "P04",
+      "P02",
+      "P03"
+    ]
+  },
+  "study-return": {
+    "label": "Traction return path",
+    "summary": "The traction circuit needs a return connection to its source.",
+    "details": [
+      "Fourth rail uses a separate return conductor and shoe in this model. Third rail, overhead DC and overhead AC use wheelsets and running rails as part of their return circuit.",
+      "Cyan traces identify the normal traction return. Protective earthing and bonding address electrical hazards; the two functions must be coordinated in the railway’s electrical design."
+    ],
+    "sources": [
+      "EL02",
+      "EL04",
+      "EL05",
+      "E02"
+    ]
+  },
+  "transformer": {
+    "summary": "A transformer transfers energy between separate winding circuits through a magnetic core.",
+    "details": [
+      "The DC substation transformer supplies the rectifier. The conventional AC chain has a source-side traction transformer and a separate transformer on the train before the line converter.",
+      "Open the assembly to identify the core, primary and secondary windings, tank and insulated terminals. Follow each winding to its own electrical connections."
+    ],
+    "sources": [
+      "P01",
+      "E01",
+      "E02"
+    ]
+  },
+  "rectifier": {
+    "summary": "The wayside diode rectifier supplies the DC traction network.",
+    "details": [
+      "The rectifier changes the substation transformer’s AC output into DC. Its diode arrangement is one-way, so it cannot export regenerated energy to the AC grid. A receiving train or another available energy sink is needed on the DC side.",
+      "Open the assembly to inspect the clamped semiconductor devices, heat sinks, busbars and enclosure. The conventional AC supply chain omits this wayside rectifier."
+    ],
+    "sources": [
+      "P01",
+      "P12"
+    ]
+  }
+};
   for(const [id,patch]of Object.entries(patches)){const concept=concepts.find(item=>item.id===id);if(concept)Object.assign(concept,patch);}
 }
 

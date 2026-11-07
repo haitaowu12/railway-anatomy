@@ -62,7 +62,7 @@ check('An absent integration remains absent in every degraded scenario',()=>{
   for(const d of CONTROL_DOMAINS)for(const scenario of CONTROL_SCENARIOS){
     const m=evaluateControlInterface({domain:d.id,architecture:'separate',scenario:scenario.id,trace:'request'});
     assert.equal(m.commandState,'No common-display command interface');
-    assert.match(m.steps[0].text,/No common-display interface/);
+    assert.match(m.steps[0].text,/no connection to the common display/);
     assert.match(m.steps[2].text,/No local action/);
   }
 });
@@ -95,6 +95,8 @@ check('Context links select the appropriate functional owner instead of bundling
   assert.equal(getInterfaceContext('station-lift').domain,'vertical');
   assert.equal(getInterfaceContext('operational-cab-radio').domain,'radio');
   assert.equal(getInterfaceContext(null,'communications-security','video').domain,'security');
+  assert.equal(getInterfaceContext('occ-access-supervision','communications-security','access').domain,'security');
+  assert.equal(COMMUNICATION_TOPOLOGIES['communications-security/access'].nodes.find(n=>n.id==='supervision').component,'occ-access-supervision');
   assert.equal(getInterfaceContext(null,'station-networks','power').domain,'traction');
 });
 
@@ -106,12 +108,13 @@ check('Legacy I/O lesson identifies a building actuator and preserves an interve
     assert(!t.edges.some(e=>e.from==='output'&&e.to==='plant'));
     assert(!COMMUNICATIONS_SCENE_PARTS[key].includes('tunnel-damper'));
     assert(COMMUNICATIONS_SCENE_PARTS[key].includes('bas-actuator'));
+    if(variant==='stale')assert.match(t.edges.find(e=>e.from==='gateway'&&e.to==='rtu').label,/unavailable/,'A lost supervisory link must not show a deliverable reverse request');
   }
 });
 
 
 check('Communications equipment SCADA has explicit optional request capabilities and source scope',()=>{
- const domain=CONTROL_DOMAINS.find(d=>d.id==='telecom');assert(domain);assert.match(domain.supervisor,/telecom SCADA/);assert(domain.sources.includes('OC10'));assert(domain.sources.includes('OC11'));assert(domain.sources.includes('OC14'));assert.match(domain.boundary,/NMS/);assert.match(domain.boundary,/mandatory/);
+ const domain=CONTROL_DOMAINS.find(d=>d.id==='telecom');assert(domain);assert.match(domain.supervisor,/telecom SCADA/);assert(domain.sources.includes('OC10'));assert(domain.sources.includes('OC11'));assert(domain.sources.includes('OC14'));assert.match(domain.boundary,/NMS/);assert.match(domain.boundary,/NMS.*supply.*points/);assert.match(domain.boundary,/SCADA can acquire them directly/);
  for(const id of ['telecom','security','passenger']){assert(connectionModesFor(id).includes('supervisory'));const enabled=evaluateControlInterface({domain:id,architecture:'integrated',trace:'request'});assert(enabled.canRequest);assert.match(enabled.steps[0].text,/configured common interface/);const disabled=evaluateControlInterface({domain:id,architecture:'summaries',trace:'request'});assert.equal(disabled.canRequest,false);assert.match(disabled.steps[1].text,/No request is sent/);}
  assert.equal(getInterfaceContext('telecom-scada').domain,'telecom');assert.deepEqual(getInterfaceContext('unrecognised-asset','unrelated-view'),{});assert.notEqual(getInterfaceContext('scada-rtu','communications-scada').domain,'traction','Generic field acquisition must not silently become traction SCADA');
 });

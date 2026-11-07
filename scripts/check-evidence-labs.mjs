@@ -49,7 +49,7 @@ check('A documented radio transfer cannot replace missing access or interrupted 
   const normal=evaluate('radio-moving-timeline'),gap=evaluate('radio-moving-timeline',{access:'gap',time:30}),transport=evaluate('radio-moving-timeline',{transport:'interrupted',time:20}),both=evaluate('radio-moving-timeline',{access:'gap',transport:'interrupted'});
   assert.equal(getMetric(normal,'All declared prerequisites documented'),60);assert.equal(getMetric(gap,'Missing or unverified prerequisites'),10);assert.equal(getMetric(transport,'Missing or unverified prerequisites'),16);assert.equal(getMetric(both,'Missing or unverified prerequisites'),17);
   assert.equal(getRow(transport,'Fixed transport').status,'declared absent');assert.equal(getRow(transport,'Serving-cell association').status,'recorded');assert.equal(getRow(normal,'End-to-end voice').status,'unresolved');
-  const unchanged=evaluate('radio-moving-timeline',{time:60});assert.deepEqual(normal.series,unchanged.series);assert.equal(getMetric(unchanged,'Fictional position'),720);
+  const unchanged=evaluate('radio-moving-timeline',{time:60});assert.deepEqual(normal.series,unchanged.series);assert.equal(getMetric(unchanged,'Example position'),720);
 });
 
 check('An absent transfer record stays unverified despite observed access, with exact event boundaries',()=>{
@@ -84,7 +84,7 @@ check('Change impact follows declared edges and distinguishes local evidence fro
 
 check('A matching evidence packet does not close an open issue or grant change authority',()=>{
   const open=evaluate('change-impact-evidence',{evidence:'coordinated'}),addressed=evaluate('change-impact-evidence',{evidence:'coordinated',issue:'disposition'}),old=evaluate('change-impact-evidence',{issue:'disposition'});
-  assert.equal(getMetric(open,'Missing or old records'),0);assert.equal(getMetric(open,'Open fictional issue'),1);assert.equal(getMetric(addressed,'Open fictional issue'),0);assert.equal(getMetric(old,'Missing or old records'),6);
+  assert.equal(getMetric(open,'Missing or old records'),0);assert.equal(getMetric(open,'Open example issue'),1);assert.equal(getMetric(addressed,'Open example issue'),0);assert.equal(getMetric(old,'Missing or old records'),6);
   for(const result of [open,addressed,old])assert.equal(getRow(result,'Authority').status,'outside exercise');assert.equal(getRow(old,'DEMO.POINT').status,'revision mismatch');
 });
 

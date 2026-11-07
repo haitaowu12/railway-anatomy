@@ -151,8 +151,8 @@ export function createPlatformAssemblies(api) {
         if(detailed){shell(cover);separate(cover,[direction*.55,.5,side*.7],'Side-post cover');}
       }
     }
-    const terminalBank=E.terminalStrip(g,{name:'door-controller-terminals',at:[full?.57:-1.23,full?.14:.25,-side*.19],labels:['Supply','Request','Position return','Lock return'],kind:'information',sources:['N04','N05']});if(!full)terminalBank.scale.setScalar(.32);
-    E.paths(g,[{id:'door-actuation',label:'Request to leaf motion',description:full?'The controller drives the motor, belt and pulley transmission; fixed guides support the moving leaves.':'The selected half-height facade uses side-post drives, with no header across the opening.',steps:[{label:'Interface terminals',nodeName:'door-controller-terminals'},{label:'Drive',nodeName:full?'door-drive-motor':'half-height-side-post-drive'},{label:'Transmission',nodeName:full?'door-belt-and-pulleys':'half-height-leaf-rack'}],sources:['N04','N05']}]);
+    const terminalBank=E.terminalStrip(g,{name:'door-controller-terminals',at:[full?.57:-1.23,full?.14:.25,-side*.19],labels:[{label:'Supply',kind:'power'},'Request','Position return','Lock return'],kind:'information',sources:['N04','N05']});if(!full)terminalBank.scale.setScalar(.32);
+    E.paths(g,[{id:'door-actuation',label:'Request to leaf motion',description:full?'The controller drives the motor, belt and pulley transmission; fixed guides support the moving leaves.':'Each side-post drive turns a pinion against a rack on its door leaf. The boarding opening stays clear above the half-height leaves.',steps:[{label:'Interface terminals',nodeName:'door-controller-terminals'},{label:'Drive',nodeName:full?'door-drive-motor':'half-height-side-post-drive'},{label:'Transmission',nodeName:full?'door-belt-and-pulleys':'half-height-leaf-rack'}],sources:['N04','N05']}]);
     const request=indicator(g,'door-open-request',[full?.88:-1.23,full?.11:.2,side*.29],P.amber);
     return {node:g,pulleys,racks,request,set(pose){
       for(const p of pulleys)p.rotation.z=-pose.opening*D.travel/(full?.105:.085);
@@ -196,7 +196,7 @@ export function createPlatformAssemblies(api) {
       for(const y of [D.floor+.08,D.floor+height])box(facade,[b-a,.07,.11],M.steel,[(a+b)/2,y,side*D.facade]);
       const pieces=Math.max(1,Math.ceil((b-a)/2));
       for(let j=0;j<=pieces;j++){const x=a+(b-a)*j/pieces;box(facade,[.07,height,.12],M.steel,[x,D.floor+height/2,side*D.facade]);
-        const mount=E.inspect(group(facade,'facade-post-base',[Math.max(a+.08,Math.min(b-.08,x)),D.floor+.025,side*D.facade]),'Fixed post base and anchors',{sources:['N03'],description:'Mounting stays within the fixed panel span; no anchor pattern or structural design is prescribed.'});box(mount,[.16,.045,.20],M.steel);for(const dx of [-.05,.05])for(const dz of [-.06,.06])cylinder(mount,.013,.05,M.core,[dx,.025,dz],null,8);
+        const mount=E.inspect(group(facade,'facade-post-base',[Math.max(a+.08,Math.min(b-.08,x)),D.floor+.025,side*D.facade]),'Fixed post base and anchors',{sources:['N03'],description:'The base and anchors connect a fixed facade post to the platform, outside the boarding opening.'});box(mount,[.16,.045,.20],M.steel);for(const dx of [-.05,.05])for(const dz of [-.06,.06])cylinder(mount,.013,.05,M.core,[dx,.025,dz],null,8);
       }
     }
     for(const cx of doorCenters){

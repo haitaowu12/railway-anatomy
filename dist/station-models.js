@@ -42,7 +42,7 @@ export function buildStationView(id, api) {
     registerAnimator } = api;
   const root = startModel(id);
   const comms = createCommunicationsAssemblies(api), E=createEquipmentDetails(api);
-  const explode=(node,delta)=>{const label=node.userData.explorationLabel||node.name.replaceAll('-',' ');E.inspect(node,label,{stage:node.userData.inspectionStage||(/cover|enclosure|roof/i.test(label)?'Open enclosure':'Working parts'),range:node.userData.inspectionRange||(/cover|enclosure|roof/i.test(label)?[0,.3]:[.4,1]),sources:node.userData.inspectionSources||[],description:node.userData.inspectionFunction||'A distinct physical piece in this generic teaching assembly.'});rawExplode(node,delta);};
+  const explode=(node,delta)=>{const label=node.userData.explorationLabel||node.name.replaceAll('-',' ');E.inspect(node,label,{stage:node.userData.inspectionStage||(/cover|enclosure|roof/i.test(label)?'Open enclosure':'Working parts'),range:node.userData.inspectionRange||(/cover|enclosure|roof/i.test(label)?[0,.3]:[.4,1]),sources:node.userData.inspectionSources||[],description:node.userData.inspectionFunction||''});rawExplode(node,delta);};
   const animations = [], routes = [], alternatives = [];
   const paint = {
     concrete: mat(0x6c7b81, .9, .02), floor: mat(0xb8c2bf, .85, .02),
@@ -281,30 +281,30 @@ export function buildStationView(id, api) {
     for (const x of [-.58, .58]) { box(doors, [1.01, 1.84, .035], paint.pale, [x, 1.02, .56]); screen(doors, .49, .3, [x, 1.64, .6], C.service); }
     shell(doors); explode(doors, [0, .15, .75]);
     E.terminalStrip(g,{name:'station-ups-power-terminals',at:[0,.2,.5],labels:['Input supply','Protected output','Return'],kind:'power',sources:['F19','DP03']});
-    E.paths(g,[{id:'station-ups-hardware',label:'Supply conversion and storage',description:'Input, conversion, storage and output are separate hardware. No runtime or retained load is assigned.',steps:[{label:'Terminals',nodeName:'station-ups-power-terminals'},{label:'Conversion module',nodeName:'station-ups-conversion-module-0'},{label:'Storage tray',nodeName:'station-ups-battery-tray-0'}],sources:['F19','DP03']}]);
+    E.paths(g,[{id:'station-ups-hardware',label:'Supply conversion and storage',description:'Power-conversion modules feed the protected output. Batteries store energy for a supply interruption; backup duration depends on the load and battery condition.',steps:[{label:'Terminals',nodeName:'station-ups-power-terminals'},{label:'Conversion module',nodeName:'station-ups-conversion-module-0'},{label:'Storage tray',nodeName:'station-ups-battery-tray-0'}],sources:['F19','DP03']}]);
     return g;
   }
   function pump(parent, at = [0, 0, 0], scale = 1) {
     const g = part(parent, 'fire-pump', at); g.scale.setScalar(scale);
     box(g, [2.8, .17, 1.45], M.steel, [0, .15, 0]);
     for (const x of [-1.1, .95]) for (const z of [-.5, .5]) box(g, [.25, .26, .22], M.core, [x, .25, z]);
-    const motor = E.inspect(group(g, 'pump-motor', [-.72, .69, 0]),'Fixed pump motor housing',{sources:['DP04'],description:'The stationary motor enclosure supports the rotating shaft; a motor supply is distinct from a pump duty or start condition.'});
+    const motor = E.inspect(group(g, 'pump-motor', [-.72, .69, 0]),'Fixed pump motor housing',{sources:['DP04'],description:'The housing holds the motor and shaft bearings while the shaft turns. Separate controls determine when the motor runs.'});
     cylinder(motor, .36, .95, M.teal, [0, 0, 0], [0, 0, Math.PI / 2], 16);
     for (let i = 0; i < 10; i++) {
       const theta = i * Math.PI / 5;
       box(motor, [.85, .045, .14], M.steel, [0, Math.cos(theta) * .34, Math.sin(theta) * .34], [theta, 0, 0]);
     }
-    const shaft=E.inspect(group(g,'pump-drive-shaft',[.185,.69,0]),'Continuous drive shaft and coupling',{sources:['DP04'],description:'One straight shaft joins the motor output, sealing region and impeller hub.'});
+    const shaft=E.inspect(group(g,'pump-drive-shaft',[.185,.69,0]),'Pump shaft and coupling',{sources:['DP04'],description:'The coupling connects the motor shaft to the pump shaft, which turns the impeller.'});
     cylinder(shaft,.08,.97,M.steel,[0,0,0],[0,0,Math.PI/2],12);
     for(const x of [-.225,-.135]){cylinder(shaft,.15,.07,M.steel,[x,0,0],[0,0,Math.PI/2],16);box(shaft,[.075,.022,.065],M.copper,[x,.15,0]);}
     const hydraulic = group(g, 'pump-hydraulic-section', [.65, .69, 0]);
-    E.inspect(hydraulic,'Pump casing and fluid collection passage',{sources:['DP04'],description:'An open annular working section keeps the impeller visible; a separate outlet carries the collected flow.'});
+    E.inspect(hydraulic,'Pump casing and fluid collection passage',{sources:['DP04'],description:'The casing collects fluid leaving the impeller and directs it toward the outlet.'});
     const casingShape=new THREE.Shape();
     for(let j=0;j<=48;j++){const t=j/48,a=Math.PI/2+.24+t*(Math.PI*2-.48),r=.34+.08*t+.065,point=[r*Math.cos(a),r*Math.sin(a)];j?casingShape.lineTo(...point):casingShape.moveTo(...point);}
     for(let j=48;j>=0;j--){const t=j/48,a=Math.PI/2+.24+t*(Math.PI*2-.48),r=.34+.08*t;casingShape.lineTo(r*Math.cos(a),r*Math.sin(a));}casingShape.closePath();
-    const casingGeometry=new THREE.ExtrudeGeometry(casingShape,{depth:.32,bevelEnabled:false});casingGeometry.rotateY(Math.PI/2);casingGeometry.translate(-.16,0,0);const volute=mesh(hydraulic,casingGeometry,paint.fire);volute.name='pump-volute-wall';E.inspect(volute,'Expanding collecting casing',{sources:['DP04'],description:'The original spiral passage grows toward the upper outlet. Its section is illustrative, not a pump performance design.'});
+    const casingGeometry=new THREE.ExtrudeGeometry(casingShape,{depth:.32,bevelEnabled:false});casingGeometry.rotateY(Math.PI/2);casingGeometry.translate(-.16,0,0);const volute=mesh(hydraulic,casingGeometry,paint.fire);volute.name='pump-volute-wall';E.inspect(volute,'Expanding collecting casing',{sources:['DP04'],description:'The spiral passage grows toward the outlet as it collects flow from around the impeller.'});
     E.annulus(hydraulic,'pump-backplate',.083,.5,.035,M.steel,[-.17,0,0]).rotation.set(0,0,Math.PI/2);
-    const seal=E.inspect(group(g,'pump-shaft-seal',[.38,.69,0]),'Shaft sealing region',{sources:['DP04'],description:'The shaft crosses the stationary hydraulic boundary through an annular sealing region.'});
+    const seal=E.inspect(group(g,'pump-shaft-seal',[.38,.69,0]),'Shaft sealing region',{sources:['DP04'],description:'The seal limits fluid leakage where the rotating shaft enters the pump casing.'});
     for(const x of [-.025,.025])E.annulus(seal,'pump-seal-face',.083,.135,.035,x<0?M.steel:M.copper,[x,0,0]).rotation.set(0,0,Math.PI/2);
     const front = group(hydraulic, 'pump-cover'); E.annulus(front,'pump-inlet-cover',.12,.5,.08,paint.fire,[.23,0,0]).rotation.set(0,0,Math.PI/2);
     shell(front); E.separate(front,'Hydraulic cover and inlet eye',[.65,.1,.2],{stage:'Open enclosure',range:[0,.35],sources:['DP04']});
@@ -317,7 +317,7 @@ export function buildStationView(id, api) {
     E.separate(impeller,'Impeller and open vane passages',[.7,.2,.3],{stage:'Working section',range:[.4,1],sources:['DP04']});
     E.port(g,{name:'pump-inlet-interface',label:'Axial fluid inlet',at:[1.18,.69,0],kind:'fluid',sources:['DP04']});
     E.port(g,{name:'pump-discharge-interface',label:'Collected-flow outlet',at:[.65,1.65,0],kind:'fluid',sources:['DP04']});
-    E.paths(g,[{id:'pump-fluid',label:'Fluid through the pump',description:'Axial inlet → impeller eye and vanes → collecting casing → outlet. This is a directional anatomy, not a calculated flow field.',steps:[{label:'Inlet',nodeName:'pump-inlet-interface'},{label:'Impeller',nodeName:'pump-impeller'},{label:'Casing',nodeName:'pump-hydraulic-section'},{label:'Outlet',nodeName:'pump-discharge-interface'}],sources:['DP04']},{id:'pump-drive',label:'Drive and sealing',description:'Motor and shaft deliver work through the sealing region to the impeller.',steps:[{label:'Motor',nodeName:'pump-motor'},{label:'Shaft and coupling',nodeName:'pump-drive-shaft'},{label:'Seal',nodeName:'pump-shaft-seal'},{label:'Impeller',nodeName:'pump-impeller'}],sources:['DP04']}]);
+    E.paths(g,[{id:'pump-fluid',label:'Fluid through the pump',description:'Fluid enters along the shaft axis, passes through the impeller eye and vanes, then reaches the outlet through the collecting casing.',steps:[{label:'Inlet',nodeName:'pump-inlet-interface'},{label:'Impeller',nodeName:'pump-impeller'},{label:'Casing',nodeName:'pump-hydraulic-section'},{label:'Outlet',nodeName:'pump-discharge-interface'}],sources:['DP04']},{id:'pump-drive',label:'Drive and sealing',description:'The motor transmits torque through the coupling and shaft to the impeller. The seal limits leakage around the shaft.',steps:[{label:'Motor',nodeName:'pump-motor'},{label:'Shaft and coupling',nodeName:'pump-drive-shaft'},{label:'Seal',nodeName:'pump-shaft-seal'},{label:'Impeller',nodeName:'pump-impeller'}],sources:['DP04']}]);
     // Mechanical motion is a cutaway demonstration, never an alarm-driven start.
     animations.push(state => { const angle=['station-plant','fire-systems'].includes(id)&&variant(state)==='water'?Math.PI*4*Math.max(0,Math.min(1,state.phase/5)):0;impeller.rotation.x=shaft.rotation.x=angle; });
     pipes(g, [[1.18, .69, 0], [1.7, .69, 0], [1.9, .7, .8]], .11);
@@ -370,7 +370,7 @@ export function buildStationView(id, api) {
       box(g, [.4, .52, .22], M.core, [0, -.36, z]);
     }
     E.separate(motor,'Fan drive motor',[0,0,-.7],{stage:'Drive and support',range:[.65,1],sources:['DP02']});
-    E.paths(g,[{id:'fan-work',label:'Motor, shaft and airflow',description:'Motor work reaches the impeller through the shaft; the fixed casing and supports stay separate.',steps:[{label:'Motor',nodeName:'fan-drive-motor'},{label:'Impeller',nodeName:'axial-impeller'},{label:'Casing',nodeName:'fan-casing'}],sources:['DP02']}]);
+    E.paths(g,[{id:'fan-work',label:'Motor, shaft and airflow',description:'The motor turns the shaft and impeller. The blades transfer energy to the air while the casing and supports stay fixed.',steps:[{label:'Motor',nodeName:'fan-drive-motor'},{label:'Impeller',nodeName:'axial-impeller'},{label:'Casing',nodeName:'fan-casing'}],sources:['DP02']}]);
     return g;
   }
   function damper(parent, at = [0, 0, 0], scale = 1, rotation = [0, 0, 0]) {
@@ -473,7 +473,7 @@ export function buildStationView(id, api) {
     const pan=E.inspect(group(g,'air-handler-condensate-pan',[.49,.32,0]),'Condensate pan',{sources:['DP02'],description:'A dedicated liquid collection and drainage path sits below the coil.'});box(pan,[.9,.035,1.6],paint.water);for(const z of [-.78,.78])box(pan,[.9,.12,.025],M.steel,[0,.06,z]);
     E.route(g,{name:'air-handler-condensate-drain',label:'Condensate drain',points:[[.49,.32,.8],[.49,.12,.95],[1.1,.12,1.2]],kind:'fluid',from:'Condensate pan',to:'Drain connection',sources:['DP02'],radius:.035});
     E.port(g,{name:'air-handler-coil-supply',label:'Coil fluid supply',at:[1.4,1.77,1.2],kind:'fluid',sources:['DP02']});E.port(g,{name:'air-handler-coil-return',label:'Coil fluid return',at:[1.4,.62,1.2],kind:'fluid',sources:['DP02']});
-    for(const [node,label,stage,range]of [[pan,'Condensate pan','Thermal interfaces',[.4,.8]],[panels,'Air-handler access panels','Open enclosure',[0,.3]],[filter,'Pleated air filter','Air treatment',[.3,.6]],[coil,'Finned heat-exchanger coil','Air treatment',[.45,.8]],[rotor,'Supply-air impeller','Fan and drive',[.65,1]]])E.inspect(node,label,{stage,range,sources:['DP02']});
+    for(const [node,label,stage,range]of [[pan,'Condensate pan','Thermal interfaces',[.4,.8]],[panels,'Air-handler access panels','Open enclosure',[0,.3]],[filter,'Pleated air filter','Air treatment',[.3,.6]],[coil,'Finned heat-exchanger coil','Air treatment',[.45,.8]],[rotor,'Supply-air impeller','Fan and drive',[.65,1]]])E.inspect(node,label,{stage,range,sources:['DP02'],description:node.userData.inspectionFunction||''});
     E.paths(g,[{id:'station-supply-air',label:'Air treatment path',description:'A selected intake → filter → coil → fan arrangement; fluid and condensate have separate routes.',steps:[{label:'Damper',nodeName:'air-handler-inlet-damper'},{label:'Filter',nodeName:'air-filter-section'},{label:'Coil',nodeName:'air-handler-coil'},{label:'Fan',nodeName:'supply-air-impeller'}],sources:['DP02']},{id:'station-coil-services',label:'Coil and condensate interfaces',description:'Thermal supply and return are distinct from the drainage route.',steps:[{label:'Coil supply',nodeName:'air-handler-coil-supply'},{label:'Coil',nodeName:'air-handler-coil'},{label:'Coil return',nodeName:'air-handler-coil-return'},{label:'Condensate',nodeName:'air-handler-condensate-pan'},{label:'Drain',nodeName:'air-handler-condensate-drain'}],sources:['DP02']}]);
     return g;
   }
@@ -566,7 +566,7 @@ export function buildStationView(id, api) {
     const sheave=group(drive,'lift-traction-sheave',[0,0,-.64]);
     cylinder(sheave,.36,.26,M.steel,[0,0,0],[0,0,Math.PI/2],24);
     box(sheave,[.02,.55,.03],paint.pale,[.145,0,0]);sheave.userData.explorationLabel='Traction sheave';explode(sheave,[0,.45,.5]);
-    const counterweight=E.inspect(group(g,'lift-counterweight',[0,rise+.5,-1.0]),'Guided counterweight',{sources:['SP01'],description:'The selected traction arrangement moves the counterweight oppositely to the cabin.'});
+    const counterweight=E.inspect(group(g,'lift-counterweight',[0,rise+.5,-1.0]),'Guided counterweight',{sources:['SP01'],description:'The counterweight moves in the opposite direction to the car, reducing the load the motor must lift.'});
     for(let i=0;i<7;i++)box(counterweight,[1.25,.12,.16],M.core,[0,i*.13,0]);
     const ropes=[],counterRopes=[],top=rise+2.48;
     for(const x of [-.7,.7]){const rail=E.inspect(box(g,[.045,rise+1.8,.045],M.steel,[x,(rise+1.8)/2,-1]),'Fixed counterweight guide',{sources:['SP01']});rail.name='lift-counterweight-guide';}
@@ -590,7 +590,7 @@ export function buildStationView(id, api) {
       g.userData.suspensionLengths={car:top-roof,counterweight:top-counterTop,wrap:Math.PI*.36};
       g.userData.liftPose=pose;
     });
-    E.paths(g,[{id:'lift-mechanical',label:'Traction and guidance',description:'Drive, sheave, suspended car, counterweight and guide interfaces retain distinct motion.',steps:[{label:'Machine',nodeName:'lift-traction-machine'},{label:'Sheave',nodeName:'lift-traction-sheave'},{label:'Car',nodeName:'lift-carriage'},{label:'Guide shoe',nodeName:'lift-car-guide-shoe'},{label:'Counterweight',nodeName:'lift-counterweight'}],sources:['SP01']},{id:'lift-landing-evidence',label:'Car and landing doors',description:'The moving car doors are separate from each fixed landing and its contact target.',steps:[{label:'Car operator',nodeName:'lift-car-door-operator'},{label:'Car door',nodeName:'lift-car-door'},{label:'Landing door',nodeName:'lift-landing-door-0'},{label:'Contact',nodeName:'lift-landing-contact-0'},{label:'Target',nodeName:'lift-landing-contact-target-0'}],sources:['SP01']}]);
+    E.paths(g,[{id:'lift-mechanical',label:'Traction and guidance',description:'The traction machine turns the sheave. Suspension ropes move the car and counterweight in opposite directions, while fixed guide rails keep them aligned.',steps:[{label:'Machine',nodeName:'lift-traction-machine'},{label:'Sheave',nodeName:'lift-traction-sheave'},{label:'Car',nodeName:'lift-carriage'},{label:'Guide shoe',nodeName:'lift-car-guide-shoe'},{label:'Counterweight',nodeName:'lift-counterweight'}],sources:['SP01']},{id:'lift-landing-evidence',label:'Car and landing doors',description:'The car doors travel with the lift. Each floor has its own landing doors and contacts that report whether those doors are closed.',steps:[{label:'Car operator',nodeName:'lift-car-door-operator'},{label:'Car door',nodeName:'lift-car-door'},{label:'Landing door',nodeName:'lift-landing-door-0'},{label:'Contact',nodeName:'lift-landing-contact-0'},{label:'Target',nodeName:'lift-landing-contact-target-0'}],sources:['SP01']}]);
     return g;
   }
   function contextTrain(parent, at = [0, 0, 0]) {

@@ -1,0 +1,681 @@
+# Railway core content review
+
+Review completed 7 November 2026 against the staged baseline `e43f9fa5a0f49150be4ccaec90ed3dcf18adef74` and the local integration changes.
+
+## Scope and method
+
+The complete authored entries in `dist/catalog.js`, `dist/expansion-data.js` and `dist/tours.js` were read in compact per-entry extracts. Review included labels, summaries, every detail paragraph, qualifications, source descriptions and scope notes, architecture flows, view variants, tour instructions, action targets, questions, answer indices and feedback. IDs and integration APIs were preserved.
+
+Coverage comprises 130 catalog concepts (127 initial definitions and three appended track concepts), 95 catalog source records, six architectures, 36 expansion concepts, 25 expansion sources, six expansion views with 15 variants, two expansion domains and all 36 primary destination mappings, and 26 tours authored in `tours.js` (25 initial entries and the appended turnout tour). The six imported study tours, the later catalog augmentation modules and their own entries belong to the parallel reviewers. This report does not claim to have reread those imported entries.
+
+The review checked existing references against the mechanisms they support and used targeted primary-source research for the self-guarded crossing distinction, the current G9 product claim and DC interruption. It did not independently download every source or reproduce numerical engineering calculations. The P80 brochure remains explicitly labelled as an OEM document hosted by a public mirror; its host alone was not treated as a factual defect.
+
+## Corrections and clarifications
+
+- Expanded the previously skeletal incoming-supply, switchgear, breaker and substation-control entries. The DC breaker now explains separation of contacts and arc extinction; SCADA is expanded on first use and distinguished from local protection.
+- Clarified the battery’s supported circuits and finite runtime, the parking brake’s stationary holding function, and the separate roles of auxiliary supply, motor power and control messages.
+- Replaced author-facing instructions such as “the model should show” and “do not prescribe” with explanations of the actual equipment, information and interfaces.
+- Clarified the conventional sprinkler mechanism: each heat-responsive head opens locally, while smoke detection, the fire panel and the pump perform separate jobs. Pre-action and deluge arrangements are identified as alternatives.
+- Explained that a station UPS powers its connected circuits; a working display does not establish power at a fan or pump. Replaced generic lists of unspecified ratings with the dependencies that matter to a beginner.
+- Retained distinctions that affect understanding: conductor-rail return versus protective bonding, communication versus movement authority, command versus achieved state, and fixed versus moving crossings.
+- Reworded the self-guarded-frog explanation to locate its guiding features at the crossing. A conventional opposite check rail guides the other wheel; raised casting features in a self-guarded frog replace that arrangement.
+- Verified the published G9 private-cloud claim and kept it explicitly tied to the 2026 product description. The entry no longer discusses hypothetical claims about AI granting movement authority.
+- Explained LiDAR point clouds in everyday terms and separated observation, event reporting and railway response. Kept open-platform intrusion, door-edge obstruction, interspace sensing and platform-end access distinct.
+- Removed the repeated general-purpose disclaimer attached to nearly every operations/depot expansion entry. Retained a concise statement of illustrative geometry where a concept has no external source.
+- Explained gearbox reduction in terms of motor speed and axle torque, and separated washing motion from the collection, treatment and reuse of water.
+- Replaced vague tour buttons with destination-specific actions. Matched instructions to the actual “Sequence position”, “Model options” and “Separate parts” controls. All answer indices and feedback were reviewed; the substantive answer choices remain consistent with the mechanisms.
+
+## Primary-source checks
+
+- [voestalpine Nortrak: Guard Rails — AREMA Style](https://www.voestalpine.com/nortrak/en/products/Guard-Rails-AREMA-Style/) describes the opposite check rail and states that raised parts of a self-guarded casting serve its guiding purpose.
+- [voestalpine Nortrak: Frogs](https://www.voestalpine.com/nortrak/en/products/Frogs-00001/) distinguishes self-guarded and flange-bearing product alternatives. No product performance claim was generalized.
+- [Hitachi Rail: Signaling at InnoTrans 2026](https://www.hitachirail.com/blog/signaling-hitachi-rail-at-innotrans-2026/) describes SelTrac G9 hosting safety-critical functions in a private cloud. The description supports a product example, not an inventory of installations.
+- [Sécheron: high-speed DC circuit breakers, 2025 brochure](https://www.secheron.com/wp-content/uploads/2025/09/SG101001BEN_F28_Brochure_Circuit-breaker-DC_UR26-80S_09.25.pdf) and [DC interruption curves](https://www.secheron.com/wp-content/uploads/audros/SG104249BEN_A01_Brochure_Circuit-breaker-DC_UR26-80I_03.19.pdf) show DC current interruption and arc voltage. The catalog uses the existing EL06 source ID for this equipment family.
+
+## Validation and integration boundary
+
+`node --check` passed for all three edited JavaScript modules. `git diff --check` passed for the owned changes. The site check passed source completeness, unique identities, every-concept reachability, architecture mappings, tour actions and answers, experiment behavior, local links and the scene/lesson geometry checks observed during this pass. The site check reported stale generated reading content after the catalog changes; the integration owner regenerates `reading.html` and runs the complete release gate after all content modules are saved. The full run subsequently completed with 36 passed checks and three failures: two generated-reading failures and a separate exact-caption assertion in `check-component-motion.mjs` against a revised sprinkler caption. The integration owner was notified. This report is not a claim of a clean release gate, browser or GPU validation.
+
+## Catalog concepts reviewed
+
+- `utility`
+- `ac-switchgear`
+- `transformer`
+- `rectifier`
+- `dc-switchgear`
+- `breaker`
+- `wayside-resistor`
+- `grounding`
+- `facility-transformer`
+- `disconnect`
+- `positive-rail`
+- `negative-rail`
+- `running-rail`
+- `reaction-rail`
+- `collector`
+- `carbody`
+- `bogie`
+- `traction-inverter`
+- `lim-primary`
+- `motor-slip`
+- `apu`
+- `vehicle-battery`
+- `brakes`
+- `parking-brake`
+- `hvac`
+- `compressor`
+- `doors`
+- `regeneration`
+- `substation-control`
+- `control-battery`
+- `atp`
+- `ato`
+- `ats`
+- `train-control`
+- `tcms`
+- `train-radio`
+- `radio-antenna`
+- `wayside-radio`
+- `zone-controller`
+- `balise`
+- `tachometer`
+- `accelerometer`
+- `door-control`
+- `passenger-info`
+- `pa-intercom`
+- `cctv`
+- `train-network`
+- `brake-control`
+- `track-ballasted`
+- `track-ballast`
+- `track-subballast`
+- `track-formation`
+- `track-sleeper`
+- `track-rail-pad`
+- `track-rail-clip`
+- `track-insulator`
+- `track-baseplate`
+- `track-direct-fixation`
+- `track-slab`
+- `track-plinth`
+- `track-embedded`
+- `track-turnout`
+- `track-stock-rail`
+- `track-switch-rail`
+- `track-closure-rail`
+- `track-frog`
+- `track-check-rail`
+- `track-stretcher`
+- `track-point-machine`
+- `track-point-detection`
+- `track-crossover`
+- `track-diamond-crossing`
+- `cbtc`
+- `movement-authority`
+- `interlocking`
+- `point-machine`
+- `train-detection`
+- `track-circuit`
+- `axle-counter`
+- `lineside-signal`
+- `fixed-block`
+- `moving-block`
+- `odometry`
+- `braking-curve`
+- `train-integrity`
+- `etcs-level-1`
+- `etcs-level-2`
+- `rbc`
+- `etcs-onboard`
+- `leu`
+- `gsm-r-frmcs`
+- `seltrac`
+- `seltrac-loop`
+- `seltrac-g9`
+- `station-pa`
+- `station-pis`
+- `station-radio`
+- `station-cctv`
+- `access-controller`
+- `flss`
+- `fire-panel`
+- `fire-detector`
+- `fire-notification`
+- `sprinkler-system`
+- `fire-pump`
+- `emergency-lighting`
+- `emergency-intercom`
+- `station-egress`
+- `tunnel-fan`
+- `tunnel-shaft`
+- `tunnel-damper`
+- `smoke-control`
+- `station-hvac`
+- `hvac-air-handler`
+- `bas-controller`
+- `bas-sensor`
+- `bas-actuator`
+- `plant-network`
+- `power-scada`
+- `station-scada`
+- `occ-workstation`
+- `station-transformer`
+- `auxiliary-switchboard`
+- `station-ups`
+- `telecom-rack`
+- `fiber-backbone`
+- `network-switch`
+- `track-wheelset`
+- `track-crossing-nose`
+- `track-wing-rail`
+
+## Catalog sources reviewed
+
+- `PM01`
+- `PM02`
+- `PM03`
+- `PM04`
+- `P01`
+- `P02`
+- `P03`
+- `P04`
+- `P05`
+- `P06`
+- `P07`
+- `P08`
+- `P09`
+- `P10`
+- `P11`
+- `P12`
+- `T01`
+- `T02`
+- `T03`
+- `T04`
+- `T05`
+- `T06`
+- `T07`
+- `T08`
+- `T09`
+- `T10`
+- `T11`
+- `T12`
+- `K01`
+- `K02`
+- `K03`
+- `K04`
+- `K05`
+- `K06`
+- `K07`
+- `K08`
+- `K09`
+- `K10`
+- `K11`
+- `K12`
+- `K13`
+- `K14`
+- `K15`
+- `K16`
+- `K17`
+- `K18`
+- `K19`
+- `K20`
+- `K21`
+- `S01`
+- `S02`
+- `S03`
+- `S04`
+- `S05`
+- `S06`
+- `S07`
+- `S08`
+- `S09`
+- `S10`
+- `S11`
+- `S12`
+- `S13`
+- `S14`
+- `S15`
+- `S16`
+- `S17`
+- `S18`
+- `S19`
+- `S20`
+- `S21`
+- `F01`
+- `F02`
+- `F03`
+- `F04`
+- `F05`
+- `F06`
+- `F07`
+- `F08`
+- `F09`
+- `F10`
+- `F11`
+- `F12`
+- `F13`
+- `F14`
+- `F15`
+- `F16`
+- `F17`
+- `F18`
+- `F19`
+- `F20`
+- `TW01`
+- `TW02`
+- `TW03`
+- `TW04`
+- `TW05`
+
+## Architectures reviewed
+
+- `conventional-fixed-block`
+- `legacy-loop-atc`
+- `radio-cbtc`
+- `seltrac-virtualized`
+- `etcs-balise`
+- `etcs-radio`
+
+## Expansion concepts reviewed
+
+- `platform-intrusion`
+- `platform-lidar`
+- `platform-radar`
+- `platform-alarm-video`
+- `platform-response`
+- `platform-screen-door`
+- `platform-door-drive`
+- `platform-door-proof`
+- `platform-gap-detector`
+- `platform-end-gate`
+- `operations-centre`
+- `operations-traffic-supervision`
+- `operations-signalling-workstation`
+- `operations-power-control`
+- `operations-station-supervision`
+- `operations-radio-dispatch`
+- `operations-event-recording`
+- `operations-equipment-room`
+- `depot-layout`
+- `depot-stabling`
+- `depot-throat`
+- `depot-controller`
+- `depot-inspection-pit`
+- `depot-roof-access`
+- `depot-lifting-jacks`
+- `depot-bogie-drop`
+- `depot-wheel-lathe`
+- `depot-wash-plant`
+- `depot-water-recovery`
+- `depot-stores`
+- `depot-personnel-protection`
+- `depot-energy-isolation`
+- `rotary-traction-motor`
+- `traction-gearbox`
+- `loop-pickup`
+- `loop-interface`
+
+## Expansion sources reviewed
+
+- `N01`
+- `N02`
+- `N03`
+- `N04`
+- `N05`
+- `N06`
+- `N07`
+- `N08`
+- `N09`
+- `O01`
+- `O02`
+- `O03`
+- `O04`
+- `O05`
+- `O06`
+- `O07`
+- `O08`
+- `O09`
+- `O10`
+- `O11`
+- `O12`
+- `O13`
+- `O14`
+- `X01`
+- `X02`
+
+## Expansion views and variants reviewed
+
+- `platform-interface`: `open-platform`, `platform-doors`, `interspace`, `platform-end`
+- `operations-centre`: `service`, `incident`
+- `depot-overview`: `layout`, `night`
+- `depot-maintenance`: `inspection`, `lifting`, `wheel-lathe`
+- `depot-wash`: `wash`, `recovery`
+- `depot-protection`: `work-zone`, `indication`
+
+## Expansion domains and primary destinations reviewed
+
+- `operations`
+- `depot`
+
+Every primary mapping for the 36 expansion concept IDs listed above was checked against its declared view and variant. The shared site checks also validate the final composed navigation after module augmentation.
+
+## Tours reviewed
+
+- `station-context`
+- `track-foundations`
+- `rail-seat`
+- `point-proof`
+- `energy-journey`
+- `four-rail-roles`
+- `linear-motor`
+- `braking-destinations`
+- `control-responsibilities`
+- `cbtc-layers`
+- `detect-reference`
+- `odometry-error`
+- `seltrac-generations`
+- `etcs-supervision`
+- `communications-roles`
+- `onboard-services`
+- `station-announcements`
+- `supervisory-boundaries`
+- `fire-functions`
+- `ventilation-objectives`
+- `platform-zones`
+- `platform-feedback`
+- `depot-journey`
+- `depot-energy`
+- `depot-water`
+- `turnout-wheels`
+
+## Journey-module coverage reconciliation
+
+The final coverage check also read all of `dist/point-machine.js` and `dist/turnout-journey.js`, including their user-facing conditional strings and the state functions that produce them. Their mechanisms and explanations agree; no edit was needed.
+
+- Point-machine outcomes: `proved`, `unproved`, `detector-missing`. Reviewed the A/B/Neither correspondence, near/far position labels, lock-state labels, all three explanatory outcomes, diagram nodes `points`, `detector`, `logic`, `other`, `output`, and all five connecting labels. A returned B indication remains one input among the interlocking’s required route checks.
+- Turnout routes: `straight`, `diverging`, each at whole-turnout and crossing-close-up scales. Reviewed the six whole-turnout stages: Route set and locked; Through the switch; Along the closure rails; Approach the crossing; Across the crossing; Continue on the selected route.
+- Crossing-close-up stages: Approach the crossing; Wing rail and wheel tread; Nose and opposite check rail; Continue onto the nose; Beyond the crossing. Both near/far branches and the route, blade, location, crossing-wheel and check-wheel readouts were checked.
+
+The composed catalog contains 333 concept IDs. Every ID maps to an assigned authoring module; none is outside the review allocation. At reconciliation time, 261 IDs were explicitly present in saved coverage ledgers. The remaining 72 were exactly the 38 study, 30 electrification and four station-lift concepts assigned to the studies reviewer, whose report was pending. Imported content was not silently counted as reviewed by this pass.
+
+## Shared labels and compact interface copy
+
+Read all of `dist/platform-config.js`, `dist/labels.js`, `dist/navigation.js`, `dist/navigation-search.js`, `dist/labs-ui.js`, `dist/topology-ui.js` and `dist/process-ui.js` during coverage reconciliation. This covers the configuration descriptions and fallback notice, short labels, navigation groups and change notices, search prompts/results, lab controls/results/diagram labels, topology headings/status keys, and people/process headings and connection text. Canonical imported lesson content retains the module ownership documented above.
+
+Platform choices reviewed: `open`, `half-height`, `full-height`; sensor choices `lidar`, `radar`; variant availability and the open-edge/interspace fallback. Changed the fallback to name the unavailable interspace view without suggesting that the boarding gap disappears. Simplified the five option descriptions.
+
+All 271 short-label entries were read. Three obsolete keys were corrected to active concepts: `collector-positive-shoe`, `dc-link` and `inverter-power-module`. Hardware-host and supervision labels now match the current equipment/function distinction. The balise and substation-control labels were clarified. A validation confirms every short-label key resolves to an active concept; platform fallback and the final locked-indication state retain their behavior.
+
+Short-label IDs reviewed:
+
+- `network-overview`
+- `network-route`
+- `network-station`
+- `network-turnback`
+- `network-train`
+- `network-depot`
+- `network-maintenance`
+- `network-stabling`
+- `network-control-centre`
+- `network-substation`
+- `network-telecommunications`
+- `depot-layout`
+- `depot-stabling`
+- `depot-throat`
+- `depot-controller`
+- `depot-inspection-pit`
+- `depot-roof-access`
+- `depot-bogie-drop`
+- `depot-lifting-jacks`
+- `depot-wheel-lathe`
+- `depot-maintenance-road`
+- `depot-network-boundary`
+- `depot-reception`
+- `depot-dispatch`
+- `depot-yard-points`
+- `depot-shunt-signal`
+- `depot-wash-plant`
+- `depot-water-recovery`
+- `depot-stores`
+- `depot-facility-power`
+- `depot-work-planning`
+- `depot-maintenance-release`
+- `depot-wash-gantry`
+- `depot-wash-pump`
+- `depot-compressed-air`
+- `depot-material-handling`
+- `depot-personnel-protection`
+- `depot-energy-isolation`
+- `utility`
+- `ac-switchgear`
+- `transformer`
+- `rectifier`
+- `dc-switchgear`
+- `breaker`
+- `wayside-resistor`
+- `grounding`
+- `facility-transformer`
+- `disconnect`
+- `positive-rail`
+- `negative-rail`
+- `running-rail`
+- `reaction-rail`
+- `collector`
+- `carbody`
+- `bogie`
+- `traction-inverter`
+- `lim-primary`
+- `apu`
+- `vehicle-battery`
+- `hvac`
+- `brakes`
+- `compressor`
+- `doors`
+- `control-battery`
+- `substation-control`
+- `atp`
+- `ato`
+- `ats`
+- `train-control`
+- `tcms`
+- `train-radio`
+- `radio-antenna`
+- `wayside-radio`
+- `zone-controller`
+- `balise`
+- `tachometer`
+- `accelerometer`
+- `door-control`
+- `passenger-info`
+- `pa-intercom`
+- `cctv`
+- `train-network`
+- `transformer-core`
+- `transformer-primary-winding`
+- `transformer-secondary-winding`
+- `transformer-tank`
+- `transformer-bushing`
+- `rectifier-diode-stack`
+- `rectifier-cooling`
+- `rectifier-busbar`
+- `switchgear-pole`
+- `switchgear-busbar`
+- `switchgear-drive`
+- `breaker-arc-chute`
+- `overhead-contact-wire`
+- `overhead-support`
+- `pantograph`
+- `collector-positive-shoe`
+- `collector-return-shoe`
+- `wheel-return`
+- `running-rail-return`
+- `onboard-transformer`
+- `line-converter`
+- `dc-link`
+- `inverter-power-module`
+- `onboard-braking-resistor`
+- `supply-return-terminal`
+- `ac-feeder-switchgear`
+- `communications-system`
+- `fiber-patch-panel`
+- `optical-transceiver`
+- `communications-router`
+- `onboard-ethernet-gateway`
+- `communications-power`
+- `scada-rtu`
+- `scada-input-module`
+- `scada-output-module`
+- `scada-gateway`
+- `scada-head-end`
+- `scada-information-quality`
+- `help-point-electronics`
+- `voice-call-server`
+- `operational-cab-radio`
+- `pis-controller`
+- `pa-controller`
+- `pa-amplifier`
+- `camera-imager`
+- `cctv-recording`
+- `access-door-interface`
+- `track-ballast`
+- `track-subballast`
+- `track-rail-pad`
+- `track-rail-clip`
+- `track-turnout`
+- `track-check-rail`
+- `track-stretcher`
+- `cbtc`
+- `point-machine`
+- `lineside-signal`
+- `odometry`
+- `braking-curve`
+- `train-integrity`
+- `etcs-onboard`
+- `leu`
+- `gsm-r-frmcs`
+- `seltrac`
+- `seltrac-loop`
+- `seltrac-g9`
+- `station-pa`
+- `station-pis`
+- `station-radio`
+- `station-cctv`
+- `access-controller`
+- `flss`
+- `fire-panel`
+- `fire-notification`
+- `sprinkler-system`
+- `fire-pump`
+- `emergency-lighting`
+- `emergency-intercom`
+- `station-egress`
+- `tunnel-shaft`
+- `tunnel-damper`
+- `smoke-control`
+- `station-hvac`
+- `hvac-air-handler`
+- `bas-controller`
+- `bas-sensor`
+- `bas-actuator`
+- `plant-network`
+- `station-scada`
+- `occ-workstation`
+- `station-transformer`
+- `auxiliary-switchboard`
+- `station-ups`
+- `telecom-rack`
+- `fiber-backbone`
+- `platform-intrusion`
+- `platform-lidar`
+- `platform-radar`
+- `platform-alarm-video`
+- `platform-response`
+- `platform-screen-door`
+- `platform-door-drive`
+- `platform-door-proof`
+- `platform-gap-detector`
+- `platform-end-gate`
+- `operations-centre`
+- `operations-traffic-supervision`
+- `operations-signalling-workstation`
+- `operations-power-control`
+- `operations-station-supervision`
+- `operations-radio-dispatch`
+- `operations-event-recording`
+- `operations-equipment-room`
+- `traction-gearbox`
+- `loop-pickup`
+- `loop-interface`
+- `depot-wheelset`
+- `depot-bogie-workshop`
+- `depot-drainage`
+- `depot-ventilation`
+- `depot-fire-security`
+- `depot-staff-access`
+- `depot-work-handover`
+- `depot-condition-monitoring`
+- `depot-diagnostics`
+- `depot-brake-test`
+- `depot-door-service`
+- `depot-hvac-service`
+- `depot-traction-service`
+- `depot-wheelset-inspection`
+- `depot-functional-checks`
+- `depot-test-track`
+- `occ-shared-display`
+- `occ-duty-handover`
+- `occ-supervisory-request`
+- `occ-field-indication`
+- `occ-information-quality`
+- `occ-alarm-queue`
+- `occ-incident-coordination`
+- `occ-passenger-communications`
+- `occ-cctv-assessment`
+- `occ-access-supervision`
+- `occ-application-service`
+- `occ-field-gateway`
+- `occ-supervisory-network`
+- `occ-uninterruptible-power`
+- `occ-alternate-service`
+- `occ-record-timeline`
+- `occ-task-display`
+- `occ-workstation-input`
+- `occ-workplace-environment`
+- `supply-conversion`
+- `study-collector`
+- `study-onboard-transformer`
+- `study-converter`
+- `study-drive`
+- `study-return`
+- `adhesion-contact`
+- `adhesion-demand`
+- `adhesion-reference`
+- `adhesion-wsp`
+- `adhesion-sander`
+- `adhesion-brake`
+- `route-formation`
+- `route-drainage`
+- `route-bridge`
+- `route-inspection`
+- `route-work-boundary`
+- `route-record`
+- `dependency-services`
+- `dependency-power`
+- `dependency-network`
+- `dependency-identity`
+- `dependency-configuration`
+- `dependency-recording`
+- `dependency-recovery`
+- `access-entrance`
+- `access-gate`
+- `access-lift`
+- `access-information`
+- `access-assistance`
+- `access-boarding`
+- `change-item`
+- `change-baseline`
+- `change-requirement`
+- `change-interface`
+- `change-test`
+- `change-issues`
+- `change-acceptance`

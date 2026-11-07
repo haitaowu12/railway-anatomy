@@ -1,138 +1,571 @@
 import { normalizePlatformState } from './platform-config.js';
 
-export const STATION_PLATFORM_SOURCES = [{
-  id:'SP01',title:'Elevator and escalator glossary',publisher:'KONE',
-  url:'https://www.kone.com.au/tools-downloads/glossary/',
-  description:'Public definitions distinguish the car, landing, car and landing doors, traction equipment, and door-related interfaces.',
-  scope:'Terminology and physical roles only. The atlas uses an invented two-landing mechanism; it adopts no product dimensions, code interpretation, door zone or operating instruction.',
-}];
+export const STATION_PLATFORM_SOURCES = [
+  {
+    "id": "SP01",
+    "title": "Elevator and escalator glossary",
+    "publisher": "KONE",
+    "url": "https://www.kone.com.au/tools-downloads/glossary/",
+    "description": "Defines the lift car, landing, car and landing doors, and traction-drive equipment.",
+    "scope": "Lift terminology and component roles. The station model shows one two-level traction-lift arrangement."
+  }
+];
 
-const concept=(id,label,summary,details,related)=>({id,label,summary,details,related,sources:['SP01'],domain:'station',primary:['station','passenger']});
 export const STATION_PLATFORM_CONCEPTS = [
-  concept('station-lift','Station passenger lift','The cabin connects two landings through a dedicated shaft.',[
-    'The car travels within the shaft while separate landing doors remain at each floor. A clear opening in the concourse accommodates the moving assembly.',
-    'The example starts at platform level. The phase control closes the doors, moves the cabin and then opens at the upper landing. Dimensions and timing are illustrative.'
-  ],['station-lift-car','station-lift-landing-doors','station-lift-drive','station-egress']),
-  concept('station-lift-car','Lift cabin and car doors','The cabin, its floor and its own doors move together.',[
-    'The car is the moving passenger enclosure. Its doors travel with it; the landing doors belong to the building.',
-    'Follow the cabin floor against the two landing sills. This example opens the car doors only when its floor is aligned with a landing. No levelling tolerance or access compliance is claimed.'
-  ],['station-lift','station-lift-landing-doors']),
-  concept('station-lift-landing-doors','Lift landing doors and contacts','A fixed door assembly bounds the shaft at each landing.',[
-    'Landing doors are distinct from the doors on the car. Their position and locking interfaces belong to the lift system.',
-    'In the model only the doors beside the aligned cabin open. Both landings stay closed during travel. The enlarged contact targets explain relative position, not a complete interlock circuit.'
-  ],['station-lift','station-lift-car','station-lift-drive']),
-  concept('station-lift-drive','Lift traction machine and suspension','A selected traction arrangement moves the cabin and counterweight.',[
-    'A traction sheave and suspension connect the drive with the moving masses. Other lift arrangements exist.',
-    'The sheave turns with cabin travel and the counterweight moves in the opposite direction. Inspect the separate machine and sheave; the original geometry supplies no suspension, braking or load calculation.'
-  ],['station-lift','station-lift-car','auxiliary-switchboard']),
+  {
+    "id": "station-lift",
+    "label": "Station passenger lift",
+    "summary": "A passenger lift connects the platform and concourse through a shaft.",
+    "details": [
+      "The car is the moving passenger cabin. A landing is the floor-level place where passengers enter or leave; its doors stay fixed to the building.",
+      "Start at platform level and move the phase control. The doors close, the car travels through the shaft, and the doors beside the upper landing open."
+    ],
+    "related": [
+      "station-lift-car",
+      "station-lift-landing-doors",
+      "station-lift-drive",
+      "station-egress"
+    ],
+    "sources": [
+      "SP01"
+    ],
+    "domain": "station",
+    "primary": [
+      "station",
+      "passenger"
+    ]
+  },
+  {
+    "id": "station-lift-car",
+    "label": "Lift cabin and car doors",
+    "summary": "The cabin, its floor and its own doors travel together.",
+    "details": [
+      "The lift car carries passengers between levels. Its doors move with it, while a separate set of landing doors stays at each floor.",
+      "Follow the cabin floor against the lower and upper landing sills. In the sequence, the car stops level with the landing before its doors open."
+    ],
+    "related": [
+      "station-lift",
+      "station-lift-landing-doors"
+    ],
+    "sources": [
+      "SP01"
+    ],
+    "domain": "station",
+    "primary": [
+      "station",
+      "passenger"
+    ]
+  },
+  {
+    "id": "station-lift-landing-doors",
+    "label": "Lift landing doors and contacts",
+    "summary": "Landing doors separate each floor from the lift shaft.",
+    "details": [
+      "These door assemblies stay in the building while the car moves. Their locks and position contacts are separate from the doors on the car.",
+      "Only the landing doors beside the stopped cabin open in this sequence. During travel, both landing openings remain closed. Inspect the contact targets alongside the doors."
+    ],
+    "related": [
+      "station-lift",
+      "station-lift-car",
+      "station-lift-drive"
+    ],
+    "sources": [
+      "SP01"
+    ],
+    "domain": "station",
+    "primary": [
+      "station",
+      "passenger"
+    ]
+  },
+  {
+    "id": "station-lift-drive",
+    "label": "Lift traction machine and suspension",
+    "summary": "A traction machine moves the cabin and counterweight through their suspension.",
+    "details": [
+      "The traction sheave is the grooved wheel driven by the lift machine. Friction between the sheave and suspension ropes or belts transmits the driving force.",
+      "Watch the sheave turn as the cabin moves. The counterweight travels in the opposite direction; compare the moving suspension with the fixed machine mounting."
+    ],
+    "related": [
+      "station-lift",
+      "station-lift-car",
+      "auxiliary-switchboard"
+    ],
+    "sources": [
+      "SP01"
+    ],
+    "domain": "station",
+    "primary": [
+      "station",
+      "passenger"
+    ]
+  }
 ];
 
 export const STATION_PLATFORM_CONCEPT_UPDATES = [
-  {id:'platform-screen-door',summary:'Half-height and full-height facades provide different physical boarding boundaries.',details:[
-    'ST Engineering publishes half-height, semi-full-height and full-height forms. The atlas compares an open edge with two original barrier geometries; selecting a sensing or end-access lesson preserves that physical choice.',
-    'The openings line up with the parked teaching vehicle. The full-height example has a header drive; the half-height example uses side-post drives. These invented mechanisms do not reproduce a supplier design or prescribe a ventilation arrangement.'
-  ],sources:['N03','N09'],related:['platform-door-drive','platform-door-proof','platform-gap-detector','platform-intrusion','doors']},
-  {id:'platform-door-drive',summary:'A drive converts a request into leaf movement; feedback comes from separate equipment.',details:[
-    'Nippon Signal describes individual door controllers that act on commands and return status. Portalp distinguishes drive control from closed and locking information.',
-    'The full-height teaching mechanism turns pulleys as the paired leaves travel. The half-height mechanism moves racks through side-post pinions, leaving the boarding opening clear. Open or separate the covers, transmission and controller to inspect their roles.'
-  ],sources:['N04','N05'],caveat:'The chosen transmissions and phase timing are authored illustrations, not supplier geometry or an operating sequence.'},
-  {id:'platform-door-proof',summary:'The closed contact, lock mechanism and returned indication describe different conditions.',details:[
-    'A command, a closed leaf and locking information are separate interfaces in the Portalp example.',
-    'Pause after closing: the leaf target has returned to its contact while the bolt remains withdrawn. The bolt then engages, followed by the separate locking indication. The demonstration never derives train departure permission.'
-  ],sources:['N05'],caveat:'The contacts and lock are explanatory geometry, not a safety circuit, failure analysis or universal departure rule.'},
-  {id:'platform-response',summary:'A local processor reports sensor evidence through a defined railway interface.',details:[
-    'The Siemens example separates perception processing, railway interfaces and associated video. The selected LiDAR and paired-radar examples are alternatives; the scene does not imply both are always installed.',
-    'The local processor sits in a rear service alcove. The phase sequence changes sensor evidence before the report marker. The object remains in place after reporting; acknowledging or viewing a report cannot remove it.'
-  ],sources:['N01','N02'],caveat:'The model illustrates ordering with invented delays. It does not implement object classification, health logic, a railway protocol or a prescribed response.'},
-  {id:'platform-alarm-video',label:'Associated platform camera and video',summary:'An associated camera supplies a separate view of the reported location.',details:[
-    'Siemens describes an operator seeing live and historical video associated with an intrusion alarm location.',
-    'The selectable hardware here is the platform camera, mounted at the rear of the passenger area. Its event marker identifies an associated video relationship; the operator workstation belongs in the control-centre study. The camera image is not used as proof of track clearance.'
-  ],sources:['N02'],related:['platform-intrusion','platform-response','station-cctv','occ-cctv-assessment','cctv-recording']},
-  {id:'platform-gap-detector',summary:'The monitored interspace lies between the train body and a fitted platform facade.',details:[
-    'Wabtec describes residual risk in the space between a train and platform-door facade. Nippon Signal gives an example of an optional ranging sensor on the train side of the barrier.',
-    'The model marks that volume separately from the trainway and fits the object within it. This lesson requires a barrier; an open edge has no train–facade interspace. A report does not make the object disappear.'
-  ],sources:['N04','N06'],caveat:'This is neither closing-edge obstacle sensing nor a validated coverage envelope.'},
-  {id:'platform-end-gate',summary:'End access is a separate boundary that can accompany any selected platform edge.',details:[
-    'Portalp describes end doors with their own control units. Restricted end and tunnel zones are separate monitoring applications in the Molinari examples.',
-    'The end-gate leaf turns around its hinge. The latch releases while the gate is still closed; opening then separates the contact target and the frame contact. The end-access report follows. Selecting this lesson preserves the open, half-height or full-height boarding edge.'
-  ],sources:['N05','N07'],caveat:'The phase sequence explains hardware relationships. It supplies no access permission, emergency-release or track-entry procedure.'},
-  {id:'station-egress',details:[
-    'Passenger circulation connects platform, concourse, stairs, lift landings, information and assistance. The broader station environment also contains equipment rooms and service access.',
-    'The model leaves clear boarding strips, lands its stairs at the concourse and cuts a shaft opening around the lift. These spatial relationships support explanation; they do not establish evacuation capacity, accessibility compliance or an approved route.'
-  ],related:['station-lift','emergency-lighting','emergency-intercom','station-pis','flss']},
+  {
+    "id": "platform-screen-door",
+    "summary": "Platform doors form a barrier between the waiting area and the trainway.",
+    "details": [
+      "Compare an open edge with half-height and full-height barriers. Door openings align with the train’s boarding doors. Sensing and end access are separate choices that can be studied with the selected edge.",
+      "The full-height example places the drive above the opening. The half-height example uses side-post drives. Open their covers to follow how each mechanism moves the leaves."
+    ],
+    "sources": [
+      "N03",
+      "N09"
+    ],
+    "related": [
+      "platform-door-drive",
+      "platform-door-proof",
+      "platform-gap-detector",
+      "platform-intrusion",
+      "doors"
+    ]
+  },
+  {
+    "id": "platform-door-drive",
+    "summary": "A door drive turns an opening or closing request into movement.",
+    "details": [
+      "A local controller operates the drive and returns status information. The drive, moving leaves and feedback contacts have separate jobs.",
+      "In the full-height example, pulleys move a belt connected to the paired leaves. In the half-height example, pinions drive racks from the side posts. Separate the covers, transmission and controller to follow the motion."
+    ],
+    "sources": [
+      "N04",
+      "N05"
+    ],
+    "caveat": ""
+  },
+  {
+    "id": "platform-door-proof",
+    "summary": "A closed door, an engaged lock and a returned indication describe different states.",
+    "details": [
+      "The closed contact reports leaf position. The lock holds the door against opening, and a separate signal reports the locking condition.",
+      "Pause after closing: the target has reached the closed contact while the bolt is still withdrawn. Continue to see the bolt engage and the locking indication update. This sequence separates the physical condition from the information returned about it."
+    ],
+    "sources": [
+      "N05"
+    ],
+    "caveat": ""
+  },
+  {
+    "id": "platform-response",
+    "summary": "A local processor turns sensor evidence into a report at the railway interface.",
+    "details": [
+      "LiDAR uses laser light to measure distance; radar uses radio waves. Select one trainway sensing example and follow its connection to the local processor.",
+      "The processor sits in the rear service area. In the sequence, sensing is followed by a report and an associated camera view. Reporting the object provides information; the object remains in the monitored area."
+    ],
+    "sources": [
+      "N01",
+      "N02"
+    ],
+    "caveat": ""
+  },
+  {
+    "id": "platform-alarm-video",
+    "label": "Associated platform camera and video",
+    "summary": "The camera gives the operator another view of the reported location.",
+    "details": [
+      "The Siemens example connects an intrusion alarm with live and recorded video from the relevant location. That helps the operator examine the event in context.",
+      "The camera is mounted behind the passenger area. Its event marker identifies the video connection; the operator workstation is shown in the control-centre study."
+    ],
+    "sources": [
+      "N02"
+    ],
+    "related": [
+      "platform-intrusion",
+      "platform-response",
+      "station-cctv",
+      "occ-cctv-assessment",
+      "cctv-recording"
+    ]
+  },
+  {
+    "id": "platform-gap-detector",
+    "summary": "Interspace sensing monitors the gap between the train body and the platform barrier.",
+    "details": [
+      "A person or object can occupy the space between those two boundaries. This is a different sensing area from the trainway or the closing edge of a door.",
+      "The lesson requires a fitted barrier. Locate the object inside the marked space, then follow the sensing evidence to its report. The object remains in place after reporting."
+    ],
+    "sources": [
+      "N04",
+      "N06"
+    ],
+    "caveat": ""
+  },
+  {
+    "id": "platform-end-gate",
+    "summary": "An end gate controls a separate opening at the end of the platform area.",
+    "details": [
+      "The gate has its own leaf, hinge, latch and position contact. Its condition is monitored separately from the boarding doors.",
+      "The latch releases while the gate is still closed. The leaf then turns, separating its target from the frame contact, and the report follows. Changing the boarding-edge arrangement keeps this end-access interface."
+    ],
+    "sources": [
+      "N05",
+      "N07"
+    ],
+    "caveat": ""
+  },
+  {
+    "id": "station-egress",
+    "details": [
+      "Passenger circulation connects the platform, concourse, stairs, lift landings, information and assistance. Equipment rooms and service access support the station alongside those public areas.",
+      "Follow the boarding strips and the stairs and lift between levels. These are the normal circulation connections shown in the model; emergency egress depends on the station’s designated evacuation routes and arrangements."
+    ],
+    "related": [
+      "station-lift",
+      "emergency-lighting",
+      "emergency-intercom",
+      "station-pis",
+      "flss"
+    ]
+  }
 ];
 
-const animation=(label,rows)=>({label,steps:rows.map(([at,label,description])=>({at,label,description}))});
 export const PLATFORM_ANIMATIONS = {
-  sensing:animation('Object, evidence and reported location',[
-    [0,'Defined zone','The sensor and marked track area are separate from the parked train. The object starts outside the marked zone.'],
-    [.25,'Object in the zone','The object has entered the marked trainway area. Physical occupation is not yet a received report.'],
-    [.40,'Sensor evidence','The selected sensing path is highlighted. LiDAR and paired radar are separate examples.'],
-    [.66,'Local report','The processor report marker and its interface trace change after the sensor evidence.'],
-    [.85,'Associated video','The camera event marker identifies an associated view for the operator. The physical object remains.'],
-  ]),
-  boarding:animation('Request, movement, closed contact and lock',[
-    [0,'Closed and locked','The initial leaf position, contact and illustrated locking indication agree.'],
-    [.19,'Lock released','The opening request is present and the bolt has withdrawn while the leaves are still together.'],
-    [.34,'Leaves moving','The transmission and platform-side train leaves move together in this coordinated example.'],
-    [.46,'Boarding opening','The openings align. Opposite-side train doors remain closed.'],
-    [.78,'Closed contact','The leaves have returned and the closed contact is made. The lock is still withdrawn.'],
-    [.94,'Bolt engaged','The bolt has reached its illustrated engagement. The returned locking marker has not yet updated.'],
-    [.98,'Locking indication','The separate indication now reflects the engaged lock. No train movement permission is calculated.'],
-  ]),
-  openBoarding:animation('Platform-side train-door movement',[
-    [0,'Parked at the open edge','The train is aligned with the platform. There is no platform-door facade or platform-door lock.'],
-    [.34,'Train doors opening','Only the platform-facing leaves move; the opposite side remains closed.'],
-    [.46,'Open boarding doorway','The train threshold and platform share the illustrated boarding datum.'],
-    [.64,'Train doors closing','The leaves return to their closed position in this authored mechanism example.'],
-    [.78,'Leaves together','The leaves are closed. Train door locking and departure logic are outside this contextual model.'],
-  ]),
-  interspace:animation('Interspace evidence and report',[
-    [0,'Object between boundaries','The small object lies between the train body and fitted platform facade.'],
-    [.40,'Sensing evidence','The interspace sensing path highlights the occupied volume. The boarding doors remain closed.'],
-    [.66,'Interspace report','The separate report marker changes. The object remains in the same physical position.'],
-    [1,'Information needs a response','This depiction supplies neither a clearance decision nor permission to depart.'],
-  ]),
-  end:animation('End-gate latch, hinge and position contact',[
-    [0,'Gate closed','The leaf rests at the latch post; the frame contact and leaf target are adjacent.'],
-    [.22,'Latch withdrawn','The latch has retracted while the leaf remains closed.'],
-    [.48,'Leaf turns','The hinge moves the gate and separates its target from the frame contact.'],
-    [.80,'Open state reported','The end-access marker changes after the physical opening. The boarding-edge arrangement is preserved.'],
-  ]),
+  "sensing": {
+    "label": "Object, evidence and reported location",
+    "steps": [
+      {
+        "at": 0,
+        "label": "Defined zone",
+        "description": "The marked area identifies the part of the trainway being observed. The object starts outside it."
+      },
+      {
+        "at": 0.25,
+        "label": "Object in the zone",
+        "description": "The object enters the marked trainway area before the sensing and report cues change."
+      },
+      {
+        "at": 0.4,
+        "label": "Sensor evidence",
+        "description": "The chosen LiDAR or paired-radar sensing path highlights the object’s location."
+      },
+      {
+        "at": 0.66,
+        "label": "Local report",
+        "description": "The processor’s report marker and its connection change after the sensing cue."
+      },
+      {
+        "at": 0.85,
+        "label": "Associated video",
+        "description": "The camera marker identifies a related view for the operator. The object remains in place."
+      }
+    ]
+  },
+  "boarding": {
+    "label": "Request, movement, closed contact and lock",
+    "steps": [
+      {
+        "at": 0,
+        "label": "Closed and locked",
+        "description": "The leaves are together, the closed contact is made and the lock indication is present."
+      },
+      {
+        "at": 0.19,
+        "label": "Lock released",
+        "description": "The opening request is present and the bolt has withdrawn while the leaves are still together."
+      },
+      {
+        "at": 0.34,
+        "label": "Leaves moving",
+        "description": "The drive moves the platform leaves while the aligned train doors open on the platform side."
+      },
+      {
+        "at": 0.46,
+        "label": "Boarding opening",
+        "description": "The train and platform openings align; the train doors on the opposite side stay closed."
+      },
+      {
+        "at": 0.78,
+        "label": "Closed contact",
+        "description": "The leaves have returned and the closed contact is made. The lock is still withdrawn."
+      },
+      {
+        "at": 0.94,
+        "label": "Bolt engaged",
+        "description": "The bolt reaches its engaged position before the separate locking indication updates."
+      },
+      {
+        "at": 0.98,
+        "label": "Locking indication",
+        "description": "The returned indication now reports the engaged lock. Door status is one input to the wider train-departure controls."
+      }
+    ]
+  },
+  "openBoarding": {
+    "label": "Platform-side train-door movement",
+    "steps": [
+      {
+        "at": 0,
+        "label": "Parked at the open edge",
+        "description": "The train is aligned with an open platform edge, without a platform-door barrier."
+      },
+      {
+        "at": 0.34,
+        "label": "Train doors opening",
+        "description": "Only the platform-facing leaves move; the opposite side remains closed."
+      },
+      {
+        "at": 0.46,
+        "label": "Open boarding doorway",
+        "description": "The doorway is open on the platform side. The platform and train threshold align in this schematic."
+      },
+      {
+        "at": 0.64,
+        "label": "Train doors closing",
+        "description": "The platform-side leaves move back toward the closed position."
+      },
+      {
+        "at": 0.78,
+        "label": "Leaves together",
+        "description": "The leaves have reached the closed position. The close-up shows door movement; lock status belongs to the train’s separate door-control system."
+      }
+    ]
+  },
+  "interspace": {
+    "label": "Interspace evidence and report",
+    "steps": [
+      {
+        "at": 0,
+        "label": "Object between boundaries",
+        "description": "The object lies in the space between the train body and the fitted platform barrier."
+      },
+      {
+        "at": 0.4,
+        "label": "Sensing evidence",
+        "description": "The interspace sensing path highlights the occupied volume. The boarding doors remain closed."
+      },
+      {
+        "at": 0.66,
+        "label": "Interspace report",
+        "description": "The separate report marker changes. The object remains in the same physical position."
+      },
+      {
+        "at": 1,
+        "label": "Review the reported condition",
+        "description": "The report identifies the occupied space for the next response. The object still occupies it."
+      }
+    ]
+  },
+  "end": {
+    "label": "End-gate latch, hinge and position contact",
+    "steps": [
+      {
+        "at": 0,
+        "label": "Gate closed",
+        "description": "The leaf rests at the latch post; the frame contact and leaf target are adjacent."
+      },
+      {
+        "at": 0.22,
+        "label": "Latch withdrawn",
+        "description": "The latch has retracted while the leaf remains closed."
+      },
+      {
+        "at": 0.48,
+        "label": "Leaf turns",
+        "description": "The leaf turns around its hinge and the target separates from the frame contact."
+      },
+      {
+        "at": 0.8,
+        "label": "Open state reported",
+        "description": "The end-access marker changes after the gate opens. The selected boarding edge remains in place."
+      }
+    ]
+  }
 };
-export const STATION_LIFT_ANIMATION=animation('Cabin movement between two landings',[
-  [0,'At platform level','The cabin floor meets the lower landing; the cabin and lower landing doors are open.'],
-  [.22,'Doors closed','The cabin and lower landing doors close before travel. The upper landing stays closed.'],
-  [.48,'Between levels','The cabin moves through the concourse opening. Both landing doors and the cabin doors remain closed.'],
-  [.70,'Upper landing reached','The cabin floor meets the upper sill; the doors have not opened yet.'],
-  [.94,'Upper doors open','Only the doors beside the aligned cabin open. The lower landing remains closed.'],
-]);
+
+export const STATION_LIFT_ANIMATION = {
+  "label": "Cabin movement between two landings",
+  "steps": [
+    {
+      "at": 0,
+      "label": "At platform level",
+      "description": "The cabin floor meets the lower landing; the cabin and lower landing doors are open."
+    },
+    {
+      "at": 0.22,
+      "label": "Doors closed",
+      "description": "The cabin and lower landing doors close before travel. The upper landing stays closed."
+    },
+    {
+      "at": 0.48,
+      "label": "Between levels",
+      "description": "The cabin moves through the concourse opening. Both landing doors and the cabin doors remain closed."
+    },
+    {
+      "at": 0.7,
+      "label": "Upper landing reached",
+      "description": "The cabin floor meets the upper sill; the doors have not opened yet."
+    },
+    {
+      "at": 0.94,
+      "label": "Upper doors open",
+      "description": "Only the doors beside the aligned cabin open. The lower landing remains closed."
+    }
+  ]
+};
+
 export function platformAnimationFor(state) {
   const {variant,platformEdge}=normalizePlatformState(state);
   if(variant==='platform-doors')return PLATFORM_ANIMATIONS[platformEdge==='open'?'openBoarding':'boarding'];
   return PLATFORM_ANIMATIONS[variant==='interspace'?'interspace':variant==='platform-end'?'end':'sensing'];
 }
-const variant=(id,label,title,description,nodes,sources,component,guide)=>({id,label,title,description,nodes,sources,component,motion:Boolean(guide),...(guide?{animation:guide}:{})});
-export const STATION_PLATFORM_VIEW_DATA={
-  'platform-interface':{
-    label:'Platform & boarding edge',title:'Locate the boundary, then follow the mechanism',component:'platform-intrusion',level:'Interface',
-    note:'The boarding height and door centres share one datum. Edge arrangement, trainway sensing example and lesson focus are separate choices. Phase timing and monitored volumes are illustrative.',
-    variants:[
-      variant('open-platform','Trainway sensing','Follow an object into a reported location','Choose one sensing example. Its evidence, the local processor report and associated camera relationship appear in sequence; the object remains present. The selected physical edge stays in place.',['Defined zone','Sensor evidence','Local report','Associated video'],['N01','N02'],'platform-intrusion',PLATFORM_ANIMATIONS.sensing),
-      variant('platform-doors','Boarding mechanism','Separate movement from the reported condition','At an open edge, inspect the platform-side train doors. With a barrier, inspect the transmission, separate closed contact, lock bolt and returned indication alongside the matching train doorway.',['Request','Drive and leaves','Closed contact','Lock and indication'],['N03','N04','N05','N09'],'doors',PLATFORM_ANIMATIONS.boarding),
-      variant('interspace','Interspace sensing','Inspect the space between train and facade','A fitted barrier creates this distinct monitored volume. The small object, sensing evidence and report remain separate; this is not a closing-edge detector or a clearance decision.',['Train side','Interspace','Facade','Report'],['N04','N06'],'platform-gap-detector',PLATFORM_ANIMATIONS.interspace),
-      variant('platform-end','End access','Follow the hinge and contact at a different boundary','The latch withdraws, the gate turns about its hinge, the contact target separates and the report follows. End access preserves the selected boarding-edge arrangement.',['Latch','Hinge and leaf','Position contact','Report'],['N05','N07'],'platform-end-gate',PLATFORM_ANIMATIONS.end),
-    ],
+
+export const STATION_PLATFORM_VIEW_DATA = {
+  "platform-interface": {
+    "label": "Platform & boarding edge",
+    "title": "Locate the boundary, then follow the mechanism",
+    "component": "platform-intrusion",
+    "level": "Interface",
+    "note": "Choose the boarding edge, sensing method and lesson separately. Train and platform door openings align in this schematic. The sequence slows events to show movement, sensing and returned status; its timing and sensing volumes are illustrative.",
+    "variants": [
+      {
+        "id": "open-platform",
+        "label": "Trainway sensing",
+        "title": "Follow an object from sensing to report",
+        "description": "Choose LiDAR or paired radar. Follow the object, sensing evidence, local report and related camera view in sequence.",
+        "nodes": [
+          "Monitored area",
+          "Sensor evidence",
+          "Local report",
+          "Associated video"
+        ],
+        "sources": [
+          "N01",
+          "N02"
+        ],
+        "component": "platform-intrusion",
+        "motion": true,
+        "animation": PLATFORM_ANIMATIONS.sensing
+      },
+      {
+        "id": "platform-doors",
+        "label": "Boarding mechanism",
+        "title": "Separate movement from the reported condition",
+        "description": "At an open edge, follow the train’s platform-side doors. With a barrier, inspect the drive, closed contact, lock bolt and returned indication alongside the aligned train doorway.",
+        "nodes": [
+          "Request",
+          "Drive and leaves",
+          "Closed contact",
+          "Lock and indication"
+        ],
+        "sources": [
+          "N03",
+          "N04",
+          "N05",
+          "N09"
+        ],
+        "component": "doors",
+        "motion": true,
+        "animation": PLATFORM_ANIMATIONS.boarding
+      },
+      {
+        "id": "interspace",
+        "label": "Interspace sensing",
+        "title": "Inspect the space between train and barrier",
+        "description": "A fitted barrier creates this space beside the train. Locate the object, then follow the sensing evidence and report.",
+        "nodes": [
+          "Train body",
+          "Interspace",
+          "Platform barrier",
+          "Report"
+        ],
+        "sources": [
+          "N04",
+          "N06"
+        ],
+        "component": "platform-gap-detector",
+        "motion": true,
+        "animation": PLATFORM_ANIMATIONS.interspace
+      },
+      {
+        "id": "platform-end",
+        "label": "End access",
+        "title": "Follow the hinge and contact at a different boundary",
+        "description": "The latch withdraws, the gate turns, the contact target separates and the report follows. The boarding-edge choice stays selected.",
+        "nodes": [
+          "Latch",
+          "Hinge and leaf",
+          "Position contact",
+          "Report"
+        ],
+        "sources": [
+          "N05",
+          "N07"
+        ],
+        "component": "platform-end-gate",
+        "motion": true,
+        "animation": PLATFORM_ANIMATIONS.end
+      }
+    ]
   },
-  station:{
-    label:'Station overview',title:'Passenger levels and supporting equipment',component:'station-egress',level:'Installation',
-    note:'An original station section with clear boarding strips, a two-landing lift, supported equipment room and mounted passenger devices. The layout is explanatory, not a building or evacuation design.',
-    variants:[
-      variant('all','Whole station','Read the station as connected places','The island platform, vertical circulation, concourse and service room provide context for passenger devices and their supporting systems. The edge choice applies on both sides of the platform.',['Boarding edge','Passenger circulation','Equipment room','Supporting systems'],['F01','F03','F04'],'station-egress'),
-      variant('passenger','Passenger circulation','Follow the lift between platform and concourse','The cabin, car doors and landing doors occupy different moving and fixed assemblies. Play the sequence to follow a complete one-way trip while the stairs, displays and help points remain spatial context.',['Platform landing','Closed doors','Cabin travel','Upper landing'],['SP01','F01','F04'],'station-lift',STATION_LIFT_ANIMATION),
-      variant('equipment','Equipment room','Locate the hardware behind the public devices','The room is supported by the concourse and has a real access opening. Network, fire and building-control equipment are separately inspectable; their shared location does not merge their responsibilities.',['Local equipment','Service access','Physical connections','Passenger endpoints'],['F03','F17','F20'],'telecom-rack'),
-    ],
-  },
+  "station": {
+    "label": "Station overview",
+    "title": "Passenger levels and supporting equipment",
+    "component": "station-egress",
+    "level": "Installation",
+    "note": "A station section connects the platform and concourse with stairs and a two-level lift. Passenger devices and an equipment room show the systems that support those spaces. Dimensions and travel timing are schematic.",
+    "variants": [
+      {
+        "id": "all",
+        "label": "Whole station",
+        "title": "Read the station as connected places",
+        "description": "Read the island platform, routes between levels, concourse and equipment room as connected places. The selected boarding edge appears on both sides of the platform.",
+        "nodes": [
+          "Boarding edge",
+          "Routes between levels",
+          "Equipment room",
+          "Supporting systems"
+        ],
+        "sources": [
+          "F01",
+          "F03",
+          "F04"
+        ],
+        "component": "station-egress",
+        "motion": false
+      },
+      {
+        "id": "passenger",
+        "label": "Passenger circulation",
+        "title": "Follow the lift between platform and concourse",
+        "description": "Follow a one-way lift trip. The cabin and car doors move, while landing doors stay at their floor. Stairs, displays and help points show the surrounding passenger route.",
+        "nodes": [
+          "Platform landing",
+          "Closed doors",
+          "Cabin travel",
+          "Upper landing"
+        ],
+        "sources": [
+          "SP01",
+          "F01",
+          "F04"
+        ],
+        "component": "station-lift",
+        "motion": true,
+        "animation": STATION_LIFT_ANIMATION
+      },
+      {
+        "id": "equipment",
+        "label": "Equipment room",
+        "title": "Locate the hardware behind the public devices",
+        "description": "The equipment room opens from the concourse. Inspect its network, fire and building-control equipment, then follow the connections to devices in passenger areas.",
+        "nodes": [
+          "Local equipment",
+          "Service access",
+          "Physical connections",
+          "Passenger endpoints"
+        ],
+        "sources": [
+          "F03",
+          "F17",
+          "F20"
+        ],
+        "component": "telecom-rack",
+        "motion": false
+      }
+    ]
+  }
 };
 
 export function applyStationPlatformCatalog(SOURCES,CONCEPTS){
@@ -163,13 +596,67 @@ export function applyStationPlatformConfig({SYSTEMS,NEW_VIEWS,PART_VIEWS,PART_VA
   for(const item of [...STATION_PLATFORM_CONCEPTS,...STATION_PLATFORM_CONCEPT_UPDATES])if(item.related)PART_RELATIONS[item.id]=item.related;
 }
 
-export const STATION_PLATFORM_READING_GUIDES=[{
-  id:'station-platform-guide',domain:'station',component:'platform-intrusion',title:'Read a station from boarding edge to equipment room',
-  summary:'Start with physical places, then distinguish motion, sensing and returned information.',
-  sections:[
-    {heading:'Keep the physical boundary explicit',text:'An open edge, a lower barrier and a tall facade have visibly different geometry. A lesson about end access should preserve that choice. ST Engineering supplies examples of several barrier heights; the atlas selects two original forms for comparison. Trainway sensing is a separate choice: the LiDAR and paired-radar examples replace one another. A sensor is not a physical barrier, and neither the rendered volume nor its dimensions validate coverage.',sources:['N01','N02','N03']},
-    {heading:'Watch the mechanism before reading the indication',text:'The boarding sequence connects the drive to the leaves and keeps the platform-facing and opposite-side train doors distinct. With a barrier fitted, pause after the leaves return. The contact target is back at the frame, but the lock bolt remains withdrawn. The bolt and returned marker then change separately. This authors a useful distinction between command, movement and reported condition without recreating a supplier controller or calculating departure permission.',sources:['N04','N05','N09']},
-    {heading:'Locate different sensing areas',text:'An object on the trainway, an object between train and facade, a closing-edge obstruction and access past an end gate occupy different spaces. The interspace example requires a facade. The gate example keeps the edge unchanged and shows its own hinge, latch and position contact. A report leaves the physical object or open gate in place; a camera supplies additional information at a separate interface.',sources:['N02','N05','N06','N07']},
-    {heading:'Connect the passenger levels',text:'The station study places stairs and the lift between a platform and concourse. The moving cabin has its own doors; separate landing assemblies stay with the building. In the authored trip, the car closes, travels through an opening in the concourse, aligns with the upper floor and opens there. The equipment room sits on that concourse with an access opening and service aisle, while brackets connect passenger devices to supporting structure. These choices make the scene legible without claiming a usable station design.',sources:['SP01','F01','F03','F04']},
-  ],sources:['N01','N02','N03','N04','N05','N06','N07','N09','SP01','F01','F03','F04'],
-}];
+
+export const STATION_PLATFORM_READING_GUIDES = [
+  {
+    "id": "station-platform-guide",
+    "domain": "station",
+    "component": "platform-intrusion",
+    "title": "Read a station from boarding edge to equipment room",
+    "summary": "Explore the station’s spaces, then follow door movement, sensing and the information returned to control equipment.",
+    "sections": [
+      {
+        "heading": "Choose the physical edge",
+        "text": "Compare the open platform with half-height and full-height barriers. A barrier separates the passenger area from the trainway; its doors provide openings for boarding. Trainway sensing is another layer, with LiDAR or paired radar as alternatives in this model. Changing to an end-access lesson keeps the selected boarding edge.",
+        "sources": [
+          "N01",
+          "N02",
+          "N03"
+        ]
+      },
+      {
+        "heading": "Follow movement before reading status",
+        "text": "Play the boarding sequence. The platform-facing train doors move while those on the opposite side remain closed. With a barrier fitted, follow its drive and leaves. Pause after closing: the closed contact is made, but the lock bolt has not engaged yet. Continue to see the bolt engage and the returned locking indication update. Command, physical movement and reported condition are separate steps.",
+        "sources": [
+          "N04",
+          "N05",
+          "N09"
+        ]
+      },
+      {
+        "heading": "Locate the sensing area",
+        "text": "The trainway, the space between the train and barrier, a door’s closing edge and the end-gate opening are different areas. The interspace lesson requires a fitted barrier. The gate lesson shows a separate hinge, latch and position contact. After an object or open gate is reported, its physical state remains visible. The associated camera provides another view for assessment.",
+        "sources": [
+          "N02",
+          "N05",
+          "N06",
+          "N07"
+        ]
+      },
+      {
+        "heading": "Connect the passenger levels",
+        "text": "Follow the stairs and lift between the platform and concourse. The lift car carries its own doors, while landing doors stay with the building. During the trip, the doors close, the cabin travels, and the doors beside the upper landing open. On the concourse, inspect the equipment room and follow its services to displays, help points and other passenger devices.",
+        "sources": [
+          "SP01",
+          "F01",
+          "F03",
+          "F04"
+        ]
+      }
+    ],
+    "sources": [
+      "N01",
+      "N02",
+      "N03",
+      "N04",
+      "N05",
+      "N06",
+      "N07",
+      "N09",
+      "SP01",
+      "F01",
+      "F03",
+      "F04"
+    ]
+  }
+];

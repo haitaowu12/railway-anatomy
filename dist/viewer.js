@@ -313,7 +313,7 @@ export function createViewer(container, callbacks = {}) {
     equipmentDetails().powerInterfaces(g,{kind:'rectifier'});
     return g;
   }
-  function makePowerSwitchgear(parent,id='ac-switchgear',at=[0,0,0],{dc=false,scale=1}={}) {
+  function makePowerSwitchgear(parent,id='ac-switchgear',at=[0,0,0],{dc=false,scale=1,phasePoles=3}={}) {
     const g=part(parent,id,at);g.scale.setScalar(scale);g.userData.explorationAssembly=id;
     box(g,[1.05,.12,1.15],M.steel,[0,.08,0]);
     for(const x of [-.51,.51])box(g,[.055,2.32,1.1],M.core,[x,1.25,0]);
@@ -321,9 +321,9 @@ export function createViewer(container, callbacks = {}) {
     const door=group(g,'switchgear-removable-front');box(door,[.98,2.25,.05],dc?M.teal:M.white,[0,1.25,.6]);
     box(door,[.43,.25,.035],M.dark,[0,1.94,.64]);box(door,[.045,.25,.035],M.dark,[.37,1.2,.64]);shell(door);explode(door,[0,0,1.5]);
     const bus=powerPiece(g,'switchgear-busbar','Main busbars',[0,1.15,-.2]);
-    const xs=dc?[0]:[-.29,0,.29];
+    const xs=dc||phasePoles===1?[0]:[-.29,0,.29];
     for(const x of xs)box(bus,[.07,1.8,.075],M.copper,[x,1.32,-.28]);
-    const poles=powerPiece(g,'switchgear-pole',dc?'DC breaker pole':'AC interrupter poles',[0,.15,.8]);
+    const poles=powerPiece(g,'switchgear-pole',dc?'DC breaker pole':phasePoles===1?'Single-phase AC breaker pole':'Three-phase AC interrupter poles',[0,.15,.8]);
     for(const x of xs){
       cylinder(poles,dc?.16:.11,.75,M.white,[x,1.52,.04],null,12);
       for(const y of [1.06,1.96])box(poles,[.14,.09,.24],M.copper,[x,y,.06]);
@@ -338,7 +338,7 @@ export function createViewer(container, callbacks = {}) {
       const chute=powerPiece(breaker,'breaker-arc-chute','DC arc-chute plates',[0,.8,.8]);
       for(let y=1.61;y<2.25;y+=.08)box(chute,[.65,.035,.48],M.steel,[0,y,.25]);
     }
-    equipmentDetails().powerInterfaces(g,{kind:'switchgear',dc});
+    equipmentDetails().powerInterfaces(g,{kind:'switchgear',dc,phasePoles});
     return g;
   }
   function makePantograph(parent,at=[0,3.78,0]) {
@@ -506,7 +506,7 @@ export function createViewer(container, callbacks = {}) {
         if (detail) for (const z of [-.27, .27]) foot(supports, x, z);
       }
     }
-    reaction.userData.functionalPaths=[{id:'secondary-reaction',label:'Secondary current and reaction support',description:'The primary field induces currents in the passive layer; the backing and brackets belong to the magnetic and mechanical interfaces. No supply lead is attached to this secondary.',steps:[{label:'Conducting layer',nodeName:'reaction-conducting-cap'},{label:'Backing iron',nodeName:'reaction-backing-iron'},{label:'Support brackets',nodeName:'reaction-support-brackets'}],sources:['P02','P03']}];
+    reaction.userData.functionalPaths=[{id:'secondary-reaction',label:'Secondary current and reaction support',description:'The primary field induces currents in the passive layer; the backing and brackets belong to the magnetic and mechanical interfaces. Its currents are induced by the powered primary.',steps:[{label:'Conducting layer',nodeName:'reaction-conducting-cap'},{label:'Backing iron',nodeName:'reaction-backing-iron'},{label:'Support brackets',nodeName:'reaction-support-brackets'}],sources:['P02','P03']}];
     const pos = part(g, 'positive-rail'), neg = part(g, 'negative-rail');
     for (const [p, y, color] of [[pos, .63, M.positive], [neg, .37, M.negative]]) {
       // Aluminum conductor body and a separate stainless side-contact cap.
@@ -633,7 +633,7 @@ export function createViewer(container, callbacks = {}) {
     D.suspension(chassis,{detailed});
     explode(chassis, [0, .85, 0]);
     inspectionStage(chassis,'Expose the supporting frame',0,.3);
-    frame.userData.functionalPaths=[{id:'vertical-load',label:'Body to rail load path',description:'Body support → secondary air spring → frame → primary spring → axlebox bearing → axle and wheel → running rail. Lines show load relationships, not a stress solution.',steps:[{label:'Body interface',nodeName:'air-spring-body-interface'},{label:'Secondary spring',nodeName:'secondary-air-spring-near'},{label:'Frame',nodeName:'bogie-frame-and-suspension'},{label:'Primary spring',nodeName:'primary-spring-front-near'},{label:'Axlebox',nodePath:['wheelset-front','axlebox-near']},{label:'Bearing',nodePath:['wheelset-front','axlebox-near','axle-bearing']},{label:'Wheel',nodePath:['wheelset-front','wheel-near']},{label:'Running rail',conceptId:'running-rail'}],sources:['MD01','P10']}];
+    frame.userData.functionalPaths=[{id:'vertical-load',label:'Body to rail load path',description:'Body support → secondary air spring → frame → primary spring → axlebox bearing → axle and wheel → running rail. Follow each support to see how the vehicle load reaches the rails.',steps:[{label:'Body interface',nodeName:'air-spring-body-interface'},{label:'Secondary spring',nodeName:'secondary-air-spring-near'},{label:'Frame',nodeName:'bogie-frame-and-suspension'},{label:'Primary spring',nodeName:'primary-spring-front-near'},{label:'Axlebox',nodePath:['wheelset-front','axlebox-near']},{label:'Bearing',nodePath:['wheelset-front','axlebox-near','axle-bearing']},{label:'Wheel',nodePath:['wheelset-front','wheel-near']},{label:'Running rail',conceptId:'running-rail'}],sources:['MD01','P10']}];
     makePrimary(frame, [0, .37, 0], 1.68, detailed);
     const rotary=group(frame,'selected-rotary-drive');
     const motor=part(rotary,'rotary-traction-motor',[-.72,.6975,-.45]);
@@ -678,7 +678,7 @@ export function createViewer(container, callbacks = {}) {
       registerAnimator(s=>{wheel.rotation.z=phaseOffset+wheelsetAngle(s)*(r>.15?1:-2);});
     }
     D.mark(rotary,'Selected rotary drive',{sources:['MD02','MD04']});
-    rotary.userData.functionalPaths=[{id:'torque-path',label:'Rotor to wheelset torque path',description:'The rotating drive is separate from stationary stator, bearing and casing support. The illustrated ratio follows the authored 12:24 tooth counts.',steps:[{label:'Stator input',nodeName:'motor-terminal-box'},{label:'Rotor',nodeName:'motor-rotor'},{label:'Coupling',nodeName:'straight-motor-pinion-shaft'},{label:'Pinion and axle gear',conceptId:'traction-gearbox'},{label:'Driven wheelset',conceptId:'bogie'}],sources:['MD02','MD03','MD04']}];
+    rotary.userData.functionalPaths=[{id:'torque-path',label:'Rotor to wheelset torque path',description:'The stator and casing stay fixed while bearings support the rotating shafts. A 12-tooth pinion drives a 24-tooth gear, giving a 2:1 speed reduction.',steps:[{label:'Stator input',nodeName:'motor-terminal-box'},{label:'Rotor',nodeName:'motor-rotor'},{label:'Coupling',nodeName:'straight-motor-pinion-shaft'},{label:'Pinion and axle gear',conceptId:'traction-gearbox'},{label:'Driven wheelset',conceptId:'bogie'}],sources:['MD02','MD03','MD04']}];
     registerAnimator(s=>{rotary.visible=s.technology?.propulsion==='rotary';shaft.rotation.z=motorDetails.rotor.rotation.z=-wheelsetAngle(s)*2;});rotary.visible=false;
     explode(motor, [0, .3, -.65]); explode(gear, [0, .1, .65]);
     const pickup=part(frame,'loop-pickup',[.38,.65,-.43]);
@@ -754,7 +754,7 @@ export function createViewer(container, callbacks = {}) {
   }
   function makeWheelSensor(parent) {
     const g=part(parent,'tachometer',[1.02,.56,.88]);
-    const E=equipmentDetails(),encoder=E.inspect(group(g,'axle-speed-target-wheel'),'Rotating speed target',{sources:['T06','MD01'],description:'The target rotates with the axle while the sensing head stays with the support. Twelve visual marks are illustrative, not a specified encoder count.'});
+    const E=equipmentDetails(),encoder=E.inspect(group(g,'axle-speed-target-wheel'),'Rotating speed target',{sources:['T06','MD01'],description:'The target rotates with the axle while the sensing head stays with the support. Twelve marks make the rotation visible in this example.'});
     cylinder(encoder,.17,.035,M.signal,[0,0,0],[Math.PI/2,0,0],16);
     cylinder(encoder,.1,.065,M.dark,[0,0,.04],[Math.PI/2,0,0],12);
     for(let i=0;i<12;i++)box(encoder,[.035,.04,.025],M.aluminum,[Math.cos(i*Math.PI/6)*.15,Math.sin(i*Math.PI/6)*.15,.025]);
@@ -927,7 +927,7 @@ export function createViewer(container, callbacks = {}) {
       box(carrier,[.025,.16,.12],M.steel,[0,-direction*.02,side*.06]);carriers.push({node:carrier,direction});
       const contact=E.inspect(group(control,'vehicle-door-closed-contact',[direction*.35,-.15,side*.19]),direction>0?'Right closed-position contact':'Left closed-position contact',{sources});box(contact,[.11,.08,.055],M.dark);
       const led=cylinder(contact,.023,.015,new THREE.MeshBasicMaterial({color:C.service}),[0,0,side*.035],[Math.PI/2,0,0],8);contacts.push(led);
-      const lock=E.inspect(group(control,'vehicle-door-lock-bolt',[direction*.43,-.09,side*.015]),direction>0?'Right leaf lock bolt':'Left leaf lock bolt',{sources,description:'The lock engages after closure in this authored example. Its position is independent of the closed-position target.'});box(lock,[.035,.11,.04],M.steel);bolts.push(lock);
+      const lock=E.inspect(group(control,'vehicle-door-lock-bolt',[direction*.43,-.09,side*.015]),direction>0?'Right leaf lock bolt':'Left leaf lock bolt',{sources,description:'The lock engages after closure in this example. Its position is independent of the closed-position target.'});box(lock,[.035,.11,.04],M.steel);bolts.push(lock);
     }
     const controller=E.inspect(group(control,'vehicle-door-controller-board',[.48,.21,-side*.05]),'Local door controller',{sources});box(controller,[.49,.045,.20],M.service);box(controller,[.13,.035,.13],M.core,[0,.04,0]);
     const terminal=E.terminalStrip(control,{name:'vehicle-door-interface-terminals',at:[-.24,.20,-side*.05],labels:['Supply','Request','Closed return','Locked return'],kind:'information',sources});terminal.scale.setScalar(.43);
@@ -1125,7 +1125,7 @@ export function createViewer(container, callbacks = {}) {
     const dcFeeders=group(g,'dc-feeder-switchgear-arrangement');
     for(let i=0;i<3;i++)makePowerSwitchgear(dcFeeders,'dc-switchgear',[4.5+i*.87,.08,-2.1],{dc:true,scale:.8});
     const acFeeders=group(g,'ac-feeder-switchgear-arrangement');
-    for(let i=0;i<2;i++)makePowerSwitchgear(acFeeders,'ac-feeder-switchgear',[3.7+i*1.5,.08,-2.1],{scale:1});
+    for(let i=0;i<2;i++)makePowerSwitchgear(acFeeders,'ac-feeder-switchgear',[3.7+i*1.5,.08,-2.1],{scale:1,phasePoles:1});
     const returnTerminal=part(g,'supply-return-terminal',[6.8,.1,.03]);
     box(returnTerminal,[.6,.5,.5],M.core,[0,.25,0]);box(returnTerminal,[.65,.07,.12],M.negative,[0,.53,.12]);
     registerAnimator(s=>{const ac=electricMode(s)==='overhead-ac';rec.visible=dcFeeders.visible=!ac;acFeeders.visible=ac;});acFeeders.visible=false;

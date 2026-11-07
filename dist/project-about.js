@@ -9,11 +9,11 @@ export const ABOUT_HTML = `
   <section>
     <h3>A representation for each question</h3>
     <p>Original 3D schematics explain physical equipment, assemblies and selected mechanisms. Two-dimensional diagrams explain information paths, electrical principles, stakeholder contributions and processes such as configuration change and handover. Role descriptions connect the equipment with people and responsibilities.</p>
-    <p>These are selected teaching examples. Geometry, proportions and animations do not reproduce an installed railway or establish performance, operating instructions, staffing requirements or approval authority.</p>
+    <p>The models simplify geometry and motion to make the relationships visible. Examples show how systems fit together; operating and maintenance procedures remain specific to each railway.</p>
   </section>
   <section>
-    <h3>Public evidence and an evolving reference</h3>
-    <p>Explanations link to public material from railway bodies, operators, infrastructure managers, researchers and suppliers, including IRSE sources. Each source describes what it can help explain and the limits of its use. An abstract, publisher listing or product overview is identified as such; it is not presented as a review of the full document.</p>
-    <p>This is a young project, and coverage varies. Corrections, clearer explanations, missing interfaces and better public references are welcome. Contributions must be suitable for public release. <a href="https://github.com/haitaowu12/railway-anatomy/issues/new/choose" target="_blank" rel="noopener noreferrer">Suggest a correction or addition</a>, or read the <a href="https://github.com/haitaowu12/railway-anatomy/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">contribution guide</a>.</p>
+    <h3>Explore the sources</h3>
+    <p>Each explanation links to public material from railway bodies, operators, researchers and suppliers. Source notes identify the relevant topic and whether the link provides a full document, an abstract or a product overview.</p>
+    <p>Help improve the atlas with corrections, missing connections or useful public references. <a href="https://github.com/haitaowu12/railway-anatomy/issues/new/choose" target="_blank" rel="noopener noreferrer">Suggest a correction or addition</a>, or read the <a href="https://github.com/haitaowu12/railway-anatomy/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">contribution guide</a>.</p>
   </section>
 `;

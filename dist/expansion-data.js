@@ -6,7 +6,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Federal Transit Administration / Transportation Technology Center / Los Angeles County Metropolitan Transportation Authority",
     "url": "https://rosap.ntl.bts.gov/view/dot/55686",
     "description": "Public evaluation of platform track intrusion detection using paired radar transmitters and receivers, with algorithms to distinguish unwanted detections including trains.",
-    "scope": "A specific evaluated architecture, not a universal platform arrangement or guaranteed stopping performance."
+    "scope": "The paired-radar architecture evaluated for Los Angeles Metro in FTA Report 0189."
   },
   {
     "id": "N02",
@@ -14,7 +14,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/digital-solutions-software/infrastructure/perception-systems-for-railways.html",
     "description": "Platform LiDAR perception, overlapping coverage, local processing, health monitoring, CBTC interfaces and alarm video; separately describes onboard perception.",
-    "scope": "Supplier-published example. No detection probability, environmental immunity, response time or universal safety integrity level is adopted."
+    "scope": "Platform perception, processing and railway interfaces in a supplier example."
   },
   {
     "id": "N03",
@@ -22,7 +22,7 @@ export const EXTRA_SOURCES = [
     "publisher": "ST Engineering",
     "url": "https://www.stengg.com/en/smart-city/urban-solutions/smart-mobility-rail/smart-metro-systems/platform-screen-door/",
     "description": "Platform barrier forms, train presence detection and synchronized door movement.",
-    "scope": "A product family illustrating half-height, semi-full and full-height options; its certifications are not generalized."
+    "scope": "Half-height, semi-full-height and full-height options in one product family."
   },
   {
     "id": "N04",
@@ -30,7 +30,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Nippon Signal",
     "url": "https://english.signal.co.jp/products/platform/homegate/",
     "description": "Station and individual controllers, door-state feedback, gap sensors and optional stop-position / wireless interfaces.",
-    "scope": "Supplier-specific examples, including optional systems; no universal hardware allocation or project operating sequence."
+    "scope": "Controller, feedback and optional gap-sensing arrangements."
   },
   {
     "id": "N05",
@@ -38,7 +38,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Portalp Railway",
     "url": "https://www.portalp-railway.com/en/our-solutions/platform-screen-doors/electronic-door-control-board/",
     "description": "Door-control modules, separate closed and locked indications, drives, obstacle detection and platform end doors.",
-    "scope": "Functional distinctions only; project allocations and published function-specific safety ratings are not adopted as generic requirements."
+    "scope": "Separate closing commands, closed indications and lock indications."
   },
   {
     "id": "N06",
@@ -46,7 +46,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Wabtec",
     "url": "https://transitworld.wabtec.com/portfolio-platform-doors-gates-gap-protector",
     "description": "Detection of the hazardous space between the train body and platform-door facade, including curved-platform context and departure-related feedback.",
-    "scope": "An example of interspace protection; no claim that one sensor removes every entrapment risk."
+    "scope": "Detection in the space between the train and platform-door facade."
   },
   {
     "id": "N07",
@@ -54,7 +54,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Molinari Sensors",
     "url": "https://www.molinarisensors.com/product-applications",
     "description": "Track-area intrusion alerts and separately defined restricted zones at platform ends, tunnels and rights of way.",
-    "scope": "Example use cases; no retention time, detection threshold or exact installation design is adopted."
+    "scope": "Examples of separately defined track and restricted-access zones."
   },
   {
     "id": "N08",
@@ -70,7 +70,7 @@ export const EXTRA_SOURCES = [
     "publisher": "National Capital Region Transport Corporation",
     "url": "https://ncrtc.in/platform-screen-doors/",
     "description": "Operator description of physical platform separation, correct-position stopping and synchronized train/platform doors.",
-    "scope": "Operator example; it does not prescribe all railway platform interfaces or numerical stopping tolerances."
+    "scope": "An operator example of stopping alignment and coordinated doors."
   },
   {
     "id": "O01",
@@ -86,7 +86,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/digital-solutions-software/infrastructure/digital-station-solutions-and-railway-communication.html",
     "description": "Integrated station, passenger-information and power supervision.",
-    "scope": "An integration example; shared HMI does not erase subsystem responsibilities."
+    "scope": "Integration of passenger-information, facility and power supervision."
   },
   {
     "id": "O03",
@@ -94,7 +94,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Network Rail",
     "url": "https://www.networkrail.co.uk/our-work/our-routes/wessex/feltham-and-wokingham-re-signalling-programme/",
     "description": "Example of signalling control transferred to a rail operating centre.",
-    "scope": "UK mainline case study; not a universal metro architecture."
+    "scope": "A UK mainline case study of control-centre integration."
   },
   {
     "id": "O04",
@@ -102,7 +102,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/rail-services/depot-service-network/rail-service-center-dortmund.html",
     "description": "Maintenance tracks, roof access, wheel machining, cleaning and stabling.",
-    "scope": "A particular service centre; no dimensions or equipment quantities adopted."
+    "scope": "A service-centre example covering access, machining, cleaning and stabling."
   },
   {
     "id": "O05",
@@ -110,7 +110,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://press.siemens.com/global/en/pressrelease/siemens-officially-opens-rrx-maintenance-depot",
     "description": "Workshop, warehouse, washing and digital maintenance-workflow example.",
-    "scope": "Dated project description; not a prescribed depot plan."
+    "scope": "The published RRX depot project and its maintenance facilities."
   },
   {
     "id": "O06",
@@ -118,7 +118,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Mechan",
     "url": "https://www.mechan.co.uk/rail/lifting-jacks/",
     "description": "Synchronized multi-jack lifting of railway vehicles.",
-    "scope": "Supplier example; no adopted lift capacities or procedures."
+    "scope": "Coordinated operation of multiple vehicle lifting jacks."
   },
   {
     "id": "O07",
@@ -126,7 +126,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Mechan",
     "url": "https://www.mechan.co.uk/rail/bogie-equipment-drops/bogie-drops/",
     "description": "Carbody support and lowering/traversing a bogie from below.",
-    "scope": "Selected mechanism; not a maintenance instruction or support design."
+    "scope": "Vehicle-body support, bogie lowering and sideways transfer."
   },
   {
     "id": "O08",
@@ -134,7 +134,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Hegenscheidt-MFD",
     "url": "https://www.hegenscheidt.com/en/machine-portfolio/machines-for-wheelset-machining/underfloor-wheelset-lathes/u2000-150/",
     "description": "Reprofiling mounted or removed railway wheelsets.",
-    "scope": "Supplier example; wear limits, dimensions and acceptance criteria omitted."
+    "scope": "Reprofiling wheelsets while mounted or removed."
   },
   {
     "id": "O09",
@@ -142,7 +142,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Aquafrisch",
     "url": "https://www.aquafrisch.com/en/stationary-mobile-and-manual-train-washing-systems/",
     "description": "Brush/nozzle washing, fixed and mobile arrangements, and recycled-water use.",
-    "scope": "Train-specific programs; no adopted process speeds or savings percentages."
+    "scope": "Fixed and mobile washing arrangements and recycled-water use."
   },
   {
     "id": "O10",
@@ -150,7 +150,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Aquafrisch",
     "url": "https://www.aquafrisch.com/en/water-treatment/",
     "description": "Treatment, reuse and discharge are separate water-management functions.",
-    "scope": "Illustrative treatment chain; not an effluent specification."
+    "scope": "Water treatment, reuse and discharge as separate functions."
   },
   {
     "id": "O11",
@@ -158,7 +158,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Zonegreen",
     "url": "https://zonegreen.com/products/depot-protection/",
     "description": "Example interfaces among personnel protection, shunt signals, derailers and warnings.",
-    "scope": "Product-specific arrangement; no universal derailer placement or safety-integrity claim."
+    "scope": "One arrangement connecting staff registration, signals, warnings and a derailer."
   },
   {
     "id": "O12",
@@ -166,7 +166,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Zonegreen",
     "url": "https://zonegreen.com/products/electronic-interlocking/",
     "description": "Links hazardous-equipment states to access authorization in maintenance areas.",
-    "scope": "Configured site-specific sequences; not an isolation procedure."
+    "scope": "Access interlocks linked to hazardous-equipment states."
   },
   {
     "id": "O13",
@@ -190,7 +190,7 @@ export const EXTRA_SOURCES = [
     "publisher": "San Francisco Municipal Transportation Agency",
     "url": "https://www.sfmta.com/train-control-upgrade-project-understanding-train-control",
     "description": "Onboard controls, loop cable communication and control-centre functions described by an operator.",
-    "scope": "A public loop-based ATC example; not a specification for the fictional vehicle or every SelTrac generation."
+    "scope": "An operator’s explanation of a loop-based ATC system."
   },
   {
     "id": "X02",
@@ -198,7 +198,7 @@ export const EXTRA_SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/rolling-stock-components/gear-units.html",
     "description": "Rotary motor and gear-unit assemblies transfer torque to railway wheelsets.",
-    "scope": "The atlas uses an illustrative geared drive; no product rating, gear ratio or mounting specification is adopted."
+    "scope": "Motor, gear-unit and wheelset relationships in geared traction."
   }
 ];
 export const EXTRA_CONCEPTS = [
@@ -208,12 +208,12 @@ export const EXTRA_CONCEPTS = [
     "summary": "Monitors a defined track area for a person or object that should not be there.",
     "details": [
       "At an open platform, intrusion detection observes the trainway rather than physically closing the platform edge. The evaluated FTA example sends warnings to railway systems and personnel when its monitored track area is intruded upon.",
-      "A visible object, a detection decision and an operational response are different steps. The model shows their interfaces without asserting that every intrusion causes the same automatic brake command."
+      "Sensors observe the area, processing decides whether to report an intrusion, and railway systems or staff respond. These are separate steps, with different responsibilities."
     ],
     "sources": [
       "N01"
     ],
-    "caveat": "Detection is not a barrier or a guarantee that an approaching train can stop; coverage and response are project-specific.",
+    "caveat": "Detection reports an event; a physical barrier prevents access. The available train response also depends on speed, distance and the control interface.",
     "related": [
       "platform-lidar",
       "platform-radar",
@@ -226,13 +226,13 @@ export const EXTRA_CONCEPTS = [
     "label": "Platform LiDAR sensor and monitored volume",
     "summary": "Laser ranging samples the space around the track as a three-dimensional point cloud.",
     "details": [
-      "Platform-mounted LiDAR measures distance to form a three-dimensional point cloud. Siemens describes overlapping sensors for observing track danger zones.",
-      "The rendered volume illustrates coverage; it is not a validated sensor envelope."
+      "LiDAR measures distance using laser light. Repeated measurements form a point cloud: a set of points describing surfaces in three dimensions.",
+      "Siemens describes overlapping sensors that observe track danger zones. An object can hide part of the scene from one sensor, so coverage depends on sensor placement and the surrounding geometry."
     ],
     "sources": [
       "N02"
     ],
-    "caveat": "No field of view, minimum detectable object, detection probability or environmental performance is specified.",
+    "caveat": "The highlighted volume illustrates the monitored area; actual coverage depends on the installation.",
     "related": [
       "platform-intrusion",
       "platform-response"
@@ -244,12 +244,12 @@ export const EXTRA_CONCEPTS = [
     "summary": "A transmitter and receiver arrangement detects an interruption across the track area.",
     "details": [
       "FTA Report 0189 describes transmitter/receiver pairs on opposite sides of the track. An intruding object interrupts their radar path at a plane beneath the platform edge and above the rail.",
-      "The evaluated system also processes detections to distinguish unwanted activations, including a train passing through the area. This differs from recognizing every object with an ordinary passenger CCTV camera."
+      "Processing distinguishes potential intrusions from expected events such as a train passing through the detection plane. This paired-sensor arrangement differs from both LiDAR ranging and a CCTV image."
     ],
     "sources": [
       "N01"
     ],
-    "caveat": "The rendered beams are schematic; heights, spacing, thresholds and filtering logic are not installation instructions.",
+    "caveat": "This example follows the paired radar arrangement evaluated in FTA Report 0189.",
     "related": [
       "platform-intrusion",
       "platform-lidar"
@@ -266,7 +266,6 @@ export const EXTRA_CONCEPTS = [
     "sources": [
       "N02"
     ],
-    "caveat": "The site does not provide incident-response instructions or retention rules.",
     "related": [
       "platform-intrusion",
       "platform-response",
@@ -279,12 +278,12 @@ export const EXTRA_CONCEPTS = [
     "summary": "Turns sensor evidence into a defined report or interface state for the railway.",
     "details": [
       "Siemens separates perception processing from safety-related decisions, with local processing, health monitoring and a CBTC interface.",
-      "A report that no object was detected, a report of an object and unavailable sensing have different meanings. This model locates the processor and interfaces; it does not simulate those three states."
+      "An object detected, no object detected and unavailable sensing are three different reports. Health monitoring lets the receiving system distinguish missing information from a clear monitored area."
     ],
     "sources": [
       "N02"
     ],
-    "caveat": "The model does not simulate a railway protocol, health-state logic or a universal safe-state allocation.",
+    "caveat": "This view locates the sensing and interface equipment. Response rules depend on the railway’s control system.",
     "related": [
       "platform-intrusion",
       "platform-alarm-video",
@@ -298,13 +297,12 @@ export const EXTRA_CONCEPTS = [
     "summary": "A physical barrier separates the waiting platform from the trainway between boarding opportunities.",
     "details": [
       "Platform doors align openings with a stopped train. The operator example described by NCRTC opens them with the train at the correct position and coordinates them with train doors.",
-      "Barrier height varies. ST Engineering publishes half-height, semi-full-height and full-height forms. These are alternatives with different interfaces, not a rule that every station needs the same facade."
+      "Half-height, semi-full-height and full-height barriers provide different degrees of separation. Their height and openings also affect passenger space and ventilation interfaces."
     ],
     "sources": [
       "N03",
       "N09"
     ],
-    "caveat": "The model provides no stopping tolerance, ventilation calculation, structural design or compliance claim.",
     "related": [
       "platform-door-drive",
       "platform-door-proof",
@@ -324,7 +322,6 @@ export const EXTRA_CONCEPTS = [
       "N04",
       "N05"
     ],
-    "caveat": "The drive geometry is original and schematic; motor ratings, timing, forces and reopening logic are not specified.",
     "related": [
       "platform-screen-door",
       "platform-door-proof"
@@ -336,12 +333,12 @@ export const EXTRA_CONCEPTS = [
     "summary": "Feedback describes door condition rather than merely repeating the requested command.",
     "details": [
       "Portalp distinguishes the closing command from door-closed and door-locking information. This makes an important interface visible: requesting a state is not proof that the mechanism reached it.",
-      "A closed leaf and a proved lock are different conditions. The separate feedback equipment illustrates that distinction; this model does not independently simulate a lock failure or calculate departure permission."
+      "A leaf reaching its closed position and a lock engaging are separate mechanical events. Their feedback tells the coordinating system which conditions have been confirmed."
     ],
     "sources": [
       "N05"
     ],
-    "caveat": "No generic departure authorization rule or safety integrity rating is prescribed.",
+    "caveat": "The railway combines these indications with its other departure conditions.",
     "related": [
       "platform-door-drive",
       "platform-screen-door",
@@ -361,7 +358,7 @@ export const EXTRA_CONCEPTS = [
       "N04",
       "N06"
     ],
-    "caveat": "This is not the same as closing-edge obstacle sensing or a computed guarantee of complete coverage.",
+    "caveat": "Interspace sensing monitors the space beside the train; closing-edge sensing monitors an obstruction in the moving doorway.",
     "related": [
       "platform-screen-door",
       "platform-door-proof",
@@ -374,7 +371,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "The platform end forms another access boundary into tunnels and the railway.",
     "details": [
       "Platform end doors can provide a controlled passage through the platform barrier. They have a different location and use from repeated passenger boarding doors.",
-      "Restricted-zone sensors can separately monitor end-of-platform, tunnel or right-of-way access. These detection measures supplement boundaries; they do not turn a painted warning line into a physical barrier."
+      "Separate sensors can monitor access at platform ends, tunnels or other restricted areas. The gate provides a physical boundary; a sensor reports an event near that boundary."
     ],
     "sources": [
       "N05",
@@ -403,8 +400,7 @@ export const EXTRA_CONCEPTS = [
       "operations-power-control",
       "operations-radio-dispatch",
       "operations-station-supervision"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "operations-traffic-supervision",
@@ -412,7 +408,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "Service planning and train tracking help staff manage the running railway.",
     "details": [
       "Traffic-supervision applications compare train locations and timetable or headway objectives. They can propose or issue route requests and support recovery from disruption.",
-      "A request to the signalling system is distinct from a proved route. Changing a service target must not be illustrated as bypassing interlocking or onboard train protection."
+      "A route request passes to signalling for the required checks. Interlocking and onboard protection continue to constrain movement when service targets change."
     ],
     "sources": [
       "O01"
@@ -422,8 +418,7 @@ export const EXTRA_CONCEPTS = [
       "interlocking",
       "atp",
       "operations-signalling-workstation"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "operations-signalling-workstation",
@@ -431,7 +426,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "An operator interface connects route commands and railway indications.",
     "details": [
       "A signalling workstation presents the area being controlled and receives indications from the signalling installation. Network Rail provides examples of such control moving into a rail operating centre.",
-      "The teaching connection runs from request to field equipment and returned state. The screen depicts that relationship; it does not turn a drawn route into physical proof."
+      "A request travels from the workstation to signalling equipment. Indications return from the installation, allowing the operator to distinguish a requested route from a confirmed state."
     ],
     "sources": [
       "O03"
@@ -440,8 +435,7 @@ export const EXTRA_CONCEPTS = [
       "interlocking",
       "track-point-machine",
       "axle-counter"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "operations-power-control",
@@ -449,7 +443,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "Power controllers supervise supply equipment through designated control interfaces.",
     "details": [
       "A power-supervision workstation presents electrical equipment states and events and can provide authorized supervisory controls. Local protection and the physical supply network remain separate parts of the chain.",
-      "The control-room model links this desk to the traction substation. A displayed open breaker is not presented as a complete maintenance isolation."
+      "The desk receives substation measurements and equipment positions. Maintenance isolation requires separate checks of the physical electrical system."
     ],
     "sources": [
       "O02"
@@ -459,8 +453,7 @@ export const EXTRA_CONCEPTS = [
       "breaker",
       "substation-control",
       "depot-energy-isolation"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "operations-station-supervision",
@@ -468,7 +461,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "Facility events share an operating picture while retaining their subsystem responsibilities.",
     "details": [
       "Station supervision can integrate facility status, passenger information, video and selected power information. Common displays help operators correlate events across systems.",
-      "The model keeps fire detection, ventilation, passenger communications and their local controllers distinct. Integration does not prescribe which application has emergency control priority."
+      "Fire detection, ventilation and passenger communications retain their local controllers and defined control priorities, even when their information appears on one screen."
     ],
     "sources": [
       "O02"
@@ -478,8 +471,7 @@ export const EXTRA_CONCEPTS = [
       "flss",
       "station-pa",
       "tunnel-fan"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "operations-radio-dispatch",
@@ -496,8 +488,7 @@ export const EXTRA_CONCEPTS = [
       "train-radio",
       "station-radio",
       "operations-event-recording"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "operations-event-recording",
@@ -513,16 +504,15 @@ export const EXTRA_CONCEPTS = [
     "related": [
       "operations-radio-dispatch",
       "operations-equipment-room"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "operations-equipment-room",
     "label": "Control-centre application and network equipment",
     "summary": "The model exposes the infrastructure behind the operator displays.",
     "details": [
-      "The racks are an authored schematic representation of computing and network equipment serving the control-room applications. Equipment identity is separated from the pictures on workstation screens.",
-      "Follow the information path from field interface to application to display. Physical servers, resilience arrangements, cybersecurity zones and backup-centre design are not specified by this model."
+      "Computers and network equipment support the control-room applications. Workstations present the information those applications receive and process.",
+      "Follow the information path from a field interface through the network and application to the operator display. Different installations arrange servers, backup facilities and communications in different ways."
     ],
     "sources": [],
     "related": [
@@ -531,7 +521,7 @@ export const EXTRA_CONCEPTS = [
       "station-ups",
       "operations-centre"
     ],
-    "caveat": "Illustrative equipment-room geometry; no source-specific rack design, security layout, redundancy or recovery claim is made."
+    "caveat": "The racks are an illustrative arrangement of the equipment behind the displays."
   },
   {
     "id": "depot-layout",
@@ -549,8 +539,7 @@ export const EXTRA_CONCEPTS = [
       "depot-throat",
       "depot-inspection-pit",
       "depot-wash-plant"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-stabling",
@@ -567,8 +556,7 @@ export const EXTRA_CONCEPTS = [
       "depot-controller",
       "depot-layout",
       "depot-stores"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-throat",
@@ -585,8 +573,7 @@ export const EXTRA_CONCEPTS = [
       "track-turnout",
       "interlocking",
       "depot-controller"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-controller",
@@ -604,8 +591,7 @@ export const EXTRA_CONCEPTS = [
       "depot-throat",
       "depot-personnel-protection",
       "depot-stabling"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-inspection-pit",
@@ -613,7 +599,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "A track above a recessed work area exposes underframe equipment.",
     "details": [
       "The maintenance-road cutaway places a train above an inspection space so the relationship between wheel support, underframe equipment and staff access can be understood.",
-      "Track bridges, platforms and pit arrangements vary between facilities. The model explains access from below; it does not establish clearances or permission to work under a train."
+      "The train’s wheels remain supported above the pit while staff access equipment below the body. Pit geometry, access routes and work protection are designed together."
     ],
     "sources": [
       "O04"
@@ -623,8 +609,7 @@ export const EXTRA_CONCEPTS = [
       "brakes",
       "depot-personnel-protection",
       "depot-energy-isolation"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-roof-access",
@@ -632,7 +617,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "Raised access brings staff near equipment that requires a separate access-control arrangement.",
     "details": [
       "A roof-access platform reaches equipment that cannot be inspected from floor level. Depot interlocking may connect access gates with electrical-isolation and other equipment states.",
-      "The model compares access and movement conditions without providing a switching sequence. A vehicle can be stationary while hazardous electrical energy remains."
+      "Roof access and permission to move are separate conditions. A stationary vehicle can still have an energized supply or stored electrical energy."
     ],
     "sources": [
       "O12"
@@ -642,8 +627,7 @@ export const EXTRA_CONCEPTS = [
       "radio-antenna",
       "depot-energy-isolation",
       "depot-personnel-protection"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-lifting-jacks",
@@ -660,8 +644,7 @@ export const EXTRA_CONCEPTS = [
       "carbody",
       "bogie",
       "depot-bogie-drop"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-bogie-drop",
@@ -669,7 +652,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "A supported carbody can remain in place while a bogie is lowered and transferred.",
     "details": [
       "A bogie-drop installation includes a movable track bridge and supports for the vehicle body. The bogie can be lowered and moved sideways beneath the supported vehicle.",
-      "This is a different arrangement from lifting the entire vehicle on jacks. The teaching animation omits the engineered support and detachment procedure."
+      "The carbody remains supported while the detached bogie moves down and sideways. Lifting the whole vehicle on jacks uses a different support arrangement."
     ],
     "sources": [
       "O07"
@@ -678,8 +661,7 @@ export const EXTRA_CONCEPTS = [
       "bogie",
       "depot-lifting-jacks",
       "depot-inspection-pit"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-wheel-lathe",
@@ -687,7 +669,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "A machine restores a wheel profile by controlled material removal.",
     "details": [
       "An underfloor wheel lathe can machine a wheelset while it remains mounted in a vehicle; suitable machines may also handle removed wheelsets.",
-      "The cutaway shows machine rollers, the rotating wheelset and a tool near the tread. This is a conceptual machining view, not a wheel-profile specification or a decision about how much material may be removed."
+      "Machine rollers rotate the wheelset while cutting tools remove material to restore its running profile. Inspection determines whether the remaining wheel dimensions meet the applicable limits."
     ],
     "sources": [
       "O08"
@@ -696,8 +678,7 @@ export const EXTRA_CONCEPTS = [
       "bogie",
       "running-rail",
       "depot-inspection-pit"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-wash-plant",
@@ -713,8 +694,7 @@ export const EXTRA_CONCEPTS = [
     "related": [
       "depot-water-recovery",
       "depot-layout"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-water-recovery",
@@ -722,7 +702,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "Collected water can be treated for reuse while other flows leave the process.",
     "details": [
       "A collection channel routes wash water toward treatment and storage. A selected reuse circuit returns treated water to suitable wash stages, while fresh-water make-up and residual discharge remain separate process requirements outside the displayed pipe model.",
-      "The simplified tanks explain the flow relationship. The treatment technology and discharge or reuse quality depend on the actual water and process requirements; the model assumes no universal recovery percentage."
+      "Treatment removes contamination before water returns to suitable wash stages. The required quality and treatment steps depend on the incoming water, cleaning process and intended reuse."
     ],
     "sources": [
       "O09",
@@ -730,8 +710,7 @@ export const EXTRA_CONCEPTS = [
     ],
     "related": [
       "depot-wash-plant"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-stores",
@@ -748,8 +727,7 @@ export const EXTRA_CONCEPTS = [
       "depot-layout",
       "depot-controller",
       "depot-bogie-drop"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-personnel-protection",
@@ -766,8 +744,7 @@ export const EXTRA_CONCEPTS = [
       "depot-controller",
       "depot-energy-isolation",
       "depot-inspection-pit"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "depot-energy-isolation",
@@ -785,8 +762,7 @@ export const EXTRA_CONCEPTS = [
       "vehicle-battery",
       "depot-roof-access",
       "depot-personnel-protection"
-    ],
-    "caveat": "The arrangement is an original schematic teaching model; actual equipment, staffing and procedures are site-specific."
+    ]
   },
   {
     "id": "rotary-traction-motor",
@@ -806,15 +782,15 @@ export const EXTRA_CONCEPTS = [
       "lim-primary",
       "traction-inverter"
     ],
-    "caveat": "Original schematic geometry; this is one geared rotary drive, not a representation of every motor or bogie."
+    "caveat": "The example uses a geared rotary drive; direct-drive and other mechanical arrangements also exist."
   },
   {
     "id": "traction-gearbox",
     "label": "Traction gearbox and axle drive",
     "summary": "A gear unit couples rotary motor torque to the wheelset.",
     "details": [
-      "The motor and axle need a mechanical transmission matched to their operating speeds and mounting. In this example a gear unit forms the torque path between them.",
-      "A gearbox is not a train-control computer. Changing the train-to-wayside communication medium does not add or remove this mechanical drive. Direct-drive and other mechanical arrangements also exist."
+      "The motor usually turns faster than the driven axle. Reduction gears lower the output speed and increase axle torque, allowing the motor and wheels to operate at suitable speeds.",
+      "Torque passes through the gearbox to the wheelset, then through wheel–rail contact to move the train. The train-control system sends driving requests through a separate information path."
     ],
     "sources": [
       "X02"
@@ -850,7 +826,7 @@ export const EXTRA_CONCEPTS = [
     "summary": "Connects the inductive cable communication path to the train-control functions.",
     "details": [
       "The track loop is a transmission medium. Wayside interface equipment connects its messages to the equipment performing train-control functions. An onboard pickup exchanges information with that loop.",
-      "This selected loop-based SelTrac example is distinct from radio-based SelTrac examples and the separately presented G9 product description. The teaching boxes do not specify cabinet count, wiring or a universal control allocation."
+      "Loop-based and radio-based SelTrac systems use different transmission media. The interface links the chosen medium to train-control functions; the number and location of computers depend on the installation."
     ],
     "sources": [
       "X01",
@@ -871,13 +847,13 @@ export const EXTRA_VIEWS = {
     "title": "Detect an intrusion, or separate the spaces",
     "component": "platform-intrusion",
     "level": "Interface",
-    "note": "The track zone, door closing edge, train–platform-door interspace and platform-end access are different monitored areas. Objects and detection cues are illustrative; no stopping distance or guaranteed response is simulated.",
+    "note": "Compare four areas: the open trainway, the door closing edge, the train–door interspace and access beyond the platform end.",
     "variants": [
       {
         "id": "open-platform",
         "label": "Open platform",
         "title": "Observe a defined trainway zone",
-        "description": "The radar plane and LiDAR coverage illustrate different sensing approaches. They are examples to compare, not a requirement to fit both. A detected event is passed to configured railway and operator interfaces; it is not a physical barrier or proof that a train can stop.",
+        "description": "The radar plane and LiDAR coverage show two sensing approaches. A detected event reaches the configured railway and operator interfaces. Detection reports an intrusion; a barrier physically separates the platform and track.",
         "nodes": [
           "Defined zone",
           "Sensing / decision",
@@ -928,7 +904,7 @@ export const EXTRA_VIEWS = {
         "id": "platform-end",
         "label": "Platform end",
         "title": "Restricted access has its own boundary",
-        "description": "The gate and sensing example concern access beyond the passenger platform. They do not replace the platform-edge arrangement or establish an operating procedure.",
+        "description": "The end gate controls a passage beyond the passenger platform. Nearby sensors can report access into the restricted area.",
         "nodes": [
           "Platform end",
           "Gate / sensing",
@@ -948,7 +924,7 @@ export const EXTRA_VIEWS = {
     "title": "One operating picture, several responsibilities",
     "component": "operations-centre",
     "level": "Facility",
-    "note": "Original fictional control room. Workstations and logical paths illustrate responsibilities, not staff authorization, a signalling design or an incident procedure.",
+    "note": "The room groups workstations by responsibility. Their information paths connect the operators with equipment elsewhere on the railway.",
     "variants": [
       {
         "id": "service",
@@ -972,7 +948,7 @@ export const EXTRA_VIEWS = {
         "id": "incident",
         "label": "Event coordination",
         "title": "An event needs interpretation and coordination",
-        "description": "A highlighted event can reach several desks. The animation represents information arriving and staff attention, not a universal automatic emergency sequence. Recording an event is not the same as resolving its physical cause.",
+        "description": "An event can reach several desks, where staff compare the available evidence and coordinate a response. The event record preserves what was reported and communicated.",
         "nodes": [
           "Event / evidence",
           "Relevant workstation",
@@ -993,13 +969,13 @@ export const EXTRA_VIEWS = {
     "title": "The railway behind the passenger service",
     "component": "depot-layout",
     "level": "Facility",
-    "note": "Fictional compact depot: tracks, capacities, clearances and vehicle routes are illustrative. Stabling, maintenance release and permission to move are different states.",
+    "note": "Follow a train between the railway entrance, stabling and maintenance areas. Location, maintenance release and permission to move are separate states.",
     "variants": [
       {
         "id": "layout",
         "label": "Facility layout",
         "title": "Follow a vehicle through the supporting facilities",
-        "description": "Stabling, a yard throat, inspection roads, washing and stores support the fleet. The connecting tracks show functional relationships rather than a validated yard plan.",
+        "description": "Stabling, the yard throat, inspection roads, washing and stores support the fleet. The connecting tracks show how trains move between these functions.",
         "nodes": [
           "Service interface",
           "Depot throat",
@@ -1016,7 +992,7 @@ export const EXTRA_VIEWS = {
         "id": "night",
         "label": "Stabling emphasis",
         "title": "Stored does not mean ready for service",
-        "description": "Stabling provides a place for vehicles between duties. Vehicle condition, required work, allocation and operational release still need separate decisions. The model highlights storage roads without assigning a timetable or capacity.",
+        "description": "Stabling provides space between duties. Vehicle condition, required work and service allocation determine which trains can return to service.",
         "nodes": [
           "Stabling road",
           "Vehicle condition",
@@ -1036,7 +1012,7 @@ export const EXTRA_VIEWS = {
     "title": "Bring the work to the right vehicle interface",
     "component": "depot-inspection-pit",
     "level": "Assembly",
-    "note": "Equipment anatomy only. No lifting, machining, roof-access or maintenance procedure is supplied. The generic DC vehicle does not imply that every illustrated facility uses the same electrification.",
+    "note": "Compare access from below, access at roof level, vehicle lifting and wheel machining. Each arrangement connects the work area to a different part of the vehicle.",
     "variants": [
       {
         "id": "inspection",
@@ -1076,7 +1052,7 @@ export const EXTRA_VIEWS = {
         "id": "wheel-lathe",
         "label": "Underfloor wheel lathe",
         "title": "Restore a wheel profile at its running surface",
-        "description": "An underfloor lathe supports and rotates a wheelset while tools machine its profile. The illustration locates the machinery beneath the vehicle; it supplies no cut depth, tolerance, tooling setup or maintenance limit.",
+        "description": "An underfloor lathe supports and rotates a wheelset while tools machine its profile. Inspection checks the resulting shape and remaining wheel dimensions.",
         "nodes": [
           "Wheelset",
           "Machine support / rotation",
@@ -1095,13 +1071,13 @@ export const EXTRA_VIEWS = {
     "title": "Clean the vehicle, manage the water",
     "component": "depot-wash-plant",
     "level": "Assembly",
-    "note": "Brushes, spray and water paths are qualitative. The model does not set wash speed, chemical dosage, treatment quality or movement permission.",
+    "note": "Follow the cleaning equipment and the water circuit from supply through collection and treatment.",
     "variants": [
       {
         "id": "wash",
         "label": "Wash equipment",
         "title": "Mechanical cleaning needs supporting services",
-        "description": "Brush assemblies and spray equipment act on the exterior. Drainage collects used water; plant controls coordinate the equipment in the selected installation. This is not a train-driving instruction.",
+        "description": "Brushes and sprays clean the vehicle exterior. Plant controls coordinate the equipment, and drains collect the used water.",
         "nodes": [
           "Water / plant supply",
           "Brush / spray equipment",
@@ -1116,7 +1092,7 @@ export const EXTRA_VIEWS = {
         "id": "recovery",
         "label": "Water recovery",
         "title": "Reuse requires treatment and a return path",
-        "description": "The collection and treatment tanks illustrate how recovered water can return to selected washing stages. Make-up water and residual discharge remain distinct. No reuse percentage or discharge compliance is claimed.",
+        "description": "Collected water passes through treatment and storage before returning to suitable wash stages. Fresh make-up water and residual discharge remain separate flows.",
         "nodes": [
           "Collected water",
           "Treatment",
@@ -1136,7 +1112,7 @@ export const EXTRA_VIEWS = {
     "title": "Movement protection is not energy isolation",
     "component": "depot-personnel-protection",
     "level": "Interface",
-    "note": "A conceptual comparison, not a protection or isolation procedure. A screen, signal or open contact alone cannot establish that all hazards have been controlled.",
+    "note": "Movement protection controls entry to a work area. Energy isolation addresses electrical and other stored or supplied energy.",
     "variants": [
       {
         "id": "work-zone",
@@ -1158,7 +1134,7 @@ export const EXTRA_VIEWS = {
         "id": "indication",
         "label": "Indication limits",
         "title": "A displayed state has a bounded meaning",
-        "description": "A supervisor can see information about equipment. That display is not proof of absence of voltage, stored energy or movement hazards. The model never turns an indication into a safe-to-enter permission.",
+        "description": "A status display reports equipment information. Physical checks establish the relevant isolation and access conditions, including hazards that a displayed position alone cannot confirm.",
         "nodes": [
           "Field equipment",
           "Status interface",

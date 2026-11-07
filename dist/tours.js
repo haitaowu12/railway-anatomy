@@ -1,6 +1,6 @@
 import {STUDY_TOURS} from './studies-learning.js';
 // Guided questions test the mechanism or interface introduced by each lesson.
-export const TOURS = [
+export const TOURS =[
   {
     "id": "station-context",
     "label": "01 · Read the whole station",
@@ -8,7 +8,7 @@ export const TOURS = [
     "domain": "station",
     "view": "station",
     "component": "station-pa",
-    "explanation": "A passenger hears an announcement and reads a display, but the equipment that supports each service may be elsewhere in the station. The speaker needs an audio path and electrical power; the display needs its own information and supply. This station cutaway places them in context without claiming that they share one controller.",
+    "explanation": "A passenger hears an announcement and reads a display, while the equipment supporting those services may be elsewhere in the station. The speaker needs an audio path and electrical power; the display needs information and its own supply. Follow each visible device to the equipment behind it.",
     "actionText": "Start with Whole station. Under Station area in focus, compare Passenger circulation and Equipment room, then return to the PA / voice alarm selection.",
     "actionLabel": "Open the station overview",
     "action": {
@@ -44,7 +44,7 @@ export const TOURS = [
     "domain": "track",
     "view": "track-support",
     "component": "track-ballasted",
-    "explanation": "Below the train, the running rail is one part of the assembly that supports and guides its wheels. Compare ballasted, direct-fixation and embedded examples. The intermediate layers change, but the rail still needs support and restraint. The arrows illustrate a load path, not calculated stress.",
+    "explanation": "The running rail supports and guides the wheels, while the layers beneath it carry their loads into the ground or structure. Compare ballasted, direct-fixation and embedded track. Each arrangement provides support, resilience and restraint in a different way.",
     "actionText": "Compare Ballasted, Slab / direct fixation and Embedded. In each view, look for the layers and restraints that support the rail.",
     "actionLabel": "Open the track support view",
     "action": {
@@ -81,9 +81,9 @@ export const TOURS = [
     "domain": "track",
     "view": "rail-fastening",
     "component": "track-rail-clip",
-    "explanation": "A pad supports an interface, a clip provides restraint, and insulating pieces have their own role. Separate the assembly and identify the contacts instead of treating all hardware around the rail foot as interchangeable. The shown clip is an authored schematic.",
-    "actionText": "Separate the stack, then reconnect each layer to the rail foot.",
-    "actionLabel": "Show this arrangement",
+    "explanation": "A pad provides resilient support beneath the rail foot, a clip holds the rail in its seat, and insulating pieces separate electrical contact surfaces. Open the assembly and follow where the parts meet.",
+    "actionText": "Open Model options and use Separate parts, then follow the pad, clip and insulator back to the rail foot.",
+    "actionLabel": "Open the rail fastening",
     "action": {
       "view": "rail-fastening",
       "component": "track-rail-clip",
@@ -113,7 +113,7 @@ export const TOURS = [
   },
   {
     "id": "point-proof",
-    "label": "04 \u00b7 Follow a point machine",
+    "label": "04 · Follow a point machine",
     "title": "How a point machine moves and proves a turnout",
     "domain": "track",
     "view": "switch-drive",
@@ -162,7 +162,7 @@ export const TOURS = [
     "domain": "power",
     "view": "system",
     "component": "utility",
-    "explanation": "A supported and guided train also needs energy to move. This lesson selects the fourth-rail DC example. Follow the AC supply through the wayside transformer and rectifier, then through the supply conductor to the onboard inverter and selected motor. Trace the return from the vehicle back to the substation through the separate return conductor. This is one teaching arrangement; it does not define every railway.",
+    "explanation": "Follow energy through the fourth-rail DC example: incoming AC, wayside transformer, rectifier, supply conductor, onboard inverter and motor. Then trace the return from the vehicle through its separate return shoe and conductor to the substation.",
     "actionText": "Follow the selected fourth-rail DC path from the substation to the vehicle and back through the separate return conductor.",
     "actionLabel": "Follow power",
     "action": {
@@ -240,7 +240,7 @@ export const TOURS = [
     "view": "lim",
     "component": "lim-primary",
     "explanation": "The inverter energizes the primary to create a travelling magnetic field. Induced currents in the reaction rail interact with that field to produce thrust. Wheels support and guide this vehicle; the LIM produces force across its air gap.",
-    "actionText": "Inspect the primary and secondary together. Use the phase slider to follow the field cue.",
+    "actionText": "Inspect the primary and reaction rail together. Use Sequence position to follow the travelling magnetic field.",
     "actionLabel": "Follow the field",
     "action": {
       "view": "lim",
@@ -275,9 +275,9 @@ export const TOURS = [
     "domain": "power",
     "view": "system",
     "component": "wayside-resistor",
-    "explanation": "This lesson selects the fourth-rail DC example with limited network receptivity. During electrical braking the converter can return energy to the DC network; the selected wayside resistor provides a surplus-energy destination. Friction braking remains a separate mechanism. The illustration does not calculate how braking effort is blended.",
+    "explanation": "During electrical braking, the motor and converter return energy to the DC circuit. In this fourth-rail example, a wayside resistor turns surplus energy into heat when other trains cannot use it. Friction brakes provide a separate braking force; the vehicle controller coordinates the available mechanisms.",
     "actionText": "Inspect the selected wayside resistor and the separate friction-brake mechanism in this limited-receptivity DC example.",
-    "actionLabel": "Limit energy acceptance",
+    "actionLabel": "Follow braking energy",
     "action": {
       "view": "system",
       "component": "wayside-resistor",
@@ -296,7 +296,7 @@ export const TOURS = [
     "feedback": [
       "The model separates the energy destination from the friction-brake contribution; actual blending depends on the vehicle design.",
       "The chosen diode-rectifier example does not provide that AC export path.",
-      "Friction braking remains a separate available mechanism in the teaching example."
+      "Friction brakes provide a separate braking mechanism alongside electrical braking."
     ],
     "sourceConcepts": [
       "regeneration",
@@ -347,13 +347,13 @@ export const TOURS = [
   {
     "id": "cbtc-layers",
     "label": "10 · Trace CBTC responsibilities",
-    "title": "A radio link is not the whole control system",
+    "title": "Follow information from the train and back",
     "domain": "control",
     "view": "cbtc-network",
     "component": "cbtc",
     "explanation": "Follow a position estimate into a train report, then follow returned movement information into onboard supervision. Compare this with the driving request and physical vehicle response. The model shows one allocation of responsibilities; CBTC suppliers may distribute them differently.",
     "actionText": "Trace the information exchange, protection function and driving function.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Trace the CBTC path",
     "action": {
       "view": "cbtc-network",
       "component": "cbtc",
@@ -392,7 +392,7 @@ export const TOURS = [
     "component": "balise",
     "explanation": "Compare a track circuit, an axle counter and a balise. The first two illustrate section-occupancy detection arrangements; a balise exchanges information at a passing location. Similar trackside placement does not make their information roles identical.",
     "actionText": "Switch through the three device views and identify each input and output.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Compare the three devices",
     "action": {
       "view": "train-detection",
       "component": "balise",
@@ -426,7 +426,7 @@ export const TOURS = [
     "domain": "control",
     "view": "bogie",
     "component": "tachometer",
-    "explanation": "Arithmetic example: a distance estimate biased 10% high reports 110 m for an actual 100 m. This is an invented error, not a vehicle specification. Sliding wheels can cause different errors; independent measurements and position references help reveal disagreement.",
+    "explanation": "Suppose the train travels 100 m but a biased distance estimate reports 110 m: the estimate is 10% high. Wheel slide and wheel-size errors can affect wheel-based measurements. Independent sensors and known position references help reveal disagreement.",
     "actionText": "Use the stated 100 m / 110 m example for the question, then vary the wheel-distance error to explore other cases.",
     "actionLabel": "Inspect sensor disagreement",
     "action": {
@@ -461,9 +461,9 @@ export const TOURS = [
     "domain": "control",
     "view": "seltrac",
     "component": "seltrac",
-    "explanation": "Compare the historical inductive-loop example with published radio communications and the 2026 SelTrac G9 description. The teaching view separates a communication medium, a control function and its hosting environment. It does not imply that every installed railway uses the latest architecture.",
-    "actionText": "Inspect loop, radio and G9 views with their different source boundaries.",
-    "actionLabel": "Show this arrangement",
+    "explanation": "Compare the historical inductive-loop example with radio communications and the published 2026 SelTrac G9 architecture. The communication medium carries messages; control functions interpret them; the hosting equipment runs those functions. Each generation combines these choices differently.",
+    "actionText": "Compare Legacy loop, Radio communications and G9 publication. Follow what changes in communication and computing.",
+    "actionLabel": "Compare SelTrac generations",
     "action": {
       "view": "seltrac",
       "component": "seltrac",
@@ -499,7 +499,7 @@ export const TOURS = [
     "component": "etcs-level-1",
     "explanation": "In the selected Level 1 example, a balise telegram reaches the train at a passing point while onboard supervision continues. Level 2 introduces the illustrated RBC radio exchange. An ETCS level alone does not establish the block principle or automation grade.",
     "actionText": "Compare the LEU and balise path with the RBC and radio path.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Compare ETCS information paths",
     "action": {
       "view": "etcs",
       "component": "etcs-level-1",
@@ -575,7 +575,7 @@ export const TOURS = [
     "domain": "vehicle",
     "view": "services",
     "component": "apu",
-    "explanation": "Explore auxiliary power, HVAC, lighting, doors, air supply and onboard electronics. Distinguish electrical supply from control commands. The battery supports selected functions according to the vehicle design; it does not automatically power every load indefinitely.",
+    "explanation": "Explore auxiliary power, heating and ventilation, lighting, doors, air supply and onboard electronics. Follow each load’s electrical supply separately from its control commands. The battery keeps selected functions available for a limited time, depending on its capacity and connected load.",
     "actionText": "Open the equipment zones and trace their supporting systems.",
     "actionLabel": "Explore onboard services",
     "action": {
@@ -613,9 +613,9 @@ export const TOURS = [
     "domain": "communications",
     "view": "communications-passenger",
     "component": "pa-amplifier",
-    "explanation": "Follow the call station and PA controller into the amplifier and loudspeaker circuit. The connection diagram distinguishes network audio and control from the powered output to the speaker. The equipment view exposes the amplifier and speaker parts; its exaggerated cone motion illustrates a mechanism without predicting audibility or speech quality.",
+    "explanation": "Follow audio from the call station and PA controller to the amplifier and loudspeaker. The amplifier uses electrical power to drive the speaker. Inspect its equipment view, then trace the separate audio, control and supply connections.",
     "actionText": "Open Announcement. Inspect the amplifier and loudspeaker, then open Responsibilities & connections to identify the amplified-audio output and separate electrical supply.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Trace the announcement",
     "action": {
       "view": "communications-passenger",
       "component": "pa-amplifier",
@@ -647,7 +647,7 @@ export const TOURS = [
   {
     "id": "supervisory-boundaries",
     "label": "18 · Compare SCADA and BAS",
-    "title": "A dashboard is not the local control loop",
+    "title": "Connect the dashboard to local control",
     "domain": "station",
     "view": "station-networks",
     "component": "bas-controller",
@@ -690,13 +690,13 @@ export const TOURS = [
   {
     "id": "fire-functions",
     "label": "19 · Separate fire and life-safety functions",
-    "title": "Related systems are not one automatic chain",
+    "title": "Follow each fire and life-safety function",
     "domain": "station",
     "view": "fire-systems",
     "component": "sprinkler-system",
-    "explanation": "Compare detection, notification, emergency communication, lighting, egress and water-based protection. The view shows their interfaces without creating a generic cause-and-effect sequence. In a conventional thermal sprinkler, heat operates the individual sprinkler element.",
+    "explanation": "Compare fire detection, notification, emergency communication, lighting, escape routes and water-based protection. Each has a different mechanism. In the conventional sprinkler shown here, heat opens the individual head, allowing water to discharge from the pipe.",
     "actionText": "Inspect Water-based protection and its individual sprinkler head, then compare the separate detection and communication functions.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Compare fire-system functions",
     "action": {
       "view": "fire-systems",
       "component": "sprinkler-system",
@@ -728,13 +728,13 @@ export const TOURS = [
   {
     "id": "ventilation-objectives",
     "label": "20 · Explore tunnel ventilation",
-    "title": "Mechanism, objective and verified performance differ",
+    "title": "A fan drives air through a connected path",
     "domain": "station",
     "view": "tunnel-ventilation",
     "component": "tunnel-fan",
-    "explanation": "Inspect the fan, shaft and damper as one air path. Then compare normal environmental objectives with a smoke-management objective. The particles help explain the components; they do not demonstrate safe air conditions or prescribe an emergency fan sequence.",
+    "explanation": "Follow the fan, shaft and damper as one air path. Fan pressure drives the flow, while openings and resistance affect where the air travels. Compare normal heat removal with the separate objectives of smoke management.",
     "actionText": "Move from the tunnel context to the fan and damper cutaways.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Follow the ventilation path",
     "action": {
       "view": "tunnel-ventilation",
       "component": "tunnel-fan",
@@ -771,7 +771,7 @@ export const TOURS = [
     "component": "platform-intrusion",
     "explanation": "Compare an observed track area with a physical platform-door boundary. Then inspect the separate interspace between train and platform facade.",
     "actionText": "Keep Trainway sensing in focus. Change Platform edge from Open edge to Half-height doors or Full-height doors, then compare the same location.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Compare platform boundaries",
     "action": {
       "view": "platform-interface",
       "component": "platform-intrusion",
@@ -804,13 +804,13 @@ export const TOURS = [
   {
     "id": "platform-feedback",
     "label": "22 · Read door feedback",
-    "title": "Read door feedback",
+    "title": "Separate the door position and its indication",
     "domain": "station",
     "view": "platform-interface",
     "component": "platform-door-proof",
     "explanation": "Follow a door command to the drive, then inspect closed and locked feedback. These are separate facts at the train–platform interface.",
     "actionText": "Step through Leaves moving, Closed contact, Bolt engaged and Locking indication. Inspect the drive and contacts to see why a request, a closed leaf and a returned locking state are different.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Follow door movement and feedback",
     "action": {
       "view": "platform-interface",
       "component": "platform-door-proof",
@@ -886,7 +886,7 @@ export const TOURS = [
     "domain": "depot",
     "view": "depot-protection",
     "component": "depot-personnel-protection",
-    "explanation": "The work-protection map separates movement protection, hazardous-energy controls, returned indications and responsibility. Select each question to examine its inputs and evidence; the map is not the sequence for establishing a protected worksite.",
+    "explanation": "Compare the protection against vehicle movement with the controls for electrical and other hazardous energy. Each has its own equipment, indications and responsibilities. Follow what each indication confirms about the work area.",
     "actionText": "Compare Examine the movement-protection interface with Examine the energy and access interfaces. Then select Relate displayed state to its evidence and identify what a displayed indication does not establish.",
     "actionLabel": "Examine the movement-protection interface",
     "action": {
@@ -907,7 +907,7 @@ export const TOURS = [
     ],
     "answer": 0,
     "feedback": [
-      "Movement protection and energy isolation are different concepts; the illustration is not an isolation procedure.",
+      "Movement inhibition controls entry by vehicles. The relevant supplies and stored energy still need separate isolation evidence.",
       "Location does not establish the relevant energy state.",
       "A recorded request does not establish the relevant energy state."
     ],
@@ -923,9 +923,9 @@ export const TOURS = [
     "domain": "depot",
     "view": "depot-wash",
     "component": "depot-wash-gantry",
-    "explanation": "Begin with the travelling gantry around a stationary train, then compare the drive-through arrangement, where the train moves past fixed equipment. The phase control makes the difference visible. Water circuit shows the separate collection, treatment, reuse, make-up and residual-water paths.",
+    "explanation": "A travelling gantry washes a stationary train; a drive-through plant keeps its equipment fixed while the train moves. Use Sequence position to compare their motion. Then open Water circuit to follow collection, treatment, reuse, make-up and residual water.",
     "actionText": "Animate Travelling gantry and Drive-through to compare relative movement. Then select Water circuit to inspect the supporting water paths.",
-    "actionLabel": "Show this arrangement",
+    "actionLabel": "Compare wash-plant movement",
     "action": {
       "view": "depot-wash",
       "component": "depot-wash-gantry",
@@ -944,7 +944,7 @@ export const TOURS = [
     "answer": 2,
     "feedback": [
       "The relative movement needed for washing is supplied by different objects in the two examples.",
-      "The examples deliberately show different movement arrangements.",
+      "In one example the gantry moves; in the other, the train moves past fixed equipment.",
       "The change is visible in the equipment and animation, while water supply and treatment retain their supporting roles."
     ],
     "sourceConcepts": [

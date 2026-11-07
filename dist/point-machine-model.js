@@ -14,11 +14,11 @@ export function buildPointMachine(parent, api, {position, railY, bladeAt}) {
   for(const x of [-.62,.62])box(housing,[.04,.42,.88],M.teal,[x,rodY+.11,-.16]);
   box(housing,[1.20,.42,.04],M.teal,[0,rodY+.11,-.58]);
   D.mark(housing,'Machine enclosure',{sources});D.move(housing,[0,.7,0],'Open the enclosure',[0,.3]);
-  const drive=D.piece(machine,'point-drive-unit','Electromechanical drive unit',[0,rodY+.13,-.39],{sources:['PM01','PM04'],function:'A functional actuator envelope supplies the two operating outputs. Its internal gearing is not reproduced.'});
+  const drive=D.piece(machine,'point-drive-unit','Electromechanical drive unit',[0,rodY+.13,-.39],{sources:['PM01','PM04'],function:'The electromechanical drive supplies force to the two operating rods.'});
   box(drive,[.78,.19,.24],M.aluminum);
   const detection=part(parent,'track-point-detection',position);
   D.mark(detection,'Two blade detector rods and lock contacts',{sources:['PM01','PM03'],function:'Each detector rod follows its own blade. The indication requires the closed blade, open blade and locking conditions together.'});
-  const contacts=D.piece(detection,'point-detector-contacts','Blade and lock contact functions',[.24,rodY+.16,-.38],{sources:['PM01','PM03'],function:'Contact symbols show A, B or neither indicated. They are not a wiring diagram.'});
+  const contacts=D.piece(detection,'point-detector-contacts','Blade and lock contact functions',[.24,rodY+.16,-.38],{sources:['PM01','PM03'],function:'The contacts indicate A or B when the required blade and lock conditions are met; otherwise neither end is indicated.'});
   box(contacts,[.52,.045,.20],M.signal,[0,-.04,0]);
   const pairs=['A','B'].map((end,i)=>{
     const g=D.piece(contacts,'point-contact-'+end,end+' indication contact',[-.12+i*.24,0,0],{sources:['PM01']});

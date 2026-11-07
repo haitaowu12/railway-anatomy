@@ -15,10 +15,38 @@ import {DEPTH_SOURCES} from './depth-content.js';
 import {MECHANICAL_SOURCES} from './mechanical-content.js';
 // Public-source educational content. Geometry and selected arrangements are illustrative.
 export const SOURCES = [
-  {id:'PM01',title:'P80 Point Machine — December 2015 brochure',publisher:'Alstom',url:'https://pdfcoffee.com/alstom-p80-pdf-free.html',description:'Two independent operating rods, two detector rods and locking of the open and closed blades.',scope:'Alstom P80 Point Machine/EN/12.2015, General description and Key technical features. Public text mirror of the original brochure; supports the four-rod arrangement, not a reproduction of its internals.'},
-  {id:'PM02',title:'UNISTAR HR point-setting system',publisher:'voestalpine Railway Systems',url:'https://www.voestalpine.com/railway-systems/en/products/unistar-hr-point-machine/',description:'Split power and drive/locking/detection modules, internal prism locking and installations with or without stretcher bars.',scope:'Manufacturer product page, Technical description and Technical characteristics. An alternative electro-hydraulic family; its arrangement and ratings do not define all point machines.'},
-  {id:'PM03',title:'UNISTAR ELP end-position detector',publisher:'voestalpine Railway Systems',url:'https://www.voestalpine.com/railway-systems/en/products/unistar-elp-end-position-detector/',description:'Two detector rods monitor the open and closed switch point.',scope:'Manufacturer product description. Supports detecting both blades and the distinction between detector and operating rods.'},
-  {id:'PM04',title:'MCEM91 point machine',publisher:'Vossloh',url:'https://www.vossloh.com/en/products/mcem91-point-machine',description:'Electromechanical actuation, internal locking and end-position detection.',scope:'Manufacturer product page, Electromechanical operation and Operation. Supports an alternative internally locked point-machine family; no universal rod count or internal transmission is inferred.'},
+  {
+    "id": "PM01",
+    "title": "P80 Point Machine — December 2015 brochure",
+    "publisher": "Alstom",
+    "url": "https://pdfcoffee.com/alstom-p80-pdf-free.html",
+    "description": "Two independent operating rods, two detector rods and locking of the open and closed blades.",
+    "scope": "Alstom P80 Point Machine/EN/12.2015, General description and Key technical features. This public mirror describes the four-rod arrangement; the cutaway uses simplified internals."
+  },
+  {
+    "id": "PM02",
+    "title": "UNISTAR HR point-setting system",
+    "publisher": "voestalpine Railway Systems",
+    "url": "https://www.voestalpine.com/railway-systems/en/products/unistar-hr-point-machine/",
+    "description": "Split power and drive/locking/detection modules, internal prism locking and installations with or without stretcher bars.",
+    "scope": "Technical description and characteristics of an electro-hydraulic point-setting family."
+  },
+  {
+    "id": "PM03",
+    "title": "UNISTAR ELP end-position detector",
+    "publisher": "voestalpine Railway Systems",
+    "url": "https://www.voestalpine.com/railway-systems/en/products/unistar-elp-end-position-detector/",
+    "description": "Two detector rods monitor the open and closed switch point.",
+    "scope": "Manufacturer product description. Supports detecting both blades and the distinction between detector and operating rods."
+  },
+  {
+    "id": "PM04",
+    "title": "MCEM91 point machine",
+    "publisher": "Vossloh",
+    "url": "https://www.vossloh.com/en/products/mcem91-point-machine",
+    "description": "Electromechanical actuation, internal locking and end-position detection.",
+    "scope": "Electromechanical operation, internal locking and end-position detection in this point-machine family."
+  },
   {
     "id": "P01",
     "title": "DC traction power supply system",
@@ -33,7 +61,7 @@ export const SOURCES = [
     "publisher": "Railway Technical Research Institute",
     "url": "https://risc.rtri.or.jp/risc/en/aboutStandards/proposedIEC62520.jsp",
     "description": "Train-mounted primary and track-mounted secondary.",
-    "scope": "Short-primary LIM architecture; no fleet-specific details are adopted."
+    "scope": "Short-primary LIM architecture, with the primary on the vehicle and the secondary along the track."
   },
   {
     "id": "P03",
@@ -49,7 +77,7 @@ export const SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/rolling-stock-components/traction-converters.html",
     "description": "Traction power electronics and regeneration.",
-    "scope": "Converter functions and design-dependent cooling; product ratings are not adopted."
+    "scope": "Converter functions, cooling and regeneration."
   },
   {
     "id": "P05",
@@ -57,7 +85,7 @@ export const SOURCES = [
     "publisher": "ABB",
     "url": "https://www.abb.com/global/en/areas/motion/traction/auxiliary-converter",
     "description": "Onboard auxiliary supplies and optional battery charging.",
-    "scope": "Auxiliary conversion; particular output circuits and emergency endurance are model choices."
+    "scope": "Auxiliary conversion and optional battery charging."
   },
   {
     "id": "P06",
@@ -65,7 +93,7 @@ export const SOURCES = [
     "publisher": "Knorr-Bremse",
     "url": "https://rail.knorr-bremse.com/en/hu/about-us/knorr-bremse-in-hungary/local-activities/content-page-brake-control-functions/",
     "description": "Brake blending, wheel-slide protection and parking functions.",
-    "scope": "Principles and available architectures; source-specific speed thresholds are not generalized."
+    "scope": "Brake blending, wheel-slide protection and parking-brake functions."
   },
   {
     "id": "P07",
@@ -89,7 +117,7 @@ export const SOURCES = [
     "publisher": "Knorr-Bremse",
     "url": "https://rail.knorr-bremse.com/en/ca/portfolio/vehicle-types/metros/",
     "description": "Passenger doors, obstacle detection and access aids.",
-    "scope": "Generic passenger access; no proprietary door logic is reproduced."
+    "scope": "Passenger entrances, obstacle sensing and access aids."
   },
   {
     "id": "P10",
@@ -97,7 +125,7 @@ export const SOURCES = [
     "publisher": "Alstom",
     "url": "https://www.alstom.com/solutions/components/flexx-bogies-safety-reliability-and-comfort-all-trains",
     "description": "Bogies, vehicle dynamics and wheel–rail interfaces.",
-    "scope": "Background reading for bogie roles; geometry shown is original and illustrative."
+    "scope": "Bogie functions and their mechanical relationship with the vehicle."
   },
   {
     "id": "P11",
@@ -105,7 +133,7 @@ export const SOURCES = [
     "publisher": "Stemmann-Technik",
     "url": "https://www.stemmann.com/en/products/3rd_rail_current_collector",
     "description": "Shoegear and top, side or bottom contact arrangements.",
-    "scope": "Current collection; selected positive/negative conductor layout is an illustrative circuit, not this product specification."
+    "scope": "Top-, side- and bottom-contact current collection."
   },
   {
     "id": "P12",
@@ -113,7 +141,7 @@ export const SOURCES = [
     "publisher": "Cressall",
     "url": "https://www.cressall.com/applications/rail-traction-dynamic-braking/",
     "description": "Regeneration and onboard or trackside energy dissipation.",
-    "scope": "Energy destinations and resistor thermal considerations; no product sizing is implied."
+    "scope": "Braking-energy destinations and resistor heat dissipation."
   },
   {
     "id": "T01",
@@ -121,7 +149,7 @@ export const SOURCES = [
     "publisher": "Prover",
     "url": "https://www.prover.com/faq/",
     "description": "Rail signalling supplier definitions of protection, operation and supervision responsibilities.",
-    "scope": "Use the ATP, ATO and ATC entries only; supplier terminology is not a universal architecture."
+    "scope": "Definitions of ATP, ATO and ATC; the allocation of functions varies by system."
   },
   {
     "id": "T02",
@@ -129,7 +157,7 @@ export const SOURCES = [
     "publisher": "Mitsubishi Electric",
     "url": "https://www.mitsubishielectric.com/traffic/products/operation/",
     "description": "An example of train–wayside position and control exchanges, radio units and zone controllers.",
-    "scope": "One manufacturer's conceptual radio-control arrangement; no equipment specifications or configurations reproduced."
+    "scope": "One example of radio communication between onboard and wayside control equipment."
   },
   {
     "id": "T03",
@@ -137,7 +165,7 @@ export const SOURCES = [
     "publisher": "Alstom",
     "url": "https://www.alstom.com/advanced-urban-network-control-automatic-train-supervision",
     "description": "Traffic supervision, regulation, operations decision support and configurable control-centre functions.",
-    "scope": "A commercial ATS example, used for functional explanation rather than claimed performance."
+    "scope": "Traffic-supervision and regulation functions in an urban control centre."
   },
   {
     "id": "T04",
@@ -145,7 +173,7 @@ export const SOURCES = [
     "publisher": "Škoda Group",
     "url": "https://www.skodagroup.com/reference/tcms-master-control-system",
     "description": "Vehicle subsystem coordination, communications and diagnostics, including traction, brakes, doors and HVAC.",
-    "scope": "A configurable supplier implementation; the educational model separates responsibilities without claiming separate physical computers."
+    "scope": "Vehicle-management functions and interfaces that can be integrated in different hardware arrangements."
   },
   {
     "id": "T05",
@@ -153,7 +181,7 @@ export const SOURCES = [
     "publisher": "Cisco",
     "url": "https://blogs.cisco.com/industrial-iot/introducing-cisco-rail-communications-based-train-control-cbtc-and-safety-solution",
     "description": "Onboard, wayside wireless, access, backbone and control-centre communication modules.",
-    "scope": "Conceptual data transport only; no addresses, frequencies, security settings or deployment instructions."
+    "scope": "Onboard, radio, backbone and control-centre data transport."
   },
   {
     "id": "T06",
@@ -201,7 +229,7 @@ export const SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/digital-solutions-software/digital-train-solutions/intelligent-cctv.html",
     "description": "Onboard video processing and information for crew and operational monitoring.",
-    "scope": "Use generic camera and monitoring roles, without personal data or biometric analytics."
+    "scope": "Onboard camera, processing and operational-monitoring functions."
   },
   {
     "id": "T12",
@@ -217,7 +245,7 @@ export const SOURCES = [
     "publisher": "Network Rail",
     "url": "https://www.networkrail.co.uk/our-work/looking-after-the-railway/track/",
     "description": "The rail, sleeper and ballast assembly, including switches and crossings.",
-    "scope": "Basic track functions; network statistics and maintenance procedures are excluded."
+    "scope": "Track components and their basic functions."
   },
   {
     "id": "K02",
@@ -233,7 +261,7 @@ export const SOURCES = [
     "publisher": "Mid-America Transportation Center / University of Kansas",
     "url": "https://rosap.ntl.bts.gov/view/dot/25427",
     "description": "Laboratory research on ballast load distribution, drainage and fouling.",
-    "scope": "Qualitative mechanisms; numerical laboratory results are not used as site design values."
+    "scope": "Particle contact, drainage and fouling mechanisms studied in laboratory ballast."
   },
   {
     "id": "K04",
@@ -249,7 +277,7 @@ export const SOURCES = [
     "publisher": "Pandrol",
     "url": "https://www.pandrol.com/en-us/products/fastening-systems/fasteners/e-clip",
     "description": "Elastic clips, shoulders, pads and insulators in a fastening assembly.",
-    "scope": "One example of elastic rail restraint; no product forces or installation procedures."
+    "scope": "Elastic restraint and the parts of a rail fastening."
   },
   {
     "id": "K06",
@@ -257,7 +285,7 @@ export const SOURCES = [
     "publisher": "Vossloh",
     "url": "https://www.vossloh.com/en/products/system-w-21",
     "description": "Resilient rail fastening and elastomeric rail-pad functions.",
-    "scope": "Load transfer and vibration principles; no universal pad stiffness is implied."
+    "scope": "Resilient support and vibration transmission at a rail seat."
   },
   {
     "id": "K07",
@@ -265,7 +293,7 @@ export const SOURCES = [
     "publisher": "Pandrol",
     "url": "https://www.pandrol.com/products/fastening-systems/fasteners/fastclip",
     "description": "Insulators, support interfaces and baseplate variants.",
-    "scope": "Assembly choices and component roles; adjustment ranges and installation details are omitted."
+    "scope": "Insulator, support and baseplate arrangements in a fastening family."
   },
   {
     "id": "K08",
@@ -281,7 +309,7 @@ export const SOURCES = [
     "publisher": "RAILONE",
     "url": "https://railone.com/services/rheda-2000/",
     "description": "A slab-track construction using precast rail-support blocks and cast-in-place concrete.",
-    "scope": "One slab-track architecture; its particular geometry and performance figures are not adopted."
+    "scope": "One slab-track architecture using embedded rail-support blocks."
   },
   {
     "id": "K10",
@@ -297,7 +325,7 @@ export const SOURCES = [
     "publisher": "British Steel",
     "url": "https://www.britishsteel.co.uk/wp-content/uploads/2026/02/british-steel-rail-profiles-and-grades-datasheet.pdf",
     "description": "Different rail cross-sections and their section properties.",
-    "scope": "Profile anatomy only; the model does not reproduce a dimensioned commercial profile."
+    "scope": "Rail cross-section anatomy and different commercial profiles."
   },
   {
     "id": "K12",
@@ -305,7 +333,7 @@ export const SOURCES = [
     "publisher": "voestalpine Railway Systems / Nortrak-Damy",
     "url": "https://www.voestalpine.com/nortrak_damy/en/products/turnout-systems/",
     "description": "The relationship between a switch, closure rails and a frog.",
-    "scope": "Turnout component vocabulary; no particular turnout geometry is adopted."
+    "scope": "Switch, closure and crossing sections of a turnout."
   },
   {
     "id": "K13",
@@ -313,7 +341,7 @@ export const SOURCES = [
     "publisher": "voestalpine Railway Systems",
     "url": "https://www.voestalpine.com/railway-systems/en/products/optimized-switch-device-toz/",
     "description": "The coordinated contact geometry of stock and switch rails.",
-    "scope": "Wheel-guidance relationships; the proprietary optimized profile is not reproduced."
+    "scope": "Coordinated stock-rail and switch-rail contact geometry."
   },
   {
     "id": "K14",
@@ -321,7 +349,7 @@ export const SOURCES = [
     "publisher": "voestalpine Railway Systems",
     "url": "https://www.voestalpine.com/railway-systems/en/products/ehz-compound-mn13/",
     "description": "A fixed crossing assembled from a vee and wing rails.",
-    "scope": "Crossing anatomy and flangeways; casting details and dimensions are omitted."
+    "scope": "Vee, wing rails and flangeways in a fixed crossing."
   },
   {
     "id": "K15",
@@ -337,7 +365,7 @@ export const SOURCES = [
     "publisher": "Rail Accident Investigation Branch",
     "url": "https://assets.publishing.service.gov.uk/media/547c9037ed915d4c0d000199/R202008_081023_Grayrigg_v5.pdf",
     "description": "Public glossary definitions of stretcher bars and their assemblies.",
-    "scope": "Terminology only; the incident, installed equipment and operating procedures are not modeled."
+    "scope": "Appendix B glossary definitions of stretcher bars and their assemblies."
   },
   {
     "id": "K17",
@@ -345,7 +373,7 @@ export const SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/rail-infrastructure/components/wayside-components/point-operating-systems.html",
     "description": "Point drives, locking arrangements and point-position detection.",
-    "scope": "Functional boundaries; no wiring, setpoints, bypasses or operating instructions."
+    "scope": "Drive, locking and detection functions."
   },
   {
     "id": "K18",
@@ -353,7 +381,7 @@ export const SOURCES = [
     "publisher": "Rail Accident Investigation Branch",
     "url": "https://assets.publishing.service.gov.uk/media/5a818464e5274a2e87dbe0dd/080228_R042008_Ruscombe.pdf",
     "description": "Public glossary definition of a crossover.",
-    "scope": "Terminology only; the incident and its actual track layout are not reproduced."
+    "scope": "Glossary definition of a crossover."
   },
   {
     "id": "K19",
@@ -361,7 +389,7 @@ export const SOURCES = [
     "publisher": "Progress Rail",
     "url": "https://www.progressrail.com/en/segments/infrastructure/trackwork",
     "description": "Crossing, frog and diamond products, including alternative wheel-support arrangements.",
-    "scope": "A comparison of special-trackwork functions; product performance claims are not generalized."
+    "scope": "Special-trackwork families and alternative wheel-support arrangements."
   },
   {
     "id": "K20",
@@ -369,7 +397,7 @@ export const SOURCES = [
     "publisher": "Eungcheol Kim, Myungseob Kim, Gabrielle Delos and Tyler Clark / Sustainability",
     "url": "https://www.mdpi.com/2071-1050/11/21/6166",
     "description": "Research describing the relationship between plinths, direct fasteners and supporting decks.",
-    "scope": "Plinth anatomy only; the case-study dimensions, tolerances and repair methods are excluded."
+    "scope": "The relationship between a concrete plinth, fasteners and the supporting deck."
   },
   {
     "id": "K21",
@@ -377,7 +405,7 @@ export const SOURCES = [
     "publisher": "Network Rail",
     "url": "https://www.networkrail.co.uk/rail-travel/delays-explained/signals-and-points-failure/",
     "description": "An infrastructure manager explains the role of points, common causes of failure and their effect on railway service.",
-    "scope": "Public British railway context and further reading. The simplified account is not a universal signalling rule, failure diagnosis or recovery procedure."
+    "scope": "An infrastructure manager’s explanation of points and how failures affect services."
   },
   {
     "id": "S01",
@@ -417,7 +445,7 @@ export const SOURCES = [
     "publisher": "Alstom",
     "url": "https://www.alstom.com/solutions/signalling/urban-signalling/communications-based-train-control-world-leading-high-capacity-signalling",
     "description": "Radio CBTC, block principles, automation grades and alternative functional allocations.",
-    "scope": "Supplier portfolio; avoid universalizing its layout."
+    "scope": "Moving-block, fixed-block and train-centric examples within a supplier portfolio."
   },
   {
     "id": "S06",
@@ -433,7 +461,7 @@ export const SOURCES = [
     "publisher": "European Union Agency for Railways",
     "url": "https://www.era.europa.eu/domains/european-rail-traffic-management-system/braking-curves",
     "description": "ETCS supervision, brake intervention and predicted stopping behavior.",
-    "scope": "Conceptual explanation; certified algorithms are outside this model."
+    "scope": "ETCS supervision and the role of braking predictions."
   },
   {
     "id": "S08",
@@ -489,7 +517,7 @@ export const SOURCES = [
     "publisher": "voestalpine Railway Systems",
     "url": "https://www.voestalpine.com/railway-systems/en/products/uniac1-axle-counter/",
     "description": "Directional wheel sensing and section-clear evaluation.",
-    "scope": "Product example, without reset or maintenance procedures."
+    "scope": "A wheel-sensor and axle-counter implementation."
   },
   {
     "id": "S15",
@@ -513,7 +541,7 @@ export const SOURCES = [
     "publisher": "MERMEC Group",
     "url": "https://www.mermecgroup.com/protect/atpatc-systems/630/ertmsetcs-level-2.php",
     "description": "RBC, onboard EVC, DMI and train interfaces.",
-    "scope": "Supplier example; no processor or performance claims are adopted."
+    "scope": "RBC, EVC, driver interface and train interfaces in a Level 2 example."
   },
   {
     "id": "S18",
@@ -521,7 +549,7 @@ export const SOURCES = [
     "publisher": "International Union of Railways",
     "url": "https://uic.org/media-files/spip/documents/uic_frmcs_srs_at-7800_v2.1_0.pdf",
     "description": "Public April 2025 specification covering communications architecture and migration.",
-    "scope": "Sections 4 and 9; no universal rollout date."
+    "scope": "Sections 4 and 9: communications architecture and migration between GSM-R and FRMCS."
   },
   {
     "id": "S19",
@@ -537,7 +565,7 @@ export const SOURCES = [
     "publisher": "ERA, UNISIG and ERTMS Users Group",
     "url": "https://www.era.europa.eu/system/files/2023-09/index003_-_SUBSET-023_v400.pdf",
     "description": "Movement authority, train integrity and related signalling definitions.",
-    "scope": "Terminology, not implementation instructions."
+    "scope": "Signalling terminology, including movement authority and train integrity."
   },
   {
     "id": "S21",
@@ -553,7 +581,7 @@ export const SOURCES = [
     "publisher": "National Fire Protection Association",
     "url": "https://www.nfpa.org/product/nfpa-130-standard/p0130code",
     "description": "Public description of the rail fire-protection and life-safety standard.",
-    "scope": "Scope and further reading only; no reproduced standard clauses or compliance certification."
+    "scope": "The public scope of the rail fire-protection and life-safety standard."
   },
   {
     "id": "F02",
@@ -561,7 +589,7 @@ export const SOURCES = [
     "publisher": "Bosch / Keenfinity Group",
     "url": "https://www.keenfinity-group.com/us/en/solutions/public-address-systems/mass-notification-systems/ip-pa-system-praesensa/",
     "description": "Manufacturer overview of networked audio, amplifiers, supervision and backup power.",
-    "scope": "An example PA/VA architecture, not a universal rail product selection."
+    "scope": "An example of networked public address and voice alarm."
   },
   {
     "id": "F03",
@@ -569,7 +597,7 @@ export const SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/digital-solutions-software/infrastructure/digital-station-solutions-and-railway-communication.html",
     "description": "Station integration, passenger information and facility/power supervisory functions.",
-    "scope": "Supports integration boundaries; advertised performance figures are not adopted."
+    "scope": "Integration of station, passenger-information and supervisory functions."
   },
   {
     "id": "F04",
@@ -577,7 +605,7 @@ export const SOURCES = [
     "publisher": "Zenitel",
     "url": "https://www.zenitel.com/transportation-solutions-rail-infrastructure",
     "description": "Rail help points, audio communications and integrated operator interfaces.",
-    "scope": "Function-level examples; no real station locations or response procedures are reused."
+    "scope": "Rail help-point, audio and operator-interface functions."
   },
   {
     "id": "F05",
@@ -585,7 +613,7 @@ export const SOURCES = [
     "publisher": "Motorola Solutions",
     "url": "https://www.motorolasolutions.com/en_xu/solutions/transportation-logistics/rail-transportation.html",
     "description": "Operational radio devices, voice dispatch and communications applications.",
-    "scope": "Technology examples, without frequencies, coverage maps or radio-channel plans."
+    "scope": "Operational voice radio and dispatcher communications."
   },
   {
     "id": "F06",
@@ -593,7 +621,7 @@ export const SOURCES = [
     "publisher": "Axis Communications",
     "url": "https://newsroom.axis.com/en-us/article/video-surveillance-access-control",
     "description": "Video management, credentials, door events and unified operator interfaces.",
-    "scope": "General security functions; no actual camera coverage, access policy or retention policy."
+    "scope": "Video management, access decisions and door-event interfaces."
   },
   {
     "id": "F07",
@@ -601,7 +629,7 @@ export const SOURCES = [
     "publisher": "Siemens",
     "url": "https://sid.siemens.com/r/A6V11231620/21774530443_31188591243__en-US_25009479563?contentId=vpXFyswYRet3y4BSWA2lCg",
     "description": "Public manufacturer description of initiating devices, panels and notification interfaces.",
-    "scope": "Component roles only; operating steps and product capacity limits are omitted."
+    "scope": "Initiating devices, panel functions and notification outputs."
   },
   {
     "id": "F08",
@@ -609,7 +637,7 @@ export const SOURCES = [
     "publisher": "National Fire Protection Association",
     "url": "https://www.nfpa.org/news-blogs-and-articles/blogs/2021/06/22/the-basics-of-sprinkler-thermal-characteristics",
     "description": "Explanation of heat-responsive sprinkler characteristics.",
-    "scope": "Supports the thermal activation distinction, not a station sprinkler design."
+    "scope": "Local thermal activation of closed sprinkler heads."
   },
   {
     "id": "F09",
@@ -617,7 +645,7 @@ export const SOURCES = [
     "publisher": "Grundfos",
     "url": "https://www.grundfos.com/solutions/learn/research-and-insights/fire-pumps",
     "description": "Water supply, pump drivers and pressure-related fire-pump functions.",
-    "scope": "Functional description; no setpoints, sizing, starting or stopping instructions."
+    "scope": "Fire-water supply, pump drivers and pressure-related control."
   },
   {
     "id": "F10",
@@ -625,7 +653,7 @@ export const SOURCES = [
     "publisher": "Eaton",
     "url": "https://www.eaton.com/gb/en-gb/markets/buildings/how-we-drive-building-efficiency-and-safety/safe-evacuation/evacuate/basics-emergency-lighting-systems/testing-and-battery-options-for-emergency-lighting.html",
     "description": "Self-contained and central-battery emergency lighting arrangements.",
-    "scope": "Shows alternative architectures; durations and jurisdictional obligations are omitted."
+    "scope": "Self-contained and central-battery emergency-lighting arrangements."
   },
   {
     "id": "F11",
@@ -633,7 +661,7 @@ export const SOURCES = [
     "publisher": "FläktGroup",
     "url": "https://www.flaktgroup.com/en/solutions/tunnel-and-metro-ventilation/",
     "description": "Rail tunnel heat removal, powered ventilation and ventilation equipment.",
-    "scope": "Rail portions only; road-exhaust assumptions, fan ratings and universal sequences are excluded."
+    "scope": "Rail tunnel heat removal and powered ventilation."
   },
   {
     "id": "F12",
@@ -641,7 +669,7 @@ export const SOURCES = [
     "publisher": "TROX Group",
     "url": "https://www.trox-northamerica.com/downloads/29d5b7d83c086583/tunnel_damper.pdf",
     "description": "Manufacturer brochure covering blades, actuators and independent position indication.",
-    "scope": "Physical function only; manufacturer temperature/time ratings are not generalized."
+    "scope": "Damper frames, blades, actuation and position indication."
   },
   {
     "id": "F13",
@@ -657,7 +685,7 @@ export const SOURCES = [
     "publisher": "Trane",
     "url": "https://www.trane.com/commercial/north-america/us/en/about-us/newsroom/glossary/air-handler.html",
     "description": "AHU fans, filters, coils, dampers and building-control relationships.",
-    "scope": "Generic equipment mechanics, adapted illustratively to station rooms and passenger spaces."
+    "scope": "Air-handler component functions, applied here to station spaces."
   },
   {
     "id": "F15",
@@ -665,7 +693,7 @@ export const SOURCES = [
     "publisher": "Siemens",
     "url": "https://sid.siemens.com/r/A6V12957866/19996096395_21457181323__en-US_20031916171",
     "description": "Building controllers, I/O, alarming, trends and multiple automation-network interfaces.",
-    "scope": "An example implementation; no universal protocol, controller count or network topology."
+    "scope": "An example of distributed building-control functions and interfaces."
   },
   {
     "id": "F16",
@@ -673,7 +701,7 @@ export const SOURCES = [
     "publisher": "Belimo",
     "url": "https://www.belimo.com/us/en_US/products/sensors/",
     "description": "Room, duct and pipe measurements used by building automation.",
-    "scope": "Explains measured quantities; no calibration values or control thresholds."
+    "scope": "Temperature, humidity, pressure, air-quality and flow measurements."
   },
   {
     "id": "F17",
@@ -681,7 +709,7 @@ export const SOURCES = [
     "publisher": "Siemens Mobility",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/rail-infrastructure/electrification/network-control-for-rail-electrification.html",
     "description": "Traction network supervision and local substation control/protection interfaces.",
-    "scope": "Separates supervisory presentation from local equipment functions; no operating commands."
+    "scope": "Traction-supply supervision and local control and protection."
   },
   {
     "id": "F18",
@@ -689,7 +717,7 @@ export const SOURCES = [
     "publisher": "Schneider Electric, Electrical Installation Guide",
     "url": "https://www.electrical-installation.org/enwiki/Functions_of_a_substation_with_LV_metering",
     "description": "MV/LV transformers, main distribution switchboards and essential-load supply alternatives.",
-    "scope": "General building supply principles; no adopted voltage, protection coordination or real station topology."
+    "scope": "Building supply through transformers, switchboards and essential-load circuits."
   },
   {
     "id": "F19",
@@ -697,7 +725,7 @@ export const SOURCES = [
     "publisher": "ABB",
     "url": "https://new.abb.com/ups/ups-and-power-conditioning/industries/railway/administrative-buildings-and-stations",
     "description": "Backup power for station controllers, interfaces and other sensitive electronics.",
-    "scope": "Does not imply that every station load, fan or traction circuit is UPS-backed."
+    "scope": "Backup power for selected station electronics."
   },
   {
     "id": "F20",
@@ -705,7 +733,7 @@ export const SOURCES = [
     "publisher": "Moxa",
     "url": "https://www.moxa.com/en/spotlight/integrated-solutions/rail/railway-ethernet/index",
     "description": "Rail Ethernet, fiber connectivity, radio backhaul and managed networks.",
-    "scope": "Generic network roles; no commercial latency claims, addresses or actual network configuration."
+    "scope": "Ethernet, fibre and radio-backhaul roles in railway networks."
   }
 ];
 
@@ -715,8 +743,8 @@ export const CONCEPTS = [
     "label": "Incoming AC supply",
     "summary": "Energy enters the substation.",
     "details": [
-      "Upstream supply feeds AC switchgear.",
-      "The diagram shows one incoming connection."
+      "The incoming alternating-current (AC) supply carries energy from the electricity network to the substation.",
+      "AC switchgear connects this supply to the traction transformer. The diagram shows one incoming connection."
     ],
     "sources": [
       "P01"
@@ -727,8 +755,8 @@ export const CONCEPTS = [
     "label": "AC switchgear",
     "summary": "Distributes incoming AC.",
     "details": [
-      "Switchgear connects supply to conversion equipment.",
-      "Protection supervises the electrical supply."
+      "Busbars and switching devices connect the incoming AC supply to the transformer.",
+      "Protection monitors electrical conditions and can initiate opening of a circuit breaker when a fault is detected."
     ],
     "sources": [
       "P01"
@@ -763,8 +791,8 @@ export const CONCEPTS = [
     "label": "DC switchgear",
     "summary": "Distributes the DC output.",
     "details": [
-      "Feeder circuits supply track sections.",
-      "Protection separates abnormal circuits."
+      "The rectifier supplies DC busbars, which distribute current through feeder circuits to track sections.",
+      "Circuit breakers protect the outgoing feeders and can disconnect a faulted circuit."
     ],
     "sources": [
       "P01"
@@ -775,11 +803,12 @@ export const CONCEPTS = [
     "label": "DC circuit breaker",
     "summary": "Interrupts a protected circuit.",
     "details": [
-      "Fault detection initiates interruption.",
-      "Trip thresholds are deliberately unspecified."
+      "A protection device detects an abnormal electrical condition and initiates opening of the circuit breaker.",
+      "The breaker separates its contacts and extinguishes the arc to interrupt current. Direct current has no regular current-zero crossing, so a DC breaker needs an interruption design suited to that duty."
     ],
     "sources": [
-      "P01"
+      "P01",
+      "EL06"
     ]
   },
   {
@@ -793,7 +822,7 @@ export const CONCEPTS = [
     "sources": [
       "P12"
     ],
-    "caveat": "The model selects a wayside resistor as one possible receptivity arrangement, not a universal installation."
+    "caveat": "This example uses a trackside resistor; other railways use onboard resistors, energy storage or reversible substations."
   },
   {
     "id": "grounding",
@@ -812,22 +841,23 @@ export const CONCEPTS = [
     "label": "Facility supply",
     "summary": "Supports the substation building.",
     "details": [
-      "Shown separately from traction conversion.",
-      "Lighting and service loads are illustrative."
+      "A separate auxiliary supply powers substation services such as lighting and control equipment.",
+      "This branch serves the building and its equipment; the traction branch supplies the trains."
     ],
-    "sources": [],
-    "caveat": "A conceptual model element; no actual facility arrangement or supply rating is asserted."
+    "sources": [
+      "F18"
+    ]
   },
   {
     "id": "disconnect",
     "label": "Section isolation",
     "summary": "Marks an isolation boundary.",
     "details": [
-      "Separate it visually from fault interruption.",
-      "The scene does not prescribe switching procedures."
+      "A disconnector establishes an isolation gap in a circuit. This is a different function from interrupting fault current.",
+      "Some equipment combines isolation with load switching; the device type determines which currents it can interrupt."
     ],
     "sources": [],
-    "caveat": "Schematic function only. A real disconnector’s load-breaking capability and interlocks require its design documentation."
+    "caveat": "The schematic marks the isolation function without selecting a particular switching device."
   },
   {
     "id": "positive-rail",
@@ -840,7 +870,7 @@ export const CONCEPTS = [
     "sources": [
       "P11"
     ],
-    "caveat": "Conductor arrangements vary across railways; this is not a universal third-rail layout."
+    "caveat": "The selected four-rail arrangement has separate supply and return conductors. Third-rail systems commonly use the running rails for traction return."
   },
   {
     "id": "negative-rail",
@@ -850,8 +880,10 @@ export const CONCEPTS = [
       "Follow the return from onboard equipment back toward the substation. The return conductor is drawn separately from the wheel-supporting rails.",
       "A return path is part of the circuit. The word “negative” does not mean the conductor is safe to touch."
     ],
-    "sources": ["EL02", "EL07"],
-    "caveat": "This dedicated-return topology is a deliberate teaching choice, not a claim that all DC railways use it."
+    "sources": [
+      "EL02",
+      "EL07"
+    ]
   },
   {
     "id": "running-rail",
@@ -865,7 +897,7 @@ export const CONCEPTS = [
     "sources": [
       "K11"
     ],
-    "caveat": "The stylized section, rail spacing and wheel profile are explanatory geometry, not a selected rail standard or a contact-stress calculation.",
+    "caveat": "The section and wheel profiles are simplified; actual rail profiles are selected for the track and vehicles.",
     "related": [
       "bogie",
       "track-rail-pad",
@@ -904,8 +936,8 @@ export const CONCEPTS = [
     "label": "Carbody and equipment zones",
     "summary": "Houses people and the vehicle systems.",
     "details": [
-      "The cutaway separates the passenger volume, underframe equipment and roof-mounted services. These positions are illustrative.",
-      "The vehicle body and bogies form a coupled mechanical system; clearances and mounting arrangements are deliberately not presented as production drawings."
+      "The body carries the passenger compartment and provides mounting space for vehicle equipment. The cutaway shows the passenger space, underframe equipment and roof services.",
+      "Suspension between the body and bogies carries the vehicle load while allowing relative movement as the train follows the track."
     ],
     "sources": [
       "P10"
@@ -935,7 +967,7 @@ export const CONCEPTS = [
     "sources": [
       "P04"
     ],
-    "caveat": "“PCU” is a broad propulsion-control label, not a promise of identical hardware or naming across manufacturers."
+    "caveat": "Propulsion control unit (PCU) is a broader equipment label; the functions grouped inside it vary by manufacturer."
   },
   {
     "id": "lim-primary",
@@ -955,13 +987,13 @@ export const CONCEPTS = [
     "label": "Travelling field, slip and air gap",
     "summary": "Relative motion makes induction possible.",
     "details": [
-      "The travelling field and secondary move relative to one another. In an idealized induction model, that relative speed sets the induced-current frequency; synchronous motion gives zero slip.",
-      "The air gap participates in the magnetic circuit. Changing gap or relative motion changes the interaction, but this visual model does not calculate a real motor’s force or efficiency."
+      "Slip is the relative speed between the travelling magnetic field and the secondary. That relative motion induces current in the secondary. At synchronous speed, the ideal induction model has zero slip.",
+      "Changing the field speed changes the direction and size of the interaction. Motoring and regenerative braking use different slip conditions. The air gap also affects magnetic coupling."
     ],
     "sources": [
       "P03"
     ],
-    "caveat": "Finite-length effects, saturation and thermal limits require a more complete machine model; no quantitative performance is inferred."
+    "caveat": "The animation illustrates magnetic interaction. A force calculation also needs motor geometry, material properties and operating conditions."
   },
   {
     "id": "apu",
@@ -980,13 +1012,13 @@ export const CONCEPTS = [
     "label": "Auxiliary battery and charger",
     "summary": "Stores energy for selected low-voltage functions.",
     "details": [
-      "The charger and battery form a distinct branch of the illustrative auxiliary supply. This battery is not depicted as the train’s main propulsion energy source.",
-      "The loads retained after loss of line supply depend on the vehicle design. No emergency operating duration, capacity or guaranteed HVAC backup is claimed."
+      "The charger replenishes a battery that supplies selected low-voltage equipment, such as controls and emergency lighting. It is separate from the traction motor’s power path.",
+      "Which loads remain available after line power is lost, and for how long, depends on the vehicle’s battery capacity and distribution circuits."
     ],
     "sources": [
       "P05"
     ],
-    "caveat": "Battery-backed loads are a teaching example; the public auxiliary-converter source establishes optional charging, not a particular emergency power architecture."
+    "caveat": "The illustration shows an auxiliary battery branch; its connected loads depend on the vehicle design."
   },
   {
     "id": "brakes",
@@ -1006,8 +1038,8 @@ export const CONCEPTS = [
     "label": "Parking brake",
     "summary": "Holds a stationary vehicle.",
     "details": [
-      "Parking is a distinct function from continuous electrical braking. A spring-applied brake is one available implementation.",
-      "The model shows a generic parking function without specifying release pressure, gradients, holding force or operating procedures."
+      "A parking brake holds a vehicle after it has stopped. Regenerative braking depends on motion and cannot provide this stationary holding function.",
+      "A spring-applied design uses stored spring force to apply the brake; another source of force releases it."
     ],
     "sources": [
       "P06"
@@ -1043,8 +1075,8 @@ export const CONCEPTS = [
     "label": "Passenger doors and access systems",
     "summary": "Manage the interface between vehicle and platform.",
     "details": [
-      "Door drives open and close the entrances. Obstacle detection and optional access aids, such as steps or gap bridges, support passenger access.",
-      "The model places doors in the carbody and keeps their control function distinct from their mechanical motion. Exact locking, proving and departure logic is not reconstructed from a fleet."
+      "Door drives move the entrances between open and closed positions. Obstacle detection helps identify objects in the doorway; steps or gap bridges can assist boarding.",
+      "Position sensing, locking and departure interlocks connect door condition to the train’s readiness to leave. These functions are separate from the motor that moves the door."
     ],
     "sources": [
       "P09"
@@ -1062,7 +1094,9 @@ export const CONCEPTS = [
       "P12",
       "P06"
     ],
-    "related": ["brakes"],
+    "related": [
+      "brakes"
+    ],
     "caveat": "The selected diode rectifier cannot send energy backward into the AC utility. Grid regeneration needs suitable reversible equipment."
   },
   {
@@ -1070,8 +1104,8 @@ export const CONCEPTS = [
     "label": "Substation monitoring and control",
     "summary": "Connects electrical equipment to supervision.",
     "details": [
-      "Measurements and equipment states support network supervision.",
-      "SCADA provides an operator-facing view of the traction supply."
+      "Measurements such as voltage and current, together with breaker positions and alarms, show the condition of the traction supply.",
+      "Supervisory control and data acquisition (SCADA) brings this information to operators and carries authorized control requests back to substation equipment. Local protection responds to electrical faults."
     ],
     "sources": [
       "P01"
@@ -1079,14 +1113,14 @@ export const CONCEPTS = [
   },
   {
     "id": "control-battery",
-    "label": "Illustrative substation control battery",
-    "summary": "A separate stored-energy branch for the model.",
+    "label": "Substation control battery",
+    "summary": "Supplies selected control equipment when its normal supply is lost.",
     "details": [
-      "This model includes a substation auxiliary battery to distinguish control power from traction power.",
-      "Its actual loads, charger arrangement, capacity and endurance are deliberately unspecified."
+      "A charger maintains the battery during normal operation. The battery provides a separate source for designated control and signalling circuits.",
+      "The supported circuits and available operating time depend on the substation design."
     ],
     "sources": [],
-    "caveat": "A conceptual teaching choice. No particular substation auxiliary-power architecture is specified."
+    "caveat": "This illustrative branch distinguishes stored control energy from the traction supply."
   },
   {
     "id": "atp",
@@ -1094,7 +1128,7 @@ export const CONCEPTS = [
     "summary": "Supervises movement limits and can demand braking.",
     "details": [
       "ATP checks whether train movement remains inside its permitted envelope. ETCS provides one public example: onboard supervision compares position and speed with applicable limits, predicts the approach to a target, and can command brake intervention.",
-      "The protection computer issues a command; the vehicle braking equipment produces the physical force. In the teaching model, increasing an ATO driving request cannot raise the protection limit."
+      "The protection computer issues a braking command; the vehicle braking equipment produces the physical force. An ATO driving request remains within the limits supervised by ATP."
     ],
     "sources": [
       "S07"
@@ -1151,7 +1185,7 @@ export const CONCEPTS = [
     "summary": "Connects train information, protection and driving functions.",
     "details": [
       "An onboard control function reports train position and receives information governing movement. Mitsubishi Electric describes an arrangement exchanging these messages with a wayside zone controller, enabling automatic driving within the applicable speed restriction.",
-      "Our cabinet view separates localization, protection and driving responsibilities. Lines to the traction and brake systems represent commands and feedback, not the high-power path that supplies a motor."
+      "Localization estimates where the train is, protection supervises its movement limits, and driving control requests traction or braking. The lines between these functions carry commands and feedback; motor power follows a separate electrical path."
     ],
     "sources": [
       "S06"
@@ -1172,7 +1206,7 @@ export const CONCEPTS = [
     "summary": "Coordinates vehicle equipment and reports its condition.",
     "details": [
       "A TCMS connects commands, status and diagnostics across subsystems such as traction, braking, doors, lighting and HVAC.",
-      "Follow a driving request to the propulsion controller, then follow the status response back. This is a vehicle-management role; the diagram gives movement permission its own clearly labelled function."
+      "A driving request travels to the propulsion controller, and equipment status returns to the TCMS. Vehicle management and movement permission have different responsibilities, even when their computers are integrated."
     ],
     "sources": [
       "T04"
@@ -1218,7 +1252,7 @@ export const CONCEPTS = [
     "summary": "Carry information between a moving train and fixed systems.",
     "details": [
       "Wayside radios connect trains to the fixed network and its control equipment.",
-      "An antenna or network switch carries messages; the control function interprets permission. Highlight transport and decision-making separately."
+      "Antennas and network switches transport messages. The train-control equipment uses the information in those messages to supervise movement."
     ],
     "sources": [
       "T05"
@@ -1310,7 +1344,7 @@ export const CONCEPTS = [
     "summary": "Turns service information into useful passenger guidance.",
     "details": [
       "Displays can show the next station, route, connections and service changes. Content may update from vehicle location and operational information.",
-      "Trace a station announcement to the display and speaker. Passenger-facing information is distinct from the train-control message that governs movement."
+      "Passenger displays and speakers communicate journey information. Train-control messages carry the separate information used to govern movement."
     ],
     "sources": [
       "T10"
@@ -1381,7 +1415,7 @@ export const CONCEPTS = [
     "sources": [
       "K01"
     ],
-    "caveat": "Layer depths, sleeper spacing and ballast shoulders are illustrative. This comparison does not select a track design for a particular railway.",
+    "caveat": "Layer depths, sleeper spacing and ballast shoulders vary with the track design.",
     "related": [
       "track-ballast",
       "track-subballast",
@@ -1403,7 +1437,7 @@ export const CONCEPTS = [
     "sources": [
       "K03"
     ],
-    "caveat": "Particle size, fouling level and water animation are qualitative; the scene does not predict drainage capacity or track settlement.",
+    "caveat": "The animation compares water paths and particle contacts; it does not calculate drainage capacity.",
     "related": [
       "track-ballasted",
       "track-sleeper",
@@ -1422,7 +1456,7 @@ export const CONCEPTS = [
     "sources": [
       "K02"
     ],
-    "caveat": "Materials and drainage arrangements vary; the historical reference is not a current design specification.",
+    "caveat": "Materials and drainage arrangements vary with ground conditions and track design.",
     "related": [
       "track-ballast",
       "track-formation",
@@ -1440,7 +1474,7 @@ export const CONCEPTS = [
     "sources": [
       "K02"
     ],
-    "caveat": "Terminology varies. Deformation is illustrative, without a soil or settlement calculation.",
+    "caveat": "Here, formation means the prepared upper foundation surface; terminology varies between railways.",
     "related": [
       "track-subballast",
       "track-ballasted",
@@ -1459,7 +1493,7 @@ export const CONCEPTS = [
     "sources": [
       "K04"
     ],
-    "caveat": "Concrete is one sleeper material, not a universal choice. The model does not reproduce prestressing details or a structural reinforcement design.",
+    "caveat": "The example uses concrete sleepers. Timber, steel and composite sleepers are also used.",
     "related": [
       "running-rail",
       "track-rail-pad",
@@ -1480,7 +1514,7 @@ export const CONCEPTS = [
     "sources": [
       "K06"
     ],
-    "caveat": "No pad stiffness, damping coefficient or predicted noise reduction is assigned. The animation is qualitative.",
+    "caveat": "Pad stiffness and damping are different properties, both relevant to the track’s response.",
     "related": [
       "running-rail",
       "track-sleeper",
@@ -1495,12 +1529,12 @@ export const CONCEPTS = [
     "details": [
       "An elastic rail fastening combines a spring clip with anchorage and contact components. The clip's elastic deflection produces a retaining force on the rail foot.",
       "In the selected example, a shoulder anchors the clip, an insulator separates a contact interface, and a pad supports the rail. These components cooperate to restrain the rail while permitting the fastening's intended elastic movement.",
-      "The clip is therefore more than a decorative curved bracket. Its shape and constrained contact points make it a spring, while the shoulder gives that spring a mechanical reaction point."
+      "The clip acts as a spring: its deflection presses the rail into its seat, while the shoulder transfers the reaction into the sleeper or baseplate."
     ],
     "sources": [
       "K05"
     ],
-    "caveat": "Clip shapes, anchors and assembly arrangements differ. This is a functional model, without tightening, insertion or inspection instructions.",
+    "caveat": "Fastening families use different clip shapes, anchors and contact components.",
     "related": [
       "track-rail-pad",
       "track-insulator",
@@ -1538,7 +1572,7 @@ export const CONCEPTS = [
     "sources": [
       "K07"
     ],
-    "caveat": "Plate count, resilience and attachment vary; this stack is illustrative.",
+    "caveat": "Some fastenings add resilience below the plate as well as directly under the rail.",
     "related": [
       "track-rail-pad",
       "track-rail-clip",
@@ -1559,7 +1593,6 @@ export const CONCEPTS = [
     "sources": [
       "K08"
     ],
-    "caveat": "Anchor layout, embedment and layer thickness are schematic. The scene is not a fastening selection or an anchorage design.",
     "related": [
       "track-baseplate",
       "track-rail-pad",
@@ -1580,7 +1613,6 @@ export const CONCEPTS = [
     "sources": [
       "K09"
     ],
-    "caveat": "Slab reinforcement, joints, foundations and durability provisions require project-specific design. No maintenance-free claim is made.",
     "related": [
       "track-direct-fixation",
       "track-plinth",
@@ -1601,7 +1633,6 @@ export const CONCEPTS = [
     "sources": [
       "K20"
     ],
-    "caveat": "Plinth form and attachment depend on the structure and track design. No tolerances, repair method or construction sequence is provided.",
     "related": [
       "track-direct-fixation",
       "track-baseplate",
@@ -1620,7 +1651,7 @@ export const CONCEPTS = [
     "sources": [
       "K10"
     ],
-    "caveat": "The street scene is a support-system comparison, not an exposed conductor-rail or LIM street-running design.",
+    "caveat": "The street view illustrates rail support; it does not place exposed traction conductors in a street.",
     "related": [
       "running-rail",
       "track-ballasted",
@@ -1639,7 +1670,6 @@ export const CONCEPTS = [
     "sources": [
       "K12"
     ],
-    "caveat": "Geometry is illustrative; no permitted speed or route authorization is implied.",
     "related": [
       "track-stock-rail",
       "track-switch-rail",
@@ -1655,12 +1685,11 @@ export const CONCEPTS = [
     "summary": "The fixed rail provides the mating surface beside a movable switch rail.",
     "details": [
       "At a switch, the stock rail and the tapered switch rail have coordinated contact geometry. Their relationship guides the wheel through the transition into the selected path.",
-      "In this model the stock rail stays fixed. A closing blade approaches its mating face, making the distinction between the stationary rail and the moving route-selection component explicit."
+      "The stock rail stays fixed while the closing switch blade approaches its mating face. Together they form the running edge for the selected route."
     ],
     "sources": [
       "K13"
     ],
-    "caveat": "Simplified mating profiles are not a manufacturer's geometry or machining drawing.",
     "related": [
       "track-switch-rail",
       "track-turnout",
@@ -1678,7 +1707,7 @@ export const CONCEPTS = [
     "sources": [
       "K13"
     ],
-    "caveat": "Flexible blades are one example; actual movement and locking architectures differ.",
+    "caveat": "This example uses flexible switch blades; hinged designs also exist.",
     "related": [
       "track-stock-rail",
       "track-stretcher",
@@ -1693,12 +1722,11 @@ export const CONCEPTS = [
     "summary": "Connecting rails carry the running paths from the switch region toward the crossing.",
     "details": [
       "Closure rails join the switch and frog within the turnout. They complete the connecting geometry between the route-selection region and the crossing.",
-      "In the model these rails remain fixed while the blades move. Their curvature and alignment make the selected wheel path continuous; they are not additional switch blades simply because they lie inside the turnout."
+      "These rails remain fixed while the switch blades move. Their curvature and alignment connect the selected path to the crossing."
     ],
     "sources": [
       "K12"
     ],
-    "caveat": "Joins and curvature are schematic, without fabrication dimensions.",
     "related": [
       "track-turnout",
       "track-switch-rail",
@@ -1718,7 +1746,7 @@ export const CONCEPTS = [
     "sources": [
       "K14"
     ],
-    "caveat": "Flangeway dimensions and wheel-contact transitions are schematic. The scene does not calculate impact loads or wear.",
+    "caveat": "This example uses a fixed, tread-bearing crossing. Movable-nose and flange-bearing crossings work differently.",
     "related": [
       "track-check-rail",
       "track-closure-rail",
@@ -1759,7 +1787,6 @@ export const CONCEPTS = [
     "sources": [
       "K16"
     ],
-    "caveat": "Bar count, attachment positions and joint construction are illustrative; the cited glossary supplies terminology rather than a design to reproduce.",
     "related": [
       "track-switch-rail",
       "track-point-machine",
@@ -1775,8 +1802,14 @@ export const CONCEPTS = [
       "Point systems combine a drive with a locking arrangement; detection may be integrated or separate. Movement, retention and position reporting remain distinct functions.",
       "The four-rod study gives each blade its own operating rod and detector rod. Two illustrated positive locks secure the operating slides. The exposed drive and lock layout is functional, rather than a reproduction of a supplier’s internal mechanism."
     ],
-    "sources": ["PM01","PM02","PM03","PM04","K17"],
-    "caveat": "The cutaway is original illustrative geometry, without operating instructions.",
+    "sources": [
+      "PM01",
+      "PM02",
+      "PM03",
+      "PM04",
+      "K17"
+    ],
+    "caveat": "The cutaway combines published functions in a simplified four-rod arrangement.",
     "related": [
       "track-switch-rail",
       "track-stretcher",
@@ -1792,8 +1825,13 @@ export const CONCEPTS = [
       "Detector rods follow the switch blades independently of the operating rods. The four-rod study checks the closed blade, the open blade and the locks before returning an end indication.",
       "The teaching model separates a requested route from confirmed position. A command or a stopped motor alone is not treated as proof that the blades and locking arrangement have reached the required state."
     ],
-    "sources": ["PM01","PM02","PM03","PM04","K17"],
-    "caveat": "This functional explanation supplies no signalling circuit, bypass or recovery sequence.",
+    "sources": [
+      "PM01",
+      "PM02",
+      "PM03",
+      "PM04",
+      "K17"
+    ],
     "related": [
       "track-point-machine",
       "track-switch-rail",
@@ -1814,7 +1852,6 @@ export const CONCEPTS = [
     "sources": [
       "K18"
     ],
-    "caveat": "The layout is schematic. It does not state a railway's permitted direction of travel, operating rules or signalling authorization.",
     "related": [
       "track-turnout",
       "track-diamond-crossing",
@@ -1833,7 +1870,6 @@ export const CONCEPTS = [
     "sources": [
       "K19"
     ],
-    "caveat": "The example is not a turnout, a road level crossing or a universal diamond design. No crossing angle or load capacity is specified.",
     "related": [
       "track-frog",
       "track-check-rail",
@@ -1847,7 +1883,7 @@ export const CONCEPTS = [
     "summary": "Uses frequent train information to support movement control.",
     "details": [
       "A contemporary radio CBTC arrangement combines onboard localization, train-to-wayside communication and control functions that supervise movements. The useful information is the train state and movement permission carried by the messages; the radio link is the transport mechanism.",
-      "CBTC is a family of architectures. Alstom explicitly describes moving-block and optimized fixed-block approaches, different automation grades and newer train-centric allocations. This site uses a wayside-controller example to make the responsibilities visible, then lets you compare alternatives without implying that every installation uses the same boxes."
+      "CBTC includes moving-block and fixed-block approaches, different automation grades and different allocations of control functions. This example places some control functions beside the track; train-centric systems allocate more of them to onboard equipment."
     ],
     "sources": [
       "S05"
@@ -1873,7 +1909,6 @@ export const CONCEPTS = [
     "sources": [
       "S20"
     ],
-    "caveat": "The ribbon is conceptual and does not reproduce a protocol or certified calculation.",
     "related": [
       "atp",
       "interlocking",
@@ -1908,12 +1943,11 @@ export const CONCEPTS = [
     "summary": "Moves switch blades and reports the resulting condition.",
     "details": [
       "A point operating system changes the route through a turnout. Its drive moves the switch blades, locking equipment restrains the required position, and detection checks the resulting blade or lock condition. Siemens publishes arrangements with separate locks, detector rods and end-position detectors.",
-      "These functions may occupy different housings or be combined. An animation of a moving rod only demonstrates actuation. The route model should wait for a separate proved indication before showing the switch as available for a train movement."
+      "The drive, lock and detector may occupy different housings or share one enclosure. The signalling system needs the required position and lock indication before treating the switch as available for the route."
     ],
     "sources": [
       "S11"
     ],
-    "caveat": "The geometry is a generic teaching arrangement, not an installation or adjustment guide.",
     "related": [
       "interlocking",
       "train-detection",
@@ -1971,7 +2005,6 @@ export const CONCEPTS = [
     "sources": [
       "S14"
     ],
-    "caveat": "Counts in the demonstration are invented for teaching and are not recovery instructions.",
     "related": [
       "train-detection",
       "track-circuit",
@@ -2009,7 +2042,7 @@ export const CONCEPTS = [
     "sources": [
       "S12"
     ],
-    "caveat": "The comparison omits operating exceptions and must not be used to determine headway.",
+    "caveat": "Actual headway also depends on speed, braking, train length, signalling and station dwell times.",
     "related": [
       "train-detection",
       "track-circuit",
@@ -2029,7 +2062,6 @@ export const CONCEPTS = [
     "sources": [
       "S12"
     ],
-    "caveat": "This is a conceptual comparison, not a capacity or certified-separation calculation.",
     "related": [
       "fixed-block",
       "movement-authority",
@@ -2044,7 +2076,7 @@ export const CONCEPTS = [
     "summary": "Combines measured motion with known position references.",
     "details": [
       "Odometry estimates speed and distance from motion sensors. Deutsche Bahn identifies pulse generators, radar and accelerometers as established examples; independent measurements can be combined. A known passing reference such as a balise supplies a different kind of information from the motion measured between references.",
-      "Our experiment labels the true distance as a known example reference and deliberately biases a synthetic wheel measurement. A second sensor and a reference update help explain why information is combined. They do not make every estimate exact or establish the performance of a real train. Newer localization research also investigates landmark and satellite measurements."
+      "In the experiment, the actual travel distance is known and the wheel-based measurement contains an introduced error. Compare that estimate with a second sensor and a known reference point. Combining independent measurements helps limit drift, although the position estimate still has uncertainty."
     ],
     "sources": [
       "S19"
@@ -2064,12 +2096,12 @@ export const CONCEPTS = [
     "summary": "Predicts the speed reduction needed before a target.",
     "details": [
       "A braking curve relates allowable or predicted speed to the distance remaining toward a target. ERA explains that ETCS builds its prediction from train braking dynamics and the track ahead, then uses that prediction in onboard supervision.",
-      "A toy slider can show why a poorer assumed deceleration needs more space. The resulting curve is an explanatory calculation only; certified braking models include detailed inputs and supervision rules that this site does not reproduce."
+      "For the same starting speed, lower available deceleration requires more stopping distance. The slider illustrates this relationship; ETCS supervision also uses train data, gradients and safety margins."
     ],
     "sources": [
       "S07"
     ],
-    "caveat": "A service-braking animation is not evidence of an emergency-stop guarantee.",
+    "caveat": "The displayed curve explains the relationship between speed and distance; it is not an ETCS braking calculation.",
     "related": [
       "atp",
       "movement-authority",
@@ -2163,12 +2195,11 @@ export const CONCEPTS = [
     "summary": "Processes movement data, supervises the train and informs the driver.",
     "details": [
       "The European Vital Computer applies the onboard protection logic using received information and train inputs such as odometry. Interfaces connect the protection function to relevant vehicle systems. A driver-machine interface presents indications and supports driver interaction.",
-      "These roles should remain visually distinct: the display is not the entire protection computer, and the computer is not the physical brake. The cutaway links reader, radio and motion inputs to the EVC, then separates its driver display from its train-control interface."
+      "The reader, radio and motion sensors feed information to the protection computer. Its display informs the driver, while its vehicle interface can request braking. The display, computer and brake equipment each have a separate job."
     ],
     "sources": [
       "S17"
     ],
-    "caveat": "The diagram explains functions without reproducing a certified cab display or wiring arrangement.",
     "related": [
       "rbc",
       "balise",
@@ -2206,7 +2237,6 @@ export const CONCEPTS = [
     "sources": [
       "S18"
     ],
-    "caveat": "This educational view makes no claim about a particular network’s rollout schedule.",
     "related": [
       "train-radio",
       "rbc",
@@ -2220,7 +2250,7 @@ export const CONCEPTS = [
     "summary": "A supplier example with several generations and communication arrangements.",
     "details": [
       "SelTrac belongs to Hitachi Rail’s urban signalling portfolio. Hitachi completed its acquisition of Thales’ Ground Transportation Systems business on 31 May 2024; older documents therefore carry a different supplier name.",
-      "Treat the family as a case study, with separately labelled historical and contemporary examples. The comparison does not assign one cabinet arrangement, radio bearer or propulsion system to every SelTrac deployment."
+      "The historical loop-based and contemporary radio examples use different communication arrangements. The SelTrac name identifies a product family, while the generation and project determine the equipment and interfaces."
     ],
     "sources": [
       "S01"
@@ -2260,12 +2290,12 @@ export const CONCEPTS = [
     "summary": "Changes where selected control functions are hosted.",
     "details": [
       "Hitachi’s InnoTrans 2026 publication describes SelTrac G9 with safety-critical functions hosted on a secure private cloud rather than dedicated wayside hardware. It also identifies integration with ATS Next and Green CBTC.",
-      "For teaching, the useful change is the hosting boundary: logical control responsibilities can be shown separately from the cabinet or computing platform containing them. The publication’s AI-enabled supervision and energy features should not be turned into a claim that an AI model grants movement authority. Nor does the announcement establish that existing SelTrac lines use G9."
+      "Virtualization separates a software function from the dedicated computer that previously hosted it. The publication describes the G9 product architecture; an individual line’s equipment depends on its selected generation and implementation."
     ],
     "sources": [
       "S04"
     ],
-    "caveat": "A product publication is not a complete architecture specification or deployment inventory.",
+    "caveat": "This is a published product example, rather than a description of every SelTrac installation.",
     "related": [
       "seltrac",
       "cbtc",
@@ -2332,7 +2362,7 @@ export const CONCEPTS = [
     "summary": "Cameras provide video; management software organizes live views and recordings.",
     "details": [
       "A camera is an endpoint within a video system. Video management software brings device views and recordings into an operator interface and may associate them with other security events.",
-      "Linking a door event to a relevant camera view can help an operator understand the event. The image itself does not prove a door is locked, and a video server is not the access controller. The model should preserve those separate roles."
+      "Linking a door event to a relevant camera view helps an operator investigate it. The access controller still receives the door contacts and controls the lock; a video image provides a separate source of information."
     ],
     "sources": [
       "F06"
@@ -2349,12 +2379,12 @@ export const CONCEPTS = [
     "summary": "Credentials, door-state inputs and locking hardware support controlled access.",
     "details": [
       "Access management uses credentials and configured permissions to decide who may enter a controlled area. Door controllers connect the software decision to field equipment and return door-related status.",
-      "In the teaching model, a reader, door contact and lock are separate objects: identity request, observed position and physical restraint are different information. Their connection to a shared security interface does not erase the distinction between access policy and life-safety arrangements."
+      "The reader checks a credential, the door contact reports position, and the lock provides physical restraint. Access permissions and emergency egress arrangements must work together."
     ],
     "sources": [
       "F06"
     ],
-    "caveat": "Do not prescribe a universal lock-release rule or imply that controlled access can prevent required egress.",
+    "caveat": "Emergency release and exit arrangements depend on the door’s role and the station design.",
     "related": [
       "station-cctv",
       "flss",
@@ -2372,7 +2402,6 @@ export const CONCEPTS = [
     "sources": [
       "F01"
     ],
-    "caveat": "This educational grouping is not a code-compliant station design or a declaration of control authority.",
     "related": [
       "fire-panel",
       "fire-notification",
@@ -2406,7 +2435,7 @@ export const CONCEPTS = [
     "summary": "Smoke, heat, manual and waterflow inputs report different kinds of evidence.",
     "details": [
       "Detection devices and other initiating inputs supply information to a fire alarm system. A reported smoke or heat condition, a manual input and a waterflow indication describe different events.",
-      "An address or zone helps locate the report. The device is a measurement or initiating point; it does not by itself constitute the full station response. Its message should be visually distinct from an equipment command."
+      "An address or zone helps locate the report. The fire panel uses that input in its configured response; a detector report and an equipment command are different signals."
     ],
     "sources": [
       "F07"
@@ -2441,7 +2470,7 @@ export const CONCEPTS = [
     "summary": "A conventional sprinkler head responds locally to heat.",
     "details": [
       "A closed, heat-responsive sprinkler contains a thermal element that releases when its designed thermal conditions are reached. Heat response and water-distribution characteristics are part of selecting the sprinkler for its application.",
-      "This is different from a smoke detector sending an electronic alarm message. The illustrated piping supplies water to individual heads; it should not show every head opening simply because a detector reports smoke. Other suppression arrangements exist and are outside this simplified example."
+      "In a conventional wet-pipe system, each closed sprinkler opens when heat activates its own thermal element, allowing pressurized water to discharge. A smoke detector reporting an alarm does not open every sprinkler. Deluge and pre-action systems use different arrangements."
     ],
     "sources": [
       "F08"
@@ -2463,7 +2492,6 @@ export const CONCEPTS = [
     "sources": [
       "F09"
     ],
-    "caveat": "No water-storage volume, pressure setpoint, pump sequence or operating instruction is specified.",
     "related": [
       "sprinkler-system",
       "fire-panel",
@@ -2475,8 +2503,8 @@ export const CONCEPTS = [
     "label": "Emergency lighting and illuminated wayfinding",
     "summary": "Lighting can retain a designated supply when normal lighting power is unavailable.",
     "details": [
-      "A self-contained emergency luminaire has its own battery and charging arrangement. A central-battery system supplies remote luminaires from a separate battery installation. Both are real architectures, so the model should identify which example is being shown.",
-      "The illuminated fitting is only the visible endpoint of its supply and monitoring arrangement. Its purpose and circuit classification differ from ordinary decorative lighting; a generic electronics UPS should not automatically be portrayed as the approved source for every emergency luminaire."
+      "A self-contained emergency luminaire has its own battery and charger. A central-battery system instead supplies remote luminaires from a separate battery installation.",
+      "The light fitting is the visible endpoint of its power and monitoring circuit. Emergency lighting has its own supply requirements; backing up a station computer does not also back up the lights."
     ],
     "sources": [
       "F10"
@@ -2493,7 +2521,7 @@ export const CONCEPTS = [
     "summary": "A help point creates a two-way conversation with an appropriate operator.",
     "details": [
       "A passenger help point combines a call interface, microphone and loudspeaker; some implementations add video. Its communications service connects the caller to an operator rather than merely broadcasting an announcement.",
-      "Noisy transport spaces make intelligibility important. Audio processing, suitable transducers and operator integration contribute different parts of the conversation. The model can trace the request and the returning audio separately without implying that a call automatically controls train movement or ventilation."
+      "Audio processing, microphones, speakers and operator connections help speech remain understandable in noisy spaces. The request travels to staff, and their response returns over the audio path."
     ],
     "sources": [
       "F04"
@@ -2511,12 +2539,12 @@ export const CONCEPTS = [
     "summary": "Levels, routes and information belong in the station systems picture.",
     "details": [
       "Rail fire and life-safety guidance includes the means by which occupants can reach a place of safety. That makes passenger movement a spatial consideration alongside equipment, communications and ventilation.",
-      "The educational station has a concourse, platform, stairs and an accessible circulation connection to help explain where devices serve people. These illustrative routes do not demonstrate capacity, travel-time performance, protected construction or an approved emergency route."
+      "The station view connects a concourse and platform with stairs and a lift. Signs, lighting and help points support passengers along these routes."
     ],
     "sources": [
       "F01"
     ],
-    "caveat": "Do not present the model as evacuation guidance for any real station.",
+    "caveat": "The station is a simplified layout. Emergency routes depend on the actual station and its signs.",
     "related": [
       "flss",
       "emergency-lighting",
@@ -2583,12 +2611,11 @@ export const CONCEPTS = [
     "summary": "Emergency ventilation is designed around conditions and routes, not simply maximum fan speed.",
     "details": [
       "Normal ventilation addresses everyday heat and air-quality conditions. Emergency smoke management has different objectives, including conditions that support escape and emergency response. Fire location, geometry and the connected air paths affect what a useful ventilation strategy looks like.",
-      "Colored air or smoke traces explain objectives. They cannot establish tenability, smoke-layer height, exposure or evacuation performance, and should not prescribe a universal fan direction."
+      "Smoke movement depends on heat, pressure differences, openings and airflow. The coloured traces show the selected path; a fire and ventilation analysis is needed to predict conditions along an escape route."
     ],
     "sources": [
       "F13"
     ],
-    "caveat": "This model performs no CFD, fire-growth calculation or life-safety performance assessment.",
     "related": [
       "flss",
       "tunnel-fan",
@@ -2602,7 +2629,7 @@ export const CONCEPTS = [
     "summary": "Passenger spaces and equipment rooms can have different environmental needs.",
     "details": [
       "Station heating, ventilation and air conditioning manages occupied spaces and the environments required by equipment. A station can combine conditioned rooms with platform areas influenced by tunnel airflow; one room thermostat does not describe the whole station.",
-      "The useful teaching distinction is the service boundary: a local air-handling system treats and distributes air for its zones, while tunnel ventilation addresses a different connected space. Some equipment can have more than one duty, but its approved operating strategy remains project-specific."
+      "A local air-handling system treats and distributes air for its rooms or zones. Tunnel ventilation serves a different connected space. Where equipment serves both normal and emergency duties, its control strategy accounts for both roles."
     ],
     "sources": [
       "F13",
@@ -2637,7 +2664,7 @@ export const CONCEPTS = [
     "summary": "A controller connects field measurements to configured equipment actions and status.",
     "details": [
       "A building automation system (BAS), also called a building management system (BMS) in many contexts, can include distributed controllers, input/output interfaces and supervisory software. Controllers can support schedules, alarms, trends and connections to HVAC or other building-service equipment.",
-      "Local control logic and the supervisory presentation occupy different roles. A screen can show a temperature and request a change, while the controller and its equipment interfaces implement the configured behavior. The model should show both levels rather than making a workstation the direct actuator."
+      "The supervisory screen presents temperatures, alarms and requests. Local controllers read the sensors and operate the connected equipment, so the controller and workstation perform different parts of the control loop."
     ],
     "sources": [
       "F15",
@@ -2656,7 +2683,7 @@ export const CONCEPTS = [
     "summary": "Sensors turn physical conditions into information for monitoring and control.",
     "details": [
       "Room, duct and pipe sensors can measure different quantities, including temperature, humidity, pressure, air quality and flow. Their physical placement determines what part of the building system a reading describes.",
-      "A duct-pressure reading is not a room-temperature reading, and neither is a fire alarm by definition. In the model, selecting a sensor should highlight its measured medium and the controller input that receives its signal, rather than suggesting that all sensor symbols are interchangeable."
+      "Follow the measured quantity to its controller input: a duct-pressure sensor reports pressure in the duct, while a room sensor reports the conditions around its location. Fire detectors provide a separate alarm-system input."
     ],
     "sources": [
       "F16"
@@ -2673,7 +2700,7 @@ export const CONCEPTS = [
     "summary": "An actuator turns a control request into a physical change.",
     "details": [
       "Building control can adjust dampers, valves and fan operation to change air treatment and distribution. The physical actuator is the link between a control signal and equipment movement or modulation.",
-      "A command to move and feedback about the achieved condition are different signals. The model can expose a damper linkage or valve stem to make that distinction visible. Comfort-control equipment should not acquire a fire/smoke-control role simply because the graphics use a similar symbol."
+      "A command requests a change; feedback reports the achieved condition. A damper’s actuator can move its linkage while a position switch reports the result. Equipment used for smoke control has requirements beyond those of an ordinary comfort-control actuator."
     ],
     "sources": [
       "F14",
@@ -2691,7 +2718,7 @@ export const CONCEPTS = [
     "summary": "Field and supervisory communications connect different levels of building control.",
     "details": [
       "Automation controllers can exchange data through several interface families. BACnet and Modbus are examples supported by commercial controllers; a plant can also include direct I/O connections to sensors and actuators.",
-      "The protocol name describes a communications arrangement, not a physical cable route or a universal safety classification. A useful diagram distinguishes local field connections from the station-wide supervisory link and labels both as information paths."
+      "Direct field wiring connects some sensors and actuators to a controller. Network links connect controllers and supervisory systems. A protocol defines how devices exchange information; the physical cable route is a separate choice."
     ],
     "sources": [
       "F15"
@@ -2713,7 +2740,7 @@ export const CONCEPTS = [
     "sources": [
       "F17"
     ],
-    "caveat": "Do not infer a universal RTU/IED partition, trip path or remote/local command priority.",
+    "caveat": "Local protection, substation control and remote supervision can be combined or separated in different ways.",
     "related": [
       "station-scada",
       "occ-workstation",
@@ -2747,7 +2774,7 @@ export const CONCEPTS = [
     "summary": "An operator interface presents selected systems, events and communications.",
     "details": [
       "A control-centre workstation provides a human interface to supervisory applications and communications. Different views can present equipment state, events, history or conversations, while servers and field equipment perform other parts of the system.",
-      "Combining information helps an operator relate events across subsystems. It does not make every indication equally current or give every user the same authority. The teaching view should distinguish observed state, unavailable data and a request whose completion has not yet been confirmed."
+      "The workstation helps an operator relate events across systems. It distinguishes measured state, unavailable data and requests awaiting confirmation; each user’s control permissions are defined separately."
     ],
     "sources": [
       "F17",
@@ -2783,7 +2810,7 @@ export const CONCEPTS = [
     "summary": "Busbars and protective outgoing circuits distribute power to station loads.",
     "details": [
       "A low-voltage main switchboard receives the transformer output and distributes electrical supply through protected circuits. Main and branch equipment serve different parts of the installation.",
-      "Essential loads may be organized separately, and an alternative supply or UPS can be included where the design requires it. In the model, selected electronics, lighting and mechanical plant should have visibly distinct branches rather than all appearing to run through one small backup battery."
+      "Separate branches serve electronics, lighting and mechanical plant. Selected essential loads may have an alternative supply or UPS, according to their power needs."
     ],
     "sources": [
       "F18"
@@ -2801,7 +2828,7 @@ export const CONCEPTS = [
     "summary": "Backup power can keep designated control and communications electronics available.",
     "details": [
       "A station UPS can support sensitive electronics such as controllers, I/O equipment and user interfaces when the normal supply is disturbed. Its protected load boundary is part of the design.",
-      "Keeping a supervisory screen alive does not prove that every associated motor, fan or field device still has power. The teaching model should trace the selected backed-up circuits separately from the larger auxiliary loads and avoid implying unlimited battery endurance."
+      "Only circuits connected to the UPS receive its backup supply. A working supervisory screen therefore does not establish that a fan or pump still has power. Runtime depends on the battery and connected load."
     ],
     "sources": [
       "F19"
@@ -2899,12 +2926,12 @@ export const ARCHITECTURES = [
       "S14",
       "S21"
     ],
-    "limits": "Alternative detector types are choices, not a requirement to install both. National aspect codes are omitted."
+    "limits": "The example offers track circuits or axle counters for section detection. Signal aspect meanings depend on the railway."
   },
   {
     "id": "legacy-loop-atc",
     "label": "Legacy SelTrac loop example",
-    "description": "Isolate the communication medium from the control responsibilities.",
+    "description": "Trace the data loop between the train and wayside control.",
     "components": [
       "seltrac",
       "seltrac-loop",
@@ -2923,7 +2950,7 @@ export const ARCHITECTURES = [
       "S03",
       "S06"
     ],
-    "limits": "Historical, schematic arrangement; no universal cabinet map, cable geometry or present-day installation claim."
+    "limits": "A historical inductive-loop example; later generations can use radio."
   },
   {
     "id": "radio-cbtc",
@@ -2954,7 +2981,7 @@ export const ARCHITECTURES = [
       "S08",
       "S09"
     ],
-    "limits": "An example functional allocation. Other CBTC systems distribute or combine responsibilities differently."
+    "limits": "This example places control functions beside the track. Other systems distribute them differently."
   },
   {
     "id": "seltrac-virtualized",
@@ -2975,7 +3002,7 @@ export const ARCHITECTURES = [
     "sources": [
       "S04"
     ],
-    "limits": "Public product-level description only. The graphic does not assert topology, certification, interfaces or a real deployment."
+    "limits": "Based on Hitachi’s 2026 product description. Project interfaces and deployment arrangements require project documentation."
   },
   {
     "id": "etcs-balise",
@@ -3001,7 +3028,7 @@ export const ARCHITECTURES = [
       "S15",
       "S16"
     ],
-    "limits": "The selected base case omits infill and other operational variants."
+    "limits": "The base example uses balise updates without infill."
   },
   {
     "id": "etcs-radio",
@@ -3062,13 +3089,13 @@ SOURCES.push(
   {id:'TW02',title:'Turnout Components',publisher:'Vossloh',url:'https://www.vossloh.com/en/products/turnout-components',description:'Fixed and swing-nose crossing families, forged tongues, slide chairs and check-rail supports.',scope:'Manufacturer component overview. Supports distinguishing construction and function; no performance or universal arrangement is inferred.'},
   {id:'TW03',title:'Crossing with movable point EHZ HBS-HB',publisher:'voestalpine Railway Systems',url:'https://www.voestalpine.com/railway-systems/en/products/crossing-with-movable-point-ehz-hbs-hb/',description:'A movable crossing nose closes the running-edge interruption for the selected route, with its own setting and locking arrangement.',scope:'Manufacturer product page, Crossing vee, Wing rails and Setting and locking. An alternative to this study’s fixed crossing; its geometry and performance claims are not transferred.'}
 );
-CONCEPTS.push({id:'track-wheelset',label:'Wheelset: two wheels and one axle',summary:'Two wheels connected by an axle follow the two running rails through the turnout.',details:['Keep both wheels visible at the crossing. One wheel passes the crossing nose while the check rail beside the opposite running rail can guide the back of the other wheel flange.','In this tread-bearing example, the wheel tread carries vertical load on the rail head. The flange passes through the flangeway; its back face can provide lateral guidance against the check rail.','The wheelset follows a prescribed geometric path. The illustration does not solve contact forces, steering, differential rolling radii or vehicle dynamics.'],sources:['TW01','K15','MD01'],related:['track-turnout','track-switch-rail','track-frog','track-check-rail','bogie']});
+CONCEPTS.push({id:'track-wheelset',label:'Wheelset: two wheels and one axle',summary:'Two wheels connected by an axle follow the two running rails through the turnout.',details:['Keep both wheels visible at the crossing. One wheel passes the crossing nose while the check rail beside the opposite running rail can guide the back of the other wheel flange.','In this tread-bearing example, the wheel tread carries vertical load on the rail head. The flange passes through the flangeway; its back face can provide lateral guidance against the check rail.','The wheelset follows the selected route. The picture shows where guidance and support occur; contact forces and vehicle dynamics require a separate calculation.'],sources:['TW01','K15','MD01'],related:['track-turnout','track-switch-rail','track-frog','track-check-rail','bogie']});
 for(const id of ['track-turnout','track-stock-rail','track-switch-rail','track-closure-rail','track-frog','track-check-rail']){
   const c=CONCEPTS.find(c=>c.id===id);c.sources=[...new Set([...c.sources,'TW01','TW02'])];
 }
 CONCEPTS.find(c=>c.id==='track-frog').sources.push('TW03');
 
-CONCEPTS.find(c=>c.id==='track-frog').details.push('Some fixed frogs are self-guarded. Their raised casting features replace the guidance supplied by separate opposite check rails in this selected example.');
+CONCEPTS.find(c=>c.id==='track-frog').details.push('Some fixed frogs are self-guarded: raised parts of the frog casting guide the wheel at the crossing. These replace the separate check rails used in the conventional arrangement.');
 
 CONCEPTS.push(
  {id:'track-crossing-nose',label:'Crossing nose or vee',summary:'The pointed part of a common crossing carries the tread as support transfers from the wing rail.',details:['The nose and its adjoining rails form the vee. The flange passage beside it allows the wheel on the intersecting route to pass.','This nose is fixed. A movable-nose crossing is a different arrangement with its own setting, locking and detection needs.'],sources:['TW01','TW02','K14','TW03'],related:['track-frog','track-wing-rail','track-check-rail','track-wheelset']},

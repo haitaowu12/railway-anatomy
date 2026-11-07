@@ -410,7 +410,7 @@ check('New motion descriptions and maintenance article have valid public-source 
   variant.sources.forEach(source=>assert(sources.has(source),`${id} missing source ${source}`));
  }
  const guide=depotData.DEPOT_READING_GUIDES[0];assert(guide.title&&guide.sections.length>=5);
- const words=guide.sections.map(s=>s.text).join(' ').split(/\s+/).length;assert(words>=600&&words<=900);
+ for(const section of guide.sections){assert(section.heading?.trim()&&section.text?.trim(),'Maintenance guide section needs a heading and explanation');for(const source of section.sources||[])assert(sources.has(source),`Maintenance section missing source ${source}`);}
  guide.sources.forEach(source=>assert(sources.has(source),`Maintenance article missing source ${source}`));
 });
 console.log(`${passed} checks passed, ${failures.length} failed.`);

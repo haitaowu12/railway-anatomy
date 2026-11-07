@@ -1,74 +1,500 @@
-// Explanations distinguish public principles from the authored comparisons.
+// Reading guides and interactive study questions.
 export const STUDY_GUIDES = [
-  {id:'electrification-chain',domain:'power',view:'electrification',component:'study-collector',title:'Read the complete electrification chain',summary:'Collection, conversion and return are separate design choices. Compare four complete teaching arrangements while keeping propulsion independent.',sections:[
-    {heading:'Compare collection and return separately',text:'Start with Fourth rail · DC, then select Third rail · DC. Both use a conductor rail and wayside rectification, but their normal traction-return arrangements differ. The fourth-rail example has separate supply and return shoes and conductors; the third-rail example returns through wheel connections and the running rails. The Railway Engineering Institution’s public electrification chapter explains this distinction. The paired side-contact geometry is an original teaching arrangement, not a reproduction of an installed railway.',sources:['EL01','EL02','P01']},
-    {heading:'A pantograph does not identify the supply type',text:'Choose Overhead · DC, then Overhead · AC. Both use a contact wire and pantograph. The DC example retains wayside rectification, while the selected conventional AC chain introduces an onboard transformer and line converter before the DC link and motor inverter. Siemens’s contact-line overview discusses both DC and AC applications. Its AC supply overview and ABB’s conventional vehicle architecture help locate the conversion stages; neither source supplies the geometry or equipment positions used here.',sources:['EL03','E01','E02','P01']},
-    {heading:'Keep the transformer’s circuits and the drive choice separate',text:'In the AC example, the pantograph supplies the transformer’s primary circuit and the running rails provide its return relationship. The transformer secondary feeds the line converter, DC link and motor inverter through a separate circuit. Amber, cyan and copper traces distinguish these relationships; they are not one wire passing through the transformer or a plot of instantaneous AC current direction. Open the enclosure to inspect the conversion stages. The selected LIM or rotary propulsion remains an independent choice: follow the inverter to the appropriate motor mechanism rather than assuming that a pantograph determines the drive.',sources:['E02','E03','P04','P02']},
-    {heading:'Use the comparison to locate the next question',text:'These arrangements expose where collection, conversion and return differ. They do not prescribe voltage ratings, protection settings, section transitions, neutral sections, bonding, clearances or an isolation method. The AC example uses the conventional architecture discussed by ABB, without adopting the experimental transformer also described in that article. A selected combination is not evidence of a commissioned commercial configuration. Use the linked substation, guideway and vehicle views to examine equipment at a different scale, then consult the public sources for their defined scope.',sources:['E02','EL02','EL03']},
-  ],sources:['E01','E02','E03','EL01','EL02','EL03','P01','P02','P04']},
-  {id:'wheel-rail-response',domain:'vehicle',view:'adhesion',component:'adhesion-contact',title:'Separate wheel rotation from vehicle response',summary:'Demand, wheel torque, contact conditions and vehicle travel are connected, but they are not the same observation.',sections:[
-    {heading:'Begin with the two motion cues',text:'The axle carries a rim marker while a separate marker follows its centre against a fixed reference. Animate rolling, spin and slide, or move the phase slider. The centre follows the same authored path so the wheel’s different rotation is easy to compare. These rates are illustrative, without mass, inertia, adhesion coefficients or a force calculation. The scene concerns a rotary axle drive and friction braking. It does not transfer those traction relationships to the LIM, whose thrust is developed through a reaction rail.',sources:['H01','P02']},
-    {heading:'Inspect two different interventions',text:'Wheel-slide protection modulates brake effort; sanding introduces material at the wheel–rail interface. The protection comparison changes the actuator cue and wheel rotation. The sanding comparison instead exposes a reservoir, hose, nozzle and grains arriving ahead of the contact. Knorr-Bremse’s public equipment descriptions distinguish these mechanisms, and RSSB’s research discusses low adhesion and mitigation. The model does not adopt a supplier’s performance figures or implement a real controller. Sand appearing at the rail is not proof that a particular braking performance has been restored.',sources:['H01','H02','T08']},
-    {heading:'Connect response with measurement and maintenance',text:'An axle sensor reports rotation. The independent travel cue represents the separate question of how the vehicle is moving; it is not a particular sensor installation. Use the connected concepts to examine localization and the depot wheelset. A discrepancy can prompt investigation, but this scene supplies no diagnostic threshold, wheel-damage prediction or maintenance acceptance criterion. A requested effort, an observed motion and an accepted condition need their own evidence.',sources:['T06','T07','H01']},
-  ],sources:['H01','H02','T08','T06','T07','P02']},
-  {id:'infrastructure-work',domain:'track',view:'infrastructure-care',component:'route-inspection',title:'From infrastructure observation to follow-up evidence',summary:'Track, ground, drainage and structures meet in one location. Work on one interface does not close every observation there.',sections:[
-    {heading:'Read the support and water paths',text:'Use Infrastructure assets to inspect track support, a culvert and a small bridge in their physical context. The section keeps the load path through girders, bearings and abutments separate from the water passage through the culvert. Network Rail’s public explanations connect slope condition and drainage, while its inspection example shows why some spaces need more than a view from track level. The original geometry contains no calculated earth pressure, drainage capacity, structural capacity or condition assessment.',sources:['I01','I02','I03']},
-    {heading:'Connect observations, work and review',text:'The Infrastructure inspection & work evidence map identifies an observation, its assessment question, the coordinated work scope, the actual end state and the follow-up evidence. Select a step to inspect its inputs, contributors, outputs and limits. The return from review to the work record makes unsupported claims or incomplete work visible. Moving to a later step in the learning map does not mean a repair has occurred.',sources:['I02','Q01','PR06']},
-    {heading:'Preserve the other question',text:'A drainage check concerns its identified location and question. It does not establish the condition of a nearby bearing or bridge, and recording an inspection does not authorize the return of a route to service. Keep other observations and continuing actions explicit. The Configuration & change map examines matching evidence and the observed configuration; the separate worksite handback map addresses the operational interface.',sources:['I03','Q01','PR06']},
-  ],sources:['I01','I02','I03','Q01','PR06']},
-  {id:'service-dependencies',domain:'operations',view:'dependencies',component:'dependency-services',title:'Trace the dependencies behind a resilient service',summary:'An alternate data path helps only within the functions and dependencies that it actually covers.',sections:[
-    {heading:'Name the function before discussing redundancy',text:'The dependency map distinguishes fictional station-information and power-supervision applications from network paths, common application supply, identity, configuration and recording. Select Path A lost: station information retains its illustrated path B, while power supervision loses its only represented path. Select Shared power lost: neither application has the required supply. These are relationships and selected conditions; boxes are not a physical cabinet arrangement and no automatic transfer is simulated.',sources:['R01','R02']},
-    {heading:'Distinguish access, live information and history',text:'Identity unavailable retains the field-indication path but removes the new operator-request connection. Recorder unavailable retains live interfaces while interrupting the record branch. These are selected functional boundaries of the fictional example, not universal behavior for sessions or railway control systems. ENISA’s railway report provides the context of asset groups and connecting conduits. The illustration provides no actual network address, access rule, software weakness or attack demonstration.',sources:['R01','R02']},
-    {heading:'Restore evidence as well as a connection',text:'NIST’s published 2023 Revision 3 discusses recovery of OT state, data, configuration and programs. Here, Restored, unchecked reconnects the conduit while retaining a configuration mismatch and recording gap. Evidence checked adds separate checks without filling that gap. The comparison supplies no recovery time, synchronized replica or authorization to operate. Open the Configuration & change process to examine why the record, observed configuration and supporting evidence must be related to the same subject.',sources:['R01','Q01','PR01']},
-  ],sources:['R01','R02','Q01','PR01']},
-  {id:'passenger-journey',domain:'station',view:'accessible-journey',component:'access-entrance',title:'Follow access through the whole passenger journey',summary:'A usable route connects physical passage, understandable information, assistance and the boarding interface.',sections:[
-    {heading:'Inspect the connected interfaces',text:'Begin at the street, pass the wide fare gate and follow the near lift to the platform. The tactile strip, display and help point are distinct equipment; their information links are not passenger paths. The ERA application guide connects obstacle-free routes with changes of level, identification and other station interfaces. It is EU guidance rather than a universal rulebook. This model specifies no compliant width, gradient, contrast, illumination or platform gap.',sources:['A01']},
-    {heading:'Change the journey when a facility is unavailable',text:'Lift unavailable stops the highlighted route before the near lift and exposes a service message and assistance connection. The stairs remain, but the step-free route is not redirected onto them. Alternate lift selects a different approach through the fictional station and preserves the original outage marker. TransLink’s public guidance connects elevator availability with journey planning and assistance. No real station layout, current outage or operator detour has been copied into this example.',sources:['A02']},
-    {heading:'Continue from the platform into the train',text:'Boarding aid needed retains a visible gap and stops the route at the platform. Aid in place adds a bridging plate and extends the trace through the doorway. Reaching the platform and being able to board are separate questions. RNIB’s public research summary identifies barriers involving ticketing, assistance, information, physical design and disruption. That evidence supports considering the whole journey, rather than treating a lift as a complete accessibility solution. It does not represent every passenger’s needs or validate the modeled route.',sources:['A03','A01']},
-  ],sources:['A01','A02','A03']},
-  {id:'configuration-handover',domain:'processes',view:'change-evidence',component:'change-test',title:'Match a changed item with its evidence',summary:'Use the Configuration & change process to distinguish the proposed change, observed configuration, matching evidence and next handover question.',sections:[
-    {heading:'Identify the subject before following the process',text:'The two-dimensional map begins with an affected baseline and keeps proposed, recorded and observed states separate. The subject may be equipment, software, data or documentation. INCOSE’s public competency framework describes configuration identification, change control, status and audit as related responsibilities. The atlas turns those themes into an original learning map; it does not reproduce an INCOSE process or prescribe a railway’s governance. Select a step to inspect its inputs, contributing roles, action, outputs and review question.',sources:['PR01']},
-    {heading:'Examine the matching evidence',text:'The verification step receives the observed configuration, a verification question, results and exceptions. It asks whether the evidence concerns the correct item, interfaces and intended use. For example, relabelling a report from version A does not establish its applicability to version B. The relevant question is which evidence applies and where coverage or discrepancies remain unresolved. The diagram’s return to implementation keeps a mismatch visible instead of treating forward navigation as successful completion. IRSE’s public testing-and-commissioning abstract and Crossrail’s public certification-package guidance provide context for configuration and evidence traceability; the paid IRSE paper and project forms are not reproduced.',sources:['PR02','Q01']},
-    {heading:'Keep reconciliation and handover boundaries explicit',text:'Reconciliation connects the actual configuration, its records and the evidence while retaining conditions. It supplies information for a subsequent acceptance or handover question. Asset handover, maintenance release, worksite handback and a duty handover address different recipients and responsibilities, so they have their own maps. An owner label identifies a representative contributor and does not appoint that role as the approver. Reviewing a step in this atlas grants no authority to operate, move a train or enter a worksite. Public operator and regulator examples retain their jurisdiction and scope.',sources:['PR01','PR03','PR04','Q02']},
-  ],sources:['PR01','PR02','PR03','PR04','Q01','Q02']},
+  {
+    "id": "electrification-chain",
+    "domain": "power",
+    "view": "electrification",
+    "component": "study-collector",
+    "title": "Follow the complete electrification chain",
+    "summary": "Trace power from the substation to the train and back, then compare where the four supply arrangements differ.",
+    "sections": [
+      {
+        "heading": "Compare collection and return",
+        "text": "Start with Fourth rail · DC, then select Third rail · DC. Both collect power through a shoe touching a conductor rail. Fourth rail has a separate conductor and shoe for the normal return current. Third rail returns through wheel connections and the running rails. The side-by-side conductors in this teaching model make the two electrical paths visible.",
+        "sources": [
+          "EL01",
+          "EL02",
+          "P01"
+        ]
+      },
+      {
+        "heading": "A pantograph can collect AC or DC",
+        "text": "Compare Overhead · DC with Overhead · AC. Both use a pantograph touching the contact wire and a return through the running rails. In the DC example, the substation rectifies AC into DC. In the conventional AC example, the train carries a transformer and line converter before the DC link and motor inverter.",
+        "sources": [
+          "EL03",
+          "E01",
+          "E02",
+          "P01"
+        ]
+      },
+      {
+        "heading": "Follow the transformer’s two circuits",
+        "text": "The pantograph connects to the transformer’s primary winding; wheelsets and running rails complete that supply circuit. Magnetic coupling transfers energy to the separate secondary winding, which feeds the line converter. Amber, cyan and copper traces help distinguish the circuits. Open the enclosure to find the DC-link capacitor bank and motor inverter. The inverter feeds either the rotary motor or linear induction motor (LIM), according to your propulsion choice.",
+        "sources": [
+          "E02",
+          "E03",
+          "P04",
+          "P02"
+        ]
+      },
+      {
+        "heading": "Move between the chain and its equipment",
+        "text": "Use the complete chain to locate each electrical function, then open the substation, guideway, vehicle or equipment close-up. The selected supply arrangement follows you between those views. Collection, power conversion and propulsion are separate choices, so changing a pantograph to a shoe keeps the selected motor. The circuits show connections; the static traces do not show the alternating direction or waveform of AC current.",
+        "sources": [
+          "E02",
+          "EL02",
+          "EL03",
+          "P04"
+        ]
+      }
+    ],
+    "sources": [
+      "E01",
+      "E02",
+      "E03",
+      "EL01",
+      "EL02",
+      "EL03",
+      "P01",
+      "P02",
+      "P04"
+    ]
+  },
+  {
+    "id": "wheel-rail-response",
+    "domain": "vehicle",
+    "view": "adhesion",
+    "component": "adhesion-contact",
+    "title": "Compare wheel rotation with vehicle travel",
+    "summary": "Adhesion is the grip at the wheel–rail contact. It links wheel torque to the force that moves or slows the vehicle.",
+    "sections": [
+      {
+        "heading": "Start with rolling, spin and slide",
+        "text": "Watch the rim marker and the wheel centre against the fixed stripes. During rolling, rotation follows the distance travelled. During spin, the wheel turns too much for that distance; during slide, it turns too little. The centre follows the same path in these comparisons so the difference is easy to see. The animation illustrates the relationship rather than calculating a stopping distance. It shows rotary traction and friction braking; LIM traction develops thrust through a separate reaction rail.",
+        "sources": [
+          "H01",
+          "P02"
+        ]
+      },
+      {
+        "heading": "Compare brake control with sanding",
+        "text": "Wheel-slide protection monitors wheel behaviour and changes applied braking effort. In Slide protection, the brake actuator and effort bar vary while the wheel turns. Sanding acts at a different place: the hopper, hose and nozzle deliver sand ahead of the wheel–rail contact to improve grip. Follow both mechanisms and compare their physical paths.",
+        "sources": [
+          "H01",
+          "H02",
+          "T08"
+        ]
+      },
+      {
+        "heading": "Separate a measurement from the motion it describes",
+        "text": "An axle sensor measures rotation. Spin or slide can make a speed estimate based on that measurement differ from the vehicle’s actual speed. The separate travel marker makes that difference visible. Follow the connected localization concepts to see how motion evidence is combined, or open the depot wheelset study to examine the component itself.",
+        "sources": [
+          "T06",
+          "T07",
+          "H01"
+        ]
+      }
+    ],
+    "sources": [
+      "H01",
+      "H02",
+      "T08",
+      "T06",
+      "T07",
+      "P02"
+    ]
+  },
+  {
+    "id": "infrastructure-work",
+    "domain": "track",
+    "view": "infrastructure-care",
+    "component": "route-inspection",
+    "title": "Connect an observation with work and follow-up",
+    "summary": "Track, ground, drainage and structures meet at the same location, but each observation needs evidence about the part it concerns.",
+    "sections": [
+      {
+        "heading": "Follow support and water through the physical section",
+        "text": "Open Structures & drainage. Follow track load through the bridge deck, girders, bearings and abutments. Then inspect the culvert passage beneath the earthwork. Ground condition and water affect the support around the track, while enclosed spaces may need inspection methods that reach beyond the view from track level.",
+        "sources": [
+          "I01",
+          "I02",
+          "I03"
+        ]
+      },
+      {
+        "heading": "Follow the observation through the process",
+        "text": "The Infrastructure inspection & work evidence map begins with a recorded observation and its assessment question. It then connects planned work, the actual end state and follow-up evidence. Select a stage to see the inputs, contributing people and records it produces. The return arrow shows where incomplete work or unsupported claims need further attention.",
+        "sources": [
+          "I02",
+          "Q01",
+          "PR06"
+        ]
+      },
+      {
+        "heading": "Keep separate issues visible",
+        "text": "A drainage check answers a question about the drainage at an identified location. A nearby bearing observation still needs its own review. Keep those continuing actions in the work record. Use the separate worksite handback map for the operational return of a worksite, and Configuration & change for the relationship between an installed item and its records.",
+        "sources": [
+          "I03",
+          "Q01",
+          "PR06"
+        ]
+      }
+    ],
+    "sources": [
+      "I01",
+      "I02",
+      "I03",
+      "Q01",
+      "PR06"
+    ]
+  },
+  {
+    "id": "service-dependencies",
+    "domain": "operations",
+    "view": "dependencies",
+    "component": "dependency-services",
+    "title": "Find what a service needs to keep working",
+    "summary": "A second communication path helps with a lost connection, but the service still needs its other dependencies.",
+    "sections": [
+      {
+        "heading": "Trace one service at a time",
+        "text": "Start with the station-information application. It has paths A and B. The power-supervision application has only path A in this example, and both applications share a power supply. Select Path A lost: station information retains path B while power supervision loses its connection. Then select Shared power lost to see both applications lose their required supply.",
+        "sources": [
+          "R01",
+          "R02"
+        ]
+      },
+      {
+        "heading": "Separate access, live data and recording",
+        "text": "Identity unavailable removes the connection needed for a new operator request while keeping field indications available. Recorder unavailable breaks the recording branch while live information remains connected. These selected conditions help distinguish the services. A security zone groups assets with related security needs; a conduit is a communication connection between zones.",
+        "sources": [
+          "R01",
+          "R02"
+        ]
+      },
+      {
+        "heading": "Check the recovered state",
+        "text": "Compare Restored, unchecked with Evidence checked. The connection returns first, while a configuration mismatch and recording gap remain. The later comparison adds checks of configuration and recording. Restoring recording can capture new events, but does not recreate the missed history. Open Configuration & change to follow how the observed state is compared with its records and supporting evidence.",
+        "sources": [
+          "R01",
+          "Q01",
+          "PR01"
+        ]
+      }
+    ],
+    "sources": [
+      "R01",
+      "R02",
+      "Q01",
+      "PR01"
+    ]
+  },
+  {
+    "id": "passenger-journey",
+    "domain": "station",
+    "view": "accessible-journey",
+    "component": "access-entrance",
+    "title": "Follow access through the whole journey",
+    "summary": "Connect physical passage, usable information, assistance and the boarding interface from street to train.",
+    "sections": [
+      {
+        "heading": "Read the connected route",
+        "text": "Follow the entrance through the wide fare gate and near lift to the platform. Tactile surfaces, a display and an audible-information point support the journey. Violet communication links connect information and assistance; the teal line marks the selected step-free route. The example illustrates those connections with schematic dimensions.",
+        "sources": [
+          "A01"
+        ]
+      },
+      {
+        "heading": "Find another route when a lift is unavailable",
+        "text": "Lift unavailable stops the highlighted route before the near lift and displays a service message and assistance connection. The stairs remain a separate route. Alternate lift follows a different approach to the second lift while retaining the first lift’s outage marker. The passenger needs both a usable route and information that helps them find it.",
+        "sources": [
+          "A02"
+        ]
+      },
+      {
+        "heading": "Continue through the train doorway",
+        "text": "Boarding aid needed reaches the platform but stops at the gap beside the train. Aid in place adds a bridging plate and extends the path into the doorway. Reaching the platform and boarding the train are separate parts of the journey. Ticketing, information, station design, assistance and disruption can each affect whether the complete trip is usable.",
+        "sources": [
+          "A03",
+          "A01"
+        ]
+      }
+    ],
+    "sources": [
+      "A01",
+      "A02",
+      "A03"
+    ]
+  },
+  {
+    "id": "configuration-handover",
+    "domain": "processes",
+    "view": "change-evidence",
+    "component": "change-test",
+    "title": "Match a changed item with its evidence",
+    "summary": "Follow the agreed reference, the observed configuration, applicable evidence and the information passed to the receiving team.",
+    "sections": [
+      {
+        "heading": "Identify the item and the reference",
+        "text": "Configuration includes hardware, software, settings and documents. A baseline is an agreed configuration used as the reference for controlled change; the installed item and its as-built record show what was actually fitted. The Configuration & change map keeps proposed, recorded and observed states separate. Select a stage to see the people, inputs, actions and outputs involved.",
+        "sources": [
+          "Q03",
+          "PR01"
+        ]
+      },
+      {
+        "heading": "Check what the evidence covers",
+        "text": "The verification stage connects the identified configuration with a question, results and exceptions. Ask whether the evidence applies to that item, its interfaces and its intended use. A report for version A may apply to B where that link is established; changing the report’s label cannot supply missing coverage. Follow the return arrow when a configuration or evidence mismatch needs more work.",
+        "sources": [
+          "PR02",
+          "Q01"
+        ]
+      },
+      {
+        "heading": "Carry conditions into the next handover",
+        "text": "Reconciliation brings the actual configuration, its records and the applicable evidence into agreement. It also records remaining issues and conditions. The receiving team needs that information for its decision. Asset handover, maintenance release, worksite handback and a duty handover concern different recipients and responsibilities, so each has a separate process map.",
+        "sources": [
+          "PR01",
+          "PR03",
+          "PR04",
+          "Q02"
+        ]
+      }
+    ],
+    "sources": [
+      "Q03",
+      "PR01",
+      "PR02",
+      "PR03",
+      "PR04",
+      "Q01",
+      "Q02"
+    ]
+  }
 ];
 
-const tour=(id,n,title,domain,view,component,variant,explanation,actionText,question,choices,answer,feedback,sourceConcepts,options={})=>({id,label:`${n} · ${title}`,title,domain,view,component,explanation,actionText,actionLabel:options.actionLabel||'Return to starting view',action:{view,component,...variant?{variant}:{},mode:'coasting',scenario:'nominal',exploded:0,cutaway:true,...options.action},question,choices,answer,feedback,sourceConcepts});
 export const STUDY_TOURS = [
-  tour('electrification-chain',26,'Compare the whole energy chain','power','electrification','study-onboard-transformer','chain',
-    'This lesson selects Overhead · AC. Compare it with Overhead · DC: both use a pantograph, but the conventional AC example adds onboard transformation and line conversion. The propulsion selection remains independent, and the motor inverter is a distinct stage in either supply arrangement.',
-    'Inspect the onboard transformer and its separate primary and secondary paths in Overhead · AC. Compare Overhead · DC, which retains the pantograph while changing the conversion stages.',
-    'Both selected overhead examples use a pantograph. Which conversion stages distinguish the conventional AC vehicle shown here from its DC comparison?',
-    ['A wayside DC rectifier with no change to onboard conversion','An onboard transformer and line converter before the DC link and motor inverter','Direct contact-wire supply to the traction motor without a motor inverter'],1,
-    ['The selected AC architecture changes the supply and onboard conversion, rather than retaining the DC rectifier chain.','The transformer and line converter belong to this conventional AC example; the primary and secondary circuits remain electrically separate.','Supply AC is not the controlled motor supply produced by the traction inverter.'],['supply-conversion','study-onboard-transformer','study-return'],{actionLabel:'Show overhead AC',action:{electrification:'overhead-ac',mode:'motoring'}}),
-  tour('wheel-rail-response',27,'Compare wheel rotation and travel','vehicle','adhesion','adhesion-contact','slide',
-    'A brake demand applies torque at the wheel, while adhesion affects the contact force. Wheel rotation and vehicle travel can therefore disagree.',
-    'Animate Wheel slide or move the phase slider, comparing the rim marker with the travel marker and fixed reference.',
-    'The wheel rotates slowly while its centre continues along the rail. What does that establish in this illustration?',
-    ['The vehicle is stationary because wheel rotation is slow','The brake demand has necessarily been removed','Wheel rotation alone does not establish vehicle travel'],2,
-    ['The independent travel marker continues moving; slow rotation is not the same as a stationary vehicle.','A brake demand remains visible during the slide comparison.','The two cues disagree, which is why the model keeps rotation and travel separate.'],['adhesion-contact','adhesion-brake','adhesion-reference']),
-  tour('infrastructure-follow-up',28,'Read the repair evidence','track','infrastructure-care','route-record','check',
-    'Drainage work, follow-up examination and a separate bearing observation concern different evidence. The maintenance map relates the actual work record to review and continuing actions, with a separate handback interface.',
-    'Compare Record work and the actual end state with Review evidence and continuing actions. Follow the return for an unsupported claim, then inspect the separate worksite handback interface.',
-    'A record identifies a drainage check after cleaning. Which conclusion follows without further evidence?',
-    ['The record concerns that drainage check; separate structural and release questions remain','The bridge condition is accepted because the nearby drainage work is complete','The work boundary can be removed because the cleaning tool has gone'],0,
-    ['The record identifies its own subject and examination; it does not answer every condition or authority question.','A separate bearing observation needs matching evidence and review.','Removing a tool and releasing a work boundary are separate claims.'],['route-record','route-bridge','route-work-boundary'],{actionLabel:'Review the work evidence',action:{processStep:'review'}}),
-  tour('shared-dependencies',29,'Find the shared dependency','operations','dependencies','dependency-power','power-loss',
-    'An alternate communications path can retain one service while another connection is lost. A shared power supply can still affect both applications.',
-    'Compare Path A lost with Shared power lost. Trace the station and power applications separately and read the evidence table for each condition.',
-    'Why does the alternate data path fail to retain service after shared power is lost in this example?',
-    ['The alternate conduit still passes through the interrupted path A equipment','Both applications still depend on the same electrical supply','The alternate conduit reaches the recorder instead of the station interface'],1,
-    ['The network paths are separate in this example. Their shared dependency is the electrical supply to the applications.','Both applications share that supply, so the second communication path cannot provide their missing electrical power.','The alternate path serves the station application. The shared application supply remains the limitation here.'],['dependency-power','dependency-network','dependency-services']),
-  tour('accessible-journey',30,'Continue through the boarding interface','station','accessible-journey','access-boarding','aid-required',
-    'A route can reach the platform and still leave the passenger unable to cross the vehicle interface. Information and assistance are separate parts of the journey.',
-    'Compare Boarding aid needed with Aid in place, then examine the doorway and the gap.',
-    'Which change makes the illustrated boarding connection continuous?',
-    ['The information display changes while the physical gap remains','The highlighted route moves to the second lift while the boarding gap remains','A bridging plate connects the platform and doorway, and the route extends into the vehicle'],2,
-    ['Information helps the passenger act but does not itself bridge the physical interface.','A second lift changes the route to the platform; it does not resolve the platform-to-vehicle gap.','The plate changes the physical arrangement and the highlighted route; its dimensions and suitability would still need their own assessment.'],['access-boarding','access-assistance','access-information']),
-  tour('configuration-evidence',31,'Match the evidence to the changed item','depot','change-evidence','change-test',undefined,
-    'The Configuration & change map distinguishes the observed configuration from the evidence used to verify it. Examine the matching evidence receives the identified subject, verification question, results and exceptions. A mismatch leads back for further work; selecting the next step does not approve a change.',
-    'Read Examine the matching evidence in the two-dimensional process. Compare its inputs and outputs, then follow the Implementation or evidence mismatch return to implementation.',
-    'A test report identifies version A, while the item presented for verification is version B. What needs to be established before using that report as evidence for B?',
-    ['Whether the evidence applies to B, with any coverage gaps or discrepancies kept explicit','Whether the A report has been renamed B after updating the baseline record','Whether A and B have the same external appearance'],0,
-    ['Establish the evidence’s applicability to the identified configuration and verification question; a label alone cannot supply missing coverage.','Renaming the report does not change what was examined or establish its applicability to B.','Similar appearance does not establish configuration identity, interface behaviour or the coverage of the evidence.'],['change-test','change-baseline','change-issues'],{actionLabel:'Inspect the evidence step',action:{cutaway:false}}),
+  {
+    "id": "electrification-chain",
+    "label": "26 · Compare the whole energy chain",
+    "title": "Compare the whole energy chain",
+    "domain": "power",
+    "view": "electrification",
+    "component": "study-onboard-transformer",
+    "explanation": "Both overhead examples use a pantograph. The conventional AC train adds a transformer and line converter before the DC link; the motor inverter supplies the selected propulsion in both arrangements.",
+    "actionText": "Inspect the transformer’s separate primary and secondary circuits in Overhead · AC. Then compare Overhead · DC to see which conversion stages change.",
+    "actionLabel": "Show overhead AC",
+    "action": {
+      "view": "electrification",
+      "component": "study-onboard-transformer",
+      "variant": "chain",
+      "mode": "motoring",
+      "scenario": "nominal",
+      "exploded": 0,
+      "cutaway": true,
+      "electrification": "overhead-ac"
+    },
+    "question": "Both selected overhead examples use a pantograph. Which conversion stages distinguish the conventional AC vehicle shown here from its DC comparison?",
+    "choices": [
+      "A wayside DC rectifier with no change to onboard conversion",
+      "An onboard transformer and line converter before the DC link and motor inverter",
+      "Direct contact-wire supply to the traction motor without a motor inverter"
+    ],
+    "answer": 1,
+    "feedback": [
+      "The wayside diode rectifier belongs to the DC supply examples. The conventional AC train instead carries the transformer and line converter.",
+      "The transformer and line converter distinguish this AC chain. The primary and secondary windings remain separate electrical circuits.",
+      "The motor inverter produces controlled motor power. Collected supply AC has a different role."
+    ],
+    "sourceConcepts": [
+      "supply-conversion",
+      "study-onboard-transformer",
+      "study-return"
+    ]
+  },
+  {
+    "id": "wheel-rail-response",
+    "label": "27 · Compare wheel rotation and travel",
+    "title": "Compare wheel rotation and travel",
+    "domain": "vehicle",
+    "view": "adhesion",
+    "component": "adhesion-contact",
+    "explanation": "A brake applies torque to the wheel, while available adhesion limits the force at the rail. The wheel can slow its rotation even while the vehicle keeps moving.",
+    "actionText": "Play Wheel slide or move the phase slider. Compare the rim marker with the wheel centre and fixed stripes.",
+    "actionLabel": "Show wheel slide",
+    "action": {
+      "view": "adhesion",
+      "component": "adhesion-contact",
+      "variant": "slide",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "exploded": 0,
+      "cutaway": true
+    },
+    "question": "The wheel rotates slowly while its centre continues along the rail. What does that establish in this illustration?",
+    "choices": [
+      "The vehicle is stationary because the wheel is turning slowly",
+      "The applied brake effort has been removed",
+      "Wheel rotation alone does not establish vehicle travel"
+    ],
+    "answer": 2,
+    "feedback": [
+      "The centre and travel marker keep moving along the rail while wheel rotation slows.",
+      "The brake remains applied in this comparison.",
+      "The separate travel marker shows why rotation alone can give a misleading picture of vehicle movement."
+    ],
+    "sourceConcepts": [
+      "adhesion-contact",
+      "adhesion-brake",
+      "adhesion-reference"
+    ]
+  },
+  {
+    "id": "infrastructure-follow-up",
+    "label": "28 · Read the repair evidence",
+    "title": "Read the repair evidence",
+    "domain": "track",
+    "view": "infrastructure-care",
+    "component": "route-record",
+    "explanation": "A drainage repair, its follow-up check and a nearby bearing observation concern different evidence. The maintenance process connects the work record to review and continuing actions.",
+    "actionText": "Compare the work-record stage with the review stage. Follow the return arrow for incomplete evidence, then open the separate worksite handback process.",
+    "actionLabel": "Review the work evidence",
+    "action": {
+      "view": "infrastructure-care",
+      "component": "route-record",
+      "variant": "check",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "exploded": 0,
+      "cutaway": true,
+      "processStep": "review"
+    },
+    "question": "A record identifies a drainage check after cleaning. Which conclusion follows without further evidence?",
+    "choices": [
+      "The record concerns that drainage check; separate structural and release questions remain",
+      "The bridge condition is accepted because the nearby drainage work is complete",
+      "The work boundary can be removed because the cleaning tool has gone"
+    ],
+    "answer": 0,
+    "feedback": [
+      "The record identifies the drainage check. The bearing observation and worksite handback still need their own evidence and decisions.",
+      "A drainage check cannot establish the condition of a separate bearing or bridge.",
+      "The worksite handback decision needs the required records and checks; tool removal is only one observation."
+    ],
+    "sourceConcepts": [
+      "route-record",
+      "route-bridge",
+      "route-work-boundary"
+    ]
+  },
+  {
+    "id": "shared-dependencies",
+    "label": "29 · Find the shared dependency",
+    "title": "Find the shared dependency",
+    "domain": "operations",
+    "view": "dependencies",
+    "component": "dependency-power",
+    "explanation": "A second communication path can retain a data connection while another path is lost. Both applications in this example still need the same electrical supply.",
+    "actionText": "Compare Path A lost with Shared power lost. Trace the station-information and power-supervision applications separately.",
+    "actionLabel": "Show shared power loss",
+    "action": {
+      "view": "dependencies",
+      "component": "dependency-power",
+      "variant": "power-loss",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "exploded": 0,
+      "cutaway": true
+    },
+    "question": "Why does the alternate data path fail to retain service after shared power is lost in this example?",
+    "choices": [
+      "The alternate conduit still passes through the interrupted path A equipment",
+      "Both applications still depend on the same electrical supply",
+      "The alternate conduit reaches the recorder instead of the station interface"
+    ],
+    "answer": 1,
+    "feedback": [
+      "The network paths are separate in this example. Their shared dependency is the electrical supply to the applications.",
+      "Both applications share that supply, so the second communication path cannot provide their missing electrical power.",
+      "The alternate path serves the station application. The shared application supply remains the limitation here."
+    ],
+    "sourceConcepts": [
+      "dependency-power",
+      "dependency-network",
+      "dependency-services"
+    ]
+  },
+  {
+    "id": "accessible-journey",
+    "label": "30 · Continue through the boarding interface",
+    "title": "Continue through the boarding interface",
+    "domain": "station",
+    "view": "accessible-journey",
+    "component": "access-boarding",
+    "explanation": "A step-free route can reach the platform while a gap still interrupts boarding. Follow the journey through the train doorway as well as through the station.",
+    "actionText": "Compare Boarding aid needed with Aid in place, then inspect the plate between the platform and doorway.",
+    "actionLabel": "Show the boarding gap",
+    "action": {
+      "view": "accessible-journey",
+      "component": "access-boarding",
+      "variant": "aid-required",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "exploded": 0,
+      "cutaway": true
+    },
+    "question": "Which change makes the illustrated boarding connection continuous?",
+    "choices": [
+      "The information display changes while the physical gap remains",
+      "The highlighted route moves to the second lift while the boarding gap remains",
+      "A bridging plate connects the platform and doorway, and the route extends into the vehicle"
+    ],
+    "answer": 2,
+    "feedback": [
+      "Information helps the passenger find or request assistance, but the physical gap remains.",
+      "The second lift changes access to the platform. The gap at the train is a separate part of the journey.",
+      "The plate bridges the surfaces and the highlighted route continues into the train."
+    ],
+    "sourceConcepts": [
+      "access-boarding",
+      "access-assistance",
+      "access-information"
+    ]
+  },
+  {
+    "id": "configuration-evidence",
+    "label": "31 · Match the evidence to the changed item",
+    "title": "Match the evidence to the changed item",
+    "domain": "depot",
+    "view": "change-evidence",
+    "component": "change-test",
+    "explanation": "The Configuration & change map links the observed item with a verification question, results and exceptions. At the evidence stage, establish which results apply to the changed configuration.",
+    "actionText": "Open the evidence stage and compare its inputs with its outputs. Follow the return to implementation when the configuration or evidence does not match.",
+    "actionLabel": "Inspect the evidence step",
+    "action": {
+      "view": "change-evidence",
+      "component": "change-test",
+      "mode": "coasting",
+      "scenario": "nominal",
+      "exploded": 0,
+      "cutaway": false
+    },
+    "question": "A test report identifies version A, while the item presented for verification is version B. What needs to be established before using that report as evidence for B?",
+    "choices": [
+      "Whether the evidence applies to B, with any coverage gaps or discrepancies kept explicit",
+      "Whether the A report has been renamed B after updating the baseline record",
+      "Whether A and B have the same external appearance"
+    ],
+    "answer": 0,
+    "feedback": [
+      "Establish the report’s applicability to B and the verification question. Keep any uncovered changes or unresolved results visible.",
+      "A new label does not change what the test examined.",
+      "Similar appearance cannot establish identical configuration, interface behaviour or test coverage."
+    ],
+    "sourceConcepts": [
+      "change-test",
+      "change-baseline",
+      "change-issues"
+    ]
+  }
 ];

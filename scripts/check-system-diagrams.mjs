@@ -73,6 +73,17 @@ check('Diagram roles retain important qualifications in the visible drawing',()=
   assert.match(svg,/Defined vehicle interfaces; TCMS<\/text><text class="node-role"[^>]*>allocation varies<\/text>/);
 });
 
+check('A missing detector indication withholds the route even when the point locks engage',()=>{
+  for(const variant of ['unproved','detector-missing']){
+    const d=systemDiagram({view:'interlocking',variant},VIEWS.interlocking);
+    assert.match(d.nodes.find(n=>n.id==='logic').role,/Proof incomplete/);
+    assert.match(d.edges.find(e=>e.from==='points'&&e.to==='logic').label,/proof is absent/);
+    assert.match(d.edges.find(e=>e.to==='output').label,/withholds/);
+  }
+  const proved=systemDiagram({view:'interlocking',variant:'proved'},VIEWS.interlocking);
+  assert.doesNotMatch(proved.edges.find(e=>e.to==='output').label,/withholds/);
+});
+
 check('Loss of path A changes power requests while retaining the declared station alternative',()=>{
   const s=dependencyState('network-loss');assert.equal(s.stationLive,true);assert.equal(s.powerLive,false);assert.equal(s.stationRequests,true);assert.equal(s.powerRequests,false);
   assert(!dependencyState('normal').rows.some(row=>row[2].includes('failed path A')),'A normal case must not describe an active failed path');

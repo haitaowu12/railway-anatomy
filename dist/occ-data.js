@@ -7,7 +7,7 @@ export const OCC_SOURCES = [
     "publisher": "IRSE Netherlands",
     "url": "https://www.irse.nl/post/aspect-2019-conference-day-2",
     "description": "Read the Design Resilience section, “ROCC and Role”, for the relationship between operating responsibilities, people, processes and control-centre resilience.",
-    "scope": "Public conference abstract only. It informs the functional overview; no source layout, staffing or system architecture is reproduced."
+    "scope": "Public conference abstract on operating responsibilities and control-centre resilience."
   },
   {
     "id": "OC02",
@@ -15,7 +15,7 @@ export const OCC_SOURCES = [
     "publisher": "Health and Safety Executive",
     "url": "https://www.hse.gov.uk/comah/sragtech/techmeascontrol.htm",
     "description": "Read the human-interface, control and alarm sections for task analysis, visible action feedback, readable displays and the effect of the room environment.",
-    "scope": "Industrial human-factors guidance, not a railway operating rule. Numerical limits and process-industry design prescriptions are not adopted."
+    "scope": "Industrial human-factors principles applied to the control-room workplace."
   },
   {
     "id": "OC03",
@@ -23,7 +23,7 @@ export const OCC_SOURCES = [
     "publisher": "Health and Safety Executive",
     "url": "https://www.hse.gov.uk/pubns/chis6.pdf",
     "description": "Read the discussion of nuisance alarms, standing alarms and operator understanding. It helps distinguish information volume from useful warning.",
-    "scope": "General alarm-management principles from process industry. No alarm-rate target, priority scheme or railway response sequence is implied."
+    "scope": "General alarm-management principles from the process industry."
   },
   {
     "id": "OC04",
@@ -31,7 +31,7 @@ export const OCC_SOURCES = [
     "publisher": "Health and Safety Executive",
     "url": "https://www.hse.gov.uk/humanfactors/topics/shift-handover.htm",
     "description": "Read the preparation, two-way exchange and incoming cross-check sections, then compare them with the illustrated outstanding-items record.",
-    "scope": "General communication guidance. This is not a railway transfer-of-control procedure or a prescribed form."
+    "scope": "Preparation, two-way exchange and cross-checking during a handover."
   },
   {
     "id": "OC05",
@@ -39,7 +39,7 @@ export const OCC_SOURCES = [
     "publisher": "Frequentis",
     "url": "https://www.frequentis.com/en/public-transport/incident-and-crisis-management",
     "description": "Read the workflow and mobile collaboration sections for links between control-room coordination, field reports and a shared incident record.",
-    "scope": "Supplier example of incident-management functions. Its performance claims, product workflow and automated response features are not reproduced."
+    "scope": "A supplier example of rail incident coordination and shared records."
   },
   {
     "id": "OC06",
@@ -47,7 +47,7 @@ export const OCC_SOURCES = [
     "publisher": "Light Rail Safety and Standards Board",
     "url": "https://portal.lrssb.org/safety-hub/resources/83",
     "description": "The public synopsis identifies ergonomics, workload, team dynamics and HMI as connected design concerns. The full guidance is offered behind a human-verification step.",
-    "scope": "Only the publicly accessible synopsis was reviewed; no claim relies on the gated document or treats its contents as implemented."
+    "scope": "Public synopsis only; the full guidance is behind a human-verification step."
   },
   {
     "id": "OC07",
@@ -55,7 +55,7 @@ export const OCC_SOURCES = [
     "publisher": "Institution of Railway Signal Engineers",
     "url": "https://vimeo.com/508536363",
     "description": "Extended viewing on control-centre automation and the changing tasks of signallers, controllers and dispatchers.",
-    "scope": "Public lecture listing used as further reading, not evidence of a watched transcript or a universal automation architecture."
+    "scope": "Public lecture listing provided for further viewing; its transcript was not reviewed."
   },
   {
     "id": "OC08",
@@ -63,7 +63,7 @@ export const OCC_SOURCES = [
     "publisher": "G&D / Panoptec Europe",
     "url": "https://www.gdsys.com/en/products/kvm-extenders",
     "description": "Public manufacturer explanation of separating a computer from its workplace using computer and console interfaces, including video and input-device connections.",
-    "scope": "One technology family, not a required railway architecture. No range, latency, security or compatibility specification is adopted."
+    "scope": "A manufacturer example of remote keyboard, display and input-device connections."
   },
   {
     "id": "OC09",
@@ -71,7 +71,7 @@ export const OCC_SOURCES = [
     "publisher": "Barco",
     "url": "https://www.barco.com/en/products/control-room-software/barco-ctrl",
     "description": "Public example of distributing information sources to operator desks and video walls through presentation interfaces.",
-    "scope": "Supplier example only. The atlas does not reproduce product screens, security claims or a railway deployment."
+    "scope": "Distribution of selected sources to operator desks and shared display walls."
   },
   {
     "id": "OC10",
@@ -79,7 +79,7 @@ export const OCC_SOURCES = [
     "title": "LRT Design Criteria Manual — C2.2.14 SCADA",
     "url": "https://assets.metrolinx.com/image/upload/Documents/Engineering/LRT_Design_Criteria_Manual_DCM_LRT-001_REV01.pdf",
     "description": "C2.2.14 includes communications equipment at stations, maintenance facilities and OCC within SCADA monitoring, alongside remote electronic equipment and facility control interfaces.",
-    "scope": "Published 2016 design criteria, used as an example of scope. Its hardware, timing and capacity requirements are not adopted as a current universal railway specification."
+    "scope": "Published 2016 LRT criteria, used as an example of communications SCADA scope."
   },
   {
     "id": "OC11",
@@ -87,7 +87,7 @@ export const OCC_SOURCES = [
     "title": "Telecom SCADA — SANGAM",
     "url": "https://www.racomm.in/resource/Our-Offerings/Solutions/T-SCADA.aspx",
     "description": "Telecom SCADA can acquire status, alarms and events from telecom devices or their NMS: PA, PIDS, clocks, telephony, CCTV, transmission, access, recording, radio, UPS and BMS interfaces.",
-    "scope": "Supplier architecture example. The public interface list mainly establishes health monitoring; it does not establish a permission or command list for each connected device."
+    "scope": "Telecom status, alarm and event acquisition. Each control request requires its own defined interface."
   },
   {
     "id": "OC12",
@@ -95,7 +95,7 @@ export const OCC_SOURCES = [
     "title": "Digital station solutions and railway communication",
     "url": "https://www.mobility.siemens.com/global/en/portfolio/digital-solutions-software/infrastructure/digital-station-solutions-and-railway-communication.html",
     "description": "Digital Station Manager combines SCADA, PIS/PA and CCTV functions with a common operator interface; the wider platform distinguishes Power SCADA, Facility SCADA and other services.",
-    "scope": "Product capability example supporting integrated monitoring and controls. It does not establish that every railway uses integration or grants every function the same command rights."
+    "scope": "Integrated station monitoring and control capabilities in a supplier platform."
   },
   {
     "id": "OC13",
@@ -103,7 +103,7 @@ export const OCC_SOURCES = [
     "title": "Public Address System for Scotland’s Railways",
     "url": "https://www.zenitel.com/news/scotlands-railway",
     "description": "Published supplier case study describes central remote fault monitoring, event logs, live and scheduled announcements and station/group selection for ScotRail PA.",
-    "scope": "2024 supplier case study. Native PA service controls and diagnostics are evidenced; a separate SCADA command mapping is an explicit teaching option, not an asserted feature of that installation."
+    "scope": "A 2024 supplier case study of PA announcements, diagnostics and central fault monitoring."
   },
   {
     "id": "OC14",
@@ -111,7 +111,7 @@ export const OCC_SOURCES = [
     "title": "LMR site management for telecom and public safety",
     "url": "https://davicom.com/telecom-public-safety/",
     "description": "Remote telecom RTUs can combine dry contacts, analog values and device protocols, and can expose reset, power-cycle or backup-device control functions.",
-    "scope": "Telecom equipment capability example, not evidence of installation on a named railway. The teaching reset request is available only when its specific interface is enabled; it is not an operating instruction."
+    "scope": "Telecom RTU capabilities, used as an interface example rather than a named railway installation."
   },
   {
     "id": "OC15",
@@ -119,7 +119,7 @@ export const OCC_SOURCES = [
     "title": "Public Transportation Agency Safety Plan — version 1.4, January 2025",
     "url": "https://libraryarchives.metro.net/dpgtl/planning/2025-01-lacmta-public-transportation-agency-safety-plan-version-1.4.pdf",
     "description": "Section E.1.1.2 identifies ROC train, power, communications and fire/life-safety responsibilities and a broad SCADA monitoring/control scope.",
-    "scope": "One operator’s published scope. It does not provide the point list, control allocation or procedures for another railway."
+    "scope": "One operator’s published train, power, communications and life-safety responsibilities."
   },
   {
     "id": "OC16",
@@ -127,7 +127,7 @@ export const OCC_SOURCES = [
     "title": "Communications Systems Site Requirements — TM 3.4.2, revision 0",
     "url": "https://hsr.ca.gov/wp-content/uploads/docs/programs/eir_memos/Proj_Guidelines_TM3_4_2R00.pdf",
     "description": "Section 3.2.2 distinguishes physical OCC equipment including switches, NMS servers, radio equipment, CCTV storage, application servers, voice systems and their supporting facilities.",
-    "scope": "2010 project planning memorandum. Used to distinguish equipment from hosted functions; quantities, layouts and deployment requirements are not reproduced."
+    "scope": "A 2010 project planning memorandum distinguishing physical equipment and application functions."
   }
 ];
 
@@ -139,7 +139,7 @@ export const OCC_CONCEPTS = [
     "details": [
       "Inspect the installed consoles, displays, input devices, voice terminals, cable routes and adjacent technical equipment. One workstation can access several applications, while one application can span several hosts.",
       "Use Interfaces to compare functional responsibilities and permitted exchanges.",
-      "People, responsibilities, incident coordination and duty handover have their own People & processes pages. Room dimensions, staffing and system deployment are illustrative."
+      "People & processes explains incident coordination and duty handover. The room view shows the equipment those activities depend on."
     ],
     "sources": [
       "OC01",
@@ -154,8 +154,7 @@ export const OCC_CONCEPTS = [
       "operations-equipment-room",
       "occ-supervisory-request"
     ],
-    "kind": "place",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "place"
   },
   {
     "id": "occ-console",
@@ -179,8 +178,7 @@ export const OCC_CONCEPTS = [
       "occ-kvm-interface",
       "operations-radio-dispatch"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-client-computer",
@@ -188,8 +186,8 @@ export const OCC_CONCEPTS = [
     "summary": "A local computer renders the application view used at the console.",
     "details": [
       "A local client can render application information near the console and connect to its displays and input devices. A remote client or KVM arrangement is another possible allocation.",
-      "Its enclosure, connectors and computing hardware are physical anatomy. The model does not claim that receipt of a data packet makes a workstation mechanically move.",
-      "An application can share hardware with other functions or run on several hosts. No specific manufacturer or railway deployment is reproduced."
+      "Its enclosure protects the processor, memory, storage and connection interfaces. These components process data and produce the display output.",
+      "Several applications can run on the same computer, while a single application can use several computers."
     ],
     "sources": [
       "OC08",
@@ -201,17 +199,16 @@ export const OCC_CONCEPTS = [
       "occ-kvm-interface",
       "occ-task-display"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-kvm-interface",
     "label": "Remote computer interface",
     "summary": "Keyboard, video and pointing-device connections can link a workplace to computing equipment elsewhere.",
     "details": [
-      "Public KVM products place computers in a technical room while the display and input devices remain at a remote workplace. Other thin-client arrangements use different protocols and deployment choices.",
-      "Remote computer replaces the local computer with an interface module. Open its cover to inspect the connector board; follow the logical source and recipient in Connections.",
-      "The drawing is one possible arrangement. It does not specify access control, latency, network isolation or exclusive control."
+      "A keyboard, video and mouse (KVM) extender links the workplace peripherals to a computer in another room. A thin client uses a different approach: a small workplace computer connects to applications running elsewhere.",
+      "Select Remote computer to replace the local computer with a console-side interface. Open its cover to inspect the connection board.",
+      "The physical connection carries display output towards the console and input commands towards the computer. Application permissions still determine which requests a user can make."
     ],
     "sources": [
       "OC08",
@@ -223,8 +220,7 @@ export const OCC_CONCEPTS = [
       "occ-supervisory-network",
       "occ-application-service"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-display-controller",
@@ -232,7 +228,7 @@ export const OCC_CONCEPTS = [
     "summary": "A presentation controller connects selected information sources with display surfaces.",
     "details": [
       "Control-room visualization products can supply both a workstation and a shared video wall. The presentation system distributes views; it is not the field controller being viewed.",
-      "The controller is drawn as a small hardware interface beneath the wall and in the technical cabinet. A received update appears locally before the shared-display stage.",
+      "The controller receives selected picture sources and sends them to the assigned screens. The view shows its hardware interface near the display wall and in the technical cabinet.",
       "Source selection and display availability are separate from the validity of the underlying railway information."
     ],
     "sources": [
@@ -245,8 +241,7 @@ export const OCC_CONCEPTS = [
       "occ-kvm-interface",
       "occ-information-quality"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-cable-route",
@@ -254,8 +249,8 @@ export const OCC_CONCEPTS = [
     "summary": "Physical connections carry data and power between the workplace and technical equipment.",
     "details": [
       "Consoles and cabinets need connections as well as floor space. Cable trays organize those physical routes; their position is part of the room anatomy.",
-      "The model shows a tray, separate cable runs and connections behind equipment. It does not turn a tray into an abstract message-flow chart.",
-      "Data routes and electrical supply are different dependencies. The geometry does not specify segregation distances, fire performance or an installed cable design."
+      "The tray supports cable runs and helps organize their routes behind the equipment.",
+      "Data cables carry information, while supply cables carry electrical power. Both connections are needed for the equipment they serve."
     ],
     "sources": [
       "OC08",
@@ -268,8 +263,7 @@ export const OCC_CONCEPTS = [
       "occ-supervisory-network",
       "occ-uninterruptible-power"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-equipment-cabinet",
@@ -277,7 +271,7 @@ export const OCC_CONCEPTS = [
     "summary": "A cabinet supports replaceable computing, network and power modules.",
     "details": [
       "The physical cabinet is distinct from the application services hosted by its equipment. The original arrangement groups host computers, network interfaces, recording and power for inspection.",
-      "Open the enclosure and separate the circuit boards, storage carriers, switch interfaces and battery cassette. These are internal equipment parts, not separate responsibilities.",
+      "Open the enclosure to inspect the computing boards, storage carriers, network interfaces and battery module. Each part supports a different hardware function.",
       "The number of cabinets and hardware modules is illustrative. A software function need not occupy its own rack."
     ],
     "sources": [
@@ -291,8 +285,7 @@ export const OCC_CONCEPTS = [
       "operations-event-recording",
       "occ-uninterruptible-power"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "operations-equipment-room",
@@ -300,8 +293,8 @@ export const OCC_CONCEPTS = [
     "summary": "The console depends on computing, communications, recording and electrical supply.",
     "details": [
       "The technical-room view contains cabinets with identifiable hardware rather than one box for every logical function. The console at the front is a small contextual recipient.",
-      "Compare Connected, Display unavailable and Alternate host. The same hardware remains present; the selected host and the delivery outcome change.",
-      "Logical deployment and remote field equipment are shown in Connections. Wayside plant is not drawn as if it were installed beside the control-room servers."
+      "Inspect the computing hosts, network switch, recorder and UPS. Follow their connections to the console, then compare local and remote computing in Console & workstation.",
+      "Interfaces explains the information exchanged with railway systems. The field equipment can be far from the technical room that receives its reports."
     ],
     "sources": [
       "F17",
@@ -314,15 +307,14 @@ export const OCC_CONCEPTS = [
       "occ-supervisory-network",
       "occ-field-gateway"
     ],
-    "kind": "place",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "place"
   },
   {
     "id": "occ-task-display",
     "label": "Console display",
     "summary": "A monitor presents an application view; its picture depends on the source and its delivery.",
     "details": [
-      "The monitor is a physical display panel, enclosure, stand and connected electronics. Its decorative image is not a selectable railway system or an authoritative live status.",
+      "A monitor combines a display panel, enclosure, support and electronics. It presents the picture supplied by a connected computer or display interface.",
       "Inspect the installed screen and its connections in the console context. Use Interfaces to examine the source, quality and permitted request.",
       "A picture alone does not establish that its underlying information is current, complete or authoritative."
     ],
@@ -337,8 +329,7 @@ export const OCC_CONCEPTS = [
       "occ-client-computer",
       "occ-shared-display"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-workstation-input",
@@ -347,7 +338,7 @@ export const OCC_CONCEPTS = [
     "details": [
       "Control-room guidance connects input arrangements with readable feedback and the work being supported.",
       "The keyboard and pointing device are independently removable parts. Their connection to the client is separate from the monitor and communications handset.",
-      "The model does not prescribe a button sequence, railway command permission or emergency control."
+      "Input devices send user actions to the application. The application determines how to interpret those actions and which requests are available."
     ],
     "sources": [
       "OC02",
@@ -358,8 +349,7 @@ export const OCC_CONCEPTS = [
       "occ-task-display",
       "occ-kvm-interface"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-shared-display",
@@ -367,8 +357,8 @@ export const OCC_CONCEPTS = [
     "summary": "A common display presents selected information beyond an individual console.",
     "details": [
       "Public visualization systems distinguish the local workspace from a shared overview and can serve both through a presentation platform.",
-      "The wall contains actual panel assemblies and a display interface. In the update example, a received observation becomes visible at the console and then on the wall.",
-      "Screen size or prominence does not grant authority or establish data freshness. The geometry is not a sightline or ergonomic certification."
+      "The wall combines individual panel assemblies with display interfaces. A presentation controller selects the information shown across them.",
+      "A large shared picture helps staff see common information, but its content still depends on the source and the time of the last update."
     ],
     "sources": [
       "OC09",
@@ -379,8 +369,7 @@ export const OCC_CONCEPTS = [
       "occ-display-controller",
       "occ-information-quality"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-workplace-environment",
@@ -388,8 +377,8 @@ export const OCC_CONCEPTS = [
     "summary": "Lighting, sightlines and the surrounding room affect how a display is used.",
     "details": [
       "General human-factors guidance considers the task, display arrangement and physical environment together. LRSSB’s public synopsis includes HMI, ergonomics and workload.",
-      "The close view contains an empty chair, a light support and acoustic-panel proxies around the console. They supply physical context without modelling staff roles.",
-      "No reach, illumination, acoustic or sightline performance has been calculated."
+      "The close view places a chair, lighting and acoustic panels around the console. Their arrangement affects access, reflections, noise and the ability to read the displays.",
+      "The layout illustrates these relationships. Actual reach, sightlines, lighting and acoustics are assessed for the people and tasks using the room."
     ],
     "sources": [
       "OC02",
@@ -400,8 +389,7 @@ export const OCC_CONCEPTS = [
       "occ-task-display",
       "occ-shared-display"
     ],
-    "kind": "place",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "place"
   },
   {
     "id": "operations-radio-dispatch",
@@ -410,7 +398,7 @@ export const OCC_CONCEPTS = [
     "details": [
       "Railway communications products provide control-centre voice interfaces and recording functions. The terminal is different from the radio bearer and the remote recipient.",
       "The desk contains a handset, terminal face and connecting cable. The handset separates physically; the communications architecture can be explored in the communications area.",
-      "The equipment view contains no message wording, channel plan or transfer-of-control procedure."
+      "The terminal provides the user interface; servers, links and remote radios complete the voice connection."
     ],
     "sources": [
       "O14"
@@ -420,8 +408,7 @@ export const OCC_CONCEPTS = [
       "voice-call-server",
       "operations-event-recording"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-application-service",
@@ -429,8 +416,8 @@ export const OCC_CONCEPTS = [
     "summary": "Computing hardware provides one possible host for supervisory software.",
     "details": [
       "The physical model exposes a representative server enclosure, compute board, storage and connectors. A host is hardware; an application is a software function with an assigned scope.",
-      "Several applications may share infrastructure, and one application can use multiple hosts. No one-rack-per-function deployment is implied.",
-      "Host power, storage, transport and application state have separate dependencies. The model does not establish redundancy or failover."
+      "Several applications may share a host, and one application may use multiple hosts.",
+      "Power, storage, network access and running software all contribute to application availability. Keeping one of these available does not ensure the others are working."
     ],
     "sources": [
       "OC16",
@@ -442,13 +429,12 @@ export const OCC_CONCEPTS = [
       "occ-supervisory-network",
       "occ-task-display"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-alternate-service",
     "label": "Additional application host",
-    "summary": "A second host illustrates a possible deployment choice, not proven redundancy.",
+    "summary": "A second host can run another application or support a configured backup arrangement.",
     "details": [
       "A second physical host can support another application or a configured redundant arrangement. Its presence alone establishes neither automatic failover nor synchronized state.",
       "Availability depends on software, data, networks, power and engineered switching between services. Power, transport and application dependencies must be assessed together."
@@ -462,8 +448,7 @@ export const OCC_CONCEPTS = [
       "occ-information-quality",
       "operations-event-recording"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-supervisory-network",
@@ -471,8 +456,8 @@ export const OCC_CONCEPTS = [
     "summary": "Physical switching equipment connects clients, application hosts and communications interfaces.",
     "details": [
       "The network carries information between endpoints. Its physical switch, optical interface and patching are different from the application messages using them.",
-      "Open the module to inspect the circuit board, connector bank and removable optical interface. In Connections, requests and returned observations have separate directions.",
-      "The drawing is not a resilience, cybersecurity zoning or packet-timing specification."
+      "Open the module to inspect the circuit board, connector bank and removable optical interface. These parts carry the requests and reports exchanged by connected systems.",
+      "The switch forwards traffic between connected ports. Network configuration determines which systems can communicate and how alternative paths are used."
     ],
     "sources": [
       "F20",
@@ -484,8 +469,7 @@ export const OCC_CONCEPTS = [
       "occ-field-gateway",
       "occ-application-service"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-field-gateway",
@@ -508,17 +492,16 @@ export const OCC_CONCEPTS = [
       "interlocking",
       "power-scada"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "occ-uninterruptible-power",
     "label": "Equipment UPS",
-    "summary": "Selected equipment can have a power-conversion and stored-energy dependency.",
+    "summary": "Stored energy keeps selected equipment powered during an interruption.",
     "details": [
       "Railway-building examples use UPS equipment for selected information and building loads.",
       "Separate the enclosure, conversion board and battery cassette. The supply route remains physically distinct from the data cables.",
-      "No runtime, transfer performance or surviving railway function is inferred. Electrical continuity alone does not establish application availability."
+      "Available runtime depends on battery capacity and connected load. The application also needs its computer, network and source information to remain available."
     ],
     "sources": [
       "F19"
@@ -528,8 +511,7 @@ export const OCC_CONCEPTS = [
       "occ-equipment-cabinet",
       "occ-application-service"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "operations-event-recording",
@@ -537,8 +519,8 @@ export const OCC_CONCEPTS = [
     "summary": "Recording hardware stores information for later review.",
     "details": [
       "Public railway communications products include recording. An event record needs its source and context as well as stored data.",
-      "The cabinet contains a recorder board and removable storage carrier. At the record stage its indicator changes and the console gains a history entry.",
-      "The illustration does not prove common clock synchronization, a complete audit record or the physical outcome of a request."
+      "The cabinet contains processing hardware and a removable storage carrier. The recording application writes selected information to storage and retrieves it for later review.",
+      "Source identity and timestamps help interpret a record. Clock alignment and missing data affect how events from several systems can be compared."
     ],
     "sources": [
       "O14",
@@ -549,8 +531,7 @@ export const OCC_CONCEPTS = [
       "occ-application-service",
       "occ-information-quality"
     ],
-    "kind": "equipment",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "equipment"
   },
   {
     "id": "operations-traffic-supervision",
@@ -569,8 +550,7 @@ export const OCC_CONCEPTS = [
       "occ-field-indication",
       "occ-information-quality"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "operations-signalling-workstation",
@@ -591,8 +571,7 @@ export const OCC_CONCEPTS = [
       "occ-field-indication",
       "interlocking"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "operations-power-control",
@@ -600,8 +579,8 @@ export const OCC_CONCEPTS = [
     "summary": "A power-supervision application presents the state reported by local systems.",
     "details": [
       "Public rail-power supervision includes monitoring, control and archiving, while local substation equipment performs its own control and protection functions.",
-      "The example returns the reported open indication of breaker B1. Receiving and displaying that observation is separate from issuing a request.",
-      "No animation switches traction energy, proves isolation or grants access."
+      "A breaker-open indication reports a measured equipment state. Issuing an open request and receiving its position feedback are separate events.",
+      "Protection acts locally on electrical faults. Maintenance access requires isolation checks beyond the state shown on a supervisory screen."
     ],
     "sources": [
       "F17"
@@ -611,17 +590,16 @@ export const OCC_CONCEPTS = [
       "occ-field-indication",
       "occ-field-gateway"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "operations-station-supervision",
     "label": "Facilities and environmental applications",
-    "summary": "Present plant through its allocated facility SCADA, BAS or ventilation-control interfaces.",
+    "summary": "Facility applications present the conditions reported by building and ventilation controls.",
     "details": [
-      "An integrated display can contain selected BAS, TVCS and other facility points without assigning one controller ownership of all plant.",
-      "Comfort fan AHU-01 is a BAS example; tunnel fan TVF-01 belongs to a ventilation-control example. Their source, native application, requested service and returned evidence are named separately.",
-      "Communications-equipment SCADA is another application scope. Its device health and configured controls must not disappear into a traction-only or generic building-services explanation."
+      "A shared display can bring together a building automation system (BAS), a tunnel ventilation control system (TVCS) and other station services. Each retains its defined equipment and control responsibilities.",
+      "An air-handling unit supplies conditioned air to a room or zone. A tunnel fan serves the tunnel air path. Their reports and control requests come through different local systems.",
+      "Communications-equipment supervision provides another set of information, such as amplifier faults or network availability. It serves a different purpose from traction-power or building control."
     ],
     "sources": [
       "CI01",
@@ -636,8 +614,7 @@ export const OCC_CONCEPTS = [
       "occ-field-indication",
       "occ-field-gateway"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-supervisory-request",
@@ -659,16 +636,15 @@ export const OCC_CONCEPTS = [
       "occ-field-gateway",
       "occ-task-display"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-field-indication",
     "label": "Returned indication",
     "summary": "A source reports a defined equipment or application condition with its identity and quality.",
     "details": [
-      "A PA amplifier fault, camera response, breaker position and tunnel-fan condition have different meanings and owners. Name the actual source rather than treating every item as an anonymous field status.",
-      "Some conditions arrive directly; others pass through a controller, native manager or NMS. An aggregation can change detail and meaning, so its point definition matters.",
+      "A PA amplifier fault, camera response, breaker position and tunnel-fan condition describe different equipment. The source identity tells the operator which observation is being reported.",
+      "Reports may arrive directly or pass through a controller, service application or network management system (NMS). The definition of each reported point explains what its value means.",
       "A fresh returned observation is separate from evidence that a previous supervisory request caused a change."
     ],
     "sources": [
@@ -681,8 +657,7 @@ export const OCC_CONCEPTS = [
       "occ-information-quality",
       "occ-record-timeline"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-information-quality",
@@ -703,17 +678,16 @@ export const OCC_CONCEPTS = [
       "occ-field-indication",
       "occ-alternate-service"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-record-timeline",
     "label": "On-screen event history",
-    "summary": "Retain the source, event meaning, quality and relevant time with an observation or request.",
+    "summary": "An event history records what happened, where it was reported and when.",
     "details": [
       "A retained record is a software/data function. Its storage can share a host or use separate equipment; the history is not a freestanding room object.",
       "Acknowledgement, request acceptance and a returned field condition are different records. An acknowledged alarm is not a repaired device.",
-      "Retain the evidence with its quality; event order, clock accuracy and retention depend on the design."
+      "A useful record keeps the source identity, event meaning, data quality and relevant time. Clock accuracy and retention depend on the recording system."
     ],
     "sources": [
       "OC03",
@@ -724,8 +698,7 @@ export const OCC_CONCEPTS = [
       "operations-event-recording",
       "occ-field-indication"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-alarm-queue",
@@ -744,8 +717,7 @@ export const OCC_CONCEPTS = [
       "occ-incident-coordination",
       "occ-information-quality"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-cctv-assessment",
@@ -753,7 +725,7 @@ export const OCC_CONCEPTS = [
     "summary": "A video view is one source of contextual information.",
     "details": [
       "Station-management products can integrate video with other operator information.",
-      "Incident coordination is examined in People & processes. The equipment view connects the console tile with the camera, network and recorder.",
+      "A live view depends on the camera, its power supply, the network and the viewing application. Recording adds a separate storage path.",
       "A camera view is not proof of isolation, track clearance or a safe route."
     ],
     "sources": [
@@ -764,8 +736,7 @@ export const OCC_CONCEPTS = [
       "cctv-recording",
       "occ-information-quality"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-passenger-communications",
@@ -785,8 +756,7 @@ export const OCC_CONCEPTS = [
       "pa-amplifier",
       "station-pa"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-access-supervision",
@@ -794,7 +764,7 @@ export const OCC_CONCEPTS = [
     "summary": "Access events and door state belong to a defined security interface.",
     "details": [
       "Public integrated station systems can present security information alongside other services.",
-      "The equipment study links to the reader, controller, lock and door contact in Communications. Its console context is an information tile.",
+      "Follow the reader, controller, lock and door contact in Communications. Their reports appear as information in the operator application.",
       "Displayed access state is not permission to enter track, electrical or maintenance work areas."
     ],
     "sources": [
@@ -806,17 +776,15 @@ export const OCC_CONCEPTS = [
       "access-door-interface",
       "occ-information-quality"
     ],
-    "kind": "information",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "information"
   },
   {
     "id": "occ-incident-coordination",
     "label": "Incident coordination",
     "summary": "Responsible teams bring reports, evidence and continuing actions together.",
     "details": [
-      "Incident coordination is presented as a two-dimensional People & processes study.",
-      "Follow reports, distinct recipients, responsibilities and updates there. The physical control-room console remains its contextual equipment link.",
-      "The equipment page contains no incident stages, paper forms or automated emergency-response procedure."
+      "Staff combine reports from railway systems and people in the field to understand an incident. Different teams may need to act at the same time.",
+      "People & processes follows the recipients, responsibilities and continuing updates. The control-room console provides the equipment context for that work."
     ],
     "sources": [
       "OC05",
@@ -827,17 +795,15 @@ export const OCC_CONCEPTS = [
       "operations-radio-dispatch",
       "operations-event-recording"
     ],
-    "kind": "process",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "process"
   },
   {
     "id": "occ-duty-handover",
     "label": "Duty handover",
     "summary": "A change of duty needs an exchange of relevant information.",
     "details": [
-      "HSE describes preparation, two-way exchange and incoming cross-checking of task-relevant information.",
-      "The handover link opens People & processes. A console supplies the equipment context without representing the exchange as a paper model.",
-      "The atlas does not transfer an operating area, change permissions or prescribe a railway handover form."
+      "The outgoing and incoming staff prepare relevant information, exchange it in both directions and check their understanding. Open issues and continuing actions need to carry across the change of duty.",
+      "People & processes follows that exchange and connects it to the console, event history and other information used by the staff."
     ],
     "sources": [
       "OC04"
@@ -847,8 +813,7 @@ export const OCC_CONCEPTS = [
       "occ-record-timeline",
       "occ-incident-coordination"
     ],
-    "kind": "process",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "process"
   },
   {
     "id": "occ-alarm-acknowledgement",
@@ -857,7 +822,7 @@ export const OCC_CONCEPTS = [
     "details": [
       "The People & processes study separates a report, attention and continuing coordination.",
       "Acknowledgement does not clear the physical condition or establish that repair or verification has occurred.",
-      "Its equipment context is the task display, not a new physical object in the room."
+      "The display records acknowledgement separately from the alarm condition, so staff can see both attention and continuing status."
     ],
     "sources": [
       "OC03",
@@ -867,8 +832,7 @@ export const OCC_CONCEPTS = [
       "occ-alarm-queue",
       "occ-incident-coordination"
     ],
-    "kind": "process",
-    "caveat": "Original public-source teaching model. Layout, quantities and deployment are illustrative; the sequence is not an operating instruction."
+    "kind": "process"
   },
   {
     "id": "telecom-scada",
@@ -893,7 +857,7 @@ export const OCC_CONCEPTS = [
       "interface-contract"
     ],
     "kind": "information",
-    "caveat": "The named assets and trace states are fictional teaching examples, not an installed command list or operating procedure."
+    "caveat": "The interface examples use fictional equipment names. Actual monitoring points and permitted requests are configured for each railway."
   }
 ];
 
@@ -907,7 +871,7 @@ export const OCC_VIEW_DATA = {
     "title": "Connect the room with its equipment",
     "component": "operations-centre",
     "level": "Facility",
-    "note": "Original public-source teaching model. The equipment, information behaviour and people/process studies have separate purposes.",
+    "note": "Inspect the workplace equipment here. Interfaces follows the information it exchanges; People & processes follows the work that uses it.",
     "variants": [
       {
         "id": "service",
@@ -985,7 +949,7 @@ export const OCC_VIEW_DATA = {
     "title": "Inspect installed workplace equipment and its connections",
     "component": "occ-console",
     "level": "Assembly",
-    "note": "A local client and a remote client/KVM arrangement are representative alternatives. Monitors are physical surfaces, not separate railway applications.",
+    "note": "Compare a computer at the console with a keyboard, video and mouse (KVM) connection to a computer elsewhere.",
     "variants": [
       {
         "id": "task",
@@ -1009,7 +973,7 @@ export const OCC_VIEW_DATA = {
         "id": "shared",
         "label": "Remote computer",
         "title": "A workplace connected to computing elsewhere",
-        "description": "The console-side interface connects workplace displays and input devices to computing equipment elsewhere. Shared presentation uses a separate display-distribution function. This physical alternative does not establish service availability.",
+        "description": "The console-side interface connects workplace displays and input devices to computing equipment elsewhere. Shared displays use their own presentation controller.",
         "nodes": [
           "Console peripherals",
           "KVM / client interface",
@@ -1061,13 +1025,13 @@ export const OCC_VIEW_DATA = {
     "title": "Follow the hardware behind a working screen",
     "component": "operations-equipment-room",
     "level": "Assembly",
-    "note": "Original public-source teaching model. The equipment, information behaviour and people/process studies have separate purposes.",
+    "note": "Inspect the workplace equipment here. Interfaces follows the information it exchanges; People & processes follows the work that uses it.",
     "variants": [
       {
         "id": "normal",
         "label": "Equipment arrangement",
         "title": "Locate computing, network, storage and power dependencies",
-        "description": "Inspect representative cabinets containing compute hosts, switching and interface equipment, storage, distribution and UPS hardware. Applications may share or span hosts. Extra hardware alone establishes neither redundancy nor failover.",
+        "description": "Inspect computing hosts, network interfaces, storage and UPS hardware. Applications may share or span hosts. A backup service also needs suitable software, data, network and power arrangements.",
         "nodes": [
           "Compute hosts",
           "Network / interface hardware",
@@ -1107,7 +1071,7 @@ export const OCC_VIEW_DATA = {
     "title": "Open People & processes",
     "component": "occ-console",
     "level": "Context",
-    "note": "Original public-source teaching model. The equipment, information behaviour and people/process studies have separate purposes.",
+    "note": "Inspect the workplace equipment here. Interfaces follows the information it exchanges; People & processes follows the work that uses it.",
     "variants": [
       {
         "id": "reported",
@@ -1689,7 +1653,7 @@ export const OCC_READING_GUIDES = [
     "sections": [
       {
         "heading": "Start with what occupies the room",
-        "text": "A control centre contains consoles, displays, input devices, voice terminals, cabling and supporting technical equipment. A physical host and its software applications are different subjects. The model shows an original room arrangement, not an operator facility or staffing plan.",
+        "text": "A control centre contains consoles, displays, input devices, voice terminals, cables and supporting technical equipment. A host computer runs software applications; the applications provide the information and functions that operators use.",
         "sources": [
           "OC02",
           "OC16"
@@ -1697,7 +1661,7 @@ export const OCC_READING_GUIDES = [
       },
       {
         "heading": "Follow the installed workplace connections",
-        "text": "Local computing can sit near the keyboard and displays. A remote arrangement can use an interface carrying display and input information to computing equipment elsewhere. KVM is one possible technology family. One workstation can reach several applications, and one application can be distributed across hosts.",
+        "text": "A local computer sits near its keyboard and displays. A keyboard, video and mouse (KVM) interface can instead connect those peripherals to a computer in another room. One workstation can access several applications, and one application can run across several hosts.",
         "sources": [
           "OC08",
           "OC09",
@@ -1714,7 +1678,7 @@ export const OCC_READING_GUIDES = [
       },
       {
         "heading": "Name the point before drawing a connection",
-        "text": "Name the asset, observed condition, originating device or controller, native service and selected supervisory interface. Telecom SCADA can be absent, monitoring only or configured for a named request. Other applications can remain native or share selected information and requests through a common HMI. Neither integration nor a particular NMS hop is universal.",
+        "text": "For each reported point, identify the equipment, the observed condition and the system that supplies it. Telecom SCADA can monitor conditions or carry specifically configured requests. A shared human–machine interface (HMI) brings selected services to one screen; those services retain their own control permissions.",
         "sources": [
           "OC11",
           "OC12",

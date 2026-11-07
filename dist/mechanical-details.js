@@ -7,7 +7,7 @@ export function createMechanicalDetails(api) {
   const rubber = mat(0x27383b, .94, .02), insulation = mat(0xc9c6a9, .82, .02);
   const phaseMaterials = [M.copper, mat(0xc89960, .4, .65), mat(0x9f694f, .45, .6)];
   function mark(node, label, { sources = ['MD01'], function: purpose = '', interfaces = [], stage = null, range = null } = {}) {
-    Object.assign(node.userData, { inspectionPart: true, explorationLabel: label, inspectionSources: sources, inspectionFunction: purpose, inspectionInterfaces: interfaces, fidelity: 'Original schematic mechanism; dimensions and clearances illustrative' });
+    Object.assign(node.userData, { inspectionPart: true, explorationLabel: label, inspectionSources: sources, inspectionFunction: purpose, inspectionInterfaces: interfaces, fidelity: 'Simplified mechanism; proportions and clearances are illustrative' });
     if (stage && range) Object.assign(node.userData, { inspectionStage: stage, inspectionRange: range });
     return node;
   }
@@ -84,7 +84,7 @@ export function createMechanicalDetails(api) {
       const bellows=piece(g,'air-spring-bellows','Flexible air-spring bellows',[0,.1,0]);
       const points=[[.11,-.09],[.21,-.09],[.255,-.045],[.26,.025],[.225,.085],[.11,.085]].map(p=>new THREE.Vector2(...p));mesh(bellows,new THREE.LatheGeometry(points,24,0,Math.PI*1.4),rubber);
       const section=piece(bellows,'air-spring-bellows-section','Bellows section');mesh(section,new THREE.LatheGeometry(points,14,Math.PI*1.4,Math.PI*.6),rubber);shell(section);
-      const internal=piece(g,'air-spring-emergency-spring','Rubber emergency spring',[0,.085,0],{function:'Supports the assembly within the bellows in the selected generic arrangement.'});cylinder(internal,.12,.12,rubber,[0,0,0],null,16);
+      const internal=piece(g,'air-spring-emergency-spring','Rubber emergency spring',[0,.085,0],{function:'Provides a backup load path when air-spring pressure is lost.'});cylinder(internal,.12,.12,rubber,[0,0,0],null,16);
       const cap=piece(g,'air-spring-body-interface','Body support interface',[0,.2,0]);cylinder(cap,.26,.04,M.steel,[0,0,0],null,24);
       const inlet=piece(g,'air-spring-air-connection','Air-spring supply connection',[0,.025,-.26],{function:'A separate pneumatic connection supplies the bellows; levelling-control dynamics are not simulated.',interfaces:['Bellows air volume','Air-supply connection']});cylinder(inlet,.027,.1,M.copper,[0,0,0],[Math.PI/2,0,0],10);
       move(cap,[0,.38,0],'Separate the suspension levels',[.25,.55]);move(bellows,[0,.17,Math.sign(z)*.3],'Separate the suspension levels',[.25,.55]);secondary.push(g);

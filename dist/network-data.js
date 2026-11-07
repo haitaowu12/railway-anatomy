@@ -6,7 +6,7 @@ export const NETWORK_SOURCES = [{
   publisher: 'Federal Transit Administration',
   url: 'https://www.transit.dot.gov/regulations-and-programs/asset-management/transit-asset-management-systems-handbook',
   description: 'A U.S. transit agency handbook on identifying and managing systems and their assets throughout the lifecycle.',
-  scope: 'Further reading on transit systems and asset management in the U.S. context; it does not validate the fictional railway layout.'
+  scope: 'U.S. transit asset-management guidance. The overview uses an example railway to connect these system roles.'
 }];
 
 export const NETWORK_CONCEPTS = [
@@ -18,7 +18,7 @@ export const NETWORK_CONCEPTS = [
       'The three overlays separate vehicle movement, traction energy and operational information. They are different relationships on the same fictional railway, not three different railway designs.'
     ],
     sources: ['K01', 'P01', 'O01', 'O04', 'NET01'],
-    caveat: 'An authored schematic: distances, buildings, track connections and equipment quantities do not describe an installed railway.',
+    caveat: 'The overview uses a made-up route with compressed distances and simplified buildings and track connections.',
     related: ['network-route', 'network-station', 'network-depot', 'network-control-centre', 'network-substation', 'network-telecommunications']
   },
   {
@@ -26,10 +26,10 @@ export const NETWORK_CONCEPTS = [
     summary: 'The route connects passenger stops and the tracks that support and guide each vehicle.',
     details: [
       'Rails, their supports and fastening systems form the physical route. Switches and crossings connect tracks where a vehicle needs another path.',
-      'Open the trackwork views to inspect support arrangements, a turnout, its point drive and the wheel–rail interface. A drawn connection alone does not establish permission to use it.'
+      'Open the trackwork views to inspect track supports, a turnout, its point drive and the wheel–rail interface. Signalling and operating rules determine when a train may use a connected route.'
     ],
     sources: ['K01', 'K12', 'S10'],
-    caveat: 'The route is compressed for navigation; no gradients, curve radii, clearances or route capacities are calculated.',
+    caveat: 'The route is compressed so its main places fit in one view.',
     related: ['network-turnback', 'running-rail', 'track-turnout', 'track-ballasted', 'network-train']
   },
   {
@@ -40,7 +40,7 @@ export const NETWORK_CONCEPTS = [
       'Open the station to inspect its passenger systems, platform protection, mechanical and electrical plant, fire systems and control interfaces.'
     ],
     sources: ['F03', 'N09'],
-    caveat: 'Three repeated stops illustrate a route. Their platform and access layouts are not station design recommendations.',
+    caveat: 'Three stops show where passengers join and leave the railway.',
     related: ['platform-screen-door', 'station-pis', 'station-pa', 'station-scada', 'network-telecommunications']
   },
   {
@@ -51,7 +51,7 @@ export const NETWORK_CONCEPTS = [
       'Inspect the turnout to see switch rails, crossings and a point mechanism. Then follow its interface to detection and interlocking.'
     ],
     sources: ['K12', 'S10', 'S11'],
-    caveat: 'This is an illustrative connection, not an interlocking table, movement sequence or validated turnback design.',
+    caveat: 'The track drawing shows the physical connection. Open the interlocking study to follow the separate route-proving logic.',
     related: ['track-turnout', 'track-point-machine', 'track-point-detection', 'interlocking', 'network-route']
   },
   {
@@ -62,7 +62,7 @@ export const NETWORK_CONCEPTS = [
       'Propulsion and train-control communication remain independent technology choices. Their detailed equipment is visible at the vehicle and subsystem levels.'
     ],
     sources: ['P04', 'P10', 'T04'],
-    caveat: 'The overview silhouettes are not propulsion diagrams. Their motion does not simulate a timetable, speed or braking performance.',
+    caveat: 'Small moving silhouettes show where trains sit within the wider railway.',
     related: ['carbody', 'bogie', 'traction-inverter', 'train-control', 'network-station']
   },
   {
@@ -73,7 +73,7 @@ export const NETWORK_CONCEPTS = [
       'Open the depot to follow the distinctions between arrival, required work, vehicle condition and release to service.'
     ],
     sources: ['O04', 'O13'],
-    caveat: 'The compact layout is fictional. A connected track or a stored vehicle does not establish movement authority or readiness for service.',
+    caveat: 'The example depot separates its track connections, work areas and vehicle-release decisions.',
     related: ['network-maintenance', 'network-stabling', 'depot-throat', 'depot-controller', 'depot-personnel-protection']
   },
   {
@@ -84,7 +84,7 @@ export const NETWORK_CONCEPTS = [
       'Open the maintenance views for the individual mechanisms and their distinct access and protection interfaces.'
     ],
     sources: ['O04', 'O06', 'O11'],
-    caveat: 'This is equipment anatomy, not a maintenance instruction or authorization to access, lift or isolate a vehicle.',
+    caveat: 'The equipment views explain access and support mechanisms. Work protection is covered separately in the maintenance process.',
     related: ['depot-inspection-pit', 'depot-roof-access', 'depot-lifting-jacks', 'depot-wheel-lathe', 'depot-wash-plant']
   },
   {
@@ -95,7 +95,7 @@ export const NETWORK_CONCEPTS = [
       'Open the depot view to locate storage roads and their connection to the yard throat.'
     ],
     sources: ['O13'],
-    caveat: 'Road length, fleet capacity and service availability are not inferred from the number of vehicles drawn.',
+    caveat: 'The drawn vehicles mark the storage function; road lengths and fleet capacity are outside this overview.',
     related: ['depot-stabling', 'depot-throat', 'depot-controller', 'network-train']
   },
   {
@@ -106,7 +106,7 @@ export const NETWORK_CONCEPTS = [
       'Open the control centre to inspect workstations, communications and event records. Supervision and safety-related movement protection have different responsibilities.'
     ],
     sources: ['O01', 'O02'],
-    caveat: 'Room arrangement and workstation counts are illustrative. An information link does not imply unrestricted control authority.',
+    caveat: 'The room groups the main supervision roles. Each application has its own information and control permissions.',
     related: ['operations-centre', 'operations-traffic-supervision', 'operations-power-control', 'operations-radio-dispatch', 'network-telecommunications']
   },
   {
@@ -117,7 +117,7 @@ export const NETWORK_CONCEPTS = [
       'Choose the power overlay to distinguish outgoing and return relationships, then open the substation for the equipment and circuit.'
     ],
     sources: ['P01'],
-    caveat: 'Paths are separated to make the circuit readable. This overview does not set conductor positions, voltage, feeder sections or station-building supplies.',
+    caveat: 'Outgoing and return paths are drawn apart to make the DC circuit readable.',
     related: ['transformer', 'rectifier', 'dc-switchgear', 'positive-rail', 'negative-rail', 'network-train']
   },
   {
@@ -128,7 +128,7 @@ export const NETWORK_CONCEPTS = [
       'Open station networks to distinguish passenger information, video, plant supervision and other communications interfaces. Their integration does not make them interchangeable with train protection.'
     ],
     sources: ['O02', 'F20', 'T05'],
-    caveat: 'No shared physical topology, redundancy level, network security arrangement or safety certification is asserted.',
+    caveat: 'The links show which places exchange information. The communications studies explain the equipment and individual services.',
     related: ['network-switch', 'fiber-backbone', 'station-scada', 'train-radio', 'network-control-centre']
   }
 ];
@@ -136,23 +136,23 @@ export const NETWORK_CONCEPTS = [
 export const NETWORK_VIEWS = {
   railway: {
     label: 'Railway overview', title: 'A connected railway', component: 'network-overview', level: 'Railway',
-    note: 'A fictional railway at three scales: the route, its places and their equipment. Select a place to inspect it. Track geometry and paths are schematic.',
+    note: 'Explore an example railway at three scales: the route, its places and their equipment. Select a place to inspect it. Track geometry and paths are simplified.',
     variants: [
       {
         id: 'movement', label: 'Train movements', title: 'Passenger service and fleet care share a railway',
-        description: 'Teal paths connect three passenger stops, the turnback and a depot branch. Select a train, station or facility to go inside. Paths show connectivity, not permission to move or an operating plan.',
+        description: 'Teal paths connect three passenger stops, the turnback and a depot branch. Select a train, station or facility to go inside. The paths show track connections; the signalling studies explain permission to move.',
         nodes: ['Passenger stops', 'Running line / turnback', 'Depot branch', 'Care / stabling'],
         sources: ['K01', 'K12', 'O13']
       },
       {
         id: 'power', label: 'Traction power', title: 'The energy circuit crosses location boundaries',
-        description: 'This overview always shows a DC traction example, even if another supply is selected in the detailed energy study. Amber and cyan distinguish outgoing and return relationships: the substation converts, distributes and protects the supply; the vehicle uses it through its own equipment. These are illustrative paths, not cable routes.',
+        description: 'This overview always shows a DC traction example, even if another supply is selected in the detailed energy study. Amber and cyan distinguish outgoing and return relationships: the substation converts, distributes and protects the supply; the vehicle uses it through its own equipment. The paths show the electrical relationship rather than cable positions.',
         nodes: ['AC supply', 'Conversion / protection', 'Traction circuit', 'Vehicle equipment'],
         sources: ['P01', 'P04'], component: 'network-substation'
       },
       {
         id: 'information', label: 'Information links', title: 'Connected equipment keeps its own responsibilities',
-        description: 'Violet links connect the control centre with station, power and depot equipment. The overlay shows information relationships. A shared connection or display does not itself provide movement authority or verified isolation.',
+        description: 'Violet links connect the control centre with station, power and depot equipment. The overlay shows information relationships. Movement authority and electrical isolation each depend on their own control and verification processes.',
         nodes: ['Local equipment', 'Information transport', 'Supervision', 'Commands / status'],
         sources: ['O01', 'O02'], component: 'network-telecommunications'
       }

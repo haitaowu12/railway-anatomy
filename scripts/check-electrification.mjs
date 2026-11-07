@@ -82,6 +82,19 @@ for(const view of views)for(const propulsion of ['lim','rotary'])for(const profi
   cases++;
 }
 
+// The incoming three-phase supply and single-phase traction feeders have
+// different power interfaces. Inspect actual scene objects, not labels alone.
+viewer.setView('substation');viewer.setElectrification('overhead-ac');
+for(const [component,expectedPoles]of [['ac-switchgear',3],['ac-feeder-switchgear',1]]){
+  const assemblies=find(component);assert(assemblies.length,`${component}: no visible assembly`);
+  for(const assembly of assemblies){
+    let contacts=0,terminations=0;
+    assembly.traverse(node=>{if(node.name==='feeder-breaker-moving-contact')contacts++;if(/^switchgear-cable-termination-\d+$/.test(node.name))terminations++;});
+    assert.equal(contacts,expectedPoles,`${component}: breaker pole count`);
+    assert.equal(terminations,expectedPoles,`${component}: outgoing termination count`);
+  }
+}
+
 // Contact geometry is shared rather than visually approximated: the carbon
 // strips meet the wire, and the two fourth-rail shoes meet their two conductors.
 viewer.setView('vehicle');viewer.setTechnology({propulsion:'rotary',control:'loop'});viewer.setElectrification('overhead-dc');viewer.setExploded(0);
