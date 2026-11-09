@@ -1,0 +1,36 @@
+.inspection-plate { max-width: 1336px; margin: 0 auto; padding: clamp(16px, 4vw, 48px); }
+.plate-heading > a { font-size: 14px; font-weight: 600; }
+.plate-heading h1 { margin: 10px 0 0; font-size: clamp(26px, 4vw, 44px); line-height: 1.12; }
+.plate-heading p { margin: 10px 0 24px; color: var(--muted); }
+.plate-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: clamp(18px, 3vw, 36px); align-items: start; }
+.plate-drawing { border: 1px solid #c9d6ec; background: var(--surface); }
+.plate-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.plate-toolbar > span { color: var(--muted); font-size: 13px; font-weight: 600; }
+.plate-views { display: flex; gap: 4px; }
+.plate-views button { min-height: 44px; padding: 5px 13px; border-radius: 3px; font-size: 14px; }
+.plate-views button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.plate-scene { height: clamp(320px, 55dvh, 570px); position: relative; overflow: hidden; }
+#plate-model, #plate-anchors { position: absolute; inset: 0; width: 100%; height: 100%; }
+#plate-anchors { pointer-events: none; }
+#plate-error { position: absolute; inset: auto 12px 12px; margin: 0; padding: 10px; background: var(--surface); }
+.plate-caption { margin: 0; min-height: 58px; padding: 12px; border-top: 1px solid var(--line); font-size: 14px; }
+.plate-key { padding-top: 10px; border-top: 2px solid var(--accent); }
+.plate-key h2 { font-size: 19px; margin: 0; }
+.plate-key p { font-size: 14px; line-height: 1.45; color: var(--muted); margin: 4px 0 0; }
+.plate-key ol { list-style: none; padding: 0; margin: 12px 0; }
+.plate-key li { display: flex; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.plate-number { flex: 0 0 25px; width: 25px; height: 25px; border-radius: 50%; color: white; text-align: center; font-size: 13px; font-weight: 600; }
+.operating { --pin: #2149c6; }
+.detector { --pin: #59379a; }
+.lock { --pin: #805108; }
+.plate-number { background: var(--pin); }
+.plate-pin { fill: var(--pin); stroke: white; stroke-width: 1.4; }
+.plate-leader { stroke: var(--pin); stroke-width: 1.5; }
+.plate-pin-text { fill: white; font-size: 12px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+.plate-key .plate-basis { margin-bottom: 10px; }
+.plate-key > a, .plate-footer { font-size: 14px; }
+.plate-footer { margin-top: 24px; }
+@media (max-width: 800px) {
+  .plate-layout { grid-template-columns: minmax(0, 1fr); }
+  .plate-scene { height: clamp(300px, 48dvh, 420px); }
+}
