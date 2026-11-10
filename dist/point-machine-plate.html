@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Point-machine assembly · Railway Anatomy</title>
+  <link rel="icon" href="./assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./point-machine-plate.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body>
+  <main class="inspection-plate">
+    <header class="plate-heading">
+      <a href="./#learn/point-proof">← Move, lock &amp; detect</a>
+      <h1>Inside a four-rod point machine</h1>
+      <p>Trace each blade’s operating and detector rods, then move the enclosure aside to locate the locks.</p>
+    </header>
+    <section class="plate-layout" aria-label="Point-machine inspection plate">
+      <div class="plate-drawing">
+        <div class="plate-toolbar">
+          <span>End A · both blades locked</span>
+          <div class="plate-views" role="group" aria-label="Assembly view">
+            <button type="button" data-view="assembled" aria-pressed="true" disabled>Assembled</button>
+            <button type="button" data-view="exploded" aria-pressed="false" disabled>Exploded</button>
+          </div>
+        </div>
+        <div class="plate-scene">
+          <div id="plate-model"></div>
+          <svg id="plate-anchors" aria-hidden="true"></svg>
+          <p id="plate-error" hidden>The model is unavailable. The part descriptions are below or beside the drawing.</p>
+        </div>
+        <p id="plate-state" class="plate-caption" role="status">The enclosure is fitted. Both blade positions are held at end A.</p>
+      </div>
+      <aside class="plate-key" aria-labelledby="plate-key-heading">
+        <h2 id="plate-key-heading">Follow the four rods</h2>
+        <p>N and F mark the blades nearest to and farthest from the machine.</p>
+        <ol>
+          <li><span class="plate-number operating">1</span><div><strong>Operating rods</strong><p>Transfer push and pull from the drive to the two switch blades. Each blade has its own operating rod.</p></div></li>
+          <li><span class="plate-number detector">2</span><div><strong>Detector rods</strong><p>Follow the position of each blade independently of the operating rods.</p></div></li>
+          <li><span class="plate-number lock">3</span><div><strong>Locks</strong><p>Two illustrated bolts hold the operating slides. Choose Exploded to see where they engage.</p></div></li>
+        </ol>
+        <p class="plate-basis">Alstom’s P80 brochure documents the four-rod arrangement. The internal layout and dimensions are schematic.</p>
+        <a href="./reading.html#guide-point-machine">Read the point-machine field guide →</a>
+      </aside>
+    </section>
+    <footer class="plate-footer"><a href="https://tony-wu-home.web.app/">Tony Wu</a> · <a href="https://haitaowu12.github.io/tony-wu-home/">More projects</a></footer>
+  </main>
+  <script type="module" src="./point-machine-plate.js"></script>
+</body>
+</html>

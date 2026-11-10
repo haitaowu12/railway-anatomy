@@ -50,7 +50,8 @@ const VIEW = {
   services: { camera: [12, 11, 17], target: [0, 1.8, 0], distance: 34 },
 };
 export function createViewer(container, callbacks = {}) {
-  const { onSelect = () => {}, onReady = () => {}, onError = () => {} } = callbacks;
+  const { onSelect = () => {}, onReady = () => {}, onError = () => {}, onRender = () => {},
+    initialView = 'system', inspectionPlate = false } = callbacks;
   const renderer=new ColorfiguresRenderer(),rendererKind='colorfigures';
   const compatibility=true;
   renderer.setClearColor(C.background);
@@ -70,6 +71,7 @@ export function createViewer(container, callbacks = {}) {
   const studioEnvironment = installStudioEnvironment({ THREE, renderer, scene });
   const camera = new THREE.PerspectiveCamera(36, 1, .03, 250);
   const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enabled = !inspectionPlate;
   controls.enableDamping = !compatibility;
   controls.dampingFactor = .085;
   controls.minPolarAngle = .08;
@@ -1453,7 +1455,9 @@ export function createViewer(container, callbacks = {}) {
     functionalGeometry.setFromPoints(points); functionalLine.computeLineDistances();
     functionalGeometry.computeBoundingSphere();
   }
+  let plateBounds = null;
   function clearStructuralExploration() {
+    plateBounds = null;
     labelAnchorInstances.clear();
     for (const record of models.values()) { restoreIsolation(record); restoreSeparation(record); }
     if (state.explodeScope === 'selected') state.exploded = 0;
@@ -1504,7 +1508,7 @@ export function createViewer(container, callbacks = {}) {
     if(container.clientWidth<=0||container.clientHeight<=0)return false;
     camera.clearViewOffset(); camera.zoom=1; camera.updateProjectionMatrix();
     const authored = !nodes && !state.focused && !state.isolation && viewFocus()?.bounds;
-    const bounds = authored ? new THREE.Box3(new THREE.Vector3(...authored.min),new THREE.Vector3(...authored.max)) : visibleBounds(nodes||frameRoots());
+    const bounds = authored ? new THREE.Box3(new THREE.Vector3(...authored.min),new THREE.Vector3(...authored.max)) : (!nodes && plateBounds) || visibleBounds(nodes||frameRoots());
     const fit = fitPerspectiveBounds(bounds, { direction: camera.position.clone().sub(controls.target),
       up: camera.up, fov: camera.fov, aspect: camera.aspect, padding:state.view==='railway'?1.05:1.16 });
     if (!fit) return false;
@@ -1546,6 +1550,32 @@ export function createViewer(container, callbacks = {}) {
       camera.updateProjectionMatrix();
     }
     return true;
+  }
+  function frameParts(names, direction) {
+    const {root, exploded} = models.get(state.view);
+    if (inspectionPlate) {
+      for (const {node, delta} of exploded) {
+        if (node.userData.plateSeparation) delta.set(...node.userData.plateSeparation);
+      }
+      animateModel();
+    }
+    plateBounds = visibleBounds(names.map(name => root.getObjectByName(name)).filter(Boolean));
+    camera.position.copy(controls.target).add(new THREE.Vector3(...direction));
+    const fitted = fitToView();
+    controls.update(); requestRender();
+    return fitted;
+  }
+  function projectPartAnchors(names) {
+    const {root, picks} = models.get(state.view);
+    const visible = picks.filter(nodeVisible);
+    return names.flatMap(name => {
+      const part = root.getObjectByName(name);
+      if (!nodeVisible(part) || !part.userData.inspectionAnchor) return [];
+      const point = new THREE.Vector3(...part.userData.inspectionAnchor).applyMatrix4(part.matrixWorld).project(camera);
+      raycaster.setFromCamera(new THREE.Vector2(point.x, point.y), camera);
+      const firstHit = raycaster.intersectObjects(visible, false)[0];
+      return firstHit && within(firstHit.object, part) ? [{name, x:(point.x + 1) / 2, y:(1 - point.y) / 2}] : [];
+    });
   }
   function frameSelection(id = state.selected) {
     const roots = assemblyRoots(models.get(state.view), id, state);
@@ -1729,8 +1759,10 @@ export function createViewer(container, callbacks = {}) {
       state.allInstances = false; setSelected(id, { instanceId }); onSelect(id, { instanceId: state.selectedInstanceId });
     }
   }
-  renderer.domElement.addEventListener('pointerdown', down);
-  renderer.domElement.addEventListener('pointerup', up);
+  if (!inspectionPlate) {
+    renderer.domElement.addEventListener('pointerdown', down);
+    renderer.domElement.addEventListener('pointerup', up);
+  }
   renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
 
   let disposed = false, frame = 0, lastTime = 0, lastDraw = -Infinity, renderPending = true, settleFrames = 0;
@@ -1747,6 +1779,7 @@ export function createViewer(container, callbacks = {}) {
     if (settleFrames > 0) { controls.update(); settleFrames--; }
     if ((renderPending || moving || settleFrames > 0) && (!compatibility || time - lastDraw > (renderer.isColorfiguresRenderer ? 50 : 90))) {
       if(compatibility)drawWithEnclosureOcclusion(scene,state,()=>renderer.render(scene,camera));else renderer.render(scene,camera);
+      onRender();
       renderPending = false; lastDraw = time;
     }
   }
@@ -1767,10 +1800,10 @@ export function createViewer(container, callbacks = {}) {
     studioEnvironment.dispose(); renderer.dispose(); renderer.domElement.remove();
   }
 
-  setView('system'); resize(); animateModel(); frame = requestAnimationFrame(loop);
+  setView(initialView); resize(); animateModel(); frame = requestAnimationFrame(loop);
   onReady({ view: state.view, components: [...models.get(state.view).parts.keys()], renderer: rendererKind });
   return {
-    setView,
+    setView, frameParts, projectPartAnchors,
     getInspectionState, selectInstance, setAllInstances, setInspectionMode, setFunctionalPath,
     getRenderDiagnostics() {
       let visibleMeshes=0,triangles=0;models.get(state.view)?.root.traverseVisible(node=>{if(!node.isMesh)return;visibleMeshes++;triangles+=(node.geometry.index?.count||node.geometry.attributes.position?.count||0)/3;});
@@ -1816,10 +1849,10 @@ export function createViewer(container, callbacks = {}) {
     frameVariant,
     setSelected,
     setMode(mode) { if (!['motoring', 'regeneration', 'coasting', 'isolated'].includes(mode)) return; state.mode = mode; animateModel(); requestRender(); },
-    setExploded(value) {
+    setExploded(value, { refit = true } = {}) {
       const amount = THREE.MathUtils.clamp(Number(value) || 0, 0, 1), changed = state.exploded !== amount;
       state.exploded = amount; updateAssembly(); animateModel();
-      if (changed) { fitToView(); controls.update(); }
+      if (changed && refit) { fitToView(); controls.update(); }
       requestRender(); return state.exploded;
     },
     setCutaway(value) {

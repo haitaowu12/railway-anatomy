@@ -507,7 +507,7 @@ function renderPointJourney(){
   if(!active)return;
   journeyReadout('point');$('#point-journey').setAttribute('aria-label','Point-machine learning journey');
   $('#scene-title').textContent=physical?'How a point machine moves a turnout':'Where the point indication goes';
-  $('#point-journey').innerHTML=`<nav aria-label="Point-machine journey"><button data-point-chapter="mechanism" ${physical?'aria-current="step"':''}>1 · Move, lock & detect</button><button data-point-chapter="interlocking" ${!physical?'aria-current="step"':''}>2 · Follow the indication →</button><button data-turnout-start>Follow wheels →</button></nav>${physical?'<p class="point-arrangement">Four rods: 2 operating + 2 detector. Internal functions shown schematically.</p>':''}`;
+  $('#point-journey').innerHTML=`<nav aria-label="Point-machine journey"><button data-point-chapter="mechanism" ${physical?'aria-current="step"':''}>1 · Move, lock & detect</button><button data-point-chapter="interlocking" ${!physical?'aria-current="step"':''}>2 · Follow the indication →</button><button data-turnout-start>Follow wheels →</button></nav>${physical?'<p class="point-arrangement">Four rods: 2 operating + 2 detector. <a href="./point-machine-plate.html">Inspect the assembly →</a></p>':''}`;
   $('#arrangement-label').textContent='Throw outcome';
   for(const button of $$('#scenario-buttons button'))button.textContent=VIEWS['switch-drive'].variants.find(v=>v.id===button.dataset.variant)?.label||button.textContent;
   if(physical){

@@ -181,7 +181,7 @@ The Firebase configuration pins the `railway-anatomy` site on the shared Spark p
 
 Project code and original content are provided under the [MIT licence](LICENSE). Referenced publications and vendored dependencies retain their own licences and rights.
 
-Built by [Tony Wu](https://tony-wu-home.web.app/) · [More projects](https://tony-wu-home.web.app/#work).
+Built by [Tony Wu](https://haitaowu12.github.io/tony-wu-home/) · [More projects](https://tony-wu-home.web.app/#work).
 
 ### Automatic Firebase publication
 

@@ -11,6 +11,7 @@ import {representationFor} from '../dist/representation-guidance.js';
 import {processFor} from '../dist/process-ui.js';
 import {TOURS} from '../dist/tours.js';
 import {pointIndicationDiagram} from '../dist/point-machine.js';
+import { POINT_PLATE_FRAME } from '../dist/point-machine-model.js';
 
 // The renderer and DOM are the only substitutes. All scene construction,
 // animation, selection, masking and camera code below is the shipping viewer.
@@ -301,5 +302,34 @@ assert.equal(viewer.getPhase(),0,'Restarting the same point-machine tour retaine
 synchronize({...pointJourney,variant:'unproved',pointPhase:1},true);
 assert.equal(viewer.getPhase(),5,'Changing the throw outcome lost the mechanism stage');
 viewer.dispose();
+
+const plate = createViewer({ clientWidth: 356, clientHeight: 405, appendChild() {} },
+  { initialView: 'switch-drive', inspectionPlate: true });
+const rods = ['point-operating-rod-near', 'point-operating-rod-far', 'point-detector-rod-near', 'point-detector-rod-far'];
+const locks = ['point-lock-near', 'point-lock-far'];
+plate.setExploded(1, { refit: false });
+assert(plate.frameParts(POINT_PLATE_FRAME.parts, POINT_PLATE_FRAME.direction));
+plate.setExploded(0, { refit: false });
+nextFrame(1000);
+renderer.scene.updateMatrixWorld(true);
+const cameraBefore = renderer.camera.position.clone();
+const projectionBefore = renderer.camera.projectionMatrix.clone();
+const coverBefore = position('removable-machine-housing');
+const anchors = plate.projectPartAnchors(rods);
+assert.equal(anchors.length, 4, 'Both rods for each blade must be visible in the assembled plate');
+assert.deepEqual(plate.projectPartAnchors(locks), [], 'A callout must not point through the fitted cover');
+plate.setExploded(1, { refit: false });
+nextFrame(1100);
+renderer.scene.updateMatrixWorld(true);
+assert.equal(plate.projectPartAnchors(locks).length, 2, 'The displaced cover must expose both lock bolts');
+assert.deepEqual(plate.projectPartAnchors(rods), anchors, 'The rods and camera must stay in place');
+plate.setExploded(0, { refit: false });
+nextFrame(1200);
+renderer.scene.updateMatrixWorld(true);
+assert(position('removable-machine-housing').equals(coverBefore), 'The enclosure must return to its fitted position');
+assert(renderer.camera.position.equals(cameraBefore) && renderer.camera.projectionMatrix.equals(projectionBefore));
+assert.equal(plate.getPhase(), 0, 'Assembly inspection must not operate the point machine');
+plate.dispose();
+console.log('PASS point-machine plate: visible rod and lock anchors, stable camera, fitted-cover restoration and unchanged operating phase');
 console.log('PASS exploration: actual selected-assembly geometry, isolation/technology visibility, production restore order, phase composition, stale-state resets, visible bounds, duplicate-instance tags, 12 perspective fits and below-datum backdrop clearance');
 
