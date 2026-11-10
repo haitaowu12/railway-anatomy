@@ -39,7 +39,7 @@ export function turnoutGuide(route='straight',detail=false) {
     {at:0,label:'Approach the crossing',description:'Keep both wheels in view. One approaches the crossing; the other runs beside its check rail.'},
     {at:at(cross-.45),label:'Wing rail and wheel tread',description:'The wing rail provides a running surface beside the flange passage. The tread carries the wheel; the flange passes through the flangeway.'},
     {at:at(cross+.16),label:'Nose and opposite check rail',description:`The ${branch?'near':'far'} wheel passes the crossing nose. Across the axle, the check rail can guide the back of the ${branch?'far':'near'} wheel flange, keeping the crossing wheel on the intended side of the nose.`},
-    {at:at(cross+.75),label:'Continue onto the nose',description:'Support transfers between the wing rail and crossing nose. Their contact regions can overlap; the wheel is not shown dropping into a hole.'},
+    {at:at(cross+.75),label:'Continue onto the nose',description:'Watch the tread transfer from the wing rail to the nose. Both surfaces can support it briefly as the wheel crosses the visible flange gap.'},
     {at:1,label:'Beyond the crossing',description:'Both wheels continue on the selected rail pair. This fixed, tread-bearing crossing stays still for either route.'},
   ];
   return {label:detail?'Wheel support and guidance at a fixed crossing':'From selected blades to the crossing',duration:detail?13:18,loop:false,steps:detail?support:[

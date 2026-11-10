@@ -29,7 +29,7 @@ export function pointIndicationDiagram(variant = 'proved') {
     title: 'Follow the end-B indication',
     description: state.proof
       ? 'The returned point indication supplies one input to the interlocking. Train detection and the other route conditions are checked alongside it.'
-      : missing?'The blades reached B and both locks engaged, but one detector input is missing. The interlocking has no B indication.':'The throw stopped short. With no B indication, the point condition remains missing at the interlocking.',
+      : missing?'The blades reached B and both locks engaged, but one detector input is missing. The interlocking has no B indication.':'The throw stopped short of B, so the blade positions and locks needed for B indication were never established. The interlocking is missing that route input.',
     sources: ['PM01','PM03','PM04','S10'],
     nodes: [
       {id:'points', label:'Point machine & blades', component:'track-point-machine', location:'Trackside', role:state.proof||missing ? 'Near blade closed · far blade open · locked' : 'Stopped between the ends', status:missing?'available':status, statusLabel:state.position},

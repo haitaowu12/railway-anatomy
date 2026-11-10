@@ -1,6 +1,6 @@
 # Turnout and crossing study
 
-Follow the point-machine setting into a complete, fixed-crossing turnout. The wheelset has two wheels connected by one axle; it is not a complete bogie.
+Follow a single wheelset, two wheels on one axle, through a complete turnout with a fixed crossing. The point-machine setting determines which route the wheelset takes.
 
 ## Two selected routes
 
@@ -11,7 +11,9 @@ Follow the point-machine setting into a complete, fixed-crossing turnout. The wh
 
 The blades and both locks stay fixed while the wheelset passes. The two operating rods and two detector rods match the point-machine study. This independently driven schematic has no additional stretcher bar. The centre-line trace identifies the selected alignment; it is not a rail or a contact-force path.
 
-The closed blade establishes the selected entry beside its stock rail. Closure rails connect the switch to the crossing. Each route has its own opposite check rail. At the crossing the tread receives vertical support from the wing rail and nose, while the check rail can constrain the opposite wheel through its flange back. The flange passes through the flangeway. The drawing retains tread support through the transfer region; it does not depict the visible flange passage as a hole into which the wheel must drop.
+The closed blade establishes the selected entry beside its stock rail. From the switch, the closure rails carry the selected route to the crossing.
+
+Watch both wheels at the crossing. The wing rail and nose support the tread of the crossing wheel while its flange passes through the flangeway. Across the axle, the route’s check rail can guide the back of the opposite wheel’s flange and keep the crossing wheel on the intended side of the nose. The drawing shows how the tread remains supported as it passes the flange gap.
 
 ## One geometry, two scales
 
@@ -32,7 +34,7 @@ The turnout nose and wing rails are separately selectable. A wheelset path drive
 | [RISSB: Wheel and Rail Profile Development, Appendix A A.2.1, page 47 and Figure A7](https://www.ariso.org.au/wp-content/uploads/2019/03/GL_Wheel-and-Rail-Profile-Development_Final.pdf) | Tread-support transfer between the wing rail and nose; no contact-patch or load calculation is adopted. |
 | [Point-machine study](POINT-MACHINE-STUDY.md) | The documented four-rod arrangement and A/B/indication distinctions retained from the preceding journey. |
 
-The study uses a conventional fixed, tread-bearing common crossing with separate check rails. Other fixed, self-guarded, flange-bearing and movable crossing families need their own support and guidance explanations. A fixed diamond has two common crossings and two obtuse crossings. Its separate layout view marks these regions and has no wheel-contact animation. A plain diamond provides two intersecting through routes; a crossover uses two turnouts and a connecting track. They are separate layouts, rather than interchangeable names for this simple turnout.
+The study uses a conventional fixed, tread-bearing common crossing with separate check rails. Other fixed, self-guarded, flange-bearing and movable crossing families need their own support and guidance explanations. A plain diamond provides two intersecting through routes. The fixed-diamond layout marks its two common and two obtuse crossings; that view has no wheel-contact animation. A crossover instead uses two turnouts and a connecting track.
 
 ## Checks
 

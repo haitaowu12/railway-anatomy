@@ -1,8 +1,6 @@
 # Railway Anatomy
 
-A growing public reference for understanding how a railway fits together: its places, vehicles, equipment, interfaces and the people who operate and maintain it.
-
-Railway Anatomy is intended especially for graduates, newcomers and people moving into another railway discipline. It connects familiar things—a train, a platform, a control room—with the less visible systems behind them. The aim is to make those relationships easier to explore, discuss and learn, and to point readers toward useful public material for further study.
+Start with a train, a platform or a control room, then follow the equipment, interfaces and people that keep it working. Railway Anatomy is a growing public reference for graduates, newcomers and anyone moving into another railway discipline. Its models and guides show how the parts fit together and point to public sources for further study.
 
 **[Explore Railway Anatomy](https://railway-anatomy.web.app/)** · [GitHub Pages](https://haitaowu12.github.io/railway-anatomy/) · [GPT Sites](https://rail-systems-atlas.techiesea.chatgpt.site) · [Read the guides and sources](https://railway-anatomy.web.app/reading.html) · [Suggest a correction or addition](https://github.com/haitaowu12/railway-anatomy/issues/new/choose)
 
@@ -16,7 +14,7 @@ I built Railway Anatomy to make that picture easier to explore. You can start wi
 
 ## Illustrated spatial views
 
-The illustrated views are the main product baseline. I chose an ink-and-tone approach to make equipment relationships legible while retaining the working model, component selection and inspection controls.
+I use ink and tone to make parts easier to distinguish in the working models. You can still select a component, look inside an assembly or play a movement through.
 
 The physical equipment views use an adaptation of April Zhu’s [Colorfigures](https://april-zhu.com/colorfigures) ink and three-tone drawing style. Existing geometry, assembly identities, cameras, picking, cutaway/separation recipes and playback are retained. Information, electrical and process diagrams keep their existing representations.
 
@@ -59,7 +57,7 @@ The [point-machine study notes](docs/POINT-MACHINE-STUDY.md) distinguish this fo
 
 Continue from the point-machine journey with **Follow wheels**, or choose **Guided tours → Follow wheels through a turnout**. End A connects to the straight route and end B to the diverging route. The selected blades remain locked while the two wheels pass through the switch, closure rails and crossing. Changing the route returns the wheelset to its approach.
 
-**Whole turnout** keeps the route in context. **Crossing close-up** follows the same selected route through the wing rails and crossing nose, with the opposite check rail visible beside the other wheel. The tread-support and flange-back guidance relationships are distinct. The nose, wing rails and wheelset can be selected individually.
+Use **Whole turnout** to follow the selected route, then **Crossing close-up** to see what happens at the two wheels. The wing rail and crossing nose support the tread of one wheel. Across the axle, the opposite check rail can guide the back of the other wheel’s flange. You can select the nose, wing rails and wheelset individually.
 
 The [turnout study notes](docs/TURNOUT-STUDY.md) explain the original fixed-crossing geometry and compare Bane NOR, Vossloh and voestalpine references, including movable-nose and self-guarded alternatives. The field guide covers the same routes and connections.
 
