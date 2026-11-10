@@ -1,6 +1,6 @@
 # Turnout and crossing study
 
-Follow a single wheelset, two wheels on one axle, through a complete turnout with a fixed crossing. The point-machine setting determines which route the wheelset takes.
+Follow a single wheelset, two wheels on one axle, through a complete turnout with a fixed crossing. The point-machine setting determines which route the wheelset takes. The study shows one axle. Bogie wheelbase and yaw are outside its scope.
 
 ## Two selected routes
 
@@ -13,7 +13,7 @@ The blades and both locks stay fixed while the wheelset passes. The two operatin
 
 The closed blade establishes the selected entry beside its stock rail. From the switch, the closure rails carry the selected route to the crossing.
 
-Watch both wheels at the crossing. The wing rail and nose support the tread of the crossing wheel while its flange passes through the flangeway. Across the axle, the route’s check rail can guide the back of the opposite wheel’s flange and keep the crossing wheel on the intended side of the nose. The drawing shows how the tread remains supported as it passes the flange gap.
+Watch both wheels at the crossing. The wing rail and nose support the tread of the crossing wheel while its flange passes through the flangeway. Each route has its own opposite check rail. Across the axle, that rail can guide the back of the other wheel’s flange and keep the crossing wheel on the intended side of the nose. The drawing shows how the tread remains supported as it passes the flange gap.
 
 ## One geometry, two scales
 

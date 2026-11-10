@@ -165,7 +165,7 @@ export const STATION_PLATFORM_CONCEPT_UPDATES = [
     "label": "Associated platform camera and video",
     "summary": "The camera gives the operator another view of the reported location.",
     "details": [
-      "The Siemens example connects an intrusion alarm with live and recorded video from the relevant location. That helps the operator examine the event in context.",
+      "The cited Siemens track-intrusion example links the alarm to live and recorded video from the relevant location. That helps the operator examine the event in context.",
       "The camera is mounted behind the passenger area. Its event marker identifies the video connection; the operator workstation is shown in the control-centre study."
     ],
     "sources": [
@@ -303,7 +303,7 @@ export const PLATFORM_ANIMATIONS = {
       {
         "at": 0.34,
         "label": "Train doors opening",
-        "description": "Only the platform-facing leaves move; the opposite side remains closed."
+        "description": "Only the train doors facing the platform move. The opposite side stays closed."
       },
       {
         "at": 0.46,
@@ -343,7 +343,7 @@ export const PLATFORM_ANIMATIONS = {
       {
         "at": 1,
         "label": "Review the reported condition",
-        "description": "The report identifies the occupied space for the next response. The object still occupies it."
+        "description": "The report tells the operator which space is occupied so they can assess the next response."
       }
     ]
   },
@@ -390,7 +390,7 @@ export const STATION_LIFT_ANIMATION = {
     {
       "at": 0.48,
       "label": "Between levels",
-      "description": "The cabin moves through the concourse opening. Both landing doors and the cabin doors remain closed."
+      "description": "The cabin rises through the shaft towards the concourse. Both sets of landing doors and the cabin doors stay closed."
     },
     {
       "at": 0.7,
@@ -529,7 +529,7 @@ export const STATION_PLATFORM_VIEW_DATA = {
         "id": "passenger",
         "label": "Passenger circulation",
         "title": "Follow the lift between platform and concourse",
-        "description": "Follow a one-way lift trip. The cabin and car doors move, while landing doors stay at their floor. Stairs, displays and help points show the surrounding passenger route.",
+        "description": "Follow a one-way lift trip. The cabin carries its doors with it. Each set of landing doors stays at its floor. Stairs, displays and help points show the surrounding passenger route.",
         "nodes": [
           "Platform landing",
           "Closed doors",

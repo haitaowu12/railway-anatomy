@@ -87,6 +87,13 @@ check('Work and release concepts leave 3D while bridge, drainage and plant anato
   assert.equal(destination('fire-pump'),'./index.html#explore/station/fire-systems/fire-pump/water');
 });
 
+check('A reader can choose a handover map or open the specific configuration evidence step',()=>{
+  const handovers=byId.get('guide-understanding-railway-handovers');
+  assert.match(handovers, /href="#processes"/);
+  assert.doesNotMatch(handovers, /href="[^"]*configuration-change/);
+  assert.match(byId.get('guide-configuration-handover'), /href="\.\/index\.html#processes\/configuration-change\/verify"/);
+});
+
 check('All process reading summaries retain the actual stage titles and human-readable responsible roles',()=>{
   const section=html.match(/<section id="processes">([\s\S]*?)<\/section>/)?.[1];
   assert(section,'Missing process reading section');
@@ -106,9 +113,16 @@ check('All process reading summaries retain the actual stage titles and human-re
 });
 
 check('The generated source directory retains publisher, explanation and public-use scope for every record',()=>{
-  assert(html.includes(`Explore ${CONCEPTS.length} concepts and ${SOURCES.length} public references`),'Reading headline has stale release counts');
+  const sourceUrls=new Set(SOURCES.map(source=>source.url));
+  const sourceSection=html.split('<section id="references">')[1];
+  assert(sourceSection,'Missing public references');
+  const displayedUrls=[...sourceSection.matchAll(/href="([^"]+)" target="_blank"/g)].map(match=>decode(match[1]));
+  assert.equal(displayedUrls.length,sourceUrls.size,'Show each public URL once');
+  assert.deepEqual(new Set(displayedUrls),sourceUrls,'Reference directory lost or changed a public URL');
+  assert(html.includes(`Explore ${CONCEPTS.length} concepts and ${sourceUrls.size} public references`),'Reading headline has stale release counts');
   for(const source of SOURCES){
-    const article=byId.get(source.id);assert(article,`Missing source ${source.id}`);
+    const article=byId.get(source.id) ?? articles.find(item=>item.body.includes(`<section id="${esc(source.id)}">`))?.body;
+    assert(article,`Missing source ${source.id}`);
     for(const field of ['publisher','title','description','scope'])assert(article.includes(esc(source[field])),`Stale ${field} for ${source.id}`);
     assert(article.includes(`href="${esc(source.url)}"`),`Wrong public URL for ${source.id}`);
   }

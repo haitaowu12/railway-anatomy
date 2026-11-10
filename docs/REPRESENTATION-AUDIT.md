@@ -26,6 +26,8 @@ An enclosure, rail clip, filter, duct, circuit board, rectifier or record does n
 
 ## Full route and comparison inventory
 
+This inventory describes the 1 November 2026 build. Later changes to turnout and crossing studies are recorded in [the content review](CONTENT-REVIEW.md).
+
 The inventory covers **60 view routes and 148 comparison entries**. Geometry was instantiated at three authored phases per entry (**444 finite-transform states**), including legacy scenes retained for compatibility. This construction check is not a claim that every old 3D proxy remains an appropriate default: the representation column controls that decision. It also is not a GPU, visual-accessibility or performance test.
 
 Default classifications: equipment 84; connections 31; process 15; evidence 6; dependencies 7; journey 5. The physical-context column describes appropriate spatial inspection, which can be reached through a related equipment view; it does not promise an Equipment tab on process pages. Service dependencies deliberately have no 3D proxy.

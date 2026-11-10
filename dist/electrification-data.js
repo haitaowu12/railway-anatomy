@@ -556,11 +556,11 @@ export const ELECTRIFICATION_CONCEPTS = [
   },
   {
     "id": "onboard-transformer",
-    "label": "Onboard traction transformer",
-    "summary": "The conventional AC train transforms the collected supply before line conversion.",
+    "label": "Underframe traction transformer",
+    "summary": "In this overhead AC example, the transformer sits below the vehicle body.",
     "details": [
-      "The pantograph feeds the primary winding, whose return uses wheelsets and running rails. The secondary winding feeds the separate line-converter circuit.",
-      "The transformer appears under the vehicle in this teaching layout. It is omitted from all three DC supply examples."
+      "Follow the roof-mounted pantograph connection to the transformer, then the separate circuit from the secondary winding to the line converter.",
+      "In the three DC examples, the substation steps down and rectifies the supply. The train takes DC from the contact system, so it has no AC traction transformer at that input."
     ],
     "sources": [
       "E02",

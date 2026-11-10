@@ -108,7 +108,7 @@ export function applyMotionGuides(views){
     step(1,'Observe the distinction','The receiver responds to the electrical circuit. Rail contamination, circuit faults and wheel–rail contact can affect the indication.')
   ],14);
   enable('train-detection','axle-counter','Entry, exit and remaining axle counts',[
-    step(0,'Zero entries and exits','The assumed valid example begins with no axle in the section. Amber marks are entries, cyan marks exits and pale marks the difference.'),
+    step(0,'Zero count before entry','The assumed valid example begins with no axle in the section. Amber marks are entries, cyan marks exits and pale marks the difference.'),
     step(.18,'First entry','The leading axle passes the entry head. The cumulative entry count increases to one.'),
     step(.32,'Two entries','Both axles have entered and neither has exited. The remaining count is two.'),
     step(.72,'First exit','One axle has passed the exit head. Entries remain two, exits become one and one axle remains.'),

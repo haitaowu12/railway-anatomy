@@ -748,7 +748,7 @@ export function createViewer(container, callbacks = {}) {
   }
   function makeHVAC(parent,position,detailed=true) {
     const detail=equipmentDetails().hvac(parent,{component:'hvac',at:position,scale:.36,context:'vehicle'});
-    detail.node.userData.explorationLabel='Installed roof air-treatment module';
+    detail.node.userData.explorationLabel='Installed roof HVAC module';
     registerAnimator(s=>detail.animate(selectedMechanism(s)==='air'?mechanismProgress(s)*2:0));
     explode(detail.node,[0,.6,0]);return detail.node;
   }

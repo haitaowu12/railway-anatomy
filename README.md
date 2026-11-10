@@ -55,7 +55,7 @@ The [point-machine study notes](docs/POINT-MACHINE-STUDY.md) distinguish this fo
 
 ### Follow wheels through a turnout
 
-Continue from the point-machine journey with **Follow wheels**, or choose **Guided tours → Follow wheels through a turnout**. End A connects to the straight route and end B to the diverging route. The selected blades remain locked while the two wheels pass through the switch, closure rails and crossing. Changing the route returns the wheelset to its approach.
+Continue from the point-machine journey with **Follow wheels**, or choose **Guided tours → Follow wheels through a turnout**. Setting A connects to the straight route and setting B to the diverging route. The selected blades remain locked while the two wheels pass through the switch, closure rails and crossing. Changing the route returns the wheelset to its approach.
 
 Use **Whole turnout** to follow the selected route, then **Crossing close-up** to see what happens at the two wheels. The wing rail and crossing nose support the tread of one wheel. Across the axle, the opposite check rail can guide the back of the other wheel’s flange. You can select the nose, wing rails and wheelset individually.
 

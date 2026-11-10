@@ -103,7 +103,7 @@ const C=(id,label,summary,details,sources,related=[])=>({id,label,summary,detail
 export const COMMUNICATIONS_CONCEPTS = [
   C('communications-system','Railway communications','Connect people, applications and equipment across railway locations.',[
     'Communications link the train, equipment beside the track, stations and central facilities. Each service has its own endpoints and requirements, even when services share part of a network.',
-    'Switch between supervision, passenger services and voice. The equipment and destinations change, while Connections names what travels and who uses it. Open an equipment view to examine the physical interface.',
+    'Choose a study on network equipment, SCADA interfaces, calls and radio, information and audio, or video and access. Where available, Connections shows what each path carries and who uses it. Equipment shows the physical interfaces.',
     'The supervision examples use SCADA: supervisory control and data acquisition. SCADA collects equipment information and can send permitted requests. Train-control messages are covered in the signalling studies.'
   ],['F20','CM03','CM12','CM01'],['train-network','station-scada','operational-cab-radio','station-pa','station-cctv']),
   C('fiber-patch-panel','Fibre termination and patch panel','A passive termination makes the installed fibre accessible to equipment.',[

@@ -701,7 +701,7 @@ export const EXTRA_CONCEPTS = [
     "label": "Wash-water collection and treatment",
     "summary": "Collected water can be treated for reuse while other flows leave the process.",
     "details": [
-      "A collection channel routes wash water toward treatment and storage. A selected reuse circuit returns treated water to suitable wash stages, while fresh-water make-up and residual discharge remain separate process requirements outside the displayed pipe model.",
+      "A collection channel routes wash water toward treatment and storage. The reuse circuit returns treated water to suitable wash stages. Separate paths carry fresh make-up water and residual discharge.",
       "Treatment removes contamination before water returns to suitable wash stages. The required quality and treatment steps depend on the incoming water, cleaning process and intended reuse."
     ],
     "sources": [

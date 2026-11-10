@@ -513,7 +513,7 @@ export const SOURCES = [
   },
   {
     "id": "S14",
-    "title": "UNIAC[1] axle counter",
+    "title": "UNIAC axle counter",
     "publisher": "voestalpine Railway Systems",
     "url": "https://www.voestalpine.com/railway-systems/en/products/uniac1-axle-counter/",
     "description": "Directional wheel sensing and section-clear evaluation.",

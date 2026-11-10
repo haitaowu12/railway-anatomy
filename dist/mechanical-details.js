@@ -28,8 +28,8 @@ export function createMechanicalDetails(api) {
     const g = piece(parent,name,label,at,{sources,function:'Rolling elements transmit shaft load between the inner and outer raceways.',interfaces:['Rotating shaft seat','Stationary housing bore']});g.scale.setScalar(scale);
     if(!detailed){
       mark(g,'Bearing unit envelope',{sources,function:'Compact context representation; the dedicated bogie view exposes races, rollers, cage and seals.'});
-      const inner=piece(g,'bearing-inner-race','Schematic inner bearing ring',undefined,{sources});ring(inner,.077,.095,.14,M.steel);
-      const outer=piece(g,'bearing-outer-race','Schematic outer bearing ring',undefined,{sources});ring(outer,.126,.145,.14,M.core);
+      const inner=piece(g,'bearing-inner-race','Bearing inner ring',undefined,{sources});ring(inner,.077,.095,.14,M.steel);
+      const outer=piece(g,'bearing-outer-race','Bearing outer ring',undefined,{sources});ring(outer,.126,.145,.14,M.core);
       const seal=piece(g,'bearing-end-seal','Bearing seal',[0,0,.083],{sources});ring(seal,.078,.142,.018,rubber);
       return {node:g,inner,outer,rollers:null,seal,animate(angle){inner.rotation.z=Number(angle)||0;}};
     }

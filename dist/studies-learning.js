@@ -29,7 +29,7 @@ export const STUDY_GUIDES = [
       },
       {
         "heading": "Follow the transformer’s two circuits",
-        "text": "The pantograph connects to the transformer’s primary winding; wheelsets and running rails complete that supply circuit. Magnetic coupling transfers energy to the separate secondary winding, which feeds the line converter. Amber, cyan and copper traces help distinguish the circuits. Open the enclosure to find the DC-link capacitor bank and motor inverter. The inverter feeds either the rotary motor or linear induction motor (LIM), according to your propulsion choice.",
+        "text": "The pantograph connects to the transformer’s primary winding; wheelsets and running rails complete that supply circuit. Magnetic coupling transfers energy to the separate secondary winding, which feeds the line converter. The line converter converts the secondary AC to DC for the DC link. Amber traces the incoming supply and cyan marks its return. Copper traces the separate transformer secondary circuit. Open the converter enclosure to find the DC-link capacitor bank and motor inverter. The inverter feeds either the rotary motor or linear induction motor (LIM), according to your propulsion choice.",
         "sources": [
           "E02",
           "E03",

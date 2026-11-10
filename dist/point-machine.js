@@ -18,7 +18,7 @@ export function pointMachineState(fraction = 0, variant = 'proved') {
   const far={closed:atA,open:atB,locked,available:variant!=='detector-missing'};
   const indication=pointCorrespondence({near,far}),proof=indication==='B';
   const position=atA?'End A':atB?'End B':interrupted&&phase>=.72?'Stopped short':'Moving A → B';
-  const locking=locked?(phase<.15?'Both locked at A':'Both locked at B'):lock<=.001?'Released':phase<.15?'Releasing':'Engaging at B';
+  const locking=locked?(phase<.15?'Locked in setting A':'Locked in setting B'):lock<=.001?'Released':phase<.15?'Releasing':'Engaging at B';
   const bladeLabel=blade=>blade.closed?'Closed':blade.open?'Open':interrupted&&phase>=.72?'Between ends':'Moving';
   return {phase,movement,lock,proof,position,locking,indication,near,far,nearPosition:bladeLabel(near),farPosition:bladeLabel(far)};
 }
@@ -26,13 +26,13 @@ export function pointMachineState(fraction = 0, variant = 'proved') {
 export function pointIndicationDiagram(variant = 'proved') {
   const state = pointMachineState(1, variant), status = state.proof ? 'available' : 'unavailable',missing=variant==='detector-missing';
   return {
-    title: 'Follow the end-B indication',
+    title: 'Follow the indication for setting B',
     description: state.proof
       ? 'The returned point indication supplies one input to the interlocking. Train detection and the other route conditions are checked alongside it.'
       : missing?'The blades reached B and both locks engaged, but one detector input is missing. The interlocking has no B indication.':'The throw stopped short of B, so the blade positions and locks needed for B indication were never established. The interlocking is missing that route input.',
     sources: ['PM01','PM03','PM04','S10'],
     nodes: [
-      {id:'points', label:'Point machine & blades', component:'track-point-machine', location:'Trackside', role:state.proof||missing ? 'Near blade closed · far blade open · locked' : 'Stopped between the ends', status:missing?'available':status, statusLabel:state.position},
+      {id:'points', label:'Point machine & blades', component:'track-point-machine', location:'Trackside', role:state.proof||missing ? 'Near blade closed · far blade open · locked' : 'Stopped mid-throw', status:missing?'available':status, statusLabel:state.position},
       {id:'detector', label:'Blade & lock detection', component:'track-point-detection', location:'Trackside', role:'Checks both blades and their locks', status, statusLabel:state.proof ? 'B indication returned' : missing?'One detector input missing':'No B indication'},
       {id:'logic', label:'Interlocking', component:'interlocking', location:'Route protection', role:'Combines the point indication with other route inputs', status, statusLabel:state.proof ? 'Point condition received' : 'Point condition missing'},
       {id:'other', label:'Other route conditions', component:'train-detection', location:'Route protection', role:'Train detection and conflicting-route checks', status:'unknown', statusLabel:'Check alongside the points'},

@@ -128,7 +128,7 @@ check('OCC hardware dependencies do not infer service availability or automatic 
     assert(d.nodes.some(n=>n.component==='occ-uninterruptible-power'));assert(d.nodes.some(n=>n.component==='occ-application-service'));assert(d.nodes.some(n=>n.component==='operations-event-recording'));
     assert(d.nodes.every(n=>!n.status));assert(d.edges.every(e=>!e.status));
     assert.match(d.rows.find(row=>row[0]==='Deployment')[2],/do not establish redundancy/);
-    assert.match(d.rows.find(row=>row[0]==='Availability')[2],/OCC application inspector/);
+    assert.match(d.rows.find(row=>row[0]==='Availability')[2],/\bInterfaces\b/);
   }
 });
 

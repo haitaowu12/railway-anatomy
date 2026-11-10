@@ -30,7 +30,7 @@ export function journeyState(variant='available') {
   const mainLift=!['outage','alternative'].includes(variant), alternate=variant==='alternative';
   const platform=mainLift||alternate, boarding=platform&&variant!=='aid-required';
   return {mainLift,alternate,platform,boarding,
-    route:!platform?'Route interrupted before the platform':!boarding?'Platform reached; boarding unresolved':alternate?'Alternative lift route reaches the train':'Selected route reaches the train',
+    route:!platform?'Route interrupted before the platform':!boarding?'Platform reached; boarding unresolved':alternate?'The alternative lift reaches the platform. The boarding interface is passable in this case.':'Selected route reaches the train',
     rows:[
       ['Entrance and gate','Connected','A wide gate is one part of a complete usable route.'],
       ['Near lift',mainLift?'Available':'Unavailable','Stairs do not replace this step-free connection.'],
@@ -82,7 +82,7 @@ export function systemDiagram(state,definition={}) {
     node('output','Signal / route output','lineside-signal','Operating interface','Meaning depends on the signalling design'),
   ],[edge('request','logic','Request is evaluated against route conditions'),edge('logic','points','Point movement command'),edge('points','logic',pointUnproved?'Required position/locking proof is absent':'Separate position and locking proof'),edge('detection','logic','Defined occupancy or clear indication'),edge('logic','output',pointUnproved||variant==='occupied'?'The selected example withholds the permissive condition':'The interlocking evaluates the represented route conditions')]);
   if(view==='etcs') {
-    if(variant==='level-2')return diagram('ETCS Level 2: radio and reference are different paths',description,[
+    if(variant==='level-2')return diagram('ETCS Level 2 uses radio and position references',description,[
       node('route','Interlocking','interlocking','Infrastructure','Relevant route information'),node('rbc','Radio Block Centre','rbc','Infrastructure','Generates defined movement information'),
       node('radio','Railway radio transport','gsm-r-frmcs','Communications','Radio bearer selected by the system'),
       node('onboard','ETCS onboard','etcs-onboard','Train','Continuous onboard supervision'),node('reference','Balise reference','balise','Infrastructure','Location reference'),
@@ -167,7 +167,7 @@ export function systemDiagram(state,definition={}) {
     edge('service','record','Configured storage interface','both'),
     edge('power','service','Illustrative supported electrical supply'),
     edge('power','network','Illustrative supported electrical supply'),
-  ],{sources:['OC16','OC08','OC09'],rows:[['Hardware and function','Different subjects','A rack or host is equipment. An application is a software function with an allocated scope.'],['Deployment','Illustrative arrangement','Additional hosts do not establish redundancy, synchronization or failover.'],['Availability','Not inferred from this layout','Use the OCC application inspector to compare an actual point path, quality and returned evidence.']],result:'Physical connections and software responsibilities are related, but they do not have a one-to-one deployment rule.'});
+  ],{sources:['OC16','OC08','OC09'],rows:[['Hardware and function','Different subjects','A rack or host is equipment. An application is a software function with an allocated scope.'],['Deployment','Illustrative arrangement','Additional hosts do not establish redundancy, synchronization or failover.'],['Availability','Not inferred from this layout','Use Interfaces to trace a supervisory point, check its reported quality and inspect the returned evidence.']],result:'Physical connections and software responsibilities are related, but they do not have a one-to-one deployment rule.'});
   if(view==='depot-testing')return diagram('From test equipment to a recorded result',description,[
     node('subject','Identified vehicle / item','depot-functional-checks','Test definition','Configuration and work scope'),node('conditions','Declared test conditions','depot-diagnostics','Test definition',variant==='movement'?'Defined movement-test boundary':'Defined stationary-test boundary'),
     node('observe','Stimulus and observation','depot-functional-checks','Evidence','Expected and observed response'),node('record','Result and limitations','change-test','Evidence','Traceable to the subject'),node('decision','Maintenance release interface','depot-maintenance-release','Review','A separate responsible decision'),

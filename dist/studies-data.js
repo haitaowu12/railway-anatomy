@@ -78,7 +78,7 @@ export const STUDY_SOURCES = [
     "publisher": "ENISA",
     "url": "https://www.enisa.europa.eu/publications/zoning-and-conduits-for-railways",
     "description": "The 2022 report explains grouping railway assets into security zones and examining their connecting conduits.",
-    "scope": "The 2022 report explains railway security zones and the communication links between them."
+    "scope": "The 2022 report supplies background for the dependency study’s zoning and conduit examples."
   },
   {
     "id": "A01",
@@ -431,7 +431,7 @@ export const STUDY_CONCEPTS = [
     "summary": "A culvert carries water through the ground beneath the railway.",
     "details": [
       "The culvert needs a connected passage from its inlet to its outlet. Deposits, damage or a blocked outfall can affect that passage, including sections hidden from track level.",
-      "In Structures & drainage, inspect the sidewalls, floor and roof around the opening. The Infrastructure inspection & work evidence process connects a recorded condition with assessment, work and a follow-up check."
+      "In Structures & drainage, inspect the sidewalls, invert (bottom slab) and crown (top slab) around the opening. The Infrastructure inspection & work evidence process connects a recorded condition with assessment, work and a follow-up check."
     ],
     "sources": [
       "I02",
@@ -519,7 +519,7 @@ export const STUDY_CONCEPTS = [
     "summary": "A work record says what was done; a follow-up check records what was found afterward.",
     "details": [
       "Keep the original observation, completed work and follow-up evidence distinct. Each record needs an identifiable asset, location and date or version.",
-      "In the maintenance map, compare the actual end state with the review of evidence and continuing actions. A completed drainage check leaves a separate bridge issue open until that issue is addressed."
+      "In the Infrastructure inspection & work evidence map, compare the actual end state with the review of evidence and continuing actions. A completed drainage check leaves a separate bridge issue open until that issue is addressed."
     ],
     "sources": [
       "I02",
@@ -625,7 +625,7 @@ export const STUDY_CONCEPTS = [
     "summary": "Restoring a connection also raises a question about the state of the connected systems.",
     "details": [
       "Recovery may involve configuration, programs and data as well as communication. The connected equipment needs the intended settings and compatible information.",
-      "Restored, unchecked reconnects the path while a configuration mismatch remains. Evidence checked adds checks of configuration and recording; the earlier gap in recorded history stays visible."
+      "In Restored, unchecked, the connection is back. Configuration still needs checking, and the earlier recording gap remains."
     ],
     "sources": [
       "R01"
@@ -1012,7 +1012,7 @@ export const STUDY_VIEWS = {
           "AC supply",
           "Wayside transformer + rectifier",
           "Conductor + shoe",
-          "DC link → inverter → axle drive",
+          "DC link → inverter → selected drive",
           "Separate DC return"
         ],
         "sources": [
@@ -1094,7 +1094,7 @@ export const STUDY_VIEWS = {
       {
         "id": "spin",
         "label": "Wheel spin",
-        "title": "Rotation exceeds rolling motion",
+        "title": "Wheel rim speed exceeds vehicle speed",
         "description": "The wheel turns faster than the rolling reference while its centre covers the same distance. Extra rotation does not mean extra vehicle travel.",
         "nodes": [
           "Traction effort",

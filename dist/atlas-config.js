@@ -444,7 +444,7 @@ export const NEW_VIEWS = {
       {
         "id": "unproved",
         "label": "Stopped short",
-        "title": "Travel stops before end B",
+        "title": "Travel stops before setting B",
         "description": "The blades stop between the ends. Both locks stay released; neither A nor B is indicated.",
         "nodes": [
           "Command present",
@@ -463,7 +463,7 @@ export const NEW_VIEWS = {
         "title": "Locked at B, indication unavailable",
         "description": "Both blades reach B and both locks engage, but the far-blade detector input is unavailable. Neither end is indicated.",
         "nodes": [
-          "Both blades at B",
+          "Blades in setting B",
           "Locks engaged",
           "Detector input missing",
           "No B indication"
@@ -735,7 +735,7 @@ export const NEW_VIEWS = {
         "title": "Locked at B, indication unavailable",
         "description": "Both blades reach B and both locks engage, but the far-blade detector input is unavailable. Neither end is indicated.",
         "nodes": [
-          "Both blades at B",
+          "Blades in setting B",
           "Locks engaged",
           "Detector input missing",
           "No B indication"
@@ -775,7 +775,7 @@ export const NEW_VIEWS = {
         "id": "axle-counter",
         "label": "Axle counter",
         "title": "Count at the section boundaries",
-        "description": "Wheel sensors count axles entering and leaving a section. Evaluation equipment uses those counts and system status to report occupation. A clear count is section information; proving the complete train requires the relevant train-integrity arrangement.",
+        "description": "Wheel sensors count axles entering and leaving a section. Evaluation equipment uses those counts and system status to report occupation. Matching axle counts and a healthy system support a clear section indication. If axles enter and remain inside the section, the counts differ. A clear indication applies to the section, while train integrity concerns whether the train remains complete.",
         "nodes": [
           "Entry sensor",
           "Evaluation",
