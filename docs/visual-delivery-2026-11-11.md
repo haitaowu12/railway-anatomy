@@ -55,7 +55,4 @@ native-interface branch and Unslop light-refinement branch in Second Brain at
 - `npm run build` and `npm run check:release` passed with 158 version-consistent
   local dependency references.
 
-Rendered layout and browser interaction review remain open: local Chromium could
-not create its process-singleton socket, and the connected browser denied page
-access. The DOM checks do not establish visual acceptance. No GitHub Actions or
-deployment was run for this change.
+The generated reading page rendered at desktop and 390 px. Searching for “point” returned 68 entries, and the fifth expansion focused the first newly shown result when Show more disappeared. The component filter narrowed “point machine” to two results at 390 px. Keyboard activation opened the linked disclosure and focused its anchor. A no-match search displayed recovery guidance and Clear returned focus to the search field. No deployment was run.
